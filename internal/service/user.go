@@ -15,11 +15,11 @@ var (
 	ErrUserNotFound = errors.New("user not found")
 	// ErrInvalidEmail used when the email is not valid.
 	ErrInvalidEmail = errors.New("invalid email")
-	// ErrInvalidUsername used then the username is not valid.
+	// ErrInvalidUsername used when the username is not valid.
 	ErrInvalidUsername = errors.New("invalid username")
-	// ErrEmailTaken used when there is already an user registered with that email.
+	// ErrEmailTaken used when there is already a user registered with that email.
 	ErrEmailTaken = errors.New("email taken")
-	// ErrUsernameTaken used when an used is registered with that name already.
+	// ErrUsernameTaken used when a user is registered with that name already.
 	ErrUsernameTaken = errors.New("username taken")
 )
 
