@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/matryer/way"
-
 	"github.com/nicolasparada/nakama/internal/service"
 )
 
