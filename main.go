@@ -30,8 +30,8 @@ func main() {
 		return
 	}
 
-	// TODO: use service.TokenLifespan with branca.
 	codec := branca.NewBranca("supersecretkeyyoushouldnotcommit")
+	codec.SetTTL(uint32(service.TokenLifespan.Seconds()))
 	s := service.New(db, codec)
 	h := handler.New(s)
 	addr := fmt.Sprintf(":%d", port)
