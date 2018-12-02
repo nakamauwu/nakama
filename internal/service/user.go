@@ -22,7 +22,7 @@ var (
 	ErrEmailTaken = errors.New("email taken")
 	// ErrUsernameTaken used when a user is registered with that name already.
 	ErrUsernameTaken = errors.New("username taken")
-	// ErrForbiddenFollow is used when you try to following yourself.
+	// ErrForbiddenFollow is used when you try to follow yourself.
 	ErrForbiddenFollow = errors.New("cannot follow yourself")
 )
 
@@ -97,7 +97,7 @@ func (s *Service) ToggleFollow(ctx context.Context, username string) (ToggleFoll
 	}
 
 	if err != nil {
-		return out, fmt.Errorf("could not query select user id from followee username: %v", err)
+		return out, fmt.Errorf("could not query select user id from username: %v", err)
 	}
 
 	if followeeID == followerID {
@@ -106,7 +106,7 @@ func (s *Service) ToggleFollow(ctx context.Context, username string) (ToggleFoll
 
 	query = "SELECT EXISTS (SELECT 1 FROM follows WHERE follower_id = $1 AND followee_id = $2)"
 	if err = tx.QueryRowContext(ctx, query, followerID, followeeID).Scan(&out.Following); err != nil {
-		return out, fmt.Errorf("coult not query select existance of follow: %v", err)
+		return out, fmt.Errorf("could not query select existance of follow: %v", err)
 	}
 
 	if out.Following {
@@ -117,12 +117,12 @@ func (s *Service) ToggleFollow(ctx context.Context, username string) (ToggleFoll
 
 		query = "UPDATE users SET followees_count = followees_count - 1 WHERE id = $1"
 		if _, err = tx.ExecContext(ctx, query, followerID); err != nil {
-			return out, fmt.Errorf("could not update follower followees count (-): %v", err)
+			return out, fmt.Errorf("could not decrement followees count: %v", err)
 		}
 
 		query = "UPDATE users SET followers_count = followers_count - 1 WHERE id = $1 RETURNING followers_count"
 		if err = tx.QueryRowContext(ctx, query, followeeID).Scan(&out.FollowersCount); err != nil {
-			return out, fmt.Errorf("could not update followee followers count (-): %v", err)
+			return out, fmt.Errorf("could not decrement followers count: %v", err)
 		}
 	} else {
 		query = "INSERT INTO follows (follower_id, followee_id) VALUES ($1, $2)"
@@ -132,12 +132,12 @@ func (s *Service) ToggleFollow(ctx context.Context, username string) (ToggleFoll
 
 		query = "UPDATE users SET followees_count = followees_count + 1 WHERE id = $1"
 		if _, err = tx.ExecContext(ctx, query, followerID); err != nil {
-			return out, fmt.Errorf("could not update follower followees count (+): %v", err)
+			return out, fmt.Errorf("could not increment followees count: %v", err)
 		}
 
 		query = "UPDATE users SET followers_count = followers_count + 1 WHERE id = $1 RETURNING followers_count"
 		if err = tx.QueryRowContext(ctx, query, followeeID).Scan(&out.FollowersCount); err != nil {
-			return out, fmt.Errorf("could not update followee followers count (+): %v", err)
+			return out, fmt.Errorf("could not increment followers count: %v", err)
 		}
 	}
 
@@ -148,7 +148,7 @@ func (s *Service) ToggleFollow(ctx context.Context, username string) (ToggleFoll
 	out.Following = !out.Following
 
 	if out.Following {
-		// TODO: notify followee.
+		// TODO: notify user about follow.
 	}
 
 	return out, nil
