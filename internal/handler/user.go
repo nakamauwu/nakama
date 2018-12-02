@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/matryer/way"
+
 	"github.com/nicolasparada/nakama/internal/service"
 )
 
@@ -36,4 +38,37 @@ func (h *handler) createUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *handler) toggleFollow(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	username := way.Param(ctx, "username")
+
+	out, err := h.ToggleFollow(ctx, username)
+	if err == service.ErrUnauthenticated {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	if err == service.ErrInvalidUsername {
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		return
+	}
+
+	if err == service.ErrUserNotFound {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	if err == service.ErrForbiddenFollow {
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
+
+	if err != nil {
+		respondError(w, err)
+		return
+	}
+
+	respond(w, out, http.StatusOK)
 }
