@@ -80,7 +80,7 @@ func (s *Service) CreateUser(ctx context.Context, email, username string) error 
 	return nil
 }
 
-// User selects on user from the database with the given username.
+// User selects one user from the database with the given username.
 func (s *Service) User(ctx context.Context, username string) (UserProfile, error) {
 	var u UserProfile
 
