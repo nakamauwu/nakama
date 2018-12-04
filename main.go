@@ -30,9 +30,9 @@ func main() {
 		return
 	}
 
-	codec := branca.NewBranca("supersecretkeyyoushouldnotcommit")
-	codec.SetTTL(uint32(service.TokenLifespan.Seconds()))
-	s := service.New(db, codec)
+	cdc := branca.NewBranca("supersecretkeyyoushouldnotcommit")
+	cdc.SetTTL(uint32(service.TokenLifespan.Seconds()))
+	s := service.New(db, cdc)
 	h := handler.New(s)
 	addr := fmt.Sprintf(":%d", port)
 	log.Printf("accepting connections on port %d\n", port)

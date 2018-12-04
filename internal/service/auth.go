@@ -33,7 +33,7 @@ type LoginOutput struct {
 
 // AuthUserID from token.
 func (s *Service) AuthUserID(token string) (int64, error) {
-	str, err := s.codec.DecodeToString(token)
+	str, err := s.cdc.DecodeToString(token)
 	if err != nil {
 		return 0, fmt.Errorf("could not decode token: %v", err)
 	}
@@ -66,7 +66,7 @@ func (s *Service) Login(ctx context.Context, email string) (LoginOutput, error) 
 		return out, fmt.Errorf("could not query select user: %v", err)
 	}
 
-	out.Token, err = s.codec.EncodeToString(strconv.FormatInt(out.AuthUser.ID, 10))
+	out.Token, err = s.cdc.EncodeToString(strconv.FormatInt(out.AuthUser.ID, 10))
 	if err != nil {
 		return out, fmt.Errorf("could not create token: %v", err)
 	}
