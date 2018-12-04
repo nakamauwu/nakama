@@ -28,8 +28,19 @@ var (
 
 // User model.
 type User struct {
-	ID       int64  `json:"id"`
+	ID       int64  `json:"id,omitempty"`
 	Username string `json:"username"`
+}
+
+// UserProfile model.
+type UserProfile struct {
+	User
+	Email          string `json:"email,omitempty"`
+	FollowersCount int    `json:"followersCount"`
+	FolloweesCount int    `json:"followeesCount"`
+	Me             bool   `json:"me"`
+	Following      bool   `json:"following"`
+	Followeed      bool   `json:"followeed"`
 }
 
 // ToggleFollowOutput response.
@@ -67,6 +78,50 @@ func (s *Service) CreateUser(ctx context.Context, email, username string) error 
 	}
 
 	return nil
+}
+
+// User selects on user from the database with the given username.
+func (s *Service) User(ctx context.Context, username string) (UserProfile, error) {
+	var u UserProfile
+
+	username = strings.TrimSpace(username)
+	if !rxUsername.MatchString(username) {
+		return u, ErrInvalidUsername
+	}
+
+	uid, auth := ctx.Value(KeyAuthUserID).(int64)
+	args := []interface{}{username}
+	dest := []interface{}{&u.ID, &u.Email, &u.FollowersCount, &u.FolloweesCount}
+	query := "SELECT id, email, followers_count, followees_count "
+	if auth {
+		query += ", " +
+			"followers.follower_id IS NOT NULL AS following, " +
+			"followees.followee_id IS NOT NULL AS followeed "
+		dest = append(dest, &u.Following, &u.Followeed)
+	}
+	query += "FROM users "
+	if auth {
+		query += "LEFT JOIN follows AS followers ON followers.follower_id = $2 AND followers.followee_id = users.id " +
+			"LEFT JOIN follows AS followees ON followees.follower_id = users.id AND followees.followee_id = $2 "
+		args = append(args, uid)
+	}
+	query += "WHERE username = $1"
+	err := s.db.QueryRowContext(ctx, query, args...).Scan(dest...)
+	if err == sql.ErrNoRows {
+		return u, ErrUserNotFound
+	}
+
+	if err != nil {
+		return u, fmt.Errorf("coult not query select user: %v", err)
+	}
+
+	u.Username = username
+	u.Me = auth && uid == u.ID
+	if !u.Me {
+		u.ID = 0
+		u.Email = ""
+	}
+	return u, nil
 }
 
 // ToggleFollow between two users.
