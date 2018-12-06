@@ -158,23 +158,31 @@ func (s *Service) User(ctx context.Context, username string) (UserProfile, error
 	}
 
 	uid, auth := ctx.Value(KeyAuthUserID).(int64)
-	args := []interface{}{username}
+	query, args, err := buildQuery(`
+		SELECT id, email, followers_count, followees_count
+		{{if .auth}}
+		, followers.follower_id IS NOT NULL AS following
+		, followees.followee_id IS NOT NULL AS followeed
+		{{end}}
+		FROM users
+		{{if .auth}}
+		LEFT JOIN follows AS followers ON followers.follower_id = @uid AND followers.followee_id = users.id
+		LEFT JOIN follows AS followees ON followees.follower_id = users.id AND followees.followee_id = @uid
+		{{end}}
+		WHERE username = @username`, map[string]interface{}{
+		"auth":     auth,
+		"uid":      uid,
+		"username": username,
+	})
+	if err != nil {
+		return u, fmt.Errorf("could not build users sql query: %v", err)
+	}
+
 	dest := []interface{}{&u.ID, &u.Email, &u.FollowersCount, &u.FolloweesCount}
-	query := "SELECT id, email, followers_count, followees_count "
 	if auth {
-		query += ", " +
-			"followers.follower_id IS NOT NULL AS following, " +
-			"followees.followee_id IS NOT NULL AS followeed "
 		dest = append(dest, &u.Following, &u.Followeed)
 	}
-	query += "FROM users "
-	if auth {
-		query += "LEFT JOIN follows AS followers ON followers.follower_id = $2 AND followers.followee_id = users.id " +
-			"LEFT JOIN follows AS followees ON followees.follower_id = users.id AND followees.followee_id = $2 "
-		args = append(args, uid)
-	}
-	query += "WHERE username = $1"
-	err := s.db.QueryRowContext(ctx, query, args...).Scan(dest...)
+	err = s.db.QueryRowContext(ctx, query, args...).Scan(dest...)
 	if err == sql.ErrNoRows {
 		return u, ErrUserNotFound
 	}
