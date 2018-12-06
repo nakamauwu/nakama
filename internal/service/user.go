@@ -172,7 +172,7 @@ func (s *Service) User(ctx context.Context, username string) (UserProfile, error
 		"username": username,
 	})
 	if err != nil {
-		return u, fmt.Errorf("could not build users sql query: %v", err)
+		return u, fmt.Errorf("could not build user sql query: %v", err)
 	}
 
 	dest := []interface{}{&u.ID, &u.Email, &u.FollowersCount, &u.FolloweesCount}
