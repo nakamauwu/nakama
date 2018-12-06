@@ -108,3 +108,43 @@ func (h *handler) toggleFollow(w http.ResponseWriter, r *http.Request) {
 
 	respond(w, out, http.StatusOK)
 }
+
+func (h *handler) followers(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	q := r.URL.Query()
+	username := way.Param(ctx, "username")
+	first, _ := strconv.Atoi(q.Get("first"))
+	after := q.Get("after")
+	uu, err := h.Followers(ctx, username, first, after)
+	if err == service.ErrInvalidUsername {
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		return
+	}
+
+	if err != nil {
+		respondError(w, err)
+		return
+	}
+
+	respond(w, uu, http.StatusOK)
+}
+
+func (h *handler) followees(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	q := r.URL.Query()
+	username := way.Param(ctx, "username")
+	first, _ := strconv.Atoi(q.Get("first"))
+	after := q.Get("after")
+	uu, err := h.Followees(ctx, username, first, after)
+	if err == service.ErrInvalidUsername {
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		return
+	}
+
+	if err != nil {
+		respondError(w, err)
+		return
+	}
+
+	respond(w, uu, http.StatusOK)
+}

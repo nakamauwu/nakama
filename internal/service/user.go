@@ -281,3 +281,139 @@ func (s *Service) ToggleFollow(ctx context.Context, username string) (ToggleFoll
 
 	return out, nil
 }
+
+// Followers in ascending order with forward pagination.
+func (s *Service) Followers(ctx context.Context, username string, first int, after string) ([]UserProfile, error) {
+	username = strings.TrimSpace(username)
+	if !rxUsername.MatchString(username) {
+		return nil, ErrInvalidUsername
+	}
+
+	first = normalizePageSize(first)
+	after = strings.TrimSpace(after)
+	uid, auth := ctx.Value(KeyAuthUserID).(int64)
+	query, args, err := buildQuery(`
+		SELECT id, email, username, followers_count, followees_count
+		{{if .auth}}
+		, followers.follower_id IS NOT NULL AS following
+		, followees.followee_id IS NOT NULL AS followeed
+		{{end}}
+		FROM follows
+		INNER JOIN users ON follows.follower_id = users.id
+		{{if .auth}}
+		LEFT JOIN follows AS followers ON followers.follower_id = @uid AND followers.followee_id = users.id
+		LEFT JOIN follows AS followees ON followees.follower_id = users.id AND followees.followee_id = @uid
+		{{end}}
+		WHERE follows.followee_id = (SELECT id FROM users WHERE username = @username)
+		{{if .after}}AND username > @after{{end}}
+		ORDER BY username ASC
+		LIMIT @first`, map[string]interface{}{
+		"auth":     auth,
+		"uid":      uid,
+		"username": username,
+		"first":    first,
+		"after":    after,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("could not build followers sql query: %v", err)
+	}
+
+	rows, err := s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("could not query select followers: %v", err)
+	}
+
+	defer rows.Close()
+	uu := make([]UserProfile, 0, first)
+	for rows.Next() {
+		var u UserProfile
+		dest := []interface{}{&u.ID, &u.Email, &u.Username, &u.FollowersCount, &u.FolloweesCount}
+		if auth {
+			dest = append(dest, &u.Following, &u.Followeed)
+		}
+		if err = rows.Scan(dest...); err != nil {
+			return nil, fmt.Errorf("could not scan follower: %v", err)
+		}
+
+		u.Me = auth && uid == u.ID
+		if !u.Me {
+			u.ID = 0
+			u.Email = ""
+		}
+		uu = append(uu, u)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("could not iterate follower rows: %v", err)
+	}
+
+	return uu, nil
+}
+
+// Followees in ascending order with forward pagination.
+func (s *Service) Followees(ctx context.Context, username string, first int, after string) ([]UserProfile, error) {
+	username = strings.TrimSpace(username)
+	if !rxUsername.MatchString(username) {
+		return nil, ErrInvalidUsername
+	}
+
+	first = normalizePageSize(first)
+	after = strings.TrimSpace(after)
+	uid, auth := ctx.Value(KeyAuthUserID).(int64)
+	query, args, err := buildQuery(`
+		SELECT id, email, username, followers_count, followees_count
+		{{if .auth}}
+		, followers.follower_id IS NOT NULL AS following
+		, followees.followee_id IS NOT NULL AS followeed
+		{{end}}
+		FROM follows
+		INNER JOIN users ON follows.followee_id = users.id
+		{{if .auth}}
+		LEFT JOIN follows AS followers ON followers.follower_id = @uid AND followers.followee_id = users.id
+		LEFT JOIN follows AS followees ON followees.follower_id = users.id AND followees.followee_id = @uid
+		{{end}}
+		WHERE follows.follower_id = (SELECT id FROM users WHERE username = @username)
+		{{if .after}}AND username > @after{{end}}
+		ORDER BY username ASC
+		LIMIT @first`, map[string]interface{}{
+		"auth":     auth,
+		"uid":      uid,
+		"username": username,
+		"first":    first,
+		"after":    after,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("could not build followees sql query: %v", err)
+	}
+
+	rows, err := s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("could not query select followees: %v", err)
+	}
+
+	defer rows.Close()
+	uu := make([]UserProfile, 0, first)
+	for rows.Next() {
+		var u UserProfile
+		dest := []interface{}{&u.ID, &u.Email, &u.Username, &u.FollowersCount, &u.FolloweesCount}
+		if auth {
+			dest = append(dest, &u.Following, &u.Followeed)
+		}
+		if err = rows.Scan(dest...); err != nil {
+			return nil, fmt.Errorf("could not scan followee: %v", err)
+		}
+
+		u.Me = auth && uid == u.ID
+		if !u.Me {
+			u.ID = 0
+			u.Email = ""
+		}
+		uu = append(uu, u)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("could not iterate followee rows: %v", err)
+	}
+
+	return uu, nil
+}
