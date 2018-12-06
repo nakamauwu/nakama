@@ -185,7 +185,7 @@ func (s *Service) User(ctx context.Context, username string) (UserProfile, error
 	}
 
 	if err != nil {
-		return u, fmt.Errorf("coult not query select user: %v", err)
+		return u, fmt.Errorf("could not query select user: %v", err)
 	}
 
 	u.Username = username
