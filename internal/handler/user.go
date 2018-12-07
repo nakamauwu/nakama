@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -74,6 +75,28 @@ func (h *handler) user(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respond(w, u, http.StatusOK)
+}
+
+func (h *handler) updateAvatar(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, service.MaxAvatarBytes)
+	defer r.Body.Close()
+	avatarURL, err := h.UpdateAvatar(r.Context(), r.Body)
+	if err == service.ErrUnauthenticated {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	if err == service.ErrUnsupportedAvatarFormat {
+		http.Error(w, err.Error(), http.StatusUnsupportedMediaType)
+		return
+	}
+
+	if err != nil {
+		respondError(w, err)
+		return
+	}
+
+	fmt.Fprint(w, avatarURL)
 }
 
 func (h *handler) toggleFollow(w http.ResponseWriter, r *http.Request) {

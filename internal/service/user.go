@@ -5,13 +5,29 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"image"
+	"image/jpeg"
+	"image/png"
+	"io"
+	"os"
+	"path"
 	"regexp"
 	"strings"
+
+	"github.com/disintegration/imaging"
+	"github.com/matoous/go-nanoid"
 )
+
+// MaxAvatarBytes to read.
+const MaxAvatarBytes = 5 << 20 // 5MB
 
 var (
 	rxEmail    = regexp.MustCompile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")
 	rxUsername = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_-]{0,17}$")
+	avatarsDir = path.Join("web", "static", "img", "avatars")
+)
+
+var (
 	// ErrUserNotFound used when the user wasn't found on the db.
 	ErrUserNotFound = errors.New("user not found")
 	// ErrInvalidEmail used when the email is not valid.
@@ -24,12 +40,15 @@ var (
 	ErrUsernameTaken = errors.New("username taken")
 	// ErrForbiddenFollow is used when you try to follow yourself.
 	ErrForbiddenFollow = errors.New("cannot follow yourself")
+	// ErrUnsupportedAvatarFormat used for unsupported avatar format.
+	ErrUnsupportedAvatarFormat = errors.New("only png and jpeg allowed as avatar")
 )
 
 // User model.
 type User struct {
-	ID       int64  `json:"id,omitempty"`
-	Username string `json:"username"`
+	ID        int64   `json:"id,omitempty"`
+	Username  string  `json:"username"`
+	AvatarURL *string `json:"avatarUrl"`
 }
 
 // UserProfile model.
@@ -87,7 +106,7 @@ func (s *Service) Users(ctx context.Context, search string, first int, after str
 	after = strings.TrimSpace(after)
 	uid, auth := ctx.Value(KeyAuthUserID).(int64)
 	query, args, err := buildQuery(`
-		SELECT id, email, username, followers_count, followees_count
+		SELECT id, email, username, avatar, followers_count, followees_count
 		{{if .auth}}
 		, followers.follower_id IS NOT NULL AS following
 		, followees.followee_id IS NOT NULL AS followeed
@@ -122,7 +141,8 @@ func (s *Service) Users(ctx context.Context, search string, first int, after str
 	uu := make([]UserProfile, 0, first)
 	for rows.Next() {
 		var u UserProfile
-		dest := []interface{}{&u.ID, &u.Email, &u.Username, &u.FollowersCount, &u.FolloweesCount}
+		var avatar sql.NullString
+		dest := []interface{}{&u.ID, &u.Email, &u.Username, &avatar, &u.FollowersCount, &u.FolloweesCount}
 		if auth {
 			dest = append(dest, &u.Following, &u.Followeed)
 		}
@@ -134,6 +154,10 @@ func (s *Service) Users(ctx context.Context, search string, first int, after str
 		if !u.Me {
 			u.ID = 0
 			u.Email = ""
+		}
+		if avatar.Valid {
+			avatarURL := s.origin + "/img/avatars/" + avatar.String
+			u.AvatarURL = &avatarURL
 		}
 		uu = append(uu, u)
 	}
@@ -156,7 +180,7 @@ func (s *Service) User(ctx context.Context, username string) (UserProfile, error
 
 	uid, auth := ctx.Value(KeyAuthUserID).(int64)
 	query, args, err := buildQuery(`
-		SELECT id, email, followers_count, followees_count
+		SELECT id, email, avatar, followers_count, followees_count
 		{{if .auth}}
 		, followers.follower_id IS NOT NULL AS following
 		, followees.followee_id IS NOT NULL AS followeed
@@ -175,7 +199,8 @@ func (s *Service) User(ctx context.Context, username string) (UserProfile, error
 		return u, fmt.Errorf("could not build user sql query: %v", err)
 	}
 
-	dest := []interface{}{&u.ID, &u.Email, &u.FollowersCount, &u.FolloweesCount}
+	var avatar sql.NullString
+	dest := []interface{}{&u.ID, &u.Email, &avatar, &u.FollowersCount, &u.FolloweesCount}
 	if auth {
 		dest = append(dest, &u.Following, &u.Followeed)
 	}
@@ -194,7 +219,74 @@ func (s *Service) User(ctx context.Context, username string) (UserProfile, error
 		u.ID = 0
 		u.Email = ""
 	}
+	if avatar.Valid {
+		avatarURL := s.origin + "/img/avatars/" + avatar.String
+		u.AvatarURL = &avatarURL
+	}
 	return u, nil
+}
+
+// UpdateAvatar of the authenticated user returning the new avatar URL.
+func (s *Service) UpdateAvatar(ctx context.Context, r io.Reader) (string, error) {
+	uid, ok := ctx.Value(KeyAuthUserID).(int64)
+	if !ok {
+		return "", ErrUnauthenticated
+	}
+
+	r = io.LimitReader(r, MaxAvatarBytes)
+	img, format, err := image.Decode(r)
+	// TODO: handle image.ErrFormat
+
+	if err != nil {
+		return "", fmt.Errorf("could not read avatar: %v", err)
+	}
+
+	if format != "png" && format != "jpeg" {
+		return "", ErrUnsupportedAvatarFormat
+	}
+
+	avatar, err := gonanoid.Nanoid()
+	if err != nil {
+		return "", fmt.Errorf("could not generate avatar filename: %v", err)
+	}
+
+	if format == "png" {
+		avatar += ".png"
+	} else {
+		avatar += ".jpg"
+	}
+
+	avatarPath := path.Join(avatarsDir, avatar)
+	f, err := os.Create(avatarPath)
+	if err != nil {
+		return "", fmt.Errorf("could not create avatar file: %v", err)
+	}
+
+	defer f.Close()
+	img = imaging.Fill(img, 400, 400, imaging.Center, imaging.CatmullRom)
+	if format == "png" {
+		err = png.Encode(f, img)
+	} else {
+		err = jpeg.Encode(f, img, nil)
+	}
+	if err != nil {
+		return "", fmt.Errorf("could not write avatar to disk: %v", err)
+	}
+
+	var oldAvatar sql.NullString
+	if err = s.db.QueryRowContext(ctx, `
+		UPDATE users SET avatar = $1 WHERE id = $2
+		RETURNING (SELECT avatar FROM users WHERE id = $2) AS old_avatar`, avatar, uid).
+		Scan(&oldAvatar); err != nil {
+		defer os.Remove(avatarPath)
+		return "", fmt.Errorf("could not update avatar: %v", err)
+	}
+
+	if oldAvatar.Valid {
+		defer os.Remove(path.Join(avatarsDir, oldAvatar.String))
+	}
+
+	return s.origin + "/img/avatars/" + avatar, nil
 }
 
 // ToggleFollow between two users.
@@ -293,7 +385,7 @@ func (s *Service) Followers(ctx context.Context, username string, first int, aft
 	after = strings.TrimSpace(after)
 	uid, auth := ctx.Value(KeyAuthUserID).(int64)
 	query, args, err := buildQuery(`
-		SELECT id, email, username, followers_count, followees_count
+		SELECT id, email, username, avatar, followers_count, followees_count
 		{{if .auth}}
 		, followers.follower_id IS NOT NULL AS following
 		, followees.followee_id IS NOT NULL AS followeed
@@ -327,7 +419,8 @@ func (s *Service) Followers(ctx context.Context, username string, first int, aft
 	uu := make([]UserProfile, 0, first)
 	for rows.Next() {
 		var u UserProfile
-		dest := []interface{}{&u.ID, &u.Email, &u.Username, &u.FollowersCount, &u.FolloweesCount}
+		var avatar sql.NullString
+		dest := []interface{}{&u.ID, &u.Email, &u.Username, &avatar, &u.FollowersCount, &u.FolloweesCount}
 		if auth {
 			dest = append(dest, &u.Following, &u.Followeed)
 		}
@@ -339,6 +432,10 @@ func (s *Service) Followers(ctx context.Context, username string, first int, aft
 		if !u.Me {
 			u.ID = 0
 			u.Email = ""
+		}
+		if avatar.Valid {
+			avatarURL := s.origin + "/img/avatars/" + avatar.String
+			u.AvatarURL = &avatarURL
 		}
 		uu = append(uu, u)
 	}
@@ -361,7 +458,7 @@ func (s *Service) Followees(ctx context.Context, username string, first int, aft
 	after = strings.TrimSpace(after)
 	uid, auth := ctx.Value(KeyAuthUserID).(int64)
 	query, args, err := buildQuery(`
-		SELECT id, email, username, followers_count, followees_count
+		SELECT id, email, username, avatar, followers_count, followees_count
 		{{if .auth}}
 		, followers.follower_id IS NOT NULL AS following
 		, followees.followee_id IS NOT NULL AS followeed
@@ -395,7 +492,8 @@ func (s *Service) Followees(ctx context.Context, username string, first int, aft
 	uu := make([]UserProfile, 0, first)
 	for rows.Next() {
 		var u UserProfile
-		dest := []interface{}{&u.ID, &u.Email, &u.Username, &u.FollowersCount, &u.FolloweesCount}
+		var avatar sql.NullString
+		dest := []interface{}{&u.ID, &u.Email, &u.Username, &avatar, &u.FollowersCount, &u.FolloweesCount}
 		if auth {
 			dest = append(dest, &u.Following, &u.Followeed)
 		}
@@ -407,6 +505,10 @@ func (s *Service) Followees(ctx context.Context, username string, first int, aft
 		if !u.Me {
 			u.ID = 0
 			u.Email = ""
+		}
+		if avatar.Valid {
+			avatarURL := s.origin + "/img/avatars/" + avatar.String
+			u.AvatarURL = &avatarURL
 		}
 		uu = append(uu, u)
 	}
