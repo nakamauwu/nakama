@@ -235,7 +235,9 @@ func (s *Service) UpdateAvatar(ctx context.Context, r io.Reader) (string, error)
 
 	r = io.LimitReader(r, MaxAvatarBytes)
 	img, format, err := image.Decode(r)
-	// TODO: handle image.ErrFormat
+	if err == image.ErrFormat {
+		return "", ErrUnsupportedAvatarFormat
+	}
 
 	if err != nil {
 		return "", fmt.Errorf("could not read avatar: %v", err)
