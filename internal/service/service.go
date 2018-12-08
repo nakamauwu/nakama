@@ -7,7 +7,7 @@ import (
 )
 
 // Service contains the core business logic separated from the transport layer.
-// You can use it to back a REST, GRPC or GraphQL API.
+// You can use it to back a REST, gRPC or GraphQL API.
 type Service struct {
 	db     *sql.DB
 	cdc    *branca.Branca
