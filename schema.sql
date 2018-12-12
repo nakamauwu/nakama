@@ -17,6 +17,25 @@ CREATE TABLE IF NOT EXISTS follows (
     PRIMARY KEY (follower_id, followee_id)
 );
 
+CREATE TABLE IF NOT EXISTS posts (
+    id SERIAL NOT NULL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users,
+    content VARCHAR NOT NULL,
+    spoiler_of VARCHAR,
+    nsfw BOOLEAN NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS sorted_posts ON posts (created_at DESC);
+
+CREATE TABLE IF NOT EXISTS timeline (
+    id SERIAL NOT NULL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users,
+    post_id INT NOT NULL REFERENCES posts
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS timeline_unique ON timeline (user_id, post_id);
+
 INSERT INTO users (id, email, username) VALUES
     (1, 'john@example.org', 'john'),
     (2, 'jane@example.org', 'jane');
