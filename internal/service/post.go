@@ -109,6 +109,8 @@ func (s *Service) CreatePost(
 		}
 	}(ti.Post)
 
+	// TODO: notify each mentioned user in posts.
+
 	return ti, nil
 }
 
