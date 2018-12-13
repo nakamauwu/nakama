@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS posts (
     user_id INT NOT NULL REFERENCES users,
     content VARCHAR NOT NULL,
     spoiler_of VARCHAR,
-    nsfw BOOLEAN NOT NULL,
+    nsfw BOOLEAN NOT NULL DEFAULT false,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
