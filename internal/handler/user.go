@@ -34,7 +34,7 @@ func (h *handler) createUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err != nil {
-		respondError(w, err)
+		respondErr(w, err)
 		return
 	}
 
@@ -48,7 +48,7 @@ func (h *handler) users(w http.ResponseWriter, r *http.Request) {
 	after := q.Get("after")
 	uu, err := h.Users(r.Context(), search, first, after)
 	if err != nil {
-		respondError(w, err)
+		respondErr(w, err)
 		return
 	}
 
@@ -70,7 +70,7 @@ func (h *handler) user(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err != nil {
-		respondError(w, err)
+		respondErr(w, err)
 		return
 	}
 
@@ -92,7 +92,7 @@ func (h *handler) updateAvatar(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err != nil {
-		respondError(w, err)
+		respondErr(w, err)
 		return
 	}
 
@@ -125,7 +125,7 @@ func (h *handler) toggleFollow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err != nil {
-		respondError(w, err)
+		respondErr(w, err)
 		return
 	}
 
@@ -145,7 +145,7 @@ func (h *handler) followers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err != nil {
-		respondError(w, err)
+		respondErr(w, err)
 		return
 	}
 
@@ -165,7 +165,7 @@ func (h *handler) followees(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err != nil {
-		respondError(w, err)
+		respondErr(w, err)
 		return
 	}
 

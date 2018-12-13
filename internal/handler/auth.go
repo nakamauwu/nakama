@@ -33,7 +33,7 @@ func (h *handler) login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err != nil {
-		respondError(w, err)
+		respondErr(w, err)
 		return
 	}
 
@@ -53,7 +53,7 @@ func (h *handler) authUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err != nil {
-		respondError(w, err)
+		respondErr(w, err)
 		return
 	}
 

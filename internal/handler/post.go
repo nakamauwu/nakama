@@ -33,7 +33,7 @@ func (h *handler) createPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err != nil {
-		respondError(w, err)
+		respondErr(w, err)
 		return
 	}
 

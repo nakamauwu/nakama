@@ -10,7 +10,7 @@ import (
 func respond(w http.ResponseWriter, v interface{}, statusCode int) {
 	b, err := json.Marshal(v)
 	if err != nil {
-		respondError(w, fmt.Errorf("could not marshal response: %v", err))
+		respondErr(w, fmt.Errorf("could not marshal response: %v", err))
 		return
 	}
 
@@ -19,7 +19,7 @@ func respond(w http.ResponseWriter, v interface{}, statusCode int) {
 	w.Write(b)
 }
 
-func respondError(w http.ResponseWriter, err error) {
+func respondErr(w http.ResponseWriter, err error) {
 	log.Println(err)
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 }
