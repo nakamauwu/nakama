@@ -7,8 +7,6 @@ import (
 	"log"
 	"strings"
 	"time"
-
-	"github.com/sanity-io/litter"
 )
 
 var (
@@ -97,16 +95,13 @@ func (s *Service) CreatePost(
 		p.User = &u
 		p.Mine = false
 
-		tt, err := s.fanoutPost(p)
+		_, err = s.fanoutPost(p)
 		if err != nil {
 			log.Printf("could not fanout post: %v\n", err)
 			return
 		}
 
-		for _, ti = range tt {
-			log.Println(litter.Sdump(ti))
-			// TODO: broadcast timeline items.
-		}
+		// TODO: broadcast timeline items.
 	}(ti.Post)
 
 	// TODO: notify each mentioned user in posts.
