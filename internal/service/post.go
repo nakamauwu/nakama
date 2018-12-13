@@ -10,9 +10,9 @@ import (
 )
 
 var (
-	// ErrInvalidContent is used for invalid content.
+	// ErrInvalidContent denotes empty or too long content.
 	ErrInvalidContent = errors.New("invalid content")
-	// ErrInvalidSpoiler used for invalid spoiler title.
+	// ErrInvalidSpoiler denotes empty or too long spoiler title.
 	ErrInvalidSpoiler = errors.New("invalid spoiler")
 )
 

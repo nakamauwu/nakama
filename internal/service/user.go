@@ -28,19 +28,19 @@ var (
 )
 
 var (
-	// ErrUserNotFound used when the user wasn't found on the db.
+	// ErrUserNotFound denotes that the user was not found.
 	ErrUserNotFound = errors.New("user not found")
-	// ErrInvalidEmail used when the email is not valid.
+	// ErrInvalidEmail denotes a mal formated email address.
 	ErrInvalidEmail = errors.New("invalid email")
-	// ErrInvalidUsername used when the username is not valid.
+	// ErrInvalidUsername denotes an username not matching the proper format.
 	ErrInvalidUsername = errors.New("invalid username")
-	// ErrEmailTaken used when there is already a user registered with that email.
+	// ErrEmailTaken denotes there is a user with that email already.
 	ErrEmailTaken = errors.New("email taken")
-	// ErrUsernameTaken used when a user is registered with that name already.
+	// ErrUsernameTaken denotes there is a user with that name already.
 	ErrUsernameTaken = errors.New("username taken")
-	// ErrForbiddenFollow is used when you try to follow yourself.
+	// ErrForbiddenFollow denotes a forbiden follow. Like following yourself.
 	ErrForbiddenFollow = errors.New("cannot follow yourself")
-	// ErrUnsupportedAvatarFormat used for unsupported avatar format.
+	// ErrUnsupportedAvatarFormat denotes a not supported avatar image format.
 	ErrUnsupportedAvatarFormat = errors.New("only png and jpeg allowed as avatar")
 )
 

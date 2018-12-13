@@ -18,7 +18,7 @@ const (
 )
 
 var (
-	// ErrUnauthenticated used when there is no authenticated user in context.
+	// ErrUnauthenticated denotes no authenticated user in context.
 	ErrUnauthenticated = errors.New("unauthenticated")
 )
 
