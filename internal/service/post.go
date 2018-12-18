@@ -60,8 +60,9 @@ func (s *Service) CreatePost(
 
 	defer tx.Rollback()
 
-	query := "INSERT INTO posts (user_id, content, spoiler_of, nsfw) VALUES ($1, $2, $3, $4) " +
-		"RETURNING id, created_at"
+	query := `
+		INSERT INTO posts (user_id, content, spoiler_of, nsfw) VALUES ($1, $2, $3, $4)
+		RETURNING id, created_at`
 	if err = tx.QueryRowContext(ctx, query, uid, content, spoilerOf, nsfw).
 		Scan(&ti.Post.ID, &ti.Post.CreatedAt); err != nil {
 		return ti, fmt.Errorf("could not insert post: %v", err)
@@ -110,9 +111,9 @@ func (s *Service) CreatePost(
 }
 
 func (s *Service) fanoutPost(p Post) ([]TimelineItem, error) {
-	query := "INSERT INTO timeline (user_id, post_id) " +
-		"SELECT follower_id, $1 FROM follows WHERE followee_id = $2 " +
-		"RETURNING id, user_id"
+	query := `INSERT INTO timeline (user_id, post_id)
+		SELECT follower_id, $1 FROM follows WHERE followee_id = $2
+		RETURNING id, user_id`
 	rows, err := s.db.Query(query, p.ID, p.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("could not insert timeline: %v", err)

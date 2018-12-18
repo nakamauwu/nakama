@@ -100,7 +100,12 @@ func (s *Service) CreateUser(ctx context.Context, email, username string) error 
 }
 
 // Users in ascending order with forward pagination and filtered by username.
-func (s *Service) Users(ctx context.Context, search string, first int, after string) ([]UserProfile, error) {
+func (s *Service) Users(
+	ctx context.Context,
+	search string,
+	first int,
+	after string,
+) ([]UserProfile, error) {
 	search = strings.TrimSpace(search)
 	first = normalizePageSize(first)
 	after = strings.TrimSpace(after)
@@ -113,8 +118,10 @@ func (s *Service) Users(ctx context.Context, search string, first int, after str
 		{{end}}
 		FROM users
 		{{if .auth}}
-		LEFT JOIN follows AS followers ON followers.follower_id = @uid AND followers.followee_id = users.id
-		LEFT JOIN follows AS followees ON followees.follower_id = users.id AND followees.followee_id = @uid
+		LEFT JOIN follows AS followers
+			ON followers.follower_id = @uid AND followers.followee_id = users.id
+		LEFT JOIN follows AS followees
+			ON followees.follower_id = users.id AND followees.followee_id = @uid
 		{{end}}
 		{{if or .search .after}}WHERE{{end}}
 		{{if .search}}username ILIKE '%' || @search || '%'{{end}}
@@ -142,7 +149,13 @@ func (s *Service) Users(ctx context.Context, search string, first int, after str
 	for rows.Next() {
 		var u UserProfile
 		var avatar sql.NullString
-		dest := []interface{}{&u.ID, &u.Email, &u.Username, &avatar, &u.FollowersCount, &u.FolloweesCount}
+		dest := []interface{}{
+			&u.ID, &u.Email,
+			&u.Username,
+			&avatar,
+			&u.FollowersCount,
+			&u.FolloweesCount,
+		}
 		if auth {
 			dest = append(dest, &u.Following, &u.Followeed)
 		}
@@ -209,8 +222,10 @@ func (s *Service) User(ctx context.Context, username string) (UserProfile, error
 		{{end}}
 		FROM users
 		{{if .auth}}
-		LEFT JOIN follows AS followers ON followers.follower_id = @uid AND followers.followee_id = users.id
-		LEFT JOIN follows AS followees ON followees.follower_id = users.id AND followees.followee_id = @uid
+		LEFT JOIN follows AS followers
+			ON followers.follower_id = @uid AND followers.followee_id = users.id
+		LEFT JOIN follows AS followees
+			ON followees.follower_id = users.id AND followees.followee_id = @uid
 		{{end}}
 		WHERE username = @username`, map[string]interface{}{
 		"auth":     auth,
@@ -314,7 +329,10 @@ func (s *Service) UpdateAvatar(ctx context.Context, r io.Reader) (string, error)
 }
 
 // ToggleFollow between two users.
-func (s *Service) ToggleFollow(ctx context.Context, username string) (ToggleFollowOutput, error) {
+func (s *Service) ToggleFollow(
+	ctx context.Context,
+	username string,
+) (ToggleFollowOutput, error) {
 	var out ToggleFollowOutput
 	followerID, ok := ctx.Value(KeyAuthUserID).(int64)
 	if !ok {
@@ -348,8 +366,12 @@ func (s *Service) ToggleFollow(ctx context.Context, username string) (ToggleFoll
 		return out, ErrForbiddenFollow
 	}
 
-	query = "SELECT EXISTS (SELECT 1 FROM follows WHERE follower_id = $1 AND followee_id = $2)"
-	if err = tx.QueryRowContext(ctx, query, followerID, followeeID).Scan(&out.Following); err != nil {
+	query = `
+		SELECT EXISTS (
+			SELECT 1 FROM follows WHERE follower_id = $1 AND followee_id = $2
+		)`
+	if err = tx.QueryRowContext(ctx, query, followerID, followeeID).
+		Scan(&out.Following); err != nil {
 		return out, fmt.Errorf("could not query select existance of follow: %v", err)
 	}
 
@@ -364,8 +386,11 @@ func (s *Service) ToggleFollow(ctx context.Context, username string) (ToggleFoll
 			return out, fmt.Errorf("could not decrement followees count: %v", err)
 		}
 
-		query = "UPDATE users SET followers_count = followers_count - 1 WHERE id = $1 RETURNING followers_count"
-		if err = tx.QueryRowContext(ctx, query, followeeID).Scan(&out.FollowersCount); err != nil {
+		query = `
+			UPDATE users SET followers_count = followers_count - 1 WHERE id = $1
+			RETURNING followers_count`
+		if err = tx.QueryRowContext(ctx, query, followeeID).
+			Scan(&out.FollowersCount); err != nil {
 			return out, fmt.Errorf("could not decrement followers count: %v", err)
 		}
 	} else {
@@ -379,8 +404,11 @@ func (s *Service) ToggleFollow(ctx context.Context, username string) (ToggleFoll
 			return out, fmt.Errorf("could not increment followees count: %v", err)
 		}
 
-		query = "UPDATE users SET followers_count = followers_count + 1 WHERE id = $1 RETURNING followers_count"
-		if err = tx.QueryRowContext(ctx, query, followeeID).Scan(&out.FollowersCount); err != nil {
+		query = `
+			UPDATE users SET followers_count = followers_count + 1 WHERE id = $1
+			RETURNING followers_count`
+		if err = tx.QueryRowContext(ctx, query, followeeID).
+			Scan(&out.FollowersCount); err != nil {
 			return out, fmt.Errorf("could not increment followers count: %v", err)
 		}
 	}
@@ -399,7 +427,12 @@ func (s *Service) ToggleFollow(ctx context.Context, username string) (ToggleFoll
 }
 
 // Followers in ascending order with forward pagination.
-func (s *Service) Followers(ctx context.Context, username string, first int, after string) ([]UserProfile, error) {
+func (s *Service) Followers(
+	ctx context.Context,
+	username string,
+	first int,
+	after string,
+) ([]UserProfile, error) {
 	username = strings.TrimSpace(username)
 	if !rxUsername.MatchString(username) {
 		return nil, ErrInvalidUsername
@@ -417,8 +450,10 @@ func (s *Service) Followers(ctx context.Context, username string, first int, aft
 		FROM follows
 		INNER JOIN users ON follows.follower_id = users.id
 		{{if .auth}}
-		LEFT JOIN follows AS followers ON followers.follower_id = @uid AND followers.followee_id = users.id
-		LEFT JOIN follows AS followees ON followees.follower_id = users.id AND followees.followee_id = @uid
+		LEFT JOIN follows AS followers
+			ON followers.follower_id = @uid AND followers.followee_id = users.id
+		LEFT JOIN follows AS followees
+			ON followees.follower_id = users.id AND followees.followee_id = @uid
 		{{end}}
 		WHERE follows.followee_id = (SELECT id FROM users WHERE username = @username)
 		{{if .after}}AND username > @after{{end}}
@@ -444,7 +479,14 @@ func (s *Service) Followers(ctx context.Context, username string, first int, aft
 	for rows.Next() {
 		var u UserProfile
 		var avatar sql.NullString
-		dest := []interface{}{&u.ID, &u.Email, &u.Username, &avatar, &u.FollowersCount, &u.FolloweesCount}
+		dest := []interface{}{
+			&u.ID,
+			&u.Email,
+			&u.Username,
+			&avatar,
+			&u.FollowersCount,
+			&u.FolloweesCount,
+		}
 		if auth {
 			dest = append(dest, &u.Following, &u.Followeed)
 		}
@@ -472,7 +514,12 @@ func (s *Service) Followers(ctx context.Context, username string, first int, aft
 }
 
 // Followees in ascending order with forward pagination.
-func (s *Service) Followees(ctx context.Context, username string, first int, after string) ([]UserProfile, error) {
+func (s *Service) Followees(
+	ctx context.Context,
+	username string,
+	first int,
+	after string,
+) ([]UserProfile, error) {
 	username = strings.TrimSpace(username)
 	if !rxUsername.MatchString(username) {
 		return nil, ErrInvalidUsername
@@ -517,7 +564,14 @@ func (s *Service) Followees(ctx context.Context, username string, first int, aft
 	for rows.Next() {
 		var u UserProfile
 		var avatar sql.NullString
-		dest := []interface{}{&u.ID, &u.Email, &u.Username, &avatar, &u.FollowersCount, &u.FolloweesCount}
+		dest := []interface{}{
+			&u.ID,
+			&u.Email,
+			&u.Username,
+			&avatar,
+			&u.FollowersCount,
+			&u.FolloweesCount,
+		}
 		if auth {
 			dest = append(dest, &u.Following, &u.Followeed)
 		}
