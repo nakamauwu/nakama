@@ -537,8 +537,10 @@ func (s *Service) Followees(
 		FROM follows
 		INNER JOIN users ON follows.followee_id = users.id
 		{{if .auth}}
-		LEFT JOIN follows AS followers ON followers.follower_id = @uid AND followers.followee_id = users.id
-		LEFT JOIN follows AS followees ON followees.follower_id = users.id AND followees.followee_id = @uid
+		LEFT JOIN follows AS followers
+			ON followers.follower_id = @uid AND followers.followee_id = users.id
+		LEFT JOIN follows AS followees
+			ON followees.follower_id = users.id AND followees.followee_id = @uid
 		{{end}}
 		WHERE follows.follower_id = (SELECT id FROM users WHERE username = @username)
 		{{if .after}}AND username > @after{{end}}
