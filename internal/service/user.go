@@ -372,7 +372,7 @@ func (s *Service) ToggleFollow(
 		)`
 	if err = tx.QueryRowContext(ctx, query, followerID, followeeID).
 		Scan(&out.Following); err != nil {
-		return out, fmt.Errorf("could not query select existance of follow: %v", err)
+		return out, fmt.Errorf("could not query select existence of follow: %v", err)
 	}
 
 	if out.Following {
