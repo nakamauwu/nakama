@@ -14,7 +14,7 @@ var (
 	ErrInvalidContent = errors.New("invalid content")
 	// ErrInvalidSpoiler denotes empty or too long spoiler title.
 	ErrInvalidSpoiler = errors.New("invalid spoiler")
-	// ErrPostNotFound denotes a post that was not found.
+	// ErrPostNotFound denotes that the post was not found.
 	ErrPostNotFound = errors.New("post not found")
 )
 
