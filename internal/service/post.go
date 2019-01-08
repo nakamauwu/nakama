@@ -39,7 +39,7 @@ type ToggleLikeOutput struct {
 	LikesCount int  `json:"likesCount"`
 }
 
-// CreatePost publishes a post the the user timeline and fan-outs it to his followers.
+// CreatePost publishes a post to the user timeline and fan-outs it to his followers.
 func (s *Service) CreatePost(
 	ctx context.Context,
 	content string,
@@ -220,7 +220,7 @@ func (s *Service) Posts(
 	return pp, nil
 }
 
-// Post -
+// Post with the given ID.
 func (s *Service) Post(ctx context.Context, postID int64) (Post, error) {
 	var p Post
 	uid, auth := ctx.Value(KeyAuthUserID).(int64)

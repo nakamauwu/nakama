@@ -68,7 +68,7 @@ type ToggleFollowOutput struct {
 	FollowersCount int  `json:"followersCount"`
 }
 
-// CreateUser inserts a user in the database.
+// CreateUser with the given email and name.
 func (s *Service) CreateUser(ctx context.Context, email, username string) error {
 	email = strings.TrimSpace(email)
 	if !rxEmail.MatchString(email) {
@@ -204,7 +204,7 @@ func (s *Service) userByID(ctx context.Context, id int64) (User, error) {
 	return u, nil
 }
 
-// User selects one user from the database with the given username.
+// User with the given username.
 func (s *Service) User(ctx context.Context, username string) (UserProfile, error) {
 	var u UserProfile
 

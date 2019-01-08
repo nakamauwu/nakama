@@ -14,7 +14,7 @@ type TimelineItem struct {
 	Post   Post  `json:"post"`
 }
 
-// Timeline -
+// Timeline of the authenticated user in descending order and with backward pagination.
 func (s *Service) Timeline(
 	ctx context.Context,
 	last int,
