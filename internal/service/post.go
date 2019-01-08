@@ -122,7 +122,8 @@ func (s *Service) CreatePost(
 }
 
 func (s *Service) fanoutPost(p Post) ([]TimelineItem, error) {
-	query := `INSERT INTO timeline (user_id, post_id)
+	query := `
+		INSERT INTO timeline (user_id, post_id)
 		SELECT follower_id, $1 FROM follows WHERE followee_id = $2
 		RETURNING id, user_id`
 	rows, err := s.db.Query(query, p.ID, p.UserID)
@@ -174,8 +175,7 @@ func (s *Service) Posts(ctx context.Context, username string, last int, before i
 		WHERE posts.user_id = (SELECT id FROM users WHERE username = @username)
 		{{if .before}}AND posts.id < @before{{end}}
 		ORDER BY created_at DESC
-		LIMIT @last
-	`, map[string]interface{}{
+		LIMIT @last`, map[string]interface{}{
 		"auth":     auth,
 		"uid":      uid,
 		"username": username,
@@ -232,8 +232,7 @@ func (s *Service) Post(ctx context.Context, postID int64) (Post, error) {
 		LEFT JOIN post_likes AS likes
 			ON likes.user_id = @uid AND likes.post_id = posts.id
 		{{end}}
-		WHERE posts.id = @post_id
-	`, map[string]interface{}{
+		WHERE posts.id = @post_id`, map[string]interface{}{
 		"auth":    auth,
 		"uid":     uid,
 		"post_id": postID,

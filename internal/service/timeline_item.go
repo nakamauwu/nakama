@@ -35,8 +35,7 @@ func (s *Service) Timeline(ctx context.Context, last int, before int64) ([]Timel
 		WHERE timeline.user_id = @uid
 		{{if .before}}AND timeline.id < @before{{end}}
 		ORDER BY created_at DESC
-		LIMIT @last
-	`, map[string]interface{}{
+		LIMIT @last`, map[string]interface{}{
 		"uid":    uid,
 		"last":   last,
 		"before": before,
