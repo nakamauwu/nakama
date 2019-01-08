@@ -57,7 +57,7 @@ func (s *Service) Timeline(ctx context.Context, last int, before int64) ([]Timel
 		var ti TimelineItem
 		var u User
 		var avatar sql.NullString
-		dest := []interface{}{
+		if err = rows.Scan(
 			&ti.ID,
 			&ti.Post.ID,
 			&ti.Post.Content,
@@ -69,9 +69,7 @@ func (s *Service) Timeline(ctx context.Context, last int, before int64) ([]Timel
 			&ti.Post.Liked,
 			&u.Username,
 			&avatar,
-		}
-
-		if err = rows.Scan(dest...); err != nil {
+		); err != nil {
 			return nil, fmt.Errorf("could not scan timeline item: %v", err)
 		}
 
@@ -79,9 +77,7 @@ func (s *Service) Timeline(ctx context.Context, last int, before int64) ([]Timel
 			avatarURL := s.origin + "/img/avatars/" + avatar.String
 			u.AvatarURL = &avatarURL
 		}
-
 		ti.Post.User = &u
-
 		tt = append(tt, ti)
 	}
 
