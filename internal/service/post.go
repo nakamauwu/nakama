@@ -152,12 +152,7 @@ func (s *Service) fanoutPost(p Post) ([]TimelineItem, error) {
 }
 
 // Posts from a user in descending order and with backward pagination.
-func (s *Service) Posts(
-	ctx context.Context,
-	username string,
-	last int,
-	before int64,
-) ([]Post, error) {
+func (s *Service) Posts(ctx context.Context, username string, last int, before int64) ([]Post, error) {
 	username = strings.TrimSpace(username)
 	if !rxUsername.MatchString(username) {
 		return nil, ErrInvalidUsername

@@ -100,12 +100,7 @@ func (s *Service) CreateUser(ctx context.Context, email, username string) error 
 }
 
 // Users in ascending order with forward pagination and filtered by username.
-func (s *Service) Users(
-	ctx context.Context,
-	search string,
-	first int,
-	after string,
-) ([]UserProfile, error) {
+func (s *Service) Users(ctx context.Context, search string, first int, after string) ([]UserProfile, error) {
 	search = strings.TrimSpace(search)
 	first = normalizePageSize(first)
 	after = strings.TrimSpace(after)
@@ -329,10 +324,7 @@ func (s *Service) UpdateAvatar(ctx context.Context, r io.Reader) (string, error)
 }
 
 // ToggleFollow between two users.
-func (s *Service) ToggleFollow(
-	ctx context.Context,
-	username string,
-) (ToggleFollowOutput, error) {
+func (s *Service) ToggleFollow(ctx context.Context, username string) (ToggleFollowOutput, error) {
 	var out ToggleFollowOutput
 	followerID, ok := ctx.Value(KeyAuthUserID).(int64)
 	if !ok {
@@ -427,12 +419,7 @@ func (s *Service) ToggleFollow(
 }
 
 // Followers in ascending order with forward pagination.
-func (s *Service) Followers(
-	ctx context.Context,
-	username string,
-	first int,
-	after string,
-) ([]UserProfile, error) {
+func (s *Service) Followers(ctx context.Context, username string, first int, after string) ([]UserProfile, error) {
 	username = strings.TrimSpace(username)
 	if !rxUsername.MatchString(username) {
 		return nil, ErrInvalidUsername
@@ -514,12 +501,7 @@ func (s *Service) Followers(
 }
 
 // Followees in ascending order with forward pagination.
-func (s *Service) Followees(
-	ctx context.Context,
-	username string,
-	first int,
-	after string,
-) ([]UserProfile, error) {
+func (s *Service) Followees(ctx context.Context, username string, first int, after string) ([]UserProfile, error) {
 	username = strings.TrimSpace(username)
 	if !rxUsername.MatchString(username) {
 		return nil, ErrInvalidUsername

@@ -15,11 +15,7 @@ type TimelineItem struct {
 }
 
 // Timeline of the authenticated user in descending order and with backward pagination.
-func (s *Service) Timeline(
-	ctx context.Context,
-	last int,
-	before int64,
-) ([]TimelineItem, error) {
+func (s *Service) Timeline(ctx context.Context, last int, before int64) ([]TimelineItem, error) {
 	uid, ok := ctx.Value(KeyAuthUserID).(int64)
 	if !ok {
 		return nil, ErrUnauthenticated
