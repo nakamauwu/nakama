@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS posts (
     spoiler_of VARCHAR,
     nsfw BOOLEAN NOT NULL DEFAULT false,
     likes_count INT NOT NULL DEFAULT 0 CHECK (likes_count >= 0),
+    comments_count INT NOT NULL DEFAULT 0 CHECK (comments_count >= 0),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -43,11 +44,31 @@ CREATE TABLE IF NOT EXISTS post_likes (
     PRIMARY KEY (user_id, post_id)
 );
 
+CREATE TABLE IF NOT EXISTS comments (
+    id SERIAL NOT NULL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users,
+    post_id INT NOT NULL REFERENCES posts,
+    content VARCHAR NOT NULL,
+    likes_count INT NOT NULL DEFAULT 0 CHECK (likes_count >= 0),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS sorted_comments ON comments (created_at DESC);
+
+CREATE TABLE IF NOT EXISTS comment_likes (
+    user_id INT NOT NULL REFERENCES users,
+    comment_id INT NOT NULL REFERENCES comments,
+    PRIMARY KEY (user_id, comment_id)
+);
+
 INSERT INTO users (id, email, username) VALUES
     (1, 'john@example.org', 'john'),
     (2, 'jane@example.org', 'jane');
 
-INSERT INTO posts (id, user_id, content) VALUES
-    (1, 1, 'sample post');
+INSERT INTO posts (id, user_id, content, comments_count) VALUES
+    (1, 1, 'sample post', 1);
 INSERT INTO timeline (id, user_id, post_id) VALUES
     (1, 1, 1);
+
+INSERT INTO comments (id, user_id, post_id, content) VALUES
+    (1, 1, 1, 'sample comment');
