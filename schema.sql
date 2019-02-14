@@ -30,6 +30,12 @@ CREATE TABLE IF NOT EXISTS posts (
 
 CREATE INDEX IF NOT EXISTS sorted_posts ON posts (created_at DESC);
 
+CREATE TABLE IF NOT EXISTS post_likes (
+    user_id INT NOT NULL REFERENCES users,
+    post_id INT NOT NULL REFERENCES posts,
+    PRIMARY KEY (user_id, post_id)
+);
+
 CREATE TABLE IF NOT EXISTS timeline (
     id SERIAL NOT NULL PRIMARY KEY,
     user_id INT NOT NULL REFERENCES users,
@@ -37,12 +43,6 @@ CREATE TABLE IF NOT EXISTS timeline (
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS timeline_unique ON timeline (user_id, post_id);
-
-CREATE TABLE IF NOT EXISTS post_likes (
-    user_id INT NOT NULL REFERENCES users,
-    post_id INT NOT NULL REFERENCES posts,
-    PRIMARY KEY (user_id, post_id)
-);
 
 CREATE TABLE IF NOT EXISTS comments (
     id SERIAL NOT NULL PRIMARY KEY,
