@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/hako/branca"
-	_ "github.com/jackc/pgx/stdlib"
+	_ "github.com/lib/pq"
 	"github.com/nicolasparada/nakama/internal/handler"
 	"github.com/nicolasparada/nakama/internal/service"
 )
@@ -20,7 +20,7 @@ func main() {
 		brancaKey   = env("BRANCA_KEY", "supersecretkeyyoushouldnotcommit")
 	)
 
-	db, err := sql.Open("pgx", databaseURL)
+	db, err := sql.Open("postgres", databaseURL)
 	if err != nil {
 		log.Fatalf("could not open db connection: %v\n", err)
 		return
