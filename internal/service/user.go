@@ -15,7 +15,7 @@ import (
 	"strings"
 
 	"github.com/disintegration/imaging"
-	"github.com/matoous/go-nanoid"
+	gonanoid "github.com/matoous/go-nanoid"
 )
 
 // MaxAvatarBytes to read.
@@ -412,7 +412,7 @@ func (s *Service) ToggleFollow(ctx context.Context, username string) (ToggleFoll
 	out.Following = !out.Following
 
 	if out.Following {
-		// TODO: notify user about follow.
+		go s.notifyFollow(followerID, followeeID)
 	}
 
 	return out, nil
