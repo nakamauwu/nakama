@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 )
 
 // TimelineItem model.
@@ -90,4 +91,38 @@ func (s *Service) Timeline(ctx context.Context, last int, before int64) ([]Timel
 	}
 
 	return tt, nil
+}
+
+func (s *Service) fanoutPost(p Post) {
+	query := `
+		INSERT INTO timeline (user_id, post_id)
+		SELECT follower_id, $1 FROM follows WHERE followee_id = $2
+		RETURNING id, user_id`
+	rows, err := s.db.Query(query, p.ID, p.UserID)
+	if err != nil {
+		log.Printf("could not insert timeline: %v\n", err)
+		return
+	}
+
+	defer rows.Close()
+
+	tt := []TimelineItem{}
+	for rows.Next() {
+		var ti TimelineItem
+		if err = rows.Scan(&ti.ID, &ti.UserID); err != nil {
+			log.Printf("could not scan timeline item: %v\n", err)
+			return
+		}
+
+		ti.PostID = p.ID
+		ti.Post = p
+		tt = append(tt, ti)
+	}
+
+	if err = rows.Err(); err != nil {
+		log.Printf("could not iterate timeline rows: %v\n", err)
+		return
+	}
+
+	// TODO: broadcast timeline items.
 }

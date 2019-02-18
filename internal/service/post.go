@@ -111,60 +111,24 @@ func (s *Service) CreatePost(
 		return ti, fmt.Errorf("could not commit to create post: %v", err)
 	}
 
-	go func(p Post) {
-		u, err := s.userByID(context.Background(), p.UserID)
-		if err != nil {
-			log.Printf("could not get post user: %v\n", err)
-			return
-		}
-
-		p.User = &u
-		p.Mine = false
-		p.Subscribed = false
-
-		_, err = s.fanoutPost(p)
-		if err != nil {
-			log.Printf("could not fanout post: %v\n", err)
-			return
-		}
-
-		// TODO: broadcast timeline items.
-	}(ti.Post)
-
-	// TODO: notify each mentioned user in posts.
+	go s.postCreated(ti.Post)
 
 	return ti, nil
 }
 
-func (s *Service) fanoutPost(p Post) ([]TimelineItem, error) {
-	query := `
-		INSERT INTO timeline (user_id, post_id)
-		SELECT follower_id, $1 FROM follows WHERE followee_id = $2
-		RETURNING id, user_id`
-	rows, err := s.db.Query(query, p.ID, p.UserID)
+func (s *Service) postCreated(p Post) {
+	u, err := s.userByID(context.Background(), p.UserID)
 	if err != nil {
-		return nil, fmt.Errorf("could not insert timeline: %v", err)
+		log.Printf("could not fetch post user: %v\n", err)
+		return
 	}
 
-	defer rows.Close()
+	p.User = &u
+	p.Mine = false
+	p.Subscribed = false
 
-	tt := []TimelineItem{}
-	for rows.Next() {
-		var ti TimelineItem
-		if err = rows.Scan(&ti.ID, &ti.UserID); err != nil {
-			return nil, fmt.Errorf("could not scan timeline item: %v", err)
-		}
-
-		ti.PostID = p.ID
-		ti.Post = p
-		tt = append(tt, ti)
-	}
-
-	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("could not iterate timeline rows: %v", err)
-	}
-
-	return tt, nil
+	go s.fanoutPost(p)
+	// TODO: notify each mentioned user in posts.
 }
 
 // Posts from a user in descending order and with backward pagination.
