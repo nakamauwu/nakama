@@ -67,7 +67,7 @@ func (s *Service) CreateComment(ctx context.Context, postID int64, content strin
 		INSERT INTO post_subscriptions (user_id, post_id) VALUES ($1, $2)
 		ON CONFLICT (user_id, post_id) DO NOTHING`
 	if _, err = tx.ExecContext(ctx, query, uid, postID); err != nil {
-		return c, fmt.Errorf("could not insert post subcription after comment: %v", err)
+		return c, fmt.Errorf("could not insert post subcription after commenting: %v", err)
 	}
 
 	query = "UPDATE posts SET comments_count = comments_count + 1 WHERE id = $1"
