@@ -32,12 +32,18 @@ type Post struct {
 	User          *User     `json:"user,omitempty"`
 	Mine          bool      `json:"mine"`
 	Liked         bool      `json:"liked"`
+	Subscribed    bool      `json:"subscribed"`
 }
 
 // ToggleLikeOutput response.
 type ToggleLikeOutput struct {
 	Liked      bool `json:"liked"`
 	LikesCount int  `json:"likesCount"`
+}
+
+// ToggleSubscriptionOutput response.
+type ToggleSubscriptionOutput struct {
+	Subscribed bool `json:"subscribed"`
 }
 
 // CreatePost publishes a post to the user timeline and fan-outs it to his followers.
@@ -86,6 +92,13 @@ func (s *Service) CreatePost(
 	ti.Post.NSFW = nsfw
 	ti.Post.Mine = true
 
+	query = "INSERT INTO post_subscriptions (user_id, post_id) VALUES ($1, $2)"
+	if _, err = tx.ExecContext(ctx, query, uid, ti.Post.ID); err != nil {
+		return ti, fmt.Errorf("could not insert post subscription: %v", err)
+	}
+
+	ti.Post.Subscribed = true
+
 	query = "INSERT INTO timeline (user_id, post_id) VALUES ($1, $2) RETURNING id"
 	if err = tx.QueryRowContext(ctx, query, uid, ti.Post.ID).Scan(&ti.ID); err != nil {
 		return ti, fmt.Errorf("could not insert timeline item: %v", err)
@@ -107,6 +120,7 @@ func (s *Service) CreatePost(
 
 		p.User = &u
 		p.Mine = false
+		p.Subscribed = false
 
 		_, err = s.fanoutPost(p)
 		if err != nil {
@@ -167,11 +181,14 @@ func (s *Service) Posts(ctx context.Context, username string, last int, before i
 		{{if .auth}}
 		, posts.user_id = @uid AS mine
 		, likes.user_id IS NOT NULL AS liked
+		, subscriptions.user_id IS NOT NULL AS subscribed
 		{{end}}
 		FROM posts
 		{{if .auth}}
 		LEFT JOIN post_likes AS likes
 			ON likes.user_id = @uid AND likes.post_id = posts.id
+		LEFT JOIN post_subscriptions AS subscriptions
+			ON subscriptions.user_id = @uid AND subscriptions.post_id = posts.id
 		{{end}}
 		WHERE posts.user_id = (SELECT id FROM users WHERE username = @username)
 		{{if .before}}AND posts.id < @before{{end}}
@@ -207,7 +224,7 @@ func (s *Service) Posts(ctx context.Context, username string, last int, before i
 			&p.CreatedAt,
 		}
 		if auth {
-			dest = append(dest, &p.Mine, &p.Liked)
+			dest = append(dest, &p.Mine, &p.Liked, &p.Subscribed)
 		}
 
 		if err = rows.Scan(dest...); err != nil {
@@ -234,12 +251,15 @@ func (s *Service) Post(ctx context.Context, postID int64) (Post, error) {
 		{{if .auth}}
 		, posts.user_id = @uid AS mine
 		, likes.user_id IS NOT NULL AS liked
+		, subscriptions.user_id IS NOT NULL AS subscribed
 		{{end}}
 		FROM posts
 		INNER JOIN users ON posts.user_id = users.id
 		{{if .auth}}
 		LEFT JOIN post_likes AS likes
 			ON likes.user_id = @uid AND likes.post_id = posts.id
+		LEFT JOIN post_subscriptions AS subscriptions
+			ON subscriptions.user_id = @uid AND subscriptions.post_id = posts.id
 		{{end}}
 		WHERE posts.id = @post_id`, map[string]interface{}{
 		"auth":    auth,
@@ -264,7 +284,7 @@ func (s *Service) Post(ctx context.Context, postID int64) (Post, error) {
 		&avatar,
 	}
 	if auth {
-		dest = append(dest, &p.Mine, &p.Liked)
+		dest = append(dest, &p.Mine, &p.Liked, &p.Subscribed)
 	}
 	err = s.db.QueryRowContext(ctx, query, args...).Scan(dest...)
 	if err == sql.ErrNoRows {
@@ -341,6 +361,54 @@ func (s *Service) TogglePostLike(ctx context.Context, postID int64) (ToggleLikeO
 	}
 
 	out.Liked = !out.Liked
+
+	return out, nil
+}
+
+// TogglePostSubscription so you can stop receiving notifications from a thread.
+func (s *Service) TogglePostSubscription(ctx context.Context, postID int64) (ToggleSubscriptionOutput, error) {
+	var out ToggleSubscriptionOutput
+	uid, ok := ctx.Value(KeyAuthUserID).(int64)
+	if !ok {
+		return out, ErrUnauthenticated
+	}
+
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return out, fmt.Errorf("could not begin tx: %v", err)
+	}
+
+	defer tx.Rollback()
+
+	query := `SELECT EXISTS (
+		SELECT 1 FROM post_subscriptions WHERE user_id = $1 AND post_id = $2
+	)`
+	if err = tx.QueryRowContext(ctx, query, uid, postID).Scan(&out.Subscribed); err != nil {
+		return out, fmt.Errorf("could not query select post subscription existence: %v", err)
+	}
+
+	if out.Subscribed {
+		query = "DELETE FROM post_subscriptions WHERE user_id = $1 AND post_id = $2"
+		if _, err = tx.ExecContext(ctx, query, uid, postID); err != nil {
+			return out, fmt.Errorf("could not delete post subscription: %v", err)
+		}
+	} else {
+		query = "INSERT INTO post_subscriptions (user_id, post_id) VALUES ($1, $2)"
+		_, err = tx.ExecContext(ctx, query, uid, postID)
+		if isForeignKeyViolation(err) {
+			return out, ErrPostNotFound
+		}
+
+		if err != nil {
+			return out, fmt.Errorf("could not insert post subscription: %v", err)
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		return out, fmt.Errorf("could not commit to toggle post subscription: %v", err)
+	}
+
+	out.Subscribed = !out.Subscribed
 
 	return out, nil
 }

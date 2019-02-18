@@ -16,6 +16,7 @@ type Notification struct {
 	UserID   int64     `json:"-"`
 	Actors   []string  `json:"actors"`
 	Type     string    `json:"type"`
+	PostID   *int64    `json:"postID,omitempty"`
 	Read     bool      `json:"read"`
 	IssuedAt time.Time `json:"issuedAt"`
 }
@@ -29,7 +30,7 @@ func (s *Service) Notifications(ctx context.Context, last int, before int64) ([]
 
 	last = normalizePageSize(last)
 	query, args, err := buildQuery(`
-		SELECT id, actors, type, read, issued_at
+		SELECT id, actors, type, post_id, read, issued_at
 		FROM notifications
 		WHERE user_id = @uid
 		{{if .before}}AND id < @before{{end}}
@@ -53,7 +54,7 @@ func (s *Service) Notifications(ctx context.Context, last int, before int64) ([]
 	nn := make([]Notification, 0, last)
 	for rows.Next() {
 		var n Notification
-		if err = rows.Scan(&n.ID, pq.Array(&n.Actors), &n.Type, &n.Read, &n.IssuedAt); err != nil {
+		if err = rows.Scan(&n.ID, pq.Array(&n.Actors), &n.Type, &n.PostID, &n.Read, &n.IssuedAt); err != nil {
 			return nil, fmt.Errorf("could not scan notification: %v", err)
 		}
 
@@ -175,4 +176,48 @@ func (s *Service) notifyFollow(followerID, followeeID int64) {
 	}
 
 	// TODO: broadcast follow notification.
+}
+
+func (s *Service) notifyComment(c Comment) {
+	actor := c.User.Username
+	rows, err := s.db.Query(`
+		INSERT INTO notifications (user_id, actors, type, post_id)
+		SELECT user_id, $1, 'comment', $2 FROM post_subscriptions
+		WHERE post_subscriptions.user_id != $3
+			AND post_subscriptions.post_id = $2
+		ON CONFLICT (user_id, type, post_id, read) DO UPDATE SET
+			actors = array_prepend($4, array_remove(notifications.actors, $4)),
+			issued_at = now()
+		RETURNING id, user_id, actors, issued_at`,
+		pq.Array([]string{actor}),
+		c.PostID,
+		c.UserID,
+		actor,
+	)
+	if err != nil {
+		log.Printf("could not insert comment notifications: %v\n", err)
+		return
+	}
+
+	defer rows.Close()
+
+	nn := make([]Notification, 0)
+	for rows.Next() {
+		var n Notification
+		if err = rows.Scan(&n.ID, &n.UserID, pq.Array(&n.Actors), &n.IssuedAt); err != nil {
+			log.Printf("could not scan comment notification: %v\n", err)
+			return
+		}
+
+		n.Type = "comment"
+		n.PostID = &c.PostID
+		nn = append(nn, n)
+	}
+
+	if err = rows.Err(); err != nil {
+		log.Printf("could not iterate over comment notification rows: %v\n", err)
+		return
+	}
+
+	// TODO: broadcast comment notifications.
 }

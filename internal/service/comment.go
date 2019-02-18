@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 )
@@ -62,6 +63,13 @@ func (s *Service) CreateComment(ctx context.Context, postID int64, content strin
 	c.Content = content
 	c.Mine = true
 
+	query = `
+		INSERT INTO post_subscriptions (user_id, post_id) VALUES ($1, $2)
+		ON CONFLICT (user_id, post_id) DO NOTHING`
+	if _, err = tx.ExecContext(ctx, query, uid, postID); err != nil {
+		return c, fmt.Errorf("could not insert post subcription after comment: %v", err)
+	}
+
 	query = "UPDATE posts SET comments_count = comments_count + 1 WHERE id = $1"
 	if _, err = tx.ExecContext(ctx, query, postID); err != nil {
 		return c, fmt.Errorf("could not update and increment post comments count: %v", err)
@@ -71,7 +79,23 @@ func (s *Service) CreateComment(ctx context.Context, postID int64, content strin
 		return c, fmt.Errorf("could not commit to create comment: %v", err)
 	}
 
+	go s.commentCreated(c)
+
 	return c, nil
+}
+
+func (s *Service) commentCreated(c Comment) {
+	u, err := s.userByID(context.Background(), c.UserID)
+	if err != nil {
+		log.Printf("could not fetch comment user: %v\n", err)
+		return
+	}
+
+	c.User = &u
+	c.Mine = false
+
+	go s.notifyComment(c)
+	// TODO: broadcast comment.
 }
 
 // Comments from a post in descending order with backward pagination.
