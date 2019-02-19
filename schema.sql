@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS timeline (
     post_id INT NOT NULL REFERENCES posts
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS timeline_unique ON timeline (user_id, post_id);
+CREATE UNIQUE INDEX IF NOT EXISTS unique_timeline_items ON timeline (user_id, post_id);
 
 CREATE TABLE IF NOT EXISTS comments (
     id SERIAL NOT NULL PRIMARY KEY,
