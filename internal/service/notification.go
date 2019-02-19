@@ -201,7 +201,7 @@ func (s *Service) notifyComment(c Comment) {
 
 	defer rows.Close()
 
-	nn := make([]Notification, 0)
+	nn := []Notification{}
 	for rows.Next() {
 		var n Notification
 		if err = rows.Scan(&n.ID, &n.UserID, pq.Array(&n.Actors), &n.IssuedAt); err != nil {
