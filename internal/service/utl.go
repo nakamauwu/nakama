@@ -15,7 +15,7 @@ const (
 	maxPageSize     = 99
 )
 
-var queriesCache = make(map[string]*template.Template)
+var queriesCache = map[string]*template.Template{}
 
 func isUniqueViolation(err error) bool {
 	pqerr, ok := err.(*pq.Error)
