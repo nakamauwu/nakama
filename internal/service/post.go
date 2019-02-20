@@ -128,7 +128,7 @@ func (s *Service) postCreated(p Post) {
 	p.Subscribed = false
 
 	go s.fanoutPost(p)
-	// TODO: notify each mentioned user in posts.
+	go s.notifyPostMention(p)
 }
 
 // Posts from a user in descending order and with backward pagination.

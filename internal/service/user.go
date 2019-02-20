@@ -22,8 +22,8 @@ import (
 const MaxAvatarBytes = 5 << 20 // 5MB
 
 var (
-	rxEmail    = regexp.MustCompile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")
-	rxUsername = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_-]{0,17}$")
+	rxEmail    = regexp.MustCompile(`^[^\s@]+@[^\s@]+\.[^\s@]+$`)
+	rxUsername = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_-]{0,17}$`)
 	avatarsDir = path.Join("web", "static", "img", "avatars")
 )
 

@@ -95,6 +95,7 @@ func (s *Service) commentCreated(c Comment) {
 	c.Mine = false
 
 	go s.notifyComment(c)
+	go s.notifyCommentMention(c)
 	// TODO: broadcast comment.
 }
 
