@@ -98,8 +98,8 @@ func (s *Service) Timeline(ctx context.Context, last int, before int64) ([]Timel
 	return tt, nil
 }
 
-// SubscribeToTimeline to receive timeline items in realtime.
-func (s *Service) SubscribeToTimeline(ctx context.Context) (chan TimelineItem, error) {
+// TimelineItemSubscription to receive timeline items in realtime.
+func (s *Service) TimelineItemSubscription(ctx context.Context) (chan TimelineItem, error) {
 	uid, ok := ctx.Value(KeyAuthUserID).(int64)
 	if !ok {
 		return nil, ErrUnauthenticated

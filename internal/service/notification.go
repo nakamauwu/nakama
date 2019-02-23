@@ -73,8 +73,8 @@ func (s *Service) Notifications(ctx context.Context, last int, before int64) ([]
 	return nn, nil
 }
 
-// SubscribeToNotifications to receive notifications in realtime.
-func (s *Service) SubscribeToNotifications(ctx context.Context) (chan Notification, error) {
+// NotificationSubscription to receive notifications in realtime.
+func (s *Service) NotificationSubscription(ctx context.Context) (chan Notification, error) {
 	uid, ok := ctx.Value(KeyAuthUserID).(int64)
 	if !ok {
 		return nil, ErrUnauthenticated

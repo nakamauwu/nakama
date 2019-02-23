@@ -11,7 +11,7 @@ import (
 
 func (h *handler) notifications(w http.ResponseWriter, r *http.Request) {
 	if a, _, err := mime.ParseMediaType(r.Header.Get("Accept")); err == nil && a == "text/event-stream" {
-		h.subscribeToNotifications(w, r)
+		h.notificationSubscription(w, r)
 		return
 	}
 
@@ -32,14 +32,14 @@ func (h *handler) notifications(w http.ResponseWriter, r *http.Request) {
 	respond(w, nn, http.StatusOK)
 }
 
-func (h *handler) subscribeToNotifications(w http.ResponseWriter, r *http.Request) {
+func (h *handler) notificationSubscription(w http.ResponseWriter, r *http.Request) {
 	f, ok := w.(http.Flusher)
 	if !ok {
 		respondErr(w, errStreamingUnsupported)
 		return
 	}
 
-	nn, err := h.SubscribeToNotifications(r.Context())
+	nn, err := h.NotificationSubscription(r.Context())
 	if err == service.ErrUnauthenticated {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return

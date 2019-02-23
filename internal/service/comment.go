@@ -170,8 +170,8 @@ func (s *Service) Comments(ctx context.Context, postID int64, last int, before i
 	return cc, nil
 }
 
-// SubscribeToComments to receive comments in realtime.
-func (s *Service) SubscribeToComments(ctx context.Context, postID int64) chan Comment {
+// CommentSubscription to receive comments in realtime.
+func (s *Service) CommentSubscription(ctx context.Context, postID int64) chan Comment {
 	cc := make(chan Comment)
 	c := &commentClient{comments: cc, postID: postID}
 	if uid, ok := ctx.Value(KeyAuthUserID).(int64); ok {
