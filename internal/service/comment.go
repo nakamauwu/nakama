@@ -177,7 +177,7 @@ func (s *Service) CommentSubscription(ctx context.Context, postID int64) chan Co
 	if uid, ok := ctx.Value(KeyAuthUserID).(int64); ok {
 		c.userID = &uid
 	}
-	s.commentClients.Store(c, struct{}{})
+	s.commentClients.Store(c, nil)
 
 	go func() {
 		<-ctx.Done()

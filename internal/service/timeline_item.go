@@ -107,7 +107,7 @@ func (s *Service) TimelineItemSubscription(ctx context.Context) (chan TimelineIt
 
 	tt := make(chan TimelineItem)
 	c := &timelineItemClient{timeline: tt, userID: uid}
-	s.timelineItemClients.Store(c, struct{}{})
+	s.timelineItemClients.Store(c, nil)
 
 	go func() {
 		<-ctx.Done()

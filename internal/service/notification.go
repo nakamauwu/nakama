@@ -82,7 +82,7 @@ func (s *Service) NotificationSubscription(ctx context.Context) (chan Notificati
 
 	nn := make(chan Notification)
 	c := &notificationClient{notifications: nn, userID: uid}
-	s.notificationClients.Store(c, struct{}{})
+	s.notificationClients.Store(c, nil)
 
 	go func() {
 		<-ctx.Done()
