@@ -26,6 +26,12 @@ type Comment struct {
 	Liked      bool      `json:"liked"`
 }
 
+type commentClient struct {
+	comments chan Comment
+	postID   int64
+	userID   *int64
+}
+
 // CreateComment on a post.
 func (s *Service) CreateComment(ctx context.Context, postID int64, content string) (Comment, error) {
 	var c Comment
@@ -96,7 +102,7 @@ func (s *Service) commentCreated(c Comment) {
 
 	go s.notifyComment(c)
 	go s.notifyCommentMention(c)
-	// TODO: broadcast comment.
+	go s.broadcastComment(c)
 }
 
 // Comments from a post in descending order with backward pagination.
@@ -164,6 +170,24 @@ func (s *Service) Comments(ctx context.Context, postID int64, last int, before i
 	return cc, nil
 }
 
+// SubscribeToComments to receive comments in realtime.
+func (s *Service) SubscribeToComments(ctx context.Context, postID int64) chan Comment {
+	cc := make(chan Comment)
+	c := &commentClient{comments: cc, postID: postID}
+	if uid, ok := ctx.Value(KeyAuthUserID).(int64); ok {
+		c.userID = &uid
+	}
+	s.commentClients.Store(c, struct{}{})
+
+	go func() {
+		<-ctx.Done()
+		s.commentClients.Delete(c)
+		close(cc)
+	}()
+
+	return cc
+}
+
 // ToggleCommentLike 🖤
 func (s *Service) ToggleCommentLike(ctx context.Context, commentID int64) (ToggleLikeOutput, error) {
 	var out ToggleLikeOutput
@@ -221,4 +245,14 @@ func (s *Service) ToggleCommentLike(ctx context.Context, commentID int64) (Toggl
 	out.Liked = !out.Liked
 
 	return out, nil
+}
+
+func (s *Service) broadcastComment(c Comment) {
+	s.commentClients.Range(func(key, _ interface{}) bool {
+		client := key.(*commentClient)
+		if client.postID == c.PostID && !(client.userID != nil && *client.userID == c.UserID) {
+			client.comments <- c
+		}
+		return true
+	})
 }

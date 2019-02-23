@@ -15,6 +15,11 @@ type TimelineItem struct {
 	Post   Post  `json:"post"`
 }
 
+type timelineItemClient struct {
+	timeline chan TimelineItem
+	userID   int64
+}
+
 // Timeline of the authenticated user in descending order and with backward pagination.
 func (s *Service) Timeline(ctx context.Context, last int, before int64) ([]TimelineItem, error) {
 	uid, ok := ctx.Value(KeyAuthUserID).(int64)
@@ -93,6 +98,26 @@ func (s *Service) Timeline(ctx context.Context, last int, before int64) ([]Timel
 	return tt, nil
 }
 
+// SubscribeToTimeline to receive timeline items in realtime.
+func (s *Service) SubscribeToTimeline(ctx context.Context) (chan TimelineItem, error) {
+	uid, ok := ctx.Value(KeyAuthUserID).(int64)
+	if !ok {
+		return nil, ErrUnauthenticated
+	}
+
+	tt := make(chan TimelineItem)
+	c := &timelineItemClient{timeline: tt, userID: uid}
+	s.timelineItemClients.Store(c, struct{}{})
+
+	go func() {
+		<-ctx.Done()
+		s.timelineItemClients.Delete(c)
+		close(tt)
+	}()
+
+	return tt, nil
+}
+
 func (s *Service) fanoutPost(p Post) {
 	query := `
 		INSERT INTO timeline (user_id, post_id)
@@ -106,7 +131,6 @@ func (s *Service) fanoutPost(p Post) {
 
 	defer rows.Close()
 
-	tt := []TimelineItem{}
 	for rows.Next() {
 		var ti TimelineItem
 		if err = rows.Scan(&ti.ID, &ti.UserID); err != nil {
@@ -116,13 +140,22 @@ func (s *Service) fanoutPost(p Post) {
 
 		ti.PostID = p.ID
 		ti.Post = p
-		tt = append(tt, ti)
+
+		go s.broadcastTimelineItem(ti)
 	}
 
 	if err = rows.Err(); err != nil {
 		log.Printf("could not iterate timeline rows: %v\n", err)
 		return
 	}
+}
 
-	// TODO: broadcast timeline items.
+func (s *Service) broadcastTimelineItem(ti TimelineItem) {
+	s.timelineItemClients.Range(func(key, _ interface{}) bool {
+		client := key.(*timelineItemClient)
+		if client.userID == ti.UserID {
+			client.timeline <- ti
+		}
+		return true
+	})
 }

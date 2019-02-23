@@ -21,6 +21,11 @@ type Notification struct {
 	IssuedAt time.Time `json:"issuedAt"`
 }
 
+type notificationClient struct {
+	notifications chan Notification
+	userID        int64
+}
+
 // Notifications from the authenticated user in descending order with backward pagination.
 func (s *Service) Notifications(ctx context.Context, last int, before int64) ([]Notification, error) {
 	uid, ok := ctx.Value(KeyAuthUserID).(int64)
@@ -64,6 +69,26 @@ func (s *Service) Notifications(ctx context.Context, last int, before int64) ([]
 	if err = rows.Err(); err != nil {
 		return nil, fmt.Errorf("could not iterate over notification rows: %v", err)
 	}
+
+	return nn, nil
+}
+
+// SubscribeToNotifications to receive notifications in realtime.
+func (s *Service) SubscribeToNotifications(ctx context.Context) (chan Notification, error) {
+	uid, ok := ctx.Value(KeyAuthUserID).(int64)
+	if !ok {
+		return nil, ErrUnauthenticated
+	}
+
+	nn := make(chan Notification)
+	c := &notificationClient{notifications: nn, userID: uid}
+	s.notificationClients.Store(c, struct{}{})
+
+	go func() {
+		<-ctx.Done()
+		s.notificationClients.Delete(c)
+		close(nn)
+	}()
 
 	return nn, nil
 }
@@ -175,7 +200,7 @@ func (s *Service) notifyFollow(followerID, followeeID int64) {
 		return
 	}
 
-	// TODO: broadcast follow notification.
+	go s.broadcastNotification(n)
 }
 
 func (s *Service) notifyComment(c Comment) {
@@ -201,7 +226,6 @@ func (s *Service) notifyComment(c Comment) {
 
 	defer rows.Close()
 
-	nn := []Notification{}
 	for rows.Next() {
 		var n Notification
 		if err = rows.Scan(&n.ID, &n.UserID, pq.Array(&n.Actors), &n.IssuedAt); err != nil {
@@ -211,15 +235,14 @@ func (s *Service) notifyComment(c Comment) {
 
 		n.Type = "comment"
 		n.PostID = &c.PostID
-		nn = append(nn, n)
+
+		go s.broadcastNotification(n)
 	}
 
 	if err = rows.Err(); err != nil {
 		log.Printf("could not iterate over comment notification rows: %v\n", err)
 		return
 	}
-
-	// TODO: broadcast comment notifications.
 }
 
 func (s *Service) notifyPostMention(p Post) {
@@ -247,7 +270,6 @@ func (s *Service) notifyPostMention(p Post) {
 
 	defer rows.Close()
 
-	nn := []Notification{}
 	for rows.Next() {
 		var n Notification
 		if err = rows.Scan(&n.ID, &n.UserID, &n.IssuedAt); err != nil {
@@ -258,15 +280,14 @@ func (s *Service) notifyPostMention(p Post) {
 		n.Actors = actors
 		n.Type = "post_mention"
 		n.PostID = &p.ID
-		nn = append(nn, n)
+
+		go s.broadcastNotification(n)
 	}
 
 	if err = rows.Err(); err != nil {
 		log.Printf("could not iterate post mention notification rows: %v\n", err)
 		return
 	}
-
-	// TODO: broadcast post mention notifications.
 }
 
 func (s *Service) notifyCommentMention(c Comment) {
@@ -298,7 +319,6 @@ func (s *Service) notifyCommentMention(c Comment) {
 
 	defer rows.Close()
 
-	nn := []Notification{}
 	for rows.Next() {
 		var n Notification
 		if err = rows.Scan(&n.ID, &n.UserID, pq.Array(&n.Actors), &n.IssuedAt); err != nil {
@@ -308,13 +328,22 @@ func (s *Service) notifyCommentMention(c Comment) {
 
 		n.Type = "comment_mention"
 		n.PostID = &c.PostID
-		nn = append(nn, n)
+
+		go s.broadcastNotification(n)
 	}
 
 	if err = rows.Err(); err != nil {
 		log.Printf("could not iterate comment mention notification rows: %v\n", err)
 		return
 	}
+}
 
-	// TODO: broadcast comment mention notifications.
+func (s *Service) broadcastNotification(n Notification) {
+	s.notificationClients.Range(func(key, _ interface{}) bool {
+		client := key.(*notificationClient)
+		if client.userID == n.UserID {
+			client.notifications <- n
+		}
+		return true
+	})
 }
