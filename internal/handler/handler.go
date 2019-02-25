@@ -16,6 +16,8 @@ func New(s *service.Service) http.Handler {
 	h := &handler{s}
 
 	api := way.NewRouter()
+	api.HandleFunc("POST", "/send_magic_link", h.sendMagicLink)
+	api.HandleFunc("GET", "/auth_redirect", h.authRedirect)
 	api.HandleFunc("POST", "/login", h.login)
 	api.HandleFunc("GET", "/auth_user", h.authUser)
 	api.HandleFunc("POST", "/users", h.createUser)

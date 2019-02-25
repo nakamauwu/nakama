@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magic Link</title>
+    <link rel="shortcut icon" href="data:,">
+    <style>
+        body {
+            font-family: sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <a href="{{.MagicLink}}">Here is your magic link.</a>
+    </div>
+    <div>
+        <em>It expires in {{.Minutes}} minutes and can only be used once.</em>
+    </div>
+</body>
+</html>
