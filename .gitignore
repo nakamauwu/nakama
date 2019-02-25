@@ -1,3 +1,4 @@
+.env
 cockroach-data
 *.exe
 *.http
