@@ -16,7 +16,7 @@ import (
 // You can use it to back a REST, gRPC or GraphQL API.
 type Service struct {
 	db                  *sql.DB
-	cdc                 *branca.Branca
+	codec               *branca.Branca
 	origin              string
 	noReply             string
 	smtpAddr            string
@@ -46,7 +46,7 @@ func New(cfg Config) *Service {
 
 	s := &Service{
 		db:       cfg.DB,
-		cdc:      cdc,
+		codec:    cdc,
 		origin:   cfg.Origin,
 		noReply:  "noreply@+" + originURL.Hostname(),
 		smtpAddr: net.JoinHostPort(cfg.SMTPHost, strconv.Itoa(cfg.SMTPPort)),

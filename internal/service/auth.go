@@ -133,7 +133,7 @@ func (s *Service) AuthURI(ctx context.Context, verificationCode, redirectURI str
 		return "", ErrVerificationCodeExpired
 	}
 
-	token, err := s.cdc.EncodeToString(strconv.FormatInt(uid, 10))
+	token, err := s.codec.EncodeToString(strconv.FormatInt(uid, 10))
 	if err != nil {
 		return "", fmt.Errorf("could not create token: %v", err)
 	}
@@ -153,7 +153,7 @@ func (s *Service) AuthURI(ctx context.Context, verificationCode, redirectURI str
 
 // AuthUserID from token.
 func (s *Service) AuthUserID(token string) (int64, error) {
-	str, err := s.cdc.DecodeToString(token)
+	str, err := s.codec.DecodeToString(token)
 	if err != nil {
 		return 0, fmt.Errorf("could not decode token: %v", err)
 	}
@@ -192,7 +192,7 @@ func (s *Service) Login(ctx context.Context, email string) (LoginOutput, error) 
 		out.AuthUser.AvatarURL = &avatarURL
 	}
 
-	out.Token, err = s.cdc.EncodeToString(strconv.FormatInt(out.AuthUser.ID, 10))
+	out.Token, err = s.codec.EncodeToString(strconv.FormatInt(out.AuthUser.ID, 10))
 	if err != nil {
 		return out, fmt.Errorf("could not create token: %v", err)
 	}
