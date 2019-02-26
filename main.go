@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"strconv"
 	"time"
 
@@ -36,8 +37,8 @@ func main() {
 	flag.StringVar(&secretKey, "key", secretKey, "32 bytes long secret key to sign tokens ($SECRET_KEY)")
 	flag.StringVar(&smtpHost, "smtp.host", smtpHost, "SMTP host ($SMTP_HOST)")
 	flag.IntVar(&smtpPort, "smtp.port", smtpPort, "SMTP port ($SMTP_PORT)")
-	flag.StringVar(&smtpUsername, "smtp.username", smtpUsername, "SMTP username ($SMTP_USERNAME)")
-	flag.StringVar(&smtpPassword, "smtp.password", smtpPassword, "SMTP password ($SMTP_PASSWORD)")
+	flag.StringVar(&smtpUsername, "smtp.username", "", "SMTP username ($SMTP_USERNAME)")
+	flag.StringVar(&smtpPassword, "smtp.password", "", "SMTP password ($SMTP_PASSWORD)")
 	flag.Parse()
 
 	db, err := sql.Open("postgres", dburn)
@@ -76,11 +77,21 @@ func main() {
 		IdleTimeout:       time.Second * 30,
 	}
 
-	log.Printf("accepting connections on port %d\n", port)
-	log.Printf("server running at %s", origin)
-	if err = svr.ListenAndServe(); err != nil {
-		log.Fatalf("could not start server: %v\n", err)
-	}
+	errs := make(chan error, 2)
+
+	go func() {
+		log.Printf("accepting connections on port %d\n", port)
+		log.Printf("server running at %s", origin)
+		errs <- svr.ListenAndServe()
+	}()
+
+	go func() {
+		c := make(chan os.Signal)
+		signal.Notify(c, os.Interrupt, os.Kill)
+		errs <- fmt.Errorf("%v", <-c)
+	}()
+
+	log.Fatalf("terminated: %v\n", <-errs)
 }
 
 func env(key, fallbackValue string) string {
