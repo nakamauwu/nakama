@@ -140,7 +140,7 @@ func (s *Service) AuthURI(ctx context.Context, verificationCode, redirectURI str
 
 	exp, err := time.Now().Add(tokenLifespan).MarshalText()
 	if err != nil {
-		return "", fmt.Errorf("could not marshall token lifespan: %v", err)
+		return "", fmt.Errorf("could not marshall token expiration timestamp: %v", err)
 	}
 
 	f := url.Values{}
