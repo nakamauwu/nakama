@@ -155,10 +155,7 @@ func (s *Service) Comments(ctx context.Context, postID int64, last int, before i
 			return nil, fmt.Errorf("could not scan comment: %v", err)
 		}
 
-		if avatar.Valid {
-			avatarURL := s.origin + "/img/avatars/" + avatar.String
-			u.AvatarURL = &avatarURL
-		}
+		u.AvatarURL = s.avatarURL(avatar)
 		c.User = &u
 		cc = append(cc, c)
 	}

@@ -163,10 +163,7 @@ func (s *Service) Users(ctx context.Context, search string, first int, after str
 			u.ID = 0
 			u.Email = ""
 		}
-		if avatar.Valid {
-			avatarURL := s.origin + "/img/avatars/" + avatar.String
-			u.AvatarURL = &avatarURL
-		}
+		u.AvatarURL = s.avatarURL(avatar)
 		uu = append(uu, u)
 	}
 
@@ -191,10 +188,7 @@ func (s *Service) userByID(ctx context.Context, id int64) (User, error) {
 	}
 
 	u.ID = id
-	if avatar.Valid {
-		avatarURL := s.origin + "/img/avatars/" + avatar.String
-		u.AvatarURL = &avatarURL
-	}
+	u.AvatarURL = s.avatarURL(avatar)
 
 	return u, nil
 }
@@ -251,10 +245,7 @@ func (s *Service) User(ctx context.Context, username string) (UserProfile, error
 		u.ID = 0
 		u.Email = ""
 	}
-	if avatar.Valid {
-		avatarURL := s.origin + "/img/avatars/" + avatar.String
-		u.AvatarURL = &avatarURL
-	}
+	u.AvatarURL = s.avatarURL(avatar)
 	return u, nil
 }
 
@@ -320,7 +311,10 @@ func (s *Service) UpdateAvatar(ctx context.Context, r io.Reader) (string, error)
 		defer os.Remove(path.Join(avatarsDir, oldAvatar.String))
 	}
 
-	return s.origin + "/img/avatars/" + avatar, nil
+	avatarURL := s.origin
+	avatarURL.Path = "/img/avatars/" + avatar
+
+	return avatarURL.String(), nil
 }
 
 // ToggleFollow between two users.
@@ -486,10 +480,7 @@ func (s *Service) Followers(ctx context.Context, username string, first int, aft
 			u.ID = 0
 			u.Email = ""
 		}
-		if avatar.Valid {
-			avatarURL := s.origin + "/img/avatars/" + avatar.String
-			u.AvatarURL = &avatarURL
-		}
+		u.AvatarURL = s.avatarURL(avatar)
 		uu = append(uu, u)
 	}
 
@@ -568,10 +559,7 @@ func (s *Service) Followees(ctx context.Context, username string, first int, aft
 			u.ID = 0
 			u.Email = ""
 		}
-		if avatar.Valid {
-			avatarURL := s.origin + "/img/avatars/" + avatar.String
-			u.AvatarURL = &avatarURL
-		}
+		u.AvatarURL = s.avatarURL(avatar)
 		uu = append(uu, u)
 	}
 
@@ -580,4 +568,15 @@ func (s *Service) Followees(ctx context.Context, username string, first int, aft
 	}
 
 	return uu, nil
+}
+
+func (s *Service) avatarURL(avatar sql.NullString) *string {
+	if !avatar.Valid {
+		return nil
+	}
+
+	avatarURL := s.origin
+	avatarURL.Path = "/img/avatars/" + avatar.String
+	str := avatarURL.String()
+	return &str
 }

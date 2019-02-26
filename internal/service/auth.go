@@ -74,7 +74,7 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 		return fmt.Errorf("could not insert verification code: %v", err)
 	}
 
-	magicLink, _ := url.Parse(s.origin)
+	magicLink := s.origin
 	magicLink.Path = "/api/auth_redirect"
 	q := magicLink.Query()
 	q.Set("verification_code", verificationCode)
@@ -187,10 +187,7 @@ func (s *Service) Login(ctx context.Context, email string) (LoginOutput, error) 
 		return out, fmt.Errorf("could not query select user: %v", err)
 	}
 
-	if avatar.Valid {
-		avatarURL := s.origin + "/img/avatars/" + avatar.String
-		out.AuthUser.AvatarURL = &avatarURL
-	}
+	out.AuthUser.AvatarURL = s.avatarURL(avatar)
 
 	out.Token, err = s.codec.EncodeToString(strconv.FormatInt(out.AuthUser.ID, 10))
 	if err != nil {

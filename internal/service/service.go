@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"net"
 	"net/smtp"
 	"net/url"
@@ -17,7 +18,7 @@ import (
 type Service struct {
 	db                  *sql.DB
 	codec               *branca.Branca
-	origin              string
+	origin              url.URL
 	noReply             string
 	smtpAddr            string
 	smtpAuth            smtp.Auth
@@ -38,22 +39,25 @@ type Config struct {
 }
 
 // New service implementation.
-func New(cfg Config) *Service {
+func New(cfg Config) (*Service, error) {
 	cdc := branca.NewBranca(cfg.SecretKey)
 	cdc.SetTTL(uint32(tokenLifespan.Seconds()))
 
-	originURL, _ := url.Parse(cfg.Origin)
+	origin, err := url.Parse(cfg.Origin)
+	if err != nil || !origin.IsAbs() {
+		return nil, errors.New("origin must by an absolute url")
+	}
 
 	s := &Service{
 		db:       cfg.DB,
 		codec:    cdc,
-		origin:   cfg.Origin,
-		noReply:  "noreply@+" + originURL.Hostname(),
+		origin:   *origin,
+		noReply:  "noreply@+" + origin.Hostname(),
 		smtpAddr: net.JoinHostPort(cfg.SMTPHost, strconv.Itoa(cfg.SMTPPort)),
 		smtpAuth: smtp.PlainAuth("", cfg.SMTPUsername, cfg.SMTPPassword, cfg.SMTPHost),
 	}
 
 	go s.deleteExpiredVerificationCodesCronJob(context.Background())
 
-	return s
+	return s, nil
 }
