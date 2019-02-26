@@ -20,7 +20,12 @@ import (
 
 func main() {
 	godotenv.Load()
+	if err := run(); err != nil {
+		log.Fatalln(err)
+	}
+}
 
+func run() error {
 	var (
 		port         = intEnv("PORT", 3000)
 		origin       = env("ORIGIN", fmt.Sprintf("http://localhost:%d", port))
@@ -44,15 +49,13 @@ func main() {
 
 	db, err := sql.Open("postgres", dburn)
 	if err != nil {
-		log.Fatalf("could not open db connection: %v\n", err)
-		return
+		return fmt.Errorf("could not open db connection: %v", err)
 	}
 
 	defer db.Close()
 
 	if err = db.Ping(); err != nil {
-		log.Fatalf("could not ping to db: %v\n", err)
-		return
+		return fmt.Errorf("could not ping to db: %v", err)
 	}
 
 	srvc, err := service.New(service.Config{
@@ -65,8 +68,7 @@ func main() {
 		SMTPPassword: smtpPassword,
 	})
 	if err != nil {
-		log.Fatalf("could not create service: %v\n", err)
-		return
+		return fmt.Errorf("could not create service: %v", err)
 	}
 
 	svr := http.Server{
@@ -78,6 +80,8 @@ func main() {
 		IdleTimeout:       time.Second * 30,
 	}
 
+	errs := make(chan error, 2)
+
 	go func() {
 		quit := make(chan os.Signal, 1)
 		signal.Notify(quit, os.Interrupt, os.Kill)
@@ -87,16 +91,25 @@ func main() {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 		defer cancel()
 		if err := svr.Shutdown(ctx); err != nil {
-			log.Fatalf("could not shutdown server: %v\n", err)
+			errs <- fmt.Errorf("could not shutdown server: %v", err)
+			return
 		}
+
+		errs <- ctx.Err()
 	}()
 
-	log.Printf("accepting connections on port %d\n", port)
-	log.Printf("server running at %s\n", origin)
+	go func() {
+		log.Printf("accepting connections on port %d\n", port)
+		log.Printf("server running at %s\n", origin)
+		if err = svr.ListenAndServe(); err != http.ErrServerClosed {
+			errs <- fmt.Errorf("could not listen and serve: %v", err)
+			return
+		}
 
-	if err = svr.ListenAndServe(); err != http.ErrServerClosed {
-		log.Fatalf("could not listen and serve: %v\n", err)
-	}
+		errs <- nil
+	}()
+
+	return <-errs
 }
 
 func env(key, fallbackValue string) string {
@@ -110,8 +123,7 @@ func env(key, fallbackValue string) string {
 func mustEnv(key string) string {
 	s, ok := os.LookupEnv(key)
 	if !ok {
-		log.Fatalf("%s missing on environment variables\n", key)
-		return ""
+		panic(fmt.Sprintf("%s missing on environment variables", key))
 	}
 	return s
 }
