@@ -21,7 +21,7 @@ func main() {
 	var (
 		port         = intEnv("PORT", 3000)
 		origin       = env("ORIGIN", fmt.Sprintf("http://localhost:%d", port))
-		databaseURL  = env("DATABASE_URL", "postgresql://root@127.0.0.1:26257/nakama?sslmode=disable")
+		dburn        = env("DB_URN", "postgresql://root@127.0.0.1:26257/nakama?sslmode=disable")
 		secretKey    = env("SECRET_KEY", "supersecretkeyyoushouldnotcommit")
 		smtpHost     = env("SMTP_HOST", "smtp.mailtrap.io")
 		smtpPort     = intEnv("SMTP_PORT", 25)
@@ -29,13 +29,14 @@ func main() {
 		smtpPassword = mustEnv("SMTP_PASSWORD")
 	)
 
-	db, err := sql.Open("postgres", databaseURL)
+	db, err := sql.Open("postgres", dburn)
 	if err != nil {
 		log.Fatalf("could not open db connection: %v\n", err)
 		return
 	}
 
 	defer db.Close()
+
 	if err = db.Ping(); err != nil {
 		log.Fatalf("could not ping to db: %v\n", err)
 		return
