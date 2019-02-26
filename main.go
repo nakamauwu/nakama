@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -28,6 +29,16 @@ func main() {
 		smtpUsername = mustEnv("SMTP_USERNAME")
 		smtpPassword = mustEnv("SMTP_PASSWORD")
 	)
+
+	flag.IntVar(&port, "port", port, "Port ($PORT)")
+	flag.StringVar(&origin, "origin", origin, "Origin URL ($ORIGIN)")
+	flag.StringVar(&dburn, "db", dburn, "Database URN ($DB_URN)")
+	flag.StringVar(&secretKey, "key", secretKey, "32 bytes long secret key to sign tokens ($SECRET_KEY)")
+	flag.StringVar(&smtpHost, "smtp.host", smtpHost, "SMTP host ($SMTP_HOST)")
+	flag.IntVar(&smtpPort, "smtp.port", smtpPort, "SMTP port ($SMTP_PORT)")
+	flag.StringVar(&smtpUsername, "smtp.username", smtpUsername, "SMTP username ($SMTP_USERNAME)")
+	flag.StringVar(&smtpPassword, "smtp.password", smtpPassword, "SMTP password ($SMTP_PASSWORD)")
+	flag.Parse()
 
 	db, err := sql.Open("postgres", dburn)
 	if err != nil {
