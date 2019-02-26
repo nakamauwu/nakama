@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"flag"
 	"fmt"
@@ -77,21 +78,25 @@ func main() {
 		IdleTimeout:       time.Second * 30,
 	}
 
-	errs := make(chan error, 2)
-
 	go func() {
-		log.Printf("accepting connections on port %d\n", port)
-		log.Printf("server running at %s\n", origin)
-		errs <- fmt.Errorf("could not listen and serve: %v", svr.ListenAndServe())
+		quit := make(chan os.Signal, 1)
+		signal.Notify(quit, os.Interrupt, os.Kill)
+
+		<-quit
+
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+		defer cancel()
+		if err := svr.Shutdown(ctx); err != nil {
+			log.Fatalf("could not shutdown server: %v\n", err)
+		}
 	}()
 
-	go func() {
-		c := make(chan os.Signal)
-		signal.Notify(c, os.Interrupt, os.Kill)
-		errs <- fmt.Errorf("%v", <-c)
-	}()
+	log.Printf("accepting connections on port %d\n", port)
+	log.Printf("server running at %s\n", origin)
 
-	log.Fatalf("terminated: %v\n", <-errs)
+	if err = svr.ListenAndServe(); err != http.ErrServerClosed {
+		log.Fatalf("could not listen and serve: %v\n", err)
+	}
 }
 
 func env(key, fallbackValue string) string {
