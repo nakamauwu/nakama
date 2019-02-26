@@ -15,7 +15,7 @@ type handler struct {
 
 // New makes use of the service to provide an http.Handler with predefined routing.
 func New(s *service.Service, ping time.Duration) http.Handler {
-	h := &handler{s: s, ping: ping}
+	h := &handler{Service: s, ping: ping}
 
 	api := way.NewRouter()
 	api.HandleFunc("POST", "/send_magic_link", h.sendMagicLink)
