@@ -81,8 +81,8 @@ func main() {
 
 	go func() {
 		log.Printf("accepting connections on port %d\n", port)
-		log.Printf("server running at %s", origin)
-		errs <- svr.ListenAndServe()
+		log.Printf("server running at %s\n", origin)
+		errs <- fmt.Errorf("could not listen and serve: %v", svr.ListenAndServe())
 	}()
 
 	go func() {
