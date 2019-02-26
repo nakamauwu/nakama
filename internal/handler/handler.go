@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/matryer/way"
 	"github.com/nicolasparada/nakama/internal/service"
@@ -9,11 +10,12 @@ import (
 
 type handler struct {
 	*service.Service
+	ping time.Duration
 }
 
 // New makes use of the service to provide an http.Handler with predefined routing.
-func New(s *service.Service) http.Handler {
-	h := &handler{s}
+func New(s *service.Service, ping time.Duration) http.Handler {
+	h := &handler{s: s, ping: ping}
 
 	api := way.NewRouter()
 	api.HandleFunc("POST", "/send_magic_link", h.sendMagicLink)

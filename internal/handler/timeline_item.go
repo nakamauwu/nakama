@@ -1,9 +1,11 @@
 package handler
 
 import (
+	"fmt"
 	"mime"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/nicolasparada/nakama/internal/service"
 )
@@ -39,7 +41,8 @@ func (h *handler) timelineItemSubscription(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	tt, err := h.TimelineItemSubscription(r.Context())
+	ctx := r.Context()
+	tt, err := h.TimelineItemSubscription(ctx)
 	if err == service.ErrUnauthenticated {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
@@ -55,8 +58,16 @@ func (h *handler) timelineItemSubscription(w http.ResponseWriter, r *http.Reques
 	header.Set("Connection", "keep-alive")
 	header.Set("Content-Type", "text/event-stream")
 
-	for ti := range tt {
-		writeSSE(w, ti)
-		f.Flush()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(h.ping):
+			fmt.Fprint(w, "ping: \n\n")
+			f.Flush()
+		case ti := <-tt:
+			writeSSE(w, ti)
+			f.Flush()
+		}
 	}
 }

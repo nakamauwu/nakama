@@ -1,9 +1,11 @@
 package handler
 
 import (
+	"fmt"
 	"mime"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/matryer/way"
 	"github.com/nicolasparada/nakama/internal/service"
@@ -39,7 +41,8 @@ func (h *handler) notificationSubscription(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	nn, err := h.NotificationSubscription(r.Context())
+	ctx := r.Context()
+	nn, err := h.NotificationSubscription(ctx)
 	if err == service.ErrUnauthenticated {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
@@ -55,9 +58,17 @@ func (h *handler) notificationSubscription(w http.ResponseWriter, r *http.Reques
 	header.Set("Connection", "keep-alive")
 	header.Set("Content-Type", "text/event-stream")
 
-	for n := range nn {
-		writeSSE(w, n)
-		f.Flush()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(h.ping):
+			fmt.Fprint(w, "ping: \n\n")
+			f.Flush()
+		case n := <-nn:
+			writeSSE(w, n)
+			f.Flush()
+		}
 	}
 }
 
