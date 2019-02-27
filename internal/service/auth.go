@@ -24,6 +24,8 @@ const (
 )
 
 var (
+	// ErrUnimplemented denotes that the method is not implemented.
+	ErrUnimplemented = errors.New("unimplemented")
 	// ErrUnauthenticated denotes no authenticated user in context.
 	ErrUnauthenticated = errors.New("unauthenticated")
 	// ErrInvalidRedirectURI denotes that the given redirect uri was not valid.
@@ -166,9 +168,13 @@ func (s *Service) AuthUserID(token string) (int64, error) {
 	return i, nil
 }
 
-// Login insecurely.
+// Login insecurely. For development purposes only.
 func (s *Service) Login(ctx context.Context, email string) (LoginOutput, error) {
 	var out LoginOutput
+
+	if s.origin.Hostname() == "localhost" {
+		return out, ErrUnimplemented
+	}
 
 	email = strings.TrimSpace(email)
 	if !rxEmail.MatchString(email) {
