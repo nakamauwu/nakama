@@ -226,7 +226,7 @@ func (s *Service) deleteExpiredVerificationCodesCronJob(ctx context.Context) {
 			if _, err := s.db.ExecContext(ctx,
 				fmt.Sprintf(`DELETE FROM verification_codes WHERE created_at < now() - INTERVAL '%dm'`,
 					int(verificationCodeLifespan.Minutes()))); err != nil {
-				log.Printf("could not delete expired verification codes: %vn", err)
+				log.Printf("could not delete expired verification codes: %v\n", err)
 			}
 		}
 	}
