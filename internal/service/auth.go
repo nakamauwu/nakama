@@ -157,7 +157,7 @@ func (s *Service) AuthURI(ctx context.Context, verificationCode, redirectURI str
 func (s *Service) Login(ctx context.Context, email string) (LoginOutput, error) {
 	var out LoginOutput
 
-	if s.origin.Hostname() == "localhost" {
+	if s.origin.Hostname() != "localhost" {
 		return out, ErrUnimplemented
 	}
 
