@@ -153,21 +153,6 @@ func (s *Service) AuthURI(ctx context.Context, verificationCode, redirectURI str
 	return uri.String(), nil
 }
 
-// AuthUserID from token.
-func (s *Service) AuthUserID(token string) (int64, error) {
-	str, err := s.codec.DecodeToString(token)
-	if err != nil {
-		return 0, fmt.Errorf("could not decode token: %v", err)
-	}
-
-	i, err := strconv.ParseInt(str, 10, 64)
-	if err != nil {
-		return 0, fmt.Errorf("could not parse auth user id from token: %v", err)
-	}
-
-	return i, nil
-}
-
 // Login insecurely. For development purposes only.
 func (s *Service) Login(ctx context.Context, email string) (LoginOutput, error) {
 	var out LoginOutput
@@ -205,6 +190,21 @@ func (s *Service) Login(ctx context.Context, email string) (LoginOutput, error) 
 	return out, nil
 }
 
+// AuthUserID from token.
+func (s *Service) AuthUserID(token string) (int64, error) {
+	str, err := s.codec.DecodeToString(token)
+	if err != nil {
+		return 0, fmt.Errorf("could not decode token: %v", err)
+	}
+
+	i, err := strconv.ParseInt(str, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("could not parse auth user id from token: %v", err)
+	}
+
+	return i, nil
+}
+
 // AuthUser from context.
 // It requires the user ID in the context, so add it with a middleware or something.
 func (s *Service) AuthUser(ctx context.Context) (User, error) {
@@ -226,7 +226,7 @@ func (s *Service) deleteExpiredVerificationCodesCronJob(ctx context.Context) {
 			if _, err := s.db.ExecContext(ctx,
 				fmt.Sprintf(`DELETE FROM verification_codes WHERE created_at < now() - INTERVAL '%dm'`,
 					int(verificationCodeLifespan.Minutes()))); err != nil {
-				log.Printf("could not delete expired verification codes: %v", err)
+				log.Printf("could not delete expired verification codes: %vn", err)
 			}
 		}
 	}
