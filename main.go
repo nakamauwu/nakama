@@ -3,13 +3,11 @@ package main
 import (
 	"context"
 	"database/sql"
-	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -27,27 +25,17 @@ func main() {
 
 func run() error {
 	var (
-		port         = intEnv("PORT", 3000)
-		origin       = env("ORIGIN", fmt.Sprintf("http://localhost:%d", port))
-		dburn        = env("DB_URN", "postgresql://root@127.0.0.1:26257/nakama?sslmode=disable")
-		secretKey    = env("SECRET_KEY", "supersecretkeyyoushouldnotcommit")
+		port         = env("PORT", "3000")
+		origin       = env("ORIGIN", "http://localhost:"+port)
+		dbURL        = env("DATABASE_URL", "postgresql://root@127.0.0.1:26257/nakama?sslmode=disable")
+		tokenKey     = env("TOKEN_KEY", "supersecretkeyyoushouldnotcommit")
 		smtpHost     = env("SMTP_HOST", "smtp.mailtrap.io")
-		smtpPort     = intEnv("SMTP_PORT", 25)
+		smtpPort     = env("SMTP_PORT", "25")
 		smtpUsername = mustEnv("SMTP_USERNAME")
 		smtpPassword = mustEnv("SMTP_PASSWORD")
 	)
 
-	flag.IntVar(&port, "port", port, "Port ($PORT)")
-	flag.StringVar(&origin, "origin", origin, "Origin URL ($ORIGIN)")
-	flag.StringVar(&dburn, "db", dburn, "Database URN ($DB_URN)")
-	flag.StringVar(&secretKey, "key", secretKey, "32 bytes long secret key to sign tokens ($SECRET_KEY)")
-	flag.StringVar(&smtpHost, "smtp.host", smtpHost, "SMTP host ($SMTP_HOST)")
-	flag.IntVar(&smtpPort, "smtp.port", smtpPort, "SMTP port ($SMTP_PORT)")
-	flag.StringVar(&smtpUsername, "smtp.username", "", "SMTP username ($SMTP_USERNAME)")
-	flag.StringVar(&smtpPassword, "smtp.password", "", "SMTP password ($SMTP_PASSWORD)")
-	flag.Parse()
-
-	db, err := sql.Open("postgres", dburn)
+	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		return fmt.Errorf("could not open db connection: %v", err)
 	}
@@ -60,7 +48,7 @@ func run() error {
 
 	srvc, err := service.New(service.Config{
 		DB:           db,
-		SecretKey:    secretKey,
+		TokenKey:     tokenKey,
 		Origin:       origin,
 		SMTPHost:     smtpHost,
 		SMTPPort:     smtpPort,
@@ -72,7 +60,7 @@ func run() error {
 	}
 
 	svr := http.Server{
-		Addr:              fmt.Sprintf(":%d", port),
+		Addr:              ":" + port,
 		Handler:           handler.New(srvc, time.Second*15),
 		ReadHeaderTimeout: time.Second * 5,
 		ReadTimeout:       time.Second * 15,
@@ -99,8 +87,8 @@ func run() error {
 	}()
 
 	go func() {
-		log.Printf("accepting connections on port %d\n", port)
-		log.Printf("server running at %s\n", origin)
+		log.Printf("accepting connections on port %s\n", port)
+		log.Printf("starting server at %s\n", origin)
 		if err = svr.ListenAndServe(); err != http.ErrServerClosed {
 			errs <- fmt.Errorf("could not listen and serve: %v", err)
 			return
@@ -126,16 +114,4 @@ func mustEnv(key string) string {
 		panic(fmt.Sprintf("%s missing on environment variables", key))
 	}
 	return s
-}
-
-func intEnv(key string, fallbackValue int) int {
-	s, ok := os.LookupEnv(key)
-	if !ok {
-		return fallbackValue
-	}
-	i, err := strconv.Atoi(s)
-	if err != nil {
-		return fallbackValue
-	}
-	return i
 }

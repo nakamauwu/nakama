@@ -7,7 +7,6 @@ import (
 	"net"
 	"net/smtp"
 	"net/url"
-	"strconv"
 	"sync"
 
 	"github.com/hako/branca"
@@ -30,17 +29,17 @@ type Service struct {
 // Config to create a new service.
 type Config struct {
 	DB           *sql.DB
-	SecretKey    string
+	TokenKey     string
 	Origin       string
 	SMTPHost     string
-	SMTPPort     int
+	SMTPPort     string
 	SMTPUsername string
 	SMTPPassword string
 }
 
 // New service implementation.
 func New(cfg Config) (*Service, error) {
-	cdc := branca.NewBranca(cfg.SecretKey)
+	cdc := branca.NewBranca(cfg.TokenKey)
 	cdc.SetTTL(uint32(tokenLifespan.Seconds()))
 
 	origin, err := url.Parse(cfg.Origin)
@@ -53,7 +52,7 @@ func New(cfg Config) (*Service, error) {
 		codec:    cdc,
 		origin:   *origin,
 		noReply:  "noreply@+" + origin.Hostname(),
-		smtpAddr: net.JoinHostPort(cfg.SMTPHost, strconv.Itoa(cfg.SMTPPort)),
+		smtpAddr: net.JoinHostPort(cfg.SMTPHost, cfg.SMTPPort),
 		smtpAuth: smtp.PlainAuth("", cfg.SMTPUsername, cfg.SMTPPassword, cfg.SMTPHost),
 	}
 
