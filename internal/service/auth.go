@@ -90,15 +90,15 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 		}
 	}
 
-	var mail bytes.Buffer
-	if err = magicLinkMailTmpl.Execute(&mail, map[string]interface{}{
+	var b bytes.Buffer
+	if err = magicLinkMailTmpl.Execute(&b, map[string]interface{}{
 		"MagicLink": magicLink.String(),
 		"Minutes":   int(verificationCodeLifespan.Minutes()),
 	}); err != nil {
 		return fmt.Errorf("could not execute magic link mail template: %v", err)
 	}
 
-	if err = s.sendMail(email, "Magic Link", mail.String()); err != nil {
+	if err = s.sender.Send(email, "Magic Link", b.String()); err != nil {
 		return fmt.Errorf("could not send magic link: %v", err)
 	}
 

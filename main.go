@@ -3,12 +3,16 @@ package main
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"time"
+
+	"github.com/nicolasparada/nakama/internal/mailing"
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -26,7 +30,7 @@ func main() {
 func run() error {
 	var (
 		port         = env("PORT", "3000")
-		origin       = env("ORIGIN", "http://localhost:"+port)
+		originStr    = env("ORIGIN", "http://localhost:"+port)
 		dbURL        = env("DATABASE_URL", "postgresql://root@127.0.0.1:26257/nakama?sslmode=disable")
 		tokenKey     = env("TOKEN_KEY", "supersecretkeyyoushouldnotcommit")
 		smtpHost     = env("SMTP_HOST", "smtp.mailtrap.io")
@@ -34,6 +38,11 @@ func run() error {
 		smtpUsername = mustEnv("SMTP_USERNAME")
 		smtpPassword = mustEnv("SMTP_PASSWORD")
 	)
+
+	origin, err := url.Parse(originStr)
+	if err != nil || !origin.IsAbs() {
+		return errors.New("invalid origin url")
+	}
 
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
@@ -46,22 +55,23 @@ func run() error {
 		return fmt.Errorf("could not ping to db: %v", err)
 	}
 
-	srvc, err := service.New(service.Config{
-		DB:           db,
-		TokenKey:     tokenKey,
-		Origin:       origin,
-		SMTPHost:     smtpHost,
-		SMTPPort:     smtpPort,
-		SMTPUsername: smtpUsername,
-		SMTPPassword: smtpPassword,
-	})
-	if err != nil {
-		return fmt.Errorf("could not create service: %v", err)
-	}
+	sender := mailing.NewSender(
+		"noreply@"+origin.Hostname(),
+		smtpHost,
+		smtpPort,
+		smtpUsername,
+		smtpPassword,
+	)
+	service := service.New(
+		db,
+		sender,
+		*origin,
+		tokenKey,
+	)
 
-	svr := http.Server{
+	server := http.Server{
 		Addr:              ":" + port,
-		Handler:           handler.New(srvc, time.Second*15),
+		Handler:           handler.New(service, time.Second*15),
 		ReadHeaderTimeout: time.Second * 5,
 		ReadTimeout:       time.Second * 15,
 		WriteTimeout:      time.Second * 15,
@@ -78,7 +88,7 @@ func run() error {
 
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 		defer cancel()
-		if err := svr.Shutdown(ctx); err != nil {
+		if err := server.Shutdown(ctx); err != nil {
 			errs <- fmt.Errorf("could not shutdown server: %v", err)
 			return
 		}
@@ -89,7 +99,7 @@ func run() error {
 	go func() {
 		log.Printf("accepting connections on port %s\n", port)
 		log.Printf("starting server at %s\n", origin)
-		if err = svr.ListenAndServe(); err != http.ErrServerClosed {
+		if err = server.ListenAndServe(); err != http.ErrServerClosed {
 			errs <- fmt.Errorf("could not listen and serve: %v", err)
 			return
 		}
