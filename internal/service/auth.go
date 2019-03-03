@@ -50,8 +50,8 @@ type TokenOutput struct {
 	ExpiresAt time.Time
 }
 
-// LoginOutput response.
-type LoginOutput struct {
+// DevLoginOutput response.
+type DevLoginOutput struct {
 	Token     string    `json:"token"`
 	ExpiresAt time.Time `json:"expiresAt"`
 	AuthUser  User      `json:"authUser"`
@@ -159,9 +159,9 @@ func (s *Service) AuthURI(ctx context.Context, verificationCode, redirectURI str
 	return uri.String(), nil
 }
 
-// Login insecurely. For development purposes only.
-func (s *Service) Login(ctx context.Context, email string) (LoginOutput, error) {
-	var out LoginOutput
+// DevLogin is a login for development purposes only.
+func (s *Service) DevLogin(ctx context.Context, email string) (DevLoginOutput, error) {
+	var out DevLoginOutput
 
 	if s.origin.Hostname() != "localhost" {
 		return out, ErrUnimplemented

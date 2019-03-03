@@ -71,7 +71,7 @@ func (h *handler) authRedirect(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, uri, http.StatusFound)
 }
 
-func (h *handler) login(w http.ResponseWriter, r *http.Request) {
+func (h *handler) devLogin(w http.ResponseWriter, r *http.Request) {
 	var in loginInput
 	defer r.Body.Close()
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
@@ -79,7 +79,7 @@ func (h *handler) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	out, err := h.Login(r.Context(), in.Email)
+	out, err := h.DevLogin(r.Context(), in.Email)
 	if err == service.ErrUnimplemented {
 		http.Error(w, err.Error(), http.StatusNotImplemented)
 		return

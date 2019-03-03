@@ -20,7 +20,7 @@ func New(s *service.Service, ping time.Duration) http.Handler {
 	api := way.NewRouter()
 	api.HandleFunc("POST", "/send_magic_link", h.sendMagicLink)
 	api.HandleFunc("GET", "/auth_redirect", h.authRedirect)
-	api.HandleFunc("POST", "/login", h.login)
+	api.HandleFunc("POST", "/dev_login", h.devLogin)
 	api.HandleFunc("GET", "/auth_user", h.authUser)
 	api.HandleFunc("GET", "/token", h.token)
 	api.HandleFunc("POST", "/users", h.createUser)
