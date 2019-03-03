@@ -8,6 +8,8 @@ Besides having [Go](https://golang.org/) installed, the server needs two externa
 
 Copy the `.env.example` file into `.env`. You need to at least set `SMTP_USERNAME` and `SMTP_PASSWORD` before trying it out.
 
+## Dependencies
+
 These are the Go libraries used in the source code. Thank you very much.
  - [github.com/disintegration/imaging](https://github.com/disintegration/imaging)
  - [github.com/hako/branca](https://github.com/hako/branca)
