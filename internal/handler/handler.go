@@ -22,6 +22,7 @@ func New(s *service.Service, ping time.Duration) http.Handler {
 	api.HandleFunc("GET", "/auth_redirect", h.authRedirect)
 	api.HandleFunc("POST", "/login", h.login)
 	api.HandleFunc("GET", "/auth_user", h.authUser)
+	api.HandleFunc("GET", "/token", h.token)
 	api.HandleFunc("POST", "/users", h.createUser)
 	api.HandleFunc("GET", "/users", h.users)
 	api.HandleFunc("GET", "/users/:username", h.user)

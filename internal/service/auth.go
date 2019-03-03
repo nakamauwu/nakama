@@ -44,6 +44,12 @@ var magicLinkMailTmpl *template.Template
 
 type key string
 
+// TokenOutput response.
+type TokenOutput struct {
+	Token     string
+	ExpiresAt time.Time
+}
+
 // LoginOutput response.
 type LoginOutput struct {
 	Token     string    `json:"token"`
@@ -215,6 +221,25 @@ func (s *Service) AuthUser(ctx context.Context) (User, error) {
 	}
 
 	return s.userByID(ctx, uid)
+}
+
+// Token to authenticate requests.
+func (s *Service) Token(ctx context.Context) (TokenOutput, error) {
+	var out TokenOutput
+	uid, ok := ctx.Value(KeyAuthUserID).(int64)
+	if !ok {
+		return out, ErrUnauthenticated
+	}
+
+	var err error
+	out.Token, err = s.codec.EncodeToString(strconv.FormatInt(uid, 10))
+	if err != nil {
+		return out, fmt.Errorf("could not create token: %v", err)
+	}
+
+	out.ExpiresAt = time.Now().Add(tokenLifespan)
+
+	return out, nil
 }
 
 func (s *Service) deleteExpiredVerificationCodesCronJob(ctx context.Context) {
