@@ -12,11 +12,10 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/nicolasparada/nakama/internal/mailing"
-
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/nicolasparada/nakama/internal/handler"
+	"github.com/nicolasparada/nakama/internal/mailing"
 	"github.com/nicolasparada/nakama/internal/service"
 )
 
