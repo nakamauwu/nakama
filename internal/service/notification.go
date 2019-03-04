@@ -93,6 +93,23 @@ func (s *Service) NotificationSubscription(ctx context.Context) (chan Notificati
 	return nn, nil
 }
 
+// HasUnreadNotifications checks if the authenticated user has any unread notification.
+func (s *Service) HasUnreadNotifications(ctx context.Context) (bool, error) {
+	uid, ok := ctx.Value(KeyAuthUserID).(int64)
+	if !ok {
+		return false, ErrUnauthenticated
+	}
+
+	var unread bool
+	if err := s.db.QueryRowContext(ctx, `SELECT EXISTS (
+		SELECT 1 FROM notifications WHERE user_id = $1 AND read = false
+	)`, uid).Scan(&unread); err != nil {
+		return false, fmt.Errorf("could not query select unread notifications existence: %v", err)
+	}
+
+	return unread, nil
+}
+
 // MarkNotificationAsRead sets a notification from the authenticated user as read.
 func (s *Service) MarkNotificationAsRead(ctx context.Context, notificationID int64) error {
 	uid, ok := ctx.Value(KeyAuthUserID).(int64)

@@ -40,6 +40,7 @@ func New(s *service.Service, ping time.Duration) http.Handler {
 	api.HandleFunc("GET", "/posts/:post_id/comments", h.comments)
 	api.HandleFunc("POST", "/comments/:comment_id/toggle_like", h.toggleCommentLike)
 	api.HandleFunc("GET", "/notifications", h.notifications)
+	api.HandleFunc("GET", "/has_unread_notifications", h.hasUnreadNotifications)
 	api.HandleFunc("POST", "/notifications/:notification_id/mark_as_read", h.markNotificationAsRead)
 	api.HandleFunc("POST", "/mark_notifications_as_read", h.markNotificationsAsRead)
 

@@ -72,6 +72,21 @@ func (h *handler) notificationSubscription(w http.ResponseWriter, r *http.Reques
 	}
 }
 
+func (h *handler) hasUnreadNotifications(w http.ResponseWriter, r *http.Request) {
+	unread, err := h.HasUnreadNotifications(r.Context())
+	if err == service.ErrUnauthenticated {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	if err != nil {
+		respondErr(w, err)
+		return
+	}
+
+	respond(w, unread, http.StatusOK)
+}
+
 func (h *handler) markNotificationAsRead(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	notificationID, _ := strconv.ParseInt(way.Param(ctx, "notification_id"), 10, 64)
