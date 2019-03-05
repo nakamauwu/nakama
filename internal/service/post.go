@@ -11,11 +11,11 @@ import (
 )
 
 var (
-	// ErrInvalidContent denotes empty or too long content.
+	// ErrInvalidContent denotes an invalid content.
 	ErrInvalidContent = errors.New("invalid content")
-	// ErrInvalidSpoiler denotes empty or too long spoiler title.
+	// ErrInvalidSpoiler denotes an invalid spoiler title.
 	ErrInvalidSpoiler = errors.New("invalid spoiler")
-	// ErrPostNotFound denotes that the post was not found.
+	// ErrPostNotFound denotes a not found post.
 	ErrPostNotFound = errors.New("post not found")
 )
 

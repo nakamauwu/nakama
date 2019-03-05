@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// ErrCommentNotFound denotes that the comment was not found.
+// ErrCommentNotFound denotes a not found comment.
 var ErrCommentNotFound = errors.New("comment not found")
 
 // Comment model.

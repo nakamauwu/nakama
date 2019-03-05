@@ -28,20 +28,20 @@ var (
 )
 
 var (
-	// ErrUserNotFound denotes that the user was not found.
+	// ErrUserNotFound denotes a not found user.
 	ErrUserNotFound = errors.New("user not found")
-	// ErrInvalidEmail denotes a mal formated email address.
+	// ErrInvalidEmail denotes an invalid email address.
 	ErrInvalidEmail = errors.New("invalid email")
-	// ErrInvalidUsername denotes an username not matching the proper format.
+	// ErrInvalidUsername denotes an invalid username.
 	ErrInvalidUsername = errors.New("invalid username")
-	// ErrEmailTaken denotes there is a user with that email already.
+	// ErrEmailTaken denotes an email already taken.
 	ErrEmailTaken = errors.New("email taken")
-	// ErrUsernameTaken denotes there is a user with that name already.
+	// ErrUsernameTaken denotes a username already taken.
 	ErrUsernameTaken = errors.New("username taken")
 	// ErrForbiddenFollow denotes a forbiden follow. Like following yourself.
-	ErrForbiddenFollow = errors.New("cannot follow yourself")
-	// ErrUnsupportedAvatarFormat denotes a not supported avatar image format.
-	ErrUnsupportedAvatarFormat = errors.New("only png and jpeg allowed as avatar")
+	ErrForbiddenFollow = errors.New("forbidden follow")
+	// ErrUnsupportedAvatarFormat denotes an unsupported avatar image format.
+	ErrUnsupportedAvatarFormat = errors.New("unsupported avatar format")
 )
 
 // User model.

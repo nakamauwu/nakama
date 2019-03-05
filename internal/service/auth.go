@@ -24,15 +24,15 @@ const (
 )
 
 var (
-	// ErrUnimplemented denotes that the method is not implemented.
+	// ErrUnimplemented denotes a not implemented functionality.
 	ErrUnimplemented = errors.New("unimplemented")
 	// ErrUnauthenticated denotes no authenticated user in context.
 	ErrUnauthenticated = errors.New("unauthenticated")
-	// ErrInvalidRedirectURI denotes that the given redirect uri was not valid.
+	// ErrInvalidRedirectURI denotes an invalid redirect uri.
 	ErrInvalidRedirectURI = errors.New("invalid redirect uri")
-	// ErrInvalidVerificationCode denotes that the given verification code is not valid.
+	// ErrInvalidVerificationCode denotes an invalid verification code.
 	ErrInvalidVerificationCode = errors.New("invalid verification code")
-	// ErrVerificationCodeNotFound denotes that the verification code was not found.
+	// ErrVerificationCodeNotFound denotes a not found verification code.
 	ErrVerificationCodeNotFound = errors.New("verification code not found")
 )
 
