@@ -2,15 +2,11 @@
 
 Source code of the next social network for anime fans. Still on development.
 
-## Getting the code
+## Building
 
 Besides having [Go](https://golang.org/) installed, the server needs two external services. A SQL database; I'm using [CockroachDB](https://www.cockroachlabs.com/), but [Postgres](https://www.postgresql.org/) should work too. Also, an SMTP server; I recommend [mailtrap.io](https://mailtrap.io/) for development.
 
-Copy the `.env.example` file into `.env`. You need to at least set `SMTP_USERNAME` and `SMTP_PASSWORD` before trying it out.
-
-## Building
-
-Before running the server, you need a CockroachDB instance running.
+First, you need a CockroachDB instance running.
 
 ```bash
 cockroach start --insecure --host 127.0.0.1
@@ -21,6 +17,8 @@ Then, you need to create the database and tables.
 ```bash
 cat schema.sql | cockroach sql --insecure
 ```
+
+Copy the `.env.example` file into `.env`. You need to at least set `SMTP_USERNAME` and `SMTP_PASSWORD`.
 
 Now, you can build and run the server.
 
