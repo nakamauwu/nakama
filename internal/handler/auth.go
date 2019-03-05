@@ -58,11 +58,6 @@ func (h *handler) authRedirect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err == service.ErrVerificationCodeExpired {
-		http.Error(w, err.Error(), http.StatusGone)
-		return
-	}
-
 	if err != nil {
 		respondErr(w, err)
 		return
@@ -147,7 +142,7 @@ func (h *handler) withAuth(next http.Handler) http.Handler {
 		}
 
 		token := a[7:]
-		uid, err := h.AuthUserID(token)
+		uid, err := h.AuthUserIDFromToken(token)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusUnauthorized)
 			return

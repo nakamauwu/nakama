@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"database/sql"
 	"net/url"
 	"sync"
@@ -27,14 +26,10 @@ func New(db *sql.DB, sender mailing.Sender, origin url.URL, tokenKey string) *Se
 	cdc := branca.NewBranca(tokenKey)
 	cdc.SetTTL(uint32(tokenLifespan.Seconds()))
 
-	s := &Service{
+	return &Service{
 		db:     db,
 		sender: sender,
 		origin: origin,
 		codec:  cdc,
 	}
-
-	go s.deleteExpiredVerificationCodesCronJob(context.Background())
-
-	return s
 }

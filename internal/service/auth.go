@@ -34,8 +34,6 @@ var (
 	ErrInvalidVerificationCode = errors.New("invalid verification code")
 	// ErrVerificationCodeNotFound denotes that the verification code was not found.
 	ErrVerificationCodeNotFound = errors.New("verification code not found")
-	// ErrVerificationCodeExpired denotes that the verification code is already expired.
-	ErrVerificationCodeExpired = errors.New("verification code expired")
 )
 
 var rxUUID = regexp.MustCompile("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
@@ -108,6 +106,8 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 		return fmt.Errorf("could not send magic link: %v", err)
 	}
 
+	go s.deleteVerificationCodeWhenExpires(verificationCode)
+
 	return nil
 }
 
@@ -125,20 +125,15 @@ func (s *Service) AuthURI(ctx context.Context, verificationCode, redirectURI str
 	}
 
 	var uid int64
-	var ts time.Time
 	err = s.db.QueryRowContext(ctx, `
 		DELETE FROM verification_codes WHERE id = $1
-		RETURNING user_id, created_at`, verificationCode).Scan(&uid, &ts)
+		RETURNING user_id`, verificationCode).Scan(&uid)
 	if err == sql.ErrNoRows {
 		return "", ErrVerificationCodeNotFound
 	}
 
 	if err != nil {
 		return "", fmt.Errorf("could not delete verification code: %v", err)
-	}
-
-	if ts.Add(verificationCodeLifespan).Before(time.Now()) {
-		return "", ErrVerificationCodeExpired
 	}
 
 	token, err := s.codec.EncodeToString(strconv.FormatInt(uid, 10))
@@ -196,8 +191,8 @@ func (s *Service) DevLogin(ctx context.Context, email string) (DevLoginOutput, e
 	return out, nil
 }
 
-// AuthUserID from token.
-func (s *Service) AuthUserID(token string) (int64, error) {
+// AuthUserIDFromToken decodes the token into a user ID.
+func (s *Service) AuthUserIDFromToken(token string) (int64, error) {
 	str, err := s.codec.DecodeToString(token)
 	if err != nil {
 		return 0, fmt.Errorf("could not decode token: %v", err)
@@ -211,8 +206,7 @@ func (s *Service) AuthUserID(token string) (int64, error) {
 	return i, nil
 }
 
-// AuthUser from context.
-// It requires the user ID in the context, so add it with a middleware or something.
+// AuthUser is the current authenticated user.
 func (s *Service) AuthUser(ctx context.Context) (User, error) {
 	var u User
 	uid, ok := ctx.Value(KeyAuthUserID).(int64)
@@ -242,17 +236,9 @@ func (s *Service) Token(ctx context.Context) (TokenOutput, error) {
 	return out, nil
 }
 
-func (s *Service) deleteExpiredVerificationCodesCronJob(ctx context.Context) {
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(time.Hour * 24):
-			if _, err := s.db.ExecContext(ctx,
-				fmt.Sprintf(`DELETE FROM verification_codes WHERE created_at < now() - INTERVAL '%dm'`,
-					int(verificationCodeLifespan.Minutes()))); err != nil {
-				log.Printf("could not delete expired verification codes: %v\n", err)
-			}
-		}
+func (s *Service) deleteVerificationCodeWhenExpires(code string) {
+	<-time.After(verificationCodeLifespan)
+	if _, err := s.db.Exec("DELETE FROM verification_codes WHERE id = $1", code); err != nil {
+		log.Printf("could not delete expired verification code: %v\n", err)
 	}
 }
