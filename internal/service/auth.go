@@ -67,11 +67,11 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 		return ErrInvalidRedirectURI
 	}
 
-	var verificationCode string
+	var code string
 	err = s.db.QueryRowContext(ctx, `
 		INSERT INTO verification_codes (user_id) VALUES (
 			(SELECT id FROM users WHERE email = $1)
-		) RETURNING id`, email).Scan(&verificationCode)
+		) RETURNING id`, email).Scan(&code)
 	if isForeignKeyViolation(err) {
 		return ErrUserNotFound
 	}
@@ -80,12 +80,12 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 		return fmt.Errorf("could not insert verification code: %v", err)
 	}
 
-	magicLink := s.origin
-	magicLink.Path = "/api/auth_redirect"
-	q := magicLink.Query()
-	q.Set("verification_code", verificationCode)
+	link := s.origin
+	link.Path = "/api/auth_redirect"
+	q := link.Query()
+	q.Set("verification_code", code)
 	q.Set("redirect_uri", uri.String())
-	magicLink.RawQuery = q.Encode()
+	link.RawQuery = q.Encode()
 
 	if magicLinkMailTmpl == nil {
 		magicLinkMailTmpl, err = template.ParseFiles("web/template/mail/magic-link.html")
@@ -96,7 +96,7 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 
 	var b bytes.Buffer
 	if err = magicLinkMailTmpl.Execute(&b, map[string]interface{}{
-		"MagicLink": magicLink.String(),
+		"MagicLink": link.String(),
 		"Minutes":   int(verificationCodeLifespan.Minutes()),
 	}); err != nil {
 		return fmt.Errorf("could not execute magic link mail template: %v", err)
@@ -106,7 +106,7 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 		return fmt.Errorf("could not send magic link: %v", err)
 	}
 
-	go s.deleteVerificationCodeWhenExpires(verificationCode)
+	go s.deleteVerificationCodeWhenExpires(code)
 
 	return nil
 }
