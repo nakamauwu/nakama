@@ -44,8 +44,8 @@ type key string
 
 // TokenOutput response.
 type TokenOutput struct {
-	Token     string
-	ExpiresAt time.Time
+	Token     string    `json:"token"`
+	ExpiresAt time.Time `json:"expiresAt"`
 }
 
 // DevLoginOutput response.

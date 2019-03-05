@@ -48,7 +48,7 @@ var (
 type User struct {
 	ID        int64   `json:"id,omitempty"`
 	Username  string  `json:"username"`
-	AvatarURL *string `json:"avatarUrl"`
+	AvatarURL *string `json:"avatarURL"`
 }
 
 // UserProfile model.

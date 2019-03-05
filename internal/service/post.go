@@ -25,7 +25,7 @@ type Post struct {
 	UserID        int64     `json:"-"`
 	Content       string    `json:"content"`
 	SpoilerOf     *string   `json:"spoilerOf"`
-	NSFW          bool      `json:"nsfw"`
+	NSFW          bool      `json:"NSFW"`
 	LikesCount    int       `json:"likesCount"`
 	CommentsCount int       `json:"commentsCount"`
 	CreatedAt     time.Time `json:"createdAt"`
@@ -78,40 +78,42 @@ func (s *Service) CreatePost(
 
 	defer tx.Rollback()
 
+	var p Post
 	query := `
 		INSERT INTO posts (user_id, content, spoiler_of, nsfw) VALUES ($1, $2, $3, $4)
 		RETURNING id, created_at`
 	if err = tx.QueryRowContext(ctx, query, uid, content, spoilerOf, nsfw).
-		Scan(&ti.Post.ID, &ti.Post.CreatedAt); err != nil {
+		Scan(&p.ID, &p.CreatedAt); err != nil {
 		return ti, fmt.Errorf("could not insert post: %v", err)
 	}
 
-	ti.Post.UserID = uid
-	ti.Post.Content = content
-	ti.Post.SpoilerOf = spoilerOf
-	ti.Post.NSFW = nsfw
-	ti.Post.Mine = true
+	p.UserID = uid
+	p.Content = content
+	p.SpoilerOf = spoilerOf
+	p.NSFW = nsfw
+	p.Mine = true
 
 	query = "INSERT INTO post_subscriptions (user_id, post_id) VALUES ($1, $2)"
-	if _, err = tx.ExecContext(ctx, query, uid, ti.Post.ID); err != nil {
+	if _, err = tx.ExecContext(ctx, query, uid, p.ID); err != nil {
 		return ti, fmt.Errorf("could not insert post subscription: %v", err)
 	}
 
-	ti.Post.Subscribed = true
+	p.Subscribed = true
 
 	query = "INSERT INTO timeline (user_id, post_id) VALUES ($1, $2) RETURNING id"
-	if err = tx.QueryRowContext(ctx, query, uid, ti.Post.ID).Scan(&ti.ID); err != nil {
+	if err = tx.QueryRowContext(ctx, query, uid, p.ID).Scan(&ti.ID); err != nil {
 		return ti, fmt.Errorf("could not insert timeline item: %v", err)
 	}
 
 	ti.UserID = uid
-	ti.PostID = ti.Post.ID
+	ti.PostID = p.ID
+	ti.Post = &p
 
 	if err = tx.Commit(); err != nil {
 		return ti, fmt.Errorf("could not commit to create post: %v", err)
 	}
 
-	go s.postCreated(ti.Post)
+	go s.postCreated(p)
 
 	return ti, nil
 }

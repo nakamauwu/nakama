@@ -11,7 +11,8 @@ import (
 )
 
 type createUserInput struct {
-	Email, Username string
+	Email    string
+	Username string
 }
 
 func (h *handler) createUser(w http.ResponseWriter, r *http.Request) {
