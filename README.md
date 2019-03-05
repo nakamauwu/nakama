@@ -8,6 +8,27 @@ Besides having [Go](https://golang.org/) installed, the server needs two externa
 
 Copy the `.env.example` file into `.env`. You need to at least set `SMTP_USERNAME` and `SMTP_PASSWORD` before trying it out.
 
+## Building
+
+Before running the server, you need a CockroachDB instance running.
+
+```bash
+cockroach start --insecure --host 127.0.0.1
+```
+
+Then, you need to create the database and tables.
+
+```bash
+cat schema.sql | cockroach sql --insecure
+```
+
+Now, you can build and run the server.
+
+```bash
+go build
+./nakama
+```
+
 ## Dependencies
 
 These are the Go libraries used in the source code. Thank you very much.
