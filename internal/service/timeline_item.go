@@ -63,20 +63,21 @@ func (s *Service) Timeline(ctx context.Context, last int, before int64) ([]Timel
 	tt := make([]TimelineItem, 0, last)
 	for rows.Next() {
 		var ti TimelineItem
+		var p Post
 		var u User
 		var avatar sql.NullString
 		if err = rows.Scan(
 			&ti.ID,
-			&ti.Post.ID,
-			&ti.Post.Content,
-			&ti.Post.SpoilerOf,
-			&ti.Post.NSFW,
-			&ti.Post.LikesCount,
-			&ti.Post.CommentsCount,
-			&ti.Post.CreatedAt,
-			&ti.Post.Mine,
-			&ti.Post.Liked,
-			&ti.Post.Subscribed,
+			&p.ID,
+			&p.Content,
+			&p.SpoilerOf,
+			&p.NSFW,
+			&p.LikesCount,
+			&p.CommentsCount,
+			&p.CreatedAt,
+			&p.Mine,
+			&p.Liked,
+			&p.Subscribed,
 			&u.Username,
 			&avatar,
 		); err != nil {
@@ -84,7 +85,8 @@ func (s *Service) Timeline(ctx context.Context, last int, before int64) ([]Timel
 		}
 
 		u.AvatarURL = s.avatarURL(avatar)
-		ti.Post.User = &u
+		p.User = &u
+		ti.Post = &p
 		tt = append(tt, ti)
 	}
 
