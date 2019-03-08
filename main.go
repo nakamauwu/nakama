@@ -69,7 +69,7 @@ func run() error {
 	)
 	server := http.Server{
 		Addr:              ":" + port,
-		Handler:           handler.New(service, time.Second*15),
+		Handler:           handler.New(service, time.Second*15, origin.Hostname() == "localhost"),
 		ReadHeaderTimeout: time.Second * 5,
 		ReadTimeout:       time.Second * 15,
 		WriteTimeout:      time.Second * 15,

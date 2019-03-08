@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"mime"
 	"net/http"
 	"time"
 
@@ -14,7 +15,7 @@ type handler struct {
 }
 
 // New makes use of the service to provide an http.Handler with predefined routing.
-func New(s *service.Service, ping time.Duration) http.Handler {
+func New(s *service.Service, ping time.Duration, inLocalhost bool) http.Handler {
 	h := &handler{Service: s, ping: ping}
 
 	api := way.NewRouter()
@@ -44,8 +45,16 @@ func New(s *service.Service, ping time.Duration) http.Handler {
 	api.HandleFunc("POST", "/notifications/:notification_id/mark_as_read", h.markNotificationAsRead)
 	api.HandleFunc("POST", "/mark_notifications_as_read", h.markNotificationsAsRead)
 
+	mime.AddExtensionType(".js", "application/javascript; charset=utf-8")
+
+	fs := http.FileServer(&spaFileSystem{http.Dir("web/static")})
+	if inLocalhost {
+		fs = withoutCache(fs)
+	}
+
 	r := way.NewRouter()
 	r.Handle("*", "/api...", http.StripPrefix("/api", h.withAuth(api)))
+	r.Handle("GET", "/...", fs)
 
 	return r
 }
