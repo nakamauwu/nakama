@@ -67,7 +67,6 @@ func run() error {
 		*origin,
 		tokenKey,
 	)
-
 	server := http.Server{
 		Addr:              ":" + port,
 		Handler:           handler.New(service, time.Second*15),

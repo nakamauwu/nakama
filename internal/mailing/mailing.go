@@ -12,22 +12,24 @@ type Sender interface {
 	Send(to, subject, body string) error
 }
 
-type sender struct {
+// SMTPSender sends emails using an SMTP service.
+type SMTPSender struct {
 	from mail.Address
 	addr string
 	auth smtp.Auth
 }
 
 // NewSender implementation using an SMTP server.
-func NewSender(from, host, port, username, password string) Sender {
-	return &sender{
+func NewSender(from, host, port, username, password string) *SMTPSender {
+	return &SMTPSender{
 		from: mail.Address{Address: from},
 		addr: net.JoinHostPort(host, port),
 		auth: smtp.PlainAuth("", username, password, host),
 	}
 }
 
-func (s *sender) Send(to, subject, body string) error {
+// Send an email to the given email address.
+func (s *SMTPSender) Send(to, subject, body string) error {
 	toAddr := mail.Address{Address: to}
 
 	var msg string
