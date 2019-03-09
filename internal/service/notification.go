@@ -38,7 +38,7 @@ func (s *Service) Notifications(ctx context.Context, last int, before int64) ([]
 		SELECT id, actors, type, post_id, read, issued_at
 		FROM notifications
 		WHERE user_id = @uid
-		{{if .before}}AND id < @before{{end}}
+		{{if gt .before 0}}AND id < @before{{end}}
 		ORDER BY issued_at DESC
 		LIMIT @last`, map[string]interface{}{
 		"uid":    uid,

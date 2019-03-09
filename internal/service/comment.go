@@ -122,7 +122,7 @@ func (s *Service) Comments(ctx context.Context, postID int64, last int, before i
 			ON likes.comment_id = comments.id AND likes.user_id = @uid
 		{{end}}
 		WHERE comments.post_id = @post_id
-		{{if .before}}AND comments.id < @before{{end}}
+		{{if gt .before 0}}AND comments.id < @before{{end}}
 		ORDER BY created_at DESC
 		LIMIT @last`, map[string]interface{}{
 		"auth":    auth,

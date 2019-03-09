@@ -157,7 +157,7 @@ func (s *Service) Posts(ctx context.Context, username string, last int, before i
 			ON subscriptions.user_id = @uid AND subscriptions.post_id = posts.id
 		{{end}}
 		WHERE posts.user_id = (SELECT id FROM users WHERE username = @username)
-		{{if .before}}AND posts.id < @before{{end}}
+		{{if gt .before 0}}AND posts.id < @before{{end}}
 		ORDER BY created_at DESC
 		LIMIT @last`, map[string]interface{}{
 		"auth":     auth,

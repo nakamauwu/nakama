@@ -42,7 +42,7 @@ func (s *Service) Timeline(ctx context.Context, last int, before int64) ([]Timel
 		LEFT JOIN post_subscriptions AS subscriptions
 			ON subscriptions.user_id = @uid AND subscriptions.post_id = posts.id
 		WHERE timeline.user_id = @uid
-		{{if .before}}AND timeline.id < @before{{end}}
+		{{if gt .before 0}}AND timeline.id < @before{{end}}
 		ORDER BY created_at DESC
 		LIMIT @last`, map[string]interface{}{
 		"uid":    uid,
