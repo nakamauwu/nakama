@@ -1,3 +1,142 @@
+:root {
+    --hue: 270;
+    --bgcolor-root: black;
+    --bgcolor-controls: hsl(var(--hue), 8%, 8%);
+    --bgcolor-controls-hover: hsl(var(--hue), 7%, 9%);
+    --bgcolor-alt: white;
+    --color-text: white;
+    --color-accent: hsl(var(--hue), 100%, 73%);
+    --color-alt: black;
+}
+
 body {
+    background-color: var(--bgcolor-root);
+    box-sizing: border-box;
+    color: var(--color-text);
     font-family: sans-serif;
+    margin: 0;
+    padding-bottom: 6rem;
+}
+
+*,
+::before,
+::after {
+    box-sizing: inherit;
+}
+
+[hidden] {
+    display: none;
+}
+
+.js-focus-visible :focus:not(.focus-visible) {
+    outline: none;
+}
+
+[disabled] {
+    opacity: .7;
+    cursor: not-allowed;
+}
+
+a {
+    color: var(--color-accent);
+}
+
+button,
+input,
+textarea {
+    background-color: var(--bgcolor-controls);
+    border: none;
+    color: inherit;
+    border-radius: .25rem;
+}
+
+button,
+input {
+    padding: 0 1rem;
+    height: 2rem;
+}
+
+button {
+    touch-action: manipulation;
+    user-select: none;
+}
+
+textarea {
+    padding: .5rem 1rem;
+    min-height: 4rem;
+}
+
+button:hover,
+input:hover,
+textarea:hover {
+    background-color: var(--bgcolor-controls-hover);
+}
+
+input:focus,
+textarea:focus {
+    background-color: var(--bgcolor-alt);
+    color: var(--color-alt);
+    outline: none;
+}
+
+header nav > * + * {
+    margin-left: .5rem;
+}
+
+header {
+    background-color: var(--bgcolor-root);
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 3rem;
+    display: flex;
+    align-items: center;
+}
+
+header nav {
+    padding: 0 1rem;
+}
+
+header a:not([aria-current=page]) {
+    color: inherit;
+    text-decoration: none;
+}
+
+@media screen and (min-width: 415px) {
+    header {
+        bottom: initial;
+        top: 0;
+    }
+
+    body {
+        padding-top: 3rem;
+        padding-bottom: 3rem;
+    }
+}
+
+main:empty {
+    padding-top: 3rem;
+    text-align: center;
+    font-family: monospace;
+}
+
+main:empty::after {
+    content: 'Loading... Please wait.';
+    animation: pop 100ms linear;
+}
+
+@keyframes pop {
+    0%, 99% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+.container {
+    margin: 0 auto;
+    max-width: 65ch;
+    width: calc(100% - 2rem);
 }
