@@ -26,6 +26,7 @@ func New(s *service.Service, ping time.Duration, inLocalhost bool) http.Handler 
 	api.HandleFunc("GET", "/token", h.token)
 	api.HandleFunc("POST", "/users", h.createUser)
 	api.HandleFunc("GET", "/users", h.users)
+	api.HandleFunc("GET", "/usernames", h.usernames)
 	api.HandleFunc("GET", "/users/:username", h.user)
 	api.HandleFunc("PUT", "/auth_user/avatar", h.updateAvatar)
 	api.HandleFunc("POST", "/users/:username/toggle_follow", h.toggleFollow)

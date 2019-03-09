@@ -38,6 +38,8 @@ var (
 	ErrEmailTaken = errors.New("email taken")
 	// ErrUsernameTaken denotes a username already taken.
 	ErrUsernameTaken = errors.New("username taken")
+	// ErrUsernameStartRequired denotes a required username start.
+	ErrUsernameStartRequired = errors.New("username start required")
 	// ErrForbiddenFollow denotes a forbiden follow. Like following yourself.
 	ErrForbiddenFollow = errors.New("forbidden follow")
 	// ErrUnsupportedAvatarFormat denotes an unsupported avatar image format.
@@ -169,6 +171,56 @@ func (s *Service) Users(ctx context.Context, search string, first int, after str
 
 	if err = rows.Err(); err != nil {
 		return nil, fmt.Errorf("could not iterate user rows: %v", err)
+	}
+
+	return uu, nil
+}
+
+// Usernames to autocomplete a mention box or something.
+func (s *Service) Usernames(ctx context.Context, startingWith string, first int, after string) ([]string, error) {
+	startingWith = strings.TrimSpace(startingWith)
+	if startingWith == "" {
+		return nil, ErrUsernameStartRequired
+	}
+
+	uid, auth := ctx.Value(KeyAuthUserID).(int64)
+	first = normalizePageSize(first)
+	query, args, err := buildQuery(`
+		SELECT username FROM users
+		WHERE username ILIKE @startingWith || '%'
+		{{if .auth}}AND users.id != @uid{{end}}
+		{{if .after}}AND username > @after{{end}}
+		ORDER BY username ASC
+		LIMIT @first`, map[string]interface{}{
+		"startingWith": startingWith,
+		"auth":         auth,
+		"uid":          uid,
+		"after":        after,
+		"first":        first,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("could not build usernames sql query: %v", err)
+	}
+
+	rows, err := s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("could not query select usernames: %v", err)
+	}
+
+	defer rows.Close()
+
+	uu := make([]string, 0, first)
+	for rows.Next() {
+		var u string
+		if err = rows.Scan(&u); err != nil {
+			return nil, fmt.Errorf("could not scan username: %v", err)
+		}
+
+		uu = append(uu, u)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("could not iterate username rows: %v", err)
 	}
 
 	return uu, nil
