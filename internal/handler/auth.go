@@ -135,13 +135,19 @@ func (h *handler) token(w http.ResponseWriter, r *http.Request) {
 
 func (h *handler) withAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		a := r.Header.Get("Authorization")
-		if !strings.HasPrefix(a, "Bearer ") {
+		token := strings.TrimSpace(r.URL.Query().Get("token"))
+
+		if token == "" {
+			if a := r.Header.Get("Authorization"); strings.HasPrefix(a, "Bearer ") {
+				token = a[7:]
+			}
+		}
+
+		if token == "" {
 			next.ServeHTTP(w, r)
 			return
 		}
 
-		token := a[7:]
 		uid, err := h.AuthUserIDFromToken(token)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusUnauthorized)

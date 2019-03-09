@@ -16,7 +16,7 @@ import (
 )
 
 // KeyAuthUserID to use in context.
-const KeyAuthUserID key = "auth_user_id"
+const KeyAuthUserID = ctxkey("auth_user_id")
 
 const (
 	verificationCodeLifespan = time.Minute * 15
@@ -40,7 +40,7 @@ var rxUUID = regexp.MustCompile("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4
 
 var magicLinkMailTmpl *template.Template
 
-type key string
+type ctxkey string
 
 // TokenOutput response.
 type TokenOutput struct {
