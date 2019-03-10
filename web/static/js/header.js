@@ -4,13 +4,15 @@ const authUser = getAuthUser()
 const authenticated = authUser !== null
 const header = document.querySelector('header')
 header.innerHTML = `
-    <nav>
-        <a href="/">Home</a>
-        ${authenticated ? `
-            <a href="/users/${authUser.username}">Profile</a>
-            <button id="logout-button">Logout</button>
-        ` : ''}
-    </nav>
+    <div class="container wide">
+        <nav>
+            <a href="/">Home</a>
+            ${authenticated ? `
+                <a href="/users/${authUser.username}">Profile</a>
+                <button id="logout-button">Logout</button>
+            ` : ''}
+        </nav>
+    </div>
 `
 
 if (authenticated) {

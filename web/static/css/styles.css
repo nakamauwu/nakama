@@ -5,8 +5,11 @@
     --bgcolor-controls-hover: hsl(var(--hue), 7%, 9%);
     --bgcolor-alt: white;
     --color-text: white;
+    --color-muted: hsl(var(--hue), 5%, 60%);
+    --color-border: var(--bgcolor-controls);
     --color-accent: hsl(var(--hue), 100%, 73%);
     --color-alt: black;
+    --shadow: 0 0 1rem 0 rgba(0, 0, 0, 0.7);
 }
 
 body {
@@ -25,7 +28,7 @@ body {
 }
 
 [hidden] {
-    display: none;
+    display: none !important;
 }
 
 .js-focus-visible :focus:not(.focus-visible) {
@@ -42,16 +45,19 @@ a {
 }
 
 button,
-input,
+input[type=text],
+input[type=email],
 textarea {
     background-color: var(--bgcolor-controls);
     border: none;
-    color: inherit;
     border-radius: .25rem;
+    color: inherit;
+    font: inherit;
 }
 
 button,
-input {
+input[type=text],
+input[type=email] {
     padding: 0 1rem;
     height: 2rem;
 }
@@ -64,19 +70,37 @@ button {
 textarea {
     padding: .5rem 1rem;
     min-height: 4rem;
+    width: 100%;
 }
 
 button:hover,
-input:hover,
+input[type=text]:hover,
+input[type=email]:hover,
 textarea:hover {
     background-color: var(--bgcolor-controls-hover);
 }
 
-input:focus,
+input[type=text]:focus,
+input[type=email]:focus,
 textarea:focus {
     background-color: var(--bgcolor-alt);
     color: var(--color-alt);
     outline: none;
+}
+
+label {
+    align-items: center;
+    display: inline-flex;
+    user-select: none;
+    height: 2rem;
+}
+
+label input[type=checkbox] {
+    margin-right: .5rem;
+}
+
+time {
+    color: var(--color-muted);
 }
 
 header nav > * + * {
@@ -92,10 +116,7 @@ header {
     height: 3rem;
     display: flex;
     align-items: center;
-}
-
-header nav {
-    padding: 0 1rem;
+    box-shadow: var(--shadow);
 }
 
 header a:not([aria-current=page]) {
@@ -139,4 +160,8 @@ main:empty::after {
     margin: 0 auto;
     max-width: 65ch;
     width: calc(100% - 2rem);
+}
+
+.container.wide {
+    max-width: 120ch;
 }
