@@ -38,6 +38,7 @@ func New(s *service.Service, ping time.Duration, inLocalhost bool) http.Handler 
 	api.HandleFunc("POST", "/posts/:post_id/toggle_like", h.togglePostLike)
 	api.HandleFunc("POST", "/posts/:post_id/toggle_subscription", h.togglePostSubscription)
 	api.HandleFunc("GET", "/timeline", h.timeline)
+	api.HandleFunc("DELETE", "/timeline/:timeline_item_id", h.deleteTimelineItem)
 	api.HandleFunc("POST", "/posts/:post_id/comments", h.createComment)
 	api.HandleFunc("GET", "/posts/:post_id/comments", h.comments)
 	api.HandleFunc("POST", "/comments/:comment_id/toggle_like", h.toggleCommentLike)

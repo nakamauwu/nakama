@@ -117,6 +117,22 @@ func (s *Service) TimelineItemSubscription(ctx context.Context) (chan TimelineIt
 	return tt, nil
 }
 
+// DeleteTimelineItem from the auth user timeline.
+func (s *Service) DeleteTimelineItem(ctx context.Context, timelineItemID int64) error {
+	uid, ok := ctx.Value(KeyAuthUserID).(int64)
+	if !ok {
+		return ErrUnauthenticated
+	}
+
+	if _, err := s.db.ExecContext(ctx, `
+		DELETE FROM timeline
+		WHERE id = $1 AND user_id = $2`, timelineItemID, uid); err != nil {
+		return fmt.Errorf("could not delete timeline item: %v", err)
+	}
+
+	return nil
+}
+
 func (s *Service) fanoutPost(p Post) {
 	query := `
 		INSERT INTO timeline (user_id, post_id)

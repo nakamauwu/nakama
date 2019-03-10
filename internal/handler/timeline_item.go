@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/matryer/way"
 	"github.com/nicolasparada/nakama/internal/service"
 )
 
@@ -70,4 +71,16 @@ func (h *handler) timelineItemSubscription(w http.ResponseWriter, r *http.Reques
 			f.Flush()
 		}
 	}
+}
+
+func (h *handler) deleteTimelineItem(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	timelineItemID, _ := strconv.ParseInt(way.Param(ctx, "timeline_item_id"), 10, 64)
+	err := h.DeleteTimelineItem(ctx, timelineItemID)
+	if err == service.ErrUnauthenticated {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
