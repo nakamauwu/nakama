@@ -9,7 +9,7 @@
     --color-border: var(--bgcolor-controls);
     --color-accent: hsl(var(--hue), 100%, 73%);
     --color-alt: black;
-    --shadow: 0 0 1rem 0 rgba(0, 0, 0, 0.7);
+    --shadow: 0 0 1rem 0 rgba(0, 0, 0, .7);
 }
 
 body {
@@ -164,4 +164,100 @@ main:empty::after {
 
 .container.wide {
     max-width: 120ch;
+}
+
+.post-form {
+    margin-bottom: 1rem;
+}
+
+.post-form-button {
+    margin-top: .5rem;
+}
+
+.flush-posts-queue {
+    background-color: var(--color-accent);
+    color: var(--color-text);
+    position: fixed;
+    top: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    box-shadow: var(--shadow);
+}
+
+.post-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.post-item + .post-item {
+    border-top: 1px solid var(--color-border);
+}
+
+.post {
+    padding: 1rem;
+}
+
+.post-header {
+    display: flex;
+    justify-content: space-between;
+}
+
+.post-header a,
+.post-controls a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.post-header .avatar {
+    margin-right: .5rem;
+}
+
+.post-header time {
+    font-size: .875rem;
+}
+
+.avatar {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+}
+
+.avatar[data-initial] {
+    background-color: var(--color-accent);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+    color: var(--color-text);
+}
+
+.avatar[data-initial]::after {
+    content: attr(data-initial);
+}
+
+.post-content {
+    margin: 1rem 0;
+}
+
+.post-controls {
+    display: flex;
+    align-items: center;
+}
+
+.post-controls > * + * {
+    margin-left: 1rem;
+}
+
+.like-button::after {
+    content: ' 🖤';
+}
+
+.comments-link::after {
+    content: ' 💬';
+}
+
+.load-more-posts-button {
+    display: block;
+    margin: 1rem auto 0 auto;
 }

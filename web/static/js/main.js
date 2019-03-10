@@ -1,6 +1,8 @@
 import { guard } from './auth.js';
 import { createRouter } from './lib/router.js';
 
+let currentPage
+const disconnectEvent = new CustomEvent('disconnect')
 const r = createRouter()
 r.route('/', guard(view('home'), view('access')))
 r.route(/\//, view('not-found'))
@@ -17,8 +19,12 @@ function view(name) {
  */
 function renderInto(target) {
     return async result => {
-        target.innerHTML = ''
-        target.appendChild(await result)
+        if (currentPage instanceof Node) {
+            currentPage.dispatchEvent(disconnectEvent)
+            target.innerHTML = ''
+        }
+        currentPage = await result
+        target.appendChild(currentPage)
         activateLinks()
     }
 }

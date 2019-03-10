@@ -30,6 +30,27 @@ export function doPost(url, body, headers) {
     return fetch(url, init).then(parseResponse)
 }
 
+/**
+ * @param {string} url
+ * @param {function} cb
+ */
+export function subscribe(url, cb) {
+    if (isAuthenticated()) {
+        const _url = new URL(url, location.origin)
+        _url.searchParams.set('token', localStorage.getItem('token'))
+        url = _url.toString()
+    }
+    const eventSource = new EventSource(url)
+    eventSource.onmessage = ev => {
+        try {
+            cb(parseJSON(ev.data))
+        } catch (_) { }
+    }
+    return () => {
+        eventSource.close()
+    }
+}
+
 function defaultHeaders() {
     return isAuthenticated() ? {
         authorization: 'Bearer ' + localStorage.getItem('token'),
@@ -63,4 +84,5 @@ async function parseResponse(res) {
 export default {
     get: doGet,
     post: doPost,
+    subscribe,
 }
