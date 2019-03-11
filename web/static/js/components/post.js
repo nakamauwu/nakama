@@ -15,50 +15,85 @@ export default function renderPost(post) {
     const timestamp = new Date(post.createdAt).toLocaleString()
     const content = linkify(escapeHTML(post.content))
 
-    const li = document.createElement('li')
-    li.className = 'post-item'
-    li.innerHTML = `
-        <article class="post">
-            <div class="post-header">
-                <a class="post-user" href="/users/${user.username}">
-                    ${renderAvatarHTML(user)}
-                    <span>${user.username}</span>
-                </a>
-                <a href="/posts/${post.id}">
-                    <time datetime="${post.createdAt}">${timestamp}</time>
-                </a>
-            </div>
-            <div class="post-content">${content}</div>
-            <div class="post-controls">
-                ${authenticated ? `
-                    <button class="like-button"
-                        title="${post.liked ? 'Unlike' : 'Like'}"
-                        aria-pressed="${post.liked}"
-                        aria-label="${post.likesCount} likes">
-                        <span class="likes-count">${post.likesCount}</span>
-                        ${post.liked ? heartFilledSVG : heartOutlinedSVG}
-                    </button>
-                ` : `
-                    <span class="brick" aria-label="${post.likesCount} likes">
-                        <span>${post.likesCount}</span>
-                        ${post.liked ? heartFilledSVG : heartOutlinedSVG}
-                    </span>
-                `}
-                <a class="brick comments-link"
-                    href="/posts/${post.id}"
-                    title="Comments"
-                    aria-label="${post.commentsCount} comments">
-                    <span class="comments-count">${post.commentsCount}</span>
-                    <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g data-name="Layer 2"><g data-name="message-square"><rect width="24" height="24" opacity="0"/><circle cx="12" cy="11" r="1"/><circle cx="16" cy="11" r="1"/><circle cx="8" cy="11" r="1"/><path d="M19 3H5a3 3 0 0 0-3 3v15a1 1 0 0 0 .51.87A1 1 0 0 0 3 22a1 1 0 0 0 .51-.14L8 19.14a1 1 0 0 1 .55-.14H19a3 3 0 0 0 3-3V6a3 3 0 0 0-3-3zm1 13a1 1 0 0 1-1 1H8.55a3 3 0 0 0-1.55.43l-3 1.8V6a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1z"/></g></g></svg>
-                </a>
-                ${authenticated ? `
-                    <button title="More">
-                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g data-name="Layer 2"><g data-name="more-horizotnal"><rect width="24" height="24" opacity="0"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="12" r="2"/></g></g></svg>
-                    </button>
-                ` : ''}
-            </div>
-        </article>
+    const article = document.createElement('article')
+    article.className = 'post'
+    article.setAttribute('tabindex', '0')
+    article.setAttribute('aria-label', `${user.username}'s post`)
+    article.innerHTML = `
+        <div class="post-header">
+            <a class="post-user" href="/users/${user.username}">
+                ${renderAvatarHTML(user)}
+                <span>${user.username}</span>
+            </a>
+            <a href="/posts/${post.id}">
+                <time datetime="${post.createdAt}">${timestamp}</time>
+            </a>
+        </div>
+        <div class="post-content">${content}</div>
+        <div class="post-controls">
+            ${authenticated ? `
+                <button class="like-button"
+                    title="${post.liked ? 'Unlike' : 'Like'}"
+                    aria-pressed="${post.liked}"
+                    aria-label="${post.likesCount} likes">
+                    <span class="likes-count">${post.likesCount}</span>
+                    ${post.liked ? heartFilledSVG : heartOutlinedSVG}
+                </button>
+            ` : `
+                <span class="brick" aria-label="${post.likesCount} likes">
+                    <span>${post.likesCount}</span>
+                    ${post.liked ? heartFilledSVG : heartOutlinedSVG}
+                </span>
+            `}
+            <a class="brick comments-link"
+                href="/posts/${post.id}"
+                title="Comments"
+                aria-label="${post.commentsCount} comments">
+                <span class="comments-count">${post.commentsCount}</span>
+                <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g data-name="Layer 2"><g data-name="message-square"><rect width="24" height="24" opacity="0"/><circle cx="12" cy="11" r="1"/><circle cx="16" cy="11" r="1"/><circle cx="8" cy="11" r="1"/><path d="M19 3H5a3 3 0 0 0-3 3v15a1 1 0 0 0 .51.87A1 1 0 0 0 3 22a1 1 0 0 0 .51-.14L8 19.14a1 1 0 0 1 .55-.14H19a3 3 0 0 0 3-3V6a3 3 0 0 0-3-3zm1 13a1 1 0 0 1-1 1H8.55a3 3 0 0 0-1.55.43l-3 1.8V6a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1z"/></g></g></svg>
+            </a>
+            ${authenticated ? `
+                <button title="More">
+                    <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g data-name="Layer 2"><g data-name="more-horizotnal"><rect width="24" height="24" opacity="0"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="12" r="2"/></g></g></svg>
+                </button>
+            ` : ''}
+        </div>
     `
 
-    return li
+    /**
+     * @param {KeyboardEvent} ev
+     */
+    const onArticleKeyUp = ev => {
+        switch (ev.key) {
+            case 'ArrowLeft':
+            case 'ArrowUp':
+                const prevArticle = article.previousElementSibling
+                if (prevArticle instanceof HTMLElement) {
+                    prevArticle.focus()
+                    article.removeEventListener('keyup', onArticleKeyUp)
+                }
+                break
+            case 'ArrowRight':
+            case 'ArrowDown':
+                const nextArticle = article.nextElementSibling
+                if (nextArticle instanceof HTMLElement) {
+                    nextArticle.focus()
+                    article.removeEventListener('keyup', onArticleKeyUp)
+                }
+                break
+        }
+    }
+
+    const onArticleFocus = () => {
+        article.addEventListener('keyup', onArticleKeyUp)
+    }
+
+    const onArticleBlur = () => {
+        article.removeEventListener('keyup', onArticleKeyUp)
+    }
+
+    article.addEventListener('focus', onArticleFocus)
+    article.addEventListener('blur', onArticleBlur)
+
+    return article
 }

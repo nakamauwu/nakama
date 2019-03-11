@@ -17,7 +17,7 @@ template.innerHTML = `
             aria-live="assertive"
             aria-atomic="true"
             hidden></button>
-        <ol id="timeline-list" class="post-list"></ol>
+        <div id="timeline-feed" class="post-list" role="feed"></div>
         <button id="load-more-button" class="load-more-posts-button" hidden>Load more</button>
     </div>
 `
@@ -31,7 +31,7 @@ export default async function renderHomePage() {
     const postFormTextArea = postForm.querySelector('textarea')
     const postFormButton = postForm.querySelector('button')
     const flushQueueButton = /** @type {HTMLButtonElement} */ (page.getElementById('flush-queue-button'))
-    const timelineList = /** @type {HTMLOListElement} */ (page.getElementById('timeline-list'))
+    const timelineFeed = /** @type {HTMLDivElement} */ (page.getElementById('timeline-feed'))
     const loadMoreButton = /** @type {HTMLButtonElement} */ (page.getElementById('load-more-button'))
 
     /**
@@ -50,7 +50,7 @@ export default async function renderHomePage() {
             flushQueue()
 
             timeline.unshift(timelineItem)
-            timelineList.insertAdjacentElement('afterbegin', renderPost(timelineItem.post))
+            timelineFeed.insertAdjacentElement('afterbegin', renderPost(timelineItem.post))
 
             postForm.reset()
             postFormButton.hidden = true
@@ -75,7 +75,7 @@ export default async function renderHomePage() {
 
         while (timelineItem !== undefined) {
             timeline.unshift(timelineItem)
-            timelineList.insertAdjacentElement('afterbegin', renderPost(timelineItem.post))
+            timelineFeed.insertAdjacentElement('afterbegin', renderPost(timelineItem.post))
 
             timelineItem = timelineQueue.pop()
         }
@@ -87,6 +87,7 @@ export default async function renderHomePage() {
 
     const onLoadMoreButtonClick = async () => {
         loadMoreButton.disabled = true
+        timelineFeed.setAttribute('aria-busy', 'true')
 
         try {
             const lastTimelineItem = timeline[timeline.length - 1]
@@ -94,7 +95,7 @@ export default async function renderHomePage() {
 
             timeline.push(...newTimelineItems)
             for (const timelineItem of newTimelineItems) {
-                timelineList.appendChild(renderPost(timelineItem.post))
+                timelineFeed.appendChild(renderPost(timelineItem.post))
             }
 
             if (newTimelineItems.length < PAGE_SIZE) {
@@ -106,6 +107,7 @@ export default async function renderHomePage() {
             alert(err.message)
         } finally {
             loadMoreButton.disabled = false
+            timelineFeed.setAttribute('aria-busy', 'false')
         }
     }
 
@@ -124,7 +126,7 @@ export default async function renderHomePage() {
     const onPageDisconnect = unsubscribeFromTimeline
 
     for (const timelineItem of timeline) {
-        timelineList.appendChild(renderPost(timelineItem.post))
+        timelineFeed.appendChild(renderPost(timelineItem.post))
     }
 
     postForm.addEventListener('submit', onPostFormSubmit)
