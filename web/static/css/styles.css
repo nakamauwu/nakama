@@ -175,13 +175,23 @@ main:empty::after {
 }
 
 .flush-posts-queue {
-    background-color: var(--color-accent);
-    color: var(--color-text);
     position: fixed;
     top: 1rem;
     left: 50%;
     transform: translateX(-50%);
     box-shadow: var(--shadow);
+    animation: slide-flush-posts-button 300ms ease-in-out;
+}
+
+@keyframes slide-flush-posts-button {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -100%);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
 }
 
 .post-list {
