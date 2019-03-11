@@ -348,6 +348,7 @@ a.brick:active {
 
 .post-content {
     margin: 1rem 0;
+    word-wrap: break-word;
 }
 
 .post-controls {
