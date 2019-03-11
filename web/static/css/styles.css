@@ -364,11 +364,11 @@ a.brick:active {
     margin-left: .5rem;
 }
 
-.like-button.liked {
+.like-button[aria-pressed=true] {
     color: var(--color-text);
 }
 
-.like-button.liked .icon {
+.like-button[aria-pressed=true] .icon {
     fill: var(--color-red);
 }
 
