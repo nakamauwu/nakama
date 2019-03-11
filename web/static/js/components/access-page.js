@@ -9,7 +9,7 @@ template.innerHTML = `
         <h1>Nakama</h1>
         <p>Welcome to Nakama, the next social network for anime fans 🤗</p>
         <h2>Access</h2>
-        <form id="login-form">
+        <form id="login-form" class="login-form">
             <input type="email" placeholder="Email" autocomplete="email" value="john@example.org" required>
             <button>Login</button>
         </form>

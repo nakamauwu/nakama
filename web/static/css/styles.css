@@ -1,13 +1,17 @@
 :root {
     --hue: 270;
     --bgcolor-root: black;
+    --bgcolor-header: rgba(0, 0, 0, .95);
     --bgcolor-controls: hsl(var(--hue), 8%, 8%);
     --bgcolor-controls-hover: hsl(var(--hue), 7%, 9%);
+    --bgcolor-controls-active: hsl(var(--hue), 13%, 14%);
+    --bgcolor-avatar: hsl(var(--hue), 19%, 27%);
     --bgcolor-alt: white;
     --color-text: white;
     --color-muted: hsl(var(--hue), 5%, 60%);
     --color-border: var(--bgcolor-controls);
     --color-accent: hsl(var(--hue), 100%, 73%);
+    --color-red: crimson;
     --color-alt: black;
     --shadow: 0 0 1rem 0 rgba(0, 0, 0, .7);
 }
@@ -63,8 +67,14 @@ input[type=email] {
 }
 
 button {
+    display: inline-flex;
+    align-items: center;
     touch-action: manipulation;
     user-select: none;
+}
+
+button > * + * {
+    margin-left: .5rem;
 }
 
 textarea {
@@ -77,15 +87,24 @@ button:hover,
 input[type=text]:hover,
 input[type=email]:hover,
 textarea:hover {
-    background-color: var(--bgcolor-controls-hover);
+    background-color: var(--bgcolor-controls-hover) !important;
 }
 
+button.focus-visible:focus,
 input[type=text]:focus,
 input[type=email]:focus,
 textarea:focus {
-    background-color: var(--bgcolor-alt);
-    color: var(--color-alt);
-    outline: none;
+    background-color: var(--bgcolor-alt) !important;
+    color: var(--color-alt) !important;
+    outline: none !important;
+}
+
+button:active {
+    background-color: var(--bgcolor-controls-active) !important;
+}
+
+img {
+    max-width: 100%;
 }
 
 label {
@@ -103,12 +122,8 @@ time {
     color: var(--color-muted);
 }
 
-header nav > * + * {
-    margin-left: .5rem;
-}
-
 header {
-    background-color: var(--bgcolor-root);
+    background-color: var(--bgcolor-header);
     position: fixed;
     bottom: 0;
     left: 0;
@@ -119,9 +134,30 @@ header {
     box-shadow: var(--shadow);
 }
 
-header a:not([aria-current=page]) {
-    color: inherit;
-    text-decoration: none;
+header nav {
+    display: flex;
+    align-items: center;
+}
+
+header .brick[aria-current=page] {
+    position: relative;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+header .brick[aria-current=page]::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    display: block;
+    width: 100%;
+    height: 3px;
+    border-radius: 1px;
+    background-color: currentColor;
+}
+
+header nav > * + * {
+    margin-left: .5rem;
 }
 
 @media screen and (min-width: 415px) {
@@ -164,6 +200,85 @@ main:empty::after {
 
 .container.wide {
     max-width: 120ch;
+}
+
+.brick {
+    border-radius: .25rem;
+    color: inherit;
+    text-decoration: none;
+    height: 2rem;
+    padding: 0 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.brick > * + * {
+    margin-left: .5rem;
+}
+
+a.brick:hover {
+    background-color: var(--bgcolor-controls-hover) !important;
+}
+
+a.brick.focus-visible:focus {
+    background-color: var(--bgcolor-alt) !important;
+    color: var(--color-alt) !important;
+    outline: none !important;
+}
+
+a.brick:active {
+    background-color: var(--bgcolor-controls-active) !important;
+}
+
+.icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    fill: currentColor;
+}
+
+.avatar {
+    --size: 3rem;
+    width: var(--size);
+    height: var(--size);
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.avatar.small {
+    --size: 1.25rem;
+    font-size: .416rem;
+}
+
+.avatar.big {
+    --size: 7rem;
+}
+
+.avatar[data-initial] {
+    background-color: var(--bgcolor-avatar);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+    color: var(--color-text);
+}
+
+.avatar[data-initial]::after {
+    content: attr(data-initial);
+}
+
+.login-form {
+    display: flex;
+    align-items: center;
+    max-width: 320px;
+}
+
+.login-form input {
+    width: 100%;
+}
+
+.login-form button {
+    margin-left: .5rem;
 }
 
 .post-form {
@@ -213,8 +328,12 @@ main:empty::after {
     justify-content: space-between;
 }
 
-.post-header a,
-.post-controls a {
+.post-user {
+    display: inline-flex;
+    align-items: center;
+}
+
+.post-header a {
     color: inherit;
     text-decoration: none;
 }
@@ -227,47 +346,33 @@ main:empty::after {
     font-size: .875rem;
 }
 
-.avatar {
-    width: 3rem;
-    height: 3rem;
-    border-radius: 50%;
-}
-
-.avatar[data-initial] {
-    background-color: var(--color-accent);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    text-transform: uppercase;
-    color: var(--color-text);
-}
-
-.avatar[data-initial]::after {
-    content: attr(data-initial);
-}
-
 .post-content {
     margin: 1rem 0;
 }
 
 .post-controls {
+    color: var(--color-muted);
     display: flex;
     align-items: center;
 }
 
+.post-controls button {
+    background-color: transparent;
+}
+
 .post-controls > * + * {
-    margin-left: 1rem;
+    margin-left: .5rem;
 }
 
-.like-button::after {
-    content: ' 🖤';
+.like-button.liked {
+    color: var(--color-text);
 }
 
-.comments-link::after {
-    content: ' 💬';
+.like-button.liked .icon {
+    fill: var(--color-red);
 }
 
 .load-more-posts-button {
-    display: block;
+    display: flex;
     margin: 1rem auto 0 auto;
 }

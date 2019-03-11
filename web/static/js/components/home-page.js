@@ -10,7 +10,7 @@ template.innerHTML = `
         <h1>Timeline</h1>
         <form id="post-form" class="post-form">
             <textarea placeholder="Write something..." maxlength="480" required></textarea>
-            <button class="post-form-button">Publish</button>
+            <button class="post-form-button" hidden>Publish</button>
         </form>
         <button id="flush-queue-button" class="flush-posts-queue" hidden></button>
         <ol id="timeline-list" class="post-list"></ol>
@@ -46,6 +46,7 @@ export default async function renderHomePage() {
             timeline.unshift(timelineItem)
             timelineList.insertAdjacentElement('afterbegin', renderPost(timelineItem.post))
             postForm.reset()
+            postFormButton.hidden = true
         } catch (err) {
             console.error(err)
             alert(err.message)
@@ -56,6 +57,10 @@ export default async function renderHomePage() {
             postFormTextArea.disabled = false
             postFormButton.disabled = false
         }
+    }
+
+    const onPostFormTextAreaInput = () => {
+        postFormButton.hidden = postFormTextArea.value === ''
     }
 
     const flushQueue = () => {
@@ -108,6 +113,7 @@ export default async function renderHomePage() {
     const unsubscribeFromTimeline = http.subscribeToTimeline(onTimelineItemArrive)
 
     postForm.addEventListener('submit', onPostFormSubmit)
+    postFormTextArea.addEventListener('input', onPostFormTextAreaInput)
     flushQueueButton.addEventListener('click', onFlushQueueButtonClick)
     if (timeline.length == PAGE_SIZE) {
         loadMoreButton.hidden = false
