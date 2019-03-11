@@ -42,9 +42,12 @@ export default async function renderHomePage() {
 
         try {
             const timelineItem = await http.publishPost({ content })
+
             flushQueue()
+
             timeline.unshift(timelineItem)
             timelineList.insertAdjacentElement('afterbegin', renderPost(timelineItem.post))
+
             postForm.reset()
             postFormButton.hidden = true
         } catch (err) {
@@ -65,11 +68,14 @@ export default async function renderHomePage() {
 
     const flushQueue = () => {
         let timelineItem = timelineQueue.pop()
+
         while (timelineItem !== undefined) {
             timeline.unshift(timelineItem)
             timelineList.insertAdjacentElement('afterbegin', renderPost(timelineItem.post))
+
             timelineItem = timelineQueue.pop()
         }
+
         flushQueueButton.hidden = true
     }
 
@@ -81,10 +87,12 @@ export default async function renderHomePage() {
         try {
             const lastTimelineItem = timeline[timeline.length - 1]
             const newTimelineItems = await http.timeline(lastTimelineItem.id)
+
             timeline.push(...newTimelineItems)
             for (const timelineItem of newTimelineItems) {
                 timelineList.appendChild(renderPost(timelineItem.post))
             }
+
             if (newTimelineItems.length < PAGE_SIZE) {
                 loadMoreButton.removeEventListener('click', onLoadMoreButtonClick)
                 loadMoreButton.remove()
@@ -102,15 +110,18 @@ export default async function renderHomePage() {
      */
     const onTimelineItemArrive = timelineItem => {
         timelineQueue.unshift(timelineItem)
+
         flushQueueButton.textContent = timelineQueue.length + ' new posts'
         flushQueueButton.hidden = false
     }
 
+    const unsubscribeFromTimeline = http.subscribeToTimeline(onTimelineItemArrive)
+
+    const onPageDisconnect = unsubscribeFromTimeline
+
     for (const timelineItem of timeline) {
         timelineList.appendChild(renderPost(timelineItem.post))
     }
-
-    const unsubscribeFromTimeline = http.subscribeToTimeline(onTimelineItemArrive)
 
     postForm.addEventListener('submit', onPostFormSubmit)
     postFormTextArea.addEventListener('input', onPostFormTextAreaInput)
@@ -119,7 +130,7 @@ export default async function renderHomePage() {
         loadMoreButton.hidden = false
         loadMoreButton.addEventListener('click', onLoadMoreButtonClick)
     }
-    page.addEventListener('disconnect', unsubscribeFromTimeline)
+    page.addEventListener('disconnect', onPageDisconnect)
 
     return page
 }
