@@ -50,7 +50,7 @@ export default async function renderHomePage() {
             flushQueue()
 
             timeline.unshift(timelineItem)
-            timelineFeed.insertAdjacentElement('afterbegin', renderPost(timelineItem.post))
+            timelineFeed.insertAdjacentElement('afterbegin', renderTimelineItem(timelineItem))
 
             postForm.reset()
             postFormButton.hidden = true
@@ -75,7 +75,7 @@ export default async function renderHomePage() {
 
         while (timelineItem !== undefined) {
             timeline.unshift(timelineItem)
-            timelineFeed.insertAdjacentElement('afterbegin', renderPost(timelineItem.post))
+            timelineFeed.insertAdjacentElement('afterbegin', renderTimelineItem(timelineItem))
 
             timelineItem = timelineQueue.pop()
         }
@@ -95,7 +95,7 @@ export default async function renderHomePage() {
 
             timeline.push(...newTimelineItems)
             for (const timelineItem of newTimelineItems) {
-                timelineFeed.appendChild(renderPost(timelineItem.post))
+                timelineFeed.appendChild(renderTimelineItem(timelineItem))
             }
 
             if (newTimelineItems.length < PAGE_SIZE) {
@@ -126,7 +126,7 @@ export default async function renderHomePage() {
     const onPageDisconnect = unsubscribeFromTimeline
 
     for (const timelineItem of timeline) {
-        timelineFeed.appendChild(renderPost(timelineItem.post))
+        timelineFeed.appendChild(renderTimelineItem(timelineItem))
     }
 
     postForm.addEventListener('submit', onPostFormSubmit)
@@ -139,6 +139,13 @@ export default async function renderHomePage() {
     page.addEventListener('disconnect', onPageDisconnect)
 
     return page
+}
+
+/**
+ * @param {import('../types.js').TimelineItem} timelineItem
+ */
+function renderTimelineItem(timelineItem) {
+    return renderPost(timelineItem.post, timelineItem.id, true)
 }
 
 const http = {

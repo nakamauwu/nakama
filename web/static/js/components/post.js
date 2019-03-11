@@ -8,8 +8,10 @@ const heartFilledSVG = `<svg class="icon" xmlns="http://www.w3.org/2000/svg" vie
 
 /**
  * @param {import('../types.js').Post} post
+ * @param {bigint=} timelineItemID
+ * @param {boolean=} inFeed
  */
-export default function renderPost(post) {
+export default function renderPost(post, timelineItemID, inFeed = false) {
     const authenticated = isAuthenticated()
     const { user } = post
     const timestamp = new Date(post.createdAt).toLocaleString()
@@ -17,8 +19,10 @@ export default function renderPost(post) {
 
     const article = document.createElement('article')
     article.className = 'post'
-    article.setAttribute('tabindex', '0')
-    article.setAttribute('aria-label', `${user.username}'s post`)
+    if (inFeed) {
+        article.setAttribute('tabindex', '0')
+        article.setAttribute('aria-label', `${user.username}'s post`)
+    }
     article.innerHTML = `
         <div class="post-header">
             <a class="post-user" href="/users/${user.username}">
@@ -60,40 +64,42 @@ export default function renderPost(post) {
         </div>
     `
 
-    /**
-     * @param {KeyboardEvent} ev
-     */
-    const onArticleKeyUp = ev => {
-        switch (ev.key) {
-            case 'ArrowLeft':
-            case 'ArrowUp':
-                const prevArticle = article.previousElementSibling
-                if (prevArticle instanceof HTMLElement) {
-                    prevArticle.focus()
-                    article.removeEventListener('keyup', onArticleKeyUp)
-                }
-                break
-            case 'ArrowRight':
-            case 'ArrowDown':
-                const nextArticle = article.nextElementSibling
-                if (nextArticle instanceof HTMLElement) {
-                    nextArticle.focus()
-                    article.removeEventListener('keyup', onArticleKeyUp)
-                }
-                break
+    if (inFeed) {
+        /**
+         * @param {KeyboardEvent} ev
+         */
+        const onArticleKeyUp = ev => {
+            switch (ev.key) {
+                case 'ArrowLeft':
+                case 'ArrowUp':
+                    const prevArticle = article.previousElementSibling
+                    if (prevArticle instanceof HTMLElement) {
+                        prevArticle.focus()
+                        article.removeEventListener('keyup', onArticleKeyUp)
+                    }
+                    break
+                case 'ArrowRight':
+                case 'ArrowDown':
+                    const nextArticle = article.nextElementSibling
+                    if (nextArticle instanceof HTMLElement) {
+                        nextArticle.focus()
+                        article.removeEventListener('keyup', onArticleKeyUp)
+                    }
+                    break
+            }
         }
-    }
 
-    const onArticleFocus = () => {
-        article.addEventListener('keyup', onArticleKeyUp)
-    }
+        const onArticleFocus = () => {
+            article.addEventListener('keyup', onArticleKeyUp)
+        }
 
-    const onArticleBlur = () => {
-        article.removeEventListener('keyup', onArticleKeyUp)
-    }
+        const onArticleBlur = () => {
+            article.removeEventListener('keyup', onArticleKeyUp)
+        }
 
-    article.addEventListener('focus', onArticleFocus)
-    article.addEventListener('blur', onArticleBlur)
+        article.addEventListener('focus', onArticleFocus)
+        article.addEventListener('blur', onArticleBlur)
+    }
 
     return article
 }
