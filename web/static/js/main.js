@@ -1,4 +1,5 @@
 import { guard } from './auth.js';
+import renderErrorPage from './components/error-page.js';
 import { createRouter } from './lib/router.js';
 
 let currentPage
@@ -23,7 +24,12 @@ function renderInto(target) {
             currentPage.dispatchEvent(disconnectEvent)
             target.innerHTML = ''
         }
-        currentPage = await result
+        try {
+            currentPage = await result
+        } catch (err) {
+            console.error(err)
+            currentPage = renderErrorPage(err)
+        }
         target.appendChild(currentPage)
         activateLinks()
     }
