@@ -1,3 +1,6 @@
+const mentionsRegExp = /\B@([a-zA-Z][a-zA-Z0-9_-]{0,17})/g
+const urlsRegExp = /\b(https?:\/\/[\-A-Za-z0-9+&@#\/%?=~_|!:,\.;]*[\-A-Za-z0-9+&@#\/%=~_|])/gi
+
 export function isObject(x) {
     return typeof x === 'object' && x !== null
 }
@@ -16,4 +19,13 @@ export function escapeHTML(s) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;')
+}
+
+/**
+ * @param {string} s
+ */
+export function linkify(s) {
+    return s
+        .replace(mentionsRegExp, '<a href="/users/$1">@$1</a>')
+        .replace(urlsRegExp, '<a href="$1" target="_blank" rel="noopener">$1</a>')
 }
