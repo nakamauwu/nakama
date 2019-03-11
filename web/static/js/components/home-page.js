@@ -12,7 +12,11 @@ template.innerHTML = `
             <textarea placeholder="Write something..." maxlength="480" required></textarea>
             <button class="post-form-button" hidden>Publish</button>
         </form>
-        <button id="flush-queue-button" class="flush-posts-queue" hidden></button>
+        <button id="flush-queue-button"
+            class="flush-posts-queue"
+            aria-live="assertive"
+            aria-atomic="true"
+            hidden></button>
         <ol id="timeline-list" class="post-list"></ol>
         <button id="load-more-button" class="load-more-posts-button" hidden>Load more</button>
     </div>
