@@ -42,6 +42,7 @@ export default async function renderHomePage() {
 
         try {
             const timelineItem = await http.publishPost({ content })
+            flushQueue()
             timeline.unshift(timelineItem)
             timelineList.insertAdjacentElement('afterbegin', renderPost(timelineItem.post))
             postForm.reset()
@@ -57,7 +58,7 @@ export default async function renderHomePage() {
         }
     }
 
-    const onFlushQueueButtonClick = () => {
+    const flushQueue = () => {
         let timelineItem = timelineQueue.pop()
         while (timelineItem !== undefined) {
             timeline.unshift(timelineItem)
@@ -66,6 +67,8 @@ export default async function renderHomePage() {
         }
         flushQueueButton.hidden = true
     }
+
+    const onFlushQueueButtonClick = flushQueue
 
     const onLoadMoreButtonClick = async () => {
         loadMoreButton.disabled = true
