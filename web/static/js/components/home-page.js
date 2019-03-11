@@ -17,7 +17,7 @@ template.innerHTML = `
             aria-live="assertive"
             aria-atomic="true"
             hidden></button>
-        <div id="timeline-feed" class="post-list" role="feed"></div>
+        <div id="timeline-feed" role="feed"></div>
         <button id="load-more-button" class="load-more-posts-button" hidden>Load more</button>
     </div>
 `
