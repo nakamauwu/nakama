@@ -32,7 +32,7 @@ func writeSSE(w io.Writer, v interface{}) {
 	b, err := json.Marshal(v)
 	if err != nil {
 		log.Printf("could not marshal response: %v\n", err)
-		fmt.Fprintf(w, "error: %v\n\n", err)
+		fmt.Fprintf(w, "event: error\ndata: %v\n\n", err)
 		return
 	}
 

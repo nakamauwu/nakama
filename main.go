@@ -69,11 +69,9 @@ func run() error {
 	)
 	server := http.Server{
 		Addr:              ":" + port,
-		Handler:           handler.New(service, time.Second*15, origin.Hostname() == "localhost"),
+		Handler:           handler.New(service, origin.Hostname() == "localhost"),
 		ReadHeaderTimeout: time.Second * 5,
 		ReadTimeout:       time.Second * 15,
-		WriteTimeout:      time.Second * 15,
-		IdleTimeout:       time.Second * 30,
 	}
 
 	errs := make(chan error, 2)

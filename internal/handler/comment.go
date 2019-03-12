@@ -2,11 +2,9 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"mime"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/matryer/way"
 	"github.com/nicolasparada/nakama/internal/service"
@@ -83,21 +81,11 @@ func (h *handler) commentSubscription(w http.ResponseWriter, r *http.Request) {
 	header := w.Header()
 	header.Set("Cache-Control", "no-cache")
 	header.Set("Connection", "keep-alive")
-	header.Set("Content-Type", "text/event-stream")
+	header.Set("Content-Type", "text/event-stream; charset=utf-8")
 
-	cc := h.CommentSubscription(ctx, postID)
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(h.ping):
-			fmt.Fprint(w, "ping: \n\n")
-			f.Flush()
-		case c := <-cc:
-			writeSSE(w, c)
-			f.Flush()
-		}
+	for c := range h.CommentSubscription(ctx, postID) {
+		writeSSE(w, c)
+		f.Flush()
 	}
 }
 

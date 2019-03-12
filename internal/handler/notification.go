@@ -1,11 +1,9 @@
 package handler
 
 import (
-	"fmt"
 	"mime"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/matryer/way"
 	"github.com/nicolasparada/nakama/internal/service"
@@ -56,19 +54,11 @@ func (h *handler) notificationSubscription(w http.ResponseWriter, r *http.Reques
 	header := w.Header()
 	header.Set("Cache-Control", "no-cache")
 	header.Set("Connection", "keep-alive")
-	header.Set("Content-Type", "text/event-stream")
+	header.Set("Content-Type", "text/event-stream; charset=utf-8")
 
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(h.ping):
-			fmt.Fprint(w, "ping: \n\n")
-			f.Flush()
-		case n := <-nn:
-			writeSSE(w, n)
-			f.Flush()
-		}
+	for n := range nn {
+		writeSSE(w, n)
+		f.Flush()
 	}
 }
 
