@@ -39,8 +39,7 @@ func (h *handler) notificationSubscription(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	ctx := r.Context()
-	nn, err := h.NotificationSubscription(ctx)
+	nn, err := h.NotificationSubscription(r.Context())
 	if err == service.ErrUnauthenticated {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return

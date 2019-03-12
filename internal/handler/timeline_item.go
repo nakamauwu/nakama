@@ -40,8 +40,7 @@ func (h *handler) timelineItemSubscription(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	ctx := r.Context()
-	tt, err := h.TimelineItemSubscription(ctx)
+	tt, err := h.TimelineItemSubscription(r.Context())
 	if err == service.ErrUnauthenticated {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
