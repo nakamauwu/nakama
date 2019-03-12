@@ -37,7 +37,7 @@ async function onLoginFormSubmit(ev) {
     button.disabled = true
 
     try {
-        saveLogin(await http.devLogin(email))
+        saveLogin(await http.login(email))
         location.reload()
     } catch (err) {
         console.error(err)
@@ -85,7 +85,7 @@ async function runRegistrationProgram(email, username) {
 
     try {
         await http.createUser(email, username)
-        saveLogin(await http.devLogin(email))
+        saveLogin(await http.login(email))
         location.reload()
     } catch (err) {
         console.error(err)
@@ -100,7 +100,7 @@ const http = {
     /**
      * @returns {Promise<import('../types.js').DevLoginOutput>}
      */
-    devLogin: email => doPost('/api/dev_login', { email }),
+    login: email => doPost('/api/dev_login', { email }),
 
     /**
      * @param {string} email

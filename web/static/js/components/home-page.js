@@ -1,5 +1,6 @@
 import { getAuthUser } from '../auth.js';
 import { doGet, doPost, subscribe } from '../http.js';
+import { makeInfiniteList } from './behaviors/feed.js';
 import renderPost from './post.js';
 
 const PAGE_SIZE = 10
@@ -17,22 +18,20 @@ template.innerHTML = `
             aria-live="assertive"
             aria-atomic="true"
             hidden></button>
-        <div id="timeline-feed" role="feed"></div>
-        <button id="load-more-button" class="load-more-posts-button" hidden>Load more</button>
+        <div id="timeline-div"></div>
     </div>
 `
 
 export default async function renderHomePage() {
     const timelineQueue = /** @type {import('../types.js').TimelineItem[]} */ ([])
-    const timeline = await http.timeline()
+    const timeline = await http.fetchTimeline()
 
     const page = /** @type {DocumentFragment} */ (template.content.cloneNode(true))
     const postForm = /** @type {HTMLFormElement} */ (page.getElementById('post-form'))
     const postFormTextArea = postForm.querySelector('textarea')
     const postFormButton = postForm.querySelector('button')
     const flushQueueButton = /** @type {HTMLButtonElement} */ (page.getElementById('flush-queue-button'))
-    const timelineFeed = /** @type {HTMLDivElement} */ (page.getElementById('timeline-feed'))
-    const loadMoreButton = /** @type {HTMLButtonElement} */ (page.getElementById('load-more-button'))
+    const timelineDiv = /** @type {HTMLDivElement} */ (page.getElementById('timeline-div'))
 
     /**
      * @param {Event} ev
@@ -50,7 +49,7 @@ export default async function renderHomePage() {
             flushQueue()
 
             timeline.unshift(timelineItem)
-            timelineFeed.insertAdjacentElement('afterbegin', renderTimelineItem(timelineItem))
+            timelineDiv.insertAdjacentElement('afterbegin', renderTimelineItem(timelineItem))
 
             postForm.reset()
             postFormButton.hidden = true
@@ -75,7 +74,7 @@ export default async function renderHomePage() {
 
         while (timelineItem !== undefined) {
             timeline.unshift(timelineItem)
-            timelineFeed.insertAdjacentElement('afterbegin', renderTimelineItem(timelineItem))
+            timelineDiv.insertAdjacentElement('afterbegin', renderTimelineItem(timelineItem))
 
             timelineItem = timelineQueue.pop()
         }
@@ -85,31 +84,12 @@ export default async function renderHomePage() {
 
     const onFlushQueueButtonClick = flushQueue
 
-    const onLoadMoreButtonClick = async () => {
-        loadMoreButton.disabled = true
-        timelineFeed.setAttribute('aria-busy', 'true')
-
-        try {
-            const lastTimelineItem = timeline[timeline.length - 1]
-            const newTimelineItems = await http.timeline(lastTimelineItem.id)
-
-            timeline.push(...newTimelineItems)
-            for (const timelineItem of newTimelineItems) {
-                timelineFeed.appendChild(renderTimelineItem(timelineItem))
-            }
-
-            if (newTimelineItems.length < PAGE_SIZE) {
-                loadMoreButton.removeEventListener('click', onLoadMoreButtonClick)
-                loadMoreButton.remove()
-            }
-        } catch (err) {
-            console.error(err)
-            alert(err.message)
-        } finally {
-            loadMoreButton.disabled = false
-            timelineFeed.setAttribute('aria-busy', 'false')
-        }
-    }
+    const timelineTeardown = makeInfiniteList(timelineDiv, {
+        items: timeline,
+        getMoreItems: http.fetchTimeline,
+        renderItem: renderTimelineItem,
+        pageSize: PAGE_SIZE,
+    })
 
     /**
      * @param {import('../types.js').TimelineItem} timelineItem
@@ -123,19 +103,14 @@ export default async function renderHomePage() {
 
     const unsubscribeFromTimeline = http.subscribeToTimeline(onTimelineItemArrive)
 
-    const onPageDisconnect = unsubscribeFromTimeline
-
-    for (const timelineItem of timeline) {
-        timelineFeed.appendChild(renderTimelineItem(timelineItem))
+    const onPageDisconnect = () => {
+        unsubscribeFromTimeline()
+        timelineTeardown()
     }
 
     postForm.addEventListener('submit', onPostFormSubmit)
     postFormTextArea.addEventListener('input', onPostFormTextAreaInput)
     flushQueueButton.addEventListener('click', onFlushQueueButtonClick)
-    if (timeline.length == PAGE_SIZE) {
-        loadMoreButton.hidden = false
-        loadMoreButton.addEventListener('click', onLoadMoreButtonClick)
-    }
     page.addEventListener('disconnect', onPageDisconnect)
 
     return page
@@ -145,7 +120,7 @@ export default async function renderHomePage() {
  * @param {import('../types.js').TimelineItem} timelineItem
  */
 function renderTimelineItem(timelineItem) {
-    return renderPost(timelineItem.post, timelineItem.id, true)
+    return renderPost(timelineItem.post, timelineItem.id)
 }
 
 const http = {
@@ -162,7 +137,7 @@ const http = {
      * @param {bigint=} before
      * @returns {Promise<import('../types.js').TimelineItem[]>}
      */
-    timeline: (before = 0n) => doGet(`/api/timeline?before=${before}&last=${PAGE_SIZE}`),
+    fetchTimeline: (before = 0n) => doGet(`/api/timeline?before=${before}&last=${PAGE_SIZE}`),
 
     /**
      * @param {function(import('../types.js').TimelineItem): any} cb
