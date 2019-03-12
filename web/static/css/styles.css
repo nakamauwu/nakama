@@ -317,6 +317,10 @@ a.brick:active {
     padding: 1rem;
 }
 
+.post:focus {
+    outline: 3px dashed var(--color-accent);
+}
+
 .post-header {
     display: flex;
     justify-content: space-between;

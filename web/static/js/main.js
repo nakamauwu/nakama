@@ -31,13 +31,14 @@ function renderInto(target) {
             currentPage = renderErrorPage(err)
         }
         target.appendChild(currentPage)
-        activateLinks()
+        setTimeout(activateLinks)
     }
 }
 
 function activateLinks() {
     const { pathname } = location
-    for (const link of Array.from(document.querySelectorAll('a'))) {
+    const links = Array.from(document.querySelectorAll('a'))
+    for (const link of links) {
         if (link.pathname === pathname) {
             link.setAttribute('aria-current', 'page')
         } else {
