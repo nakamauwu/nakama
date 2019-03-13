@@ -1,5 +1,71 @@
 /**
- * @param {HTMLElement} feed
+ * @param {Element} el
+ */
+function makeFeed(el) {
+    let loading = false
+    let index = 0
+
+    el.setAttribute('role', 'feed')
+    el.setAttribute('aria-busy', 'false')
+
+    /**
+     * @param {MutationRecord[]} mutations
+     */
+    const mutationCallback = mutations => {
+        for (const mutation of mutations) {
+            for (const node of mutation.addedNodes) {
+                if (node instanceof Element) {
+                    node.setAttribute('tabindex', '-1')
+                }
+            }
+        }
+    }
+
+    /**
+     * @param {KeyboardEvent} ev
+     */
+    const onKeyDown = ev => {
+        if (ev.key === 'ArrowUp') {
+            index = Math.max(0, index - 1)
+        } else if (ev.key === 'ArrowDown') {
+            index = Math.min(el.children.length - 1, index + 1)
+        } else if (ev.ctrlKey && ev.key === 'Home') {
+            index = 0
+        } else if (ev.ctrlKey && ev.key === 'End') {
+            index = el.children.length - 1
+        } else {
+            return
+        }
+
+        const child = el.children[index]
+        if (child instanceof HTMLElement) {
+            child.focus()
+        }
+    }
+
+    const mo = new MutationObserver(mutationCallback)
+    mo.observe(el, { childList: true })
+    el.addEventListener('keydown', onKeyDown)
+
+    return {
+        set loading(val) {
+            loading = Boolean(val)
+            el.setAttribute('aria-busy', String(loading))
+        },
+
+        get loading() {
+            return loading
+        },
+
+        teardown() {
+            mo.disconnect()
+            el.removeEventListener('keydown', onKeyDown)
+        },
+    }
+}
+
+/**
+ * @param {HTMLElement} el
  * @param {Object} opts
  * @param {any[]} opts.items
  * @param {function(any):Element} opts.renderItem
@@ -8,23 +74,12 @@
  * @param {function(any):any=} opts.getID
  * @param {function(Error):any=} opts.onError
  */
-export function makeInfiniteList(feed, opts) {
-    let index = 0
-    let loading = false
+export function makeInfiniteList(el, opts) {
+    const feed = makeFeed(el)
 
     const target = document.createElement('div')
     target.style.visibility = 'hidden'
     target.setAttribute('aria-hidden', 'true')
-
-    const mo = new MutationObserver(mutations => {
-        for (const mutation of mutations) {
-            for (const node of mutation.addedNodes) {
-                if (node instanceof Element) {
-                    node.setAttribute('tabindex', '-1')
-                }
-            }
-        }
-    })
 
     const io = new IntersectionObserver(entries => {
         for (const entry of entries) {
@@ -35,7 +90,7 @@ export function makeInfiniteList(feed, opts) {
     }, { rootMargin: '25%' })
 
     const addPagination = () => {
-        feed.insertAdjacentElement('afterend', target)
+        el.insertAdjacentElement('afterend', target)
         setTimeout(() => {
             io.observe(target)
         })
@@ -48,12 +103,11 @@ export function makeInfiniteList(feed, opts) {
     }
 
     const loadMore = async () => {
-        if (loading) {
+        if (feed.loading) {
             return
         }
 
-        loading = true
-        feed.setAttribute('aria-busy', 'true')
+        feed.loading = true
 
         try {
             const lastItem = opts.items[opts.items.length - 1]
@@ -64,7 +118,7 @@ export function makeInfiniteList(feed, opts) {
             )
             opts.items.push(...newItems)
             for (const item of newItems) {
-                feed.appendChild(opts.renderItem(item))
+                el.appendChild(opts.renderItem(item))
             }
             if (newItems.length < opts.pageSize) {
                 removePagination()
@@ -76,52 +130,20 @@ export function makeInfiniteList(feed, opts) {
                 console.error(err)
             }
         } finally {
-            loading = false
-            feed.setAttribute('aria-busy', 'false')
+            feed.loading = false
         }
     }
-
-    /**
-     * @param {KeyboardEvent} ev
-     */
-    const onFeedKeyDown = ev => {
-        switch (ev.key) {
-            case 'ArrowLeft':
-            case 'ArrowUp':
-                index = Math.max(0, index - 1)
-                const prev = feed.children[index]
-                if (prev instanceof HTMLElement) {
-                    prev.focus()
-                }
-                break
-            case 'ArrowRight':
-            case 'ArrowDown':
-                index = Math.min(feed.children.length - 1, index + 1)
-                const next = feed.children[index]
-                if (next instanceof HTMLElement) {
-                    next.focus()
-                }
-                break
-        }
-    }
-
-    feed.setAttribute('role', 'feed')
-    feed.setAttribute('aria-busy', 'false')
 
     for (const item of opts.items) {
-        const child = opts.renderItem(item)
-        child.setAttribute('tabindex', '-1')
-        feed.appendChild(child)
+        el.appendChild(opts.renderItem(item))
     }
 
-    feed.addEventListener('keydown', onFeedKeyDown)
-    mo.observe(feed, { childList: true })
     if (opts.items.length === opts.pageSize) {
         addPagination()
     }
 
     return () => {
-        mo.disconnect()
+        feed.teardown()
         removePagination()
     }
 }
