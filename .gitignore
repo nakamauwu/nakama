@@ -1,5 +1,4 @@
 .env
 cockroach-data
 *.exe
-*.http
 web/static/img/avatars
