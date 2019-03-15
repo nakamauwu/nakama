@@ -58,7 +58,7 @@ func (h *handler) users(w http.ResponseWriter, r *http.Request) {
 
 func (h *handler) usernames(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
-	startingWith := q.Get("startingWith")
+	startingWith := q.Get("starting_with")
 	first, _ := strconv.Atoi(q.Get("first"))
 	after := q.Get("after")
 	uu, err := h.Usernames(r.Context(), startingWith, first, after)
