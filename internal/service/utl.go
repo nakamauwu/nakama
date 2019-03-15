@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 	"text/template"
 
 	"github.com/lib/pq"
@@ -16,7 +17,7 @@ const (
 	maxPageSize     = 99
 )
 
-var queriesCache = map[string]*template.Template{}
+var queriesCache sync.Map
 var rxMentions = regexp.MustCompile(`\B@([a-zA-Z][a-zA-Z0-9_-]{0,17})`)
 
 func isUniqueViolation(err error) bool {
@@ -30,7 +31,8 @@ func isForeignKeyViolation(err error) bool {
 }
 
 func buildQuery(text string, data map[string]interface{}) (string, []interface{}, error) {
-	t, ok := queriesCache[text]
+	var t *template.Template
+	v, ok := queriesCache.Load(text)
 	if !ok {
 		var err error
 		t, err = template.New("query").Parse(text)
@@ -38,7 +40,9 @@ func buildQuery(text string, data map[string]interface{}) (string, []interface{}
 			return "", nil, fmt.Errorf("could not parse sql query template: %v", err)
 		}
 
-		queriesCache[text] = t
+		queriesCache.Store(text, t)
+	} else {
+		t = v.(*template.Template)
 	}
 
 	var wr bytes.Buffer
