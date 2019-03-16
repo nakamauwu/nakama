@@ -59,6 +59,7 @@ function makeFeed(el) {
 
         teardown() {
             mo.disconnect()
+            el.removeAttribute('aria-busy')
             el.removeEventListener('keydown', onKeyDown)
         },
     }
@@ -66,6 +67,7 @@ function makeFeed(el) {
 
 /**
  * @param {HTMLElement} el
+ * @param {HTMLButtonElement} loadMoreButton
  * @param {Object} opts
  * @param {any[]} opts.items
  * @param {function(any):Element} opts.renderItem
@@ -74,40 +76,16 @@ function makeFeed(el) {
  * @param {function(any):any=} opts.getID
  * @param {function(Error):any=} opts.onError
  */
-export function makeInfiniteList(el, opts) {
+export function makeInfiniteList(el, loadMoreButton, opts) {
     const feed = makeFeed(el)
 
-    const target = document.createElement('div')
-    target.style.visibility = 'hidden'
-    target.setAttribute('aria-hidden', 'true')
-
-    const io = new IntersectionObserver(entries => {
-        for (const entry of entries) {
-            if (entry.target === target && entry.isIntersecting) {
-                loadMore()
-            }
-        }
-    }, { rootMargin: '25%' })
-
-    const addPagination = () => {
-        el.insertAdjacentElement('afterend', target)
-        setTimeout(() => {
-            io.observe(target)
-        })
-    }
-
-    const removePagination = () => {
-        io.unobserve(target)
-        io.disconnect()
-        target.remove()
-    }
-
-    const loadMore = async () => {
+    const onLoadMoreClick = async () => {
         if (feed.loading) {
             return
         }
 
         feed.loading = true
+        loadMoreButton.disabled = true
 
         try {
             const lastItem = opts.items[opts.items.length - 1]
@@ -121,7 +99,8 @@ export function makeInfiniteList(el, opts) {
                 el.appendChild(opts.renderItem(item))
             }
             if (newItems.length < opts.pageSize) {
-                removePagination()
+                loadMoreButton.removeEventListener('click', onLoadMoreClick)
+                loadMoreButton.remove()
             }
         } catch (err) {
             if (typeof opts.onError === 'function') {
@@ -131,6 +110,7 @@ export function makeInfiniteList(el, opts) {
             }
         } finally {
             feed.loading = false
+            loadMoreButton.disabled = false
         }
     }
 
@@ -139,11 +119,14 @@ export function makeInfiniteList(el, opts) {
     }
 
     if (opts.items.length === opts.pageSize) {
-        addPagination()
+        loadMoreButton.addEventListener('click', onLoadMoreClick)
+        loadMoreButton.hidden = false
+    } else {
+        loadMoreButton.remove()
     }
 
     return () => {
         feed.teardown()
-        removePagination()
+        loadMoreButton.removeEventListener('click', onLoadMoreClick)
     }
 }

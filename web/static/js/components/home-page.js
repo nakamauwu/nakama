@@ -19,6 +19,7 @@ template.innerHTML = `
             aria-atomic="true"
             hidden></button>
         <div id="timeline-div"></div>
+        <button id="load-more-button" class="load-more-posts-button" hidden>Load more</button>
     </div>
 `
 
@@ -32,6 +33,7 @@ export default async function renderHomePage() {
     const postFormButton = postForm.querySelector('button')
     const flushQueueButton = /** @type {HTMLButtonElement} */ (page.getElementById('flush-queue-button'))
     const timelineDiv = /** @type {HTMLDivElement} */ (page.getElementById('timeline-div'))
+    const loadMoreButton = /** @type {HTMLButtonElement} */ (page.getElementById('load-more-button'))
 
     /**
      * @param {Event} ev
@@ -84,7 +86,7 @@ export default async function renderHomePage() {
 
     const onFlushQueueButtonClick = flushQueue
 
-    const timelineTeardown = makeInfiniteList(timelineDiv, {
+    const teardownTimelineFeed = makeInfiniteList(timelineDiv, loadMoreButton, {
         items: timeline,
         getMoreItems: http.fetchTimeline,
         renderItem: renderTimelineItem,
@@ -105,7 +107,7 @@ export default async function renderHomePage() {
 
     const onPageDisconnect = () => {
         unsubscribeFromTimeline()
-        timelineTeardown()
+        teardownTimelineFeed()
     }
 
     postForm.addEventListener('submit', onPostFormSubmit)
