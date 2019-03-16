@@ -6,6 +6,19 @@
  */
 
 /**
+ * @typedef UserProfile
+ * @property {bigint=} id
+ * @property {string=} email
+ * @property {string} username
+ * @property {string=} avatarURL
+ * @property {number} followersCount
+ * @property {number} followeesCount
+ * @property {boolean} me
+ * @property {boolean} following
+ * @property {boolean} followeed
+ */
+
+/**
  * @typedef DevLoginOutput
  * @property {string} token
  * @property {string|Date} expiresAt
@@ -38,6 +51,12 @@
  * @property {string} content
  * @property {boolean=} NSFW
  * @property {string=} spoilerOf
+ */
+
+/**
+ * @typedef ToggleFollowOutput
+ * @property {number} followersCount
+ * @property {boolean} following
  */
 
 export default undefined

@@ -387,3 +387,48 @@ a.brick:active {
     display: flex;
     margin: 1rem auto 0 auto;
 }
+
+.user-wrapper {
+    padding: 2rem 0;
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 2rem;
+}
+
+.user-profile {
+    display: flex;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+}
+
+.user-profile .avatar {
+    --size: 7rem;
+    font-size: 2.25rem;
+    margin-right: 1rem;
+}
+
+.user-profile h1 {
+    display: inline;
+    margin-right: .5rem;
+}
+
+.user-profile .badge {
+    vertical-align: super;
+}
+
+.user-profile .follow-button {
+    margin-left: auto;
+}
+
+.user-stats {
+    margin-top: 1rem;
+}
+
+.user-stats > * + * {
+    margin-left: .5rem;
+}
+
+.center-vertically {
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+}

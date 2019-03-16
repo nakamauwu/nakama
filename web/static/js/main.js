@@ -6,6 +6,7 @@ let currentPage
 const disconnectEvent = new CustomEvent('disconnect')
 const r = createRouter()
 r.route('/', guard(view('home'), view('access')))
+r.route(/^\/users\/(?<username>[a-zA-Z][a-zA-Z0-9_-]{0,17})$/, view('user'))
 r.route(/\//, view('not-found'))
 r.subscribe(renderInto(document.querySelector('main')))
 r.install()
