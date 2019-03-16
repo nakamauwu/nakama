@@ -12,7 +12,7 @@ header.innerHTML = `
             </a>
             ${authenticated ? `
                 <a class="brick" href="/users/${authUser.username}" title="Profile">
-                    ${renderAvatarHTML(authUser, 'small')}
+                    ${renderAvatarHTML(authUser)}
                 </a>
                 <button id="logout-button">Logout</button>
             ` : ''}
