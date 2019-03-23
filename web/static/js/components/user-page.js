@@ -1,7 +1,7 @@
 import { isAuthenticated } from '../auth.js';
 import { doGet, doPost } from '../http.js';
 import renderAvatarHTML from './avatar.js';
-import { makeInfiniteList } from './behaviors/feed.js';
+import renderList from './list.js';
 import renderPost from './post.js';
 
 const PAGE_SIZE = 3
@@ -15,8 +15,7 @@ template.innerHTML = `
     </div>
     <div class="container">
         <h2>Posts</h2>
-        <div id="posts-div"></div>
-        <button id="load-more-button" class="load-more-posts-button">Load more</button>
+        <div id="posts-wrapper" class="posts-wrapper"></div>
     </div>
 `
 
@@ -29,11 +28,6 @@ export default async function renderUserPage(params) {
         post.user = user
     }
 
-    const page = /** @type {DocumentFragment} */ (template.content.cloneNode(true))
-    const userDiv = page.getElementById('user-div')
-    const postsDiv = page.getElementById('posts-div')
-    const loadMoreButton = /** @type {HTMLButtonElement} */ (page.getElementById('load-more-button'))
-
     const loadMore = async before => {
         const posts = await http.fetchPosts(user.username, before)
         for (const post of posts) {
@@ -42,13 +36,21 @@ export default async function renderUserPage(params) {
         return posts
     }
 
-    userDiv.appendChild(renderUserProfile(user))
-    makeInfiniteList(postsDiv, loadMoreButton, {
+    const { feed, teardown: teardownFeed } = renderList({
         items: posts,
-        getMoreItems: loadMore,
+        fetchMoreItems: loadMore,
         pageSize: PAGE_SIZE,
         renderItem: renderPost,
     })
+
+    const page = /** @type {DocumentFragment} */ (template.content.cloneNode(true))
+    const userDiv = page.getElementById('user-div')
+    const postsWrapper = page.getElementById('posts-wrapper')
+
+    userDiv.appendChild(renderUserProfile(user))
+    postsWrapper.appendChild(feed)
+
+    page.addEventListener('disconnect', teardownFeed)
 
     return page
 }

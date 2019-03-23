@@ -1,9 +1,9 @@
 import { getAuthUser } from '../auth.js';
 import { doGet, doPost, subscribe } from '../http.js';
-import { makeInfiniteList } from './behaviors/feed.js';
+import renderList from './list.js';
 import renderPost from './post.js';
 
-const PAGE_SIZE = 10
+const PAGE_SIZE = 3
 
 const template = document.createElement('template')
 template.innerHTML = `
@@ -13,27 +13,29 @@ template.innerHTML = `
             <textarea placeholder="Write something..." maxlength="480" required></textarea>
             <button class="post-form-button" hidden>Publish</button>
         </form>
-        <button id="flush-queue-button"
-            class="flush-posts-queue"
-            aria-live="assertive"
-            aria-atomic="true"
-            hidden></button>
-        <div id="timeline-div"></div>
-        <button id="load-more-button" class="load-more-posts-button" hidden>Load more</button>
+        <div id="timeline-wrapper" class="posts-wrapper"></div>
     </div>
 `
 
 export default async function renderHomePage() {
-    const timelineQueue = /** @type {import('../types.js').TimelineItem[]} */ ([])
     const timeline = await http.fetchTimeline()
+    const {
+        feed,
+        add: addItemToQueue,
+        flush: flushQueue,
+        teardown: teardownFeed,
+    } = renderList({
+        items: timeline,
+        fetchMoreItems: http.fetchTimeline,
+        pageSize: PAGE_SIZE,
+        renderItem: renderTimelineItem,
+    })
 
     const page = /** @type {DocumentFragment} */ (template.content.cloneNode(true))
     const postForm = /** @type {HTMLFormElement} */ (page.getElementById('post-form'))
     const postFormTextArea = postForm.querySelector('textarea')
     const postFormButton = postForm.querySelector('button')
-    const flushQueueButton = /** @type {HTMLButtonElement} */ (page.getElementById('flush-queue-button'))
-    const timelineDiv = /** @type {HTMLDivElement} */ (page.getElementById('timeline-div'))
-    const loadMoreButton = /** @type {HTMLButtonElement} */ (page.getElementById('load-more-button'))
+    const timelineWrapper = /** @type {HTMLDivElement} */ (page.getElementById('timeline-wrapper'))
 
     /**
      * @param {Event} ev
@@ -48,10 +50,8 @@ export default async function renderHomePage() {
         try {
             const timelineItem = await http.publishPost({ content })
 
+            addItemToQueue(timelineItem)
             flushQueue()
-
-            timeline.unshift(timelineItem)
-            timelineDiv.insertAdjacentElement('afterbegin', renderTimelineItem(timelineItem))
 
             postForm.reset()
             postFormButton.hidden = true
@@ -71,48 +71,19 @@ export default async function renderHomePage() {
         postFormButton.hidden = postFormTextArea.value === ''
     }
 
-    const flushQueue = () => {
-        let timelineItem = timelineQueue.pop()
-
-        while (timelineItem !== undefined) {
-            timeline.unshift(timelineItem)
-            timelineDiv.insertAdjacentElement('afterbegin', renderTimelineItem(timelineItem))
-
-            timelineItem = timelineQueue.pop()
-        }
-
-        flushQueueButton.hidden = true
-    }
-
-    const onFlushQueueButtonClick = flushQueue
-
-    const teardownTimelineFeed = makeInfiniteList(timelineDiv, loadMoreButton, {
-        items: timeline,
-        getMoreItems: http.fetchTimeline,
-        renderItem: renderTimelineItem,
-        pageSize: PAGE_SIZE,
-    })
-
-    /**
-     * @param {import('../types.js').TimelineItem} timelineItem
-     */
-    const onTimelineItemArrive = timelineItem => {
-        timelineQueue.unshift(timelineItem)
-
-        flushQueueButton.textContent = timelineQueue.length + ' new posts'
-        flushQueueButton.hidden = false
-    }
+    const onTimelineItemArrive = addItemToQueue
 
     const unsubscribeFromTimeline = http.subscribeToTimeline(onTimelineItemArrive)
 
     const onPageDisconnect = () => {
         unsubscribeFromTimeline()
-        teardownTimelineFeed()
+        teardownFeed()
     }
+
+    timelineWrapper.appendChild(feed)
 
     postForm.addEventListener('submit', onPostFormSubmit)
     postFormTextArea.addEventListener('input', onPostFormTextAreaInput)
-    flushQueueButton.addEventListener('click', onFlushQueueButtonClick)
     page.addEventListener('disconnect', onPageDisconnect)
 
     return page

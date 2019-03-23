@@ -2,6 +2,7 @@
     --hue: 270;
     --bgcolor-root: black;
     --bgcolor-header: rgba(0, 0, 0, .95);
+    --bgcolor-secondary: hsl(var(--hue), 9%, 6%);
     --bgcolor-controls: hsl(var(--hue), 8%, 8%);
     --bgcolor-controls-hover: hsl(var(--hue), 7%, 9%);
     --bgcolor-controls-active: hsl(var(--hue), 13%, 14%);
@@ -120,6 +121,7 @@ label input[type=checkbox] {
 
 time {
     color: var(--color-muted);
+    font-size: .875rem;
 }
 
 header {
@@ -292,19 +294,38 @@ a.brick:active {
     margin-top: .5rem;
 }
 
-.flush-posts-queue {
+.queue-button {
     position: fixed;
-    top: 1rem;
     left: 50%;
     transform: translateX(-50%);
     box-shadow: var(--shadow);
-    animation: slide-flush-posts-button 300ms ease-in-out;
 }
 
-@keyframes slide-flush-posts-button {
+.posts-wrapper .queue-button {
+    top: 1rem;
+    animation: slide-middle-top 300ms ease-in-out;
+}
+
+.comments-wrapper .queue-button {
+    bottom: 3rem;
+    animation: slide-middle-bottom 300ms ease-in-out;
+}
+
+@keyframes slide-middle-top {
     from {
         opacity: 0;
         transform: translate(-50%, -100%);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+}
+
+@keyframes slide-middle-bottom {
+    from {
+        opacity: 0;
+        transform: translate(-50%, 100%);
     }
     to {
         opacity: 1;
@@ -321,57 +342,64 @@ a.brick:active {
     content: 'Empty.';
 }
 
-.post + .post {
+.post + .post,
+.comment + .comment {
     border-top: 1px solid var(--color-border);
 }
 
-.post {
+.post,
+.comment {
     padding: 1rem;
 }
 
-.post:focus {
+.post:focus,
+.comment:focus {
     outline: 3px dashed var(--color-accent);
 }
 
-.post-header {
+.post-header,
+.comment-header {
     display: flex;
     justify-content: space-between;
 }
 
-.post-user {
+.post-user,
+.comment-user {
     display: inline-flex;
     align-items: center;
 }
 
-.post-user .avatar {
+.post-user .avatar,
+.comment-user .avatar {
     margin-right: .5rem;
 }
 
-.post-header a {
+.post-header a,
+.comment-header a {
     color: inherit;
     text-decoration: none;
 }
 
-.post-header time {
-    font-size: .875rem;
-}
-
-.post-content {
+.post-content,
+.comment-content {
     margin: 1rem 0;
     word-wrap: break-word;
 }
 
-.post-controls {
+.post-controls,
+.comment-controls {
     color: var(--color-muted);
     display: flex;
     align-items: center;
 }
 
-.post-controls button {
+.post-controls button,
+.comment-controls button {
     background-color: transparent;
 }
 
-.post-controls > * + * {
+.post-controls > * + *,
+.comment-controls > * + * {
     margin-left: .5rem;
 }
 
@@ -383,15 +411,30 @@ a.brick:active {
     fill: var(--color-red);
 }
 
-.load-more-posts-button {
+.posts-wrapper .load-more-button {
     display: flex;
     margin: 1rem auto 0 auto;
 }
 
+.comments-wrapper .load-more-button {
+    display: flex;
+    margin: 0 auto 1rem auto;
+}
+
+.comment-form {
+    margin-top: 1rem;
+}
+
+.comment-form button {
+    margin-top: .5rem;
+}
+
+.post-wrapper,
 .user-wrapper {
     padding: 2rem 0;
-    border-bottom: 1px solid var(--color-border);
+    /* border-bottom: 1px solid var(--color-border); */
     margin-bottom: 2rem;
+    background-color: var(--bgcolor-secondary);
 }
 
 .user-profile {

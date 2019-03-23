@@ -1,0 +1,184 @@
+function renderFeed() {
+    let index = 0
+
+    const feed = document.createElement('div')
+    feed.setAttribute('role', 'feed')
+    feed.setAttribute('aria-busy', 'false')
+
+    /**
+     * @param {MutationRecord[]} mutations
+     */
+    const mutationCallback = mutations => {
+        for (const mutation of mutations) {
+            for (const node of mutation.addedNodes) {
+                if (node instanceof Element) {
+                    node.setAttribute('tabindex', '-1')
+                }
+            }
+        }
+    }
+
+    /**
+     * @param {KeyboardEvent} ev
+     */
+    const onKeyDown = ev => {
+        if (ev.key === 'ArrowUp') {
+            index = Math.max(0, index - 1)
+        } else if (ev.key === 'ArrowDown') {
+            index = Math.min(feed.children.length - 1, index + 1)
+        } else if (ev.ctrlKey && ev.key === 'Home') {
+            index = 0
+        } else if (ev.ctrlKey && ev.key === 'End') {
+            index = feed.children.length - 1
+        } else {
+            return
+        }
+
+        const child = feed.children[index]
+        if (child instanceof HTMLElement) {
+            child.focus()
+        }
+    }
+
+    const setLoading = val => {
+        feed.setAttribute('aria-busy', String(Boolean(val)))
+    }
+
+    const teardown = () => {
+        mo.disconnect()
+        feed.removeAttribute('aria-busy')
+        feed.removeEventListener('keydown', onKeyDown)
+    }
+
+    const mo = new MutationObserver(mutationCallback)
+    mo.observe(feed, { childList: true })
+    feed.addEventListener('keydown', onKeyDown)
+
+    return { feed, setLoading, teardown }
+}
+
+/**
+ * @param {Object} opts
+ * @param {any[]} opts.items
+ * @param {function(any): HTMLElement} opts.renderItem
+ * @param {function(any):Promise<any[]>} opts.fetchMoreItems
+ * @param {number} opts.pageSize
+ * @param {function(number):string=} opts.newItemsMessageFunc
+ * @param {boolean=} opts.reverse
+ * @param {function(any):any=} opts.getID
+ * @param {function(Error):any=} opts.onError
+ */
+export default function renderList(opts) {
+    const queue = []
+    const { feed, setLoading: setFeedLoading, teardown: teardownFeed } = renderFeed()
+    let loadMoreButton = /** @type {HTMLButtonElement=} */ (null)
+    let queueButton = /** @type {HTMLButtonElement=} */ (null)
+
+    const add = item => {
+        if (queueButton === null) {
+            queueButton = document.createElement('button')
+            queueButton.className = 'queue-button'
+            queueButton.setAttribute('aria-live', 'assertive')
+            queueButton.setAttribute('aria-atomic', 'true')
+            queueButton.addEventListener('click', flush)
+            feed.insertAdjacentElement(opts.reverse ? 'afterend' : 'beforebegin', queueButton)
+        }
+
+        queue.unshift(item)
+
+        queueButton.textContent = typeof opts.newItemsMessageFunc === 'function'
+            ? opts.newItemsMessageFunc(queue.length)
+            : queue.length + ' new items'
+        queueButton.hidden = false
+    }
+
+    const flush = () => {
+        let item = queue.pop()
+
+        while (item !== undefined) {
+            opts.items.unshift(item)
+            if (opts.reverse) {
+                feed.appendChild(opts.renderItem(item))
+            } else {
+                feed.insertAdjacentElement('afterbegin', opts.renderItem(item))
+            }
+
+            item = queue.pop()
+        }
+
+        if (queueButton !== null) {
+            queueButton.hidden = true
+        }
+    }
+
+    const teardown = () => {
+        teardownFeed()
+        if (loadMoreButton !== null) {
+            loadMoreButton.removeEventListener('click', onLoadMoreButtonClick)
+        }
+        if (queueButton !== null) {
+            queueButton.removeEventListener('click', flush)
+        }
+    }
+
+    const onLoadMoreButtonClick = async () => {
+        const lastItem = opts.items[opts.items.length - 1]
+        const lastID = lastItem === undefined
+            ? undefined :
+            typeof opts.getID === 'function'
+                ? opts.getID(lastItem)
+                : lastItem['id']
+
+        setFeedLoading(true)
+        loadMoreButton.disabled = true
+
+        try {
+            const newItems = await opts.fetchMoreItems(lastID)
+
+            opts.items.push(...newItems)
+
+            for (const item of newItems) {
+                if (opts.reverse) {
+                    feed.insertAdjacentElement('afterbegin', opts.renderItem(item))
+                } else {
+                    feed.appendChild(opts.renderItem(item))
+                }
+            }
+
+            if (newItems.length < opts.pageSize) {
+                loadMoreButton.removeEventListener('click', onLoadMoreButtonClick)
+                loadMoreButton.remove()
+            }
+        } catch (err) {
+            if (typeof opts.onError === 'function') {
+                opts.onError(err)
+            } else {
+                console.error(err)
+            }
+        } finally {
+            setFeedLoading(false)
+            loadMoreButton.disabled = false
+        }
+    }
+
+
+    for (const item of opts.items) {
+        if (opts.reverse) {
+            feed.insertAdjacentElement('afterbegin', opts.renderItem(item))
+        } else {
+            feed.appendChild(opts.renderItem(item))
+        }
+    }
+
+    if (opts.items.length === opts.pageSize) {
+        setTimeout(() => {
+            loadMoreButton = document.createElement('button')
+            loadMoreButton.className = 'load-more-button'
+            loadMoreButton.textContent = 'Load more'
+            loadMoreButton.addEventListener('click', onLoadMoreButtonClick)
+            feed.insertAdjacentElement(opts.reverse ? 'beforebegin' : 'afterend', loadMoreButton)
+        })
+    }
+
+    return { feed, add, flush, teardown }
+}
