@@ -10,12 +10,12 @@ const template = document.createElement('template')
 template.innerHTML = `
     <div class="user-wrapper">
         <div class="container wide">
-            <div id="user-div"></div>
+            <div id="user-outlet"></div>
         </div>
     </div>
     <div class="container">
         <h2>Posts</h2>
-        <div id="posts-div" class="posts-wrapper"></div>
+        <div id="posts-outlet" class="posts-wrapper"></div>
     </div>
 `
 
@@ -44,11 +44,11 @@ export default async function renderUserPage(params) {
     })
 
     const page = /** @type {DocumentFragment} */ (template.content.cloneNode(true))
-    const userDiv = page.getElementById('user-div')
-    const postsDiv = page.getElementById('posts-div')
+    const userOutlet = page.getElementById('user-outlet')
+    const postsOutlet = page.getElementById('posts-outlet')
 
-    userDiv.appendChild(renderUserProfile(user))
-    postsDiv.appendChild(list.el)
+    userOutlet.appendChild(renderUserProfile(user))
+    postsOutlet.appendChild(list.el)
 
     page.addEventListener('disconnect', list.teardown)
 

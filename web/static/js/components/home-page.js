@@ -13,7 +13,7 @@ template.innerHTML = `
             <textarea placeholder="Write something..." maxlength="480" required></textarea>
             <button class="post-form-button" hidden>Publish</button>
         </form>
-        <div id="timeline-div" class="posts-wrapper"></div>
+        <div id="timeline-outlet" class="posts-wrapper"></div>
     </div>
 `
 
@@ -30,7 +30,7 @@ export default async function renderHomePage() {
     const postForm = /** @type {HTMLFormElement} */ (page.getElementById('post-form'))
     const postFormTextArea = postForm.querySelector('textarea')
     const postFormButton = postForm.querySelector('button')
-    const timelineDiv = /** @type {HTMLDivElement} */ (page.getElementById('timeline-div'))
+    const timelineOutlet = page.getElementById('timeline-outlet')
 
     /**
      * @param {Event} ev
@@ -75,7 +75,7 @@ export default async function renderHomePage() {
         list.teardown()
     }
 
-    timelineDiv.appendChild(list.el)
+    timelineOutlet.appendChild(list.el)
 
     postForm.addEventListener('submit', onPostFormSubmit)
     postFormTextArea.addEventListener('input', onPostFormTextAreaInput)
