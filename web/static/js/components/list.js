@@ -54,7 +54,7 @@ function renderFeed() {
     mo.observe(feed, { childList: true })
     feed.addEventListener('keydown', onKeyDown)
 
-    return { feed, setLoading, teardown }
+    return { el: feed, setLoading, teardown }
 }
 
 /**
@@ -70,18 +70,18 @@ function renderFeed() {
  */
 export default function renderList(opts) {
     const queue = []
-    const { feed, setLoading: setFeedLoading, teardown: teardownFeed } = renderFeed()
+    const feed = renderFeed()
     let loadMoreButton = /** @type {HTMLButtonElement=} */ (null)
     let queueButton = /** @type {HTMLButtonElement=} */ (null)
 
-    const add = item => {
+    const addItemToQueue = item => {
         if (queueButton === null) {
             queueButton = document.createElement('button')
             queueButton.className = 'queue-button'
             queueButton.setAttribute('aria-live', 'assertive')
             queueButton.setAttribute('aria-atomic', 'true')
-            queueButton.addEventListener('click', flush)
-            feed.insertAdjacentElement(opts.reverse ? 'afterend' : 'beforebegin', queueButton)
+            queueButton.addEventListener('click', flushQueue)
+            feed.el.insertAdjacentElement(opts.reverse ? 'afterend' : 'beforebegin', queueButton)
         }
 
         queue.unshift(item)
@@ -92,15 +92,15 @@ export default function renderList(opts) {
         queueButton.hidden = false
     }
 
-    const flush = () => {
+    const flushQueue = () => {
         let item = queue.pop()
 
         while (item !== undefined) {
             opts.items.unshift(item)
             if (opts.reverse) {
-                feed.appendChild(opts.renderItem(item))
+                feed.el.appendChild(opts.renderItem(item))
             } else {
-                feed.insertAdjacentElement('afterbegin', opts.renderItem(item))
+                feed.el.insertAdjacentElement('afterbegin', opts.renderItem(item))
             }
 
             item = queue.pop()
@@ -112,12 +112,12 @@ export default function renderList(opts) {
     }
 
     const teardown = () => {
-        teardownFeed()
+        feed.teardown()
         if (loadMoreButton !== null) {
             loadMoreButton.removeEventListener('click', onLoadMoreButtonClick)
         }
         if (queueButton !== null) {
-            queueButton.removeEventListener('click', flush)
+            queueButton.removeEventListener('click', flushQueue)
         }
     }
 
@@ -129,7 +129,7 @@ export default function renderList(opts) {
                 ? opts.getID(lastItem)
                 : lastItem['id']
 
-        setFeedLoading(true)
+        feed.setLoading(true)
         loadMoreButton.disabled = true
 
         try {
@@ -139,9 +139,9 @@ export default function renderList(opts) {
 
             for (const item of newItems) {
                 if (opts.reverse) {
-                    feed.insertAdjacentElement('afterbegin', opts.renderItem(item))
+                    feed.el.insertAdjacentElement('afterbegin', opts.renderItem(item))
                 } else {
-                    feed.appendChild(opts.renderItem(item))
+                    feed.el.appendChild(opts.renderItem(item))
                 }
             }
 
@@ -156,7 +156,7 @@ export default function renderList(opts) {
                 console.error(err)
             }
         } finally {
-            setFeedLoading(false)
+            feed.setLoading(false)
             loadMoreButton.disabled = false
         }
     }
@@ -164,9 +164,9 @@ export default function renderList(opts) {
 
     for (const item of opts.items) {
         if (opts.reverse) {
-            feed.insertAdjacentElement('afterbegin', opts.renderItem(item))
+            feed.el.insertAdjacentElement('afterbegin', opts.renderItem(item))
         } else {
-            feed.appendChild(opts.renderItem(item))
+            feed.el.appendChild(opts.renderItem(item))
         }
     }
 
@@ -176,9 +176,9 @@ export default function renderList(opts) {
             loadMoreButton.className = 'load-more-button'
             loadMoreButton.textContent = 'Load more'
             loadMoreButton.addEventListener('click', onLoadMoreButtonClick)
-            feed.insertAdjacentElement(opts.reverse ? 'beforebegin' : 'afterend', loadMoreButton)
+            feed.el.insertAdjacentElement(opts.reverse ? 'beforebegin' : 'afterend', loadMoreButton)
         })
     }
 
-    return { feed, add, flush, teardown }
+    return { el: feed.el, addItemToQueue, flushQueue, teardown }
 }

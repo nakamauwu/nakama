@@ -4,7 +4,7 @@ import renderAvatarHTML from './avatar.js';
 import renderList from './list.js';
 import renderPost from './post.js';
 
-const PAGE_SIZE = 3
+const PAGE_SIZE = 10
 
 const template = document.createElement('template')
 template.innerHTML = `
@@ -15,7 +15,7 @@ template.innerHTML = `
     </div>
     <div class="container">
         <h2>Posts</h2>
-        <div id="posts-wrapper" class="posts-wrapper"></div>
+        <div id="posts-div" class="posts-wrapper"></div>
     </div>
 `
 
@@ -36,7 +36,7 @@ export default async function renderUserPage(params) {
         return posts
     }
 
-    const { feed, teardown: teardownFeed } = renderList({
+    const list = renderList({
         items: posts,
         fetchMoreItems: loadMore,
         pageSize: PAGE_SIZE,
@@ -45,12 +45,12 @@ export default async function renderUserPage(params) {
 
     const page = /** @type {DocumentFragment} */ (template.content.cloneNode(true))
     const userDiv = page.getElementById('user-div')
-    const postsWrapper = page.getElementById('posts-wrapper')
+    const postsDiv = page.getElementById('posts-div')
 
     userDiv.appendChild(renderUserProfile(user))
-    postsWrapper.appendChild(feed)
+    postsDiv.appendChild(list.el)
 
-    page.addEventListener('disconnect', teardownFeed)
+    page.addEventListener('disconnect', list.teardown)
 
     return page
 }

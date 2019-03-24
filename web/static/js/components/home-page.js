@@ -3,7 +3,7 @@ import { doGet, doPost, subscribe } from '../http.js';
 import renderList from './list.js';
 import renderPost from './post.js';
 
-const PAGE_SIZE = 3
+const PAGE_SIZE = 10
 
 const template = document.createElement('template')
 template.innerHTML = `
@@ -13,18 +13,13 @@ template.innerHTML = `
             <textarea placeholder="Write something..." maxlength="480" required></textarea>
             <button class="post-form-button" hidden>Publish</button>
         </form>
-        <div id="timeline-wrapper" class="posts-wrapper"></div>
+        <div id="timeline-div" class="posts-wrapper"></div>
     </div>
 `
 
 export default async function renderHomePage() {
     const timeline = await http.fetchTimeline()
-    const {
-        feed,
-        add: addItemToQueue,
-        flush: flushQueue,
-        teardown: teardownFeed,
-    } = renderList({
+    const list = renderList({
         items: timeline,
         fetchMoreItems: http.fetchTimeline,
         pageSize: PAGE_SIZE,
@@ -35,7 +30,7 @@ export default async function renderHomePage() {
     const postForm = /** @type {HTMLFormElement} */ (page.getElementById('post-form'))
     const postFormTextArea = postForm.querySelector('textarea')
     const postFormButton = postForm.querySelector('button')
-    const timelineWrapper = /** @type {HTMLDivElement} */ (page.getElementById('timeline-wrapper'))
+    const timelineDiv = /** @type {HTMLDivElement} */ (page.getElementById('timeline-div'))
 
     /**
      * @param {Event} ev
@@ -50,8 +45,8 @@ export default async function renderHomePage() {
         try {
             const timelineItem = await http.publishPost({ content })
 
-            addItemToQueue(timelineItem)
-            flushQueue()
+            list.addItemToQueue(timelineItem)
+            list.flushQueue()
 
             postForm.reset()
             postFormButton.hidden = true
@@ -71,16 +66,16 @@ export default async function renderHomePage() {
         postFormButton.hidden = postFormTextArea.value === ''
     }
 
-    const onTimelineItemArrive = addItemToQueue
+    const onTimelineItemArrive = list.addItemToQueue
 
     const unsubscribeFromTimeline = http.subscribeToTimeline(onTimelineItemArrive)
 
     const onPageDisconnect = () => {
         unsubscribeFromTimeline()
-        teardownFeed()
+        list.teardown()
     }
 
-    timelineWrapper.appendChild(feed)
+    timelineDiv.appendChild(list.el)
 
     postForm.addEventListener('submit', onPostFormSubmit)
     postFormTextArea.addEventListener('input', onPostFormTextAreaInput)
