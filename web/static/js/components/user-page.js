@@ -21,15 +21,15 @@ template.innerHTML = `
 
 export default async function renderUserPage(params) {
     const [user, posts] = await Promise.all([
-        http.fetchUser(params.username),
-        http.fetchPosts(params.username),
+        fetchUser(params.username),
+        fetchPosts(params.username),
     ])
     for (const post of posts) {
         post.user = user
     }
 
     const loadMore = async before => {
-        const posts = await http.fetchPosts(user.username, before)
+        const posts = await fetchPosts(user.username, before)
         for (const post of posts) {
             post.user = user
         }
@@ -94,7 +94,7 @@ function renderUserProfile(user) {
             followButton.disabled = true
 
             try {
-                const out = await http.toggleFollow(user.username)
+                const out = await toggleFollow(user.username)
                 followersCountSpan.textContent = String(out.followersCount)
                 followButton.setAttribute('aria-pressed', String(out.following))
                 followButton.textContent = out.following ? 'Following' : 'Follow'
@@ -112,25 +112,27 @@ function renderUserProfile(user) {
     return div
 }
 
-const http = {
-    /**
-     * @param {string} username
-     * @returns {Promise<import('../types.js').UserProfile>}
-     */
-    fetchUser: username => doGet('/api/users/' + username),
+/**
+ * @param {string} username
+ * @returns {Promise<import('../types.js').UserProfile>}
+ */
+function fetchUser(username) {
+    return doGet('/api/users/' + username)
+}
 
-    /**
-     * @param {string} username
-     * @param {bigint=} before
-     * @returns {Promise<import('../types.js').Post[]>}
-     */
-    fetchPosts: (username, before = 0n) =>
-        doGet(`/api/users/${username}/posts?before=${before}&last=${PAGE_SIZE}`),
+/**
+ * @param {string} username
+ * @param {bigint=} before
+ * @returns {Promise<import('../types.js').Post[]>}
+ */
+function fetchPosts(username, before = 0n) {
+    return doGet(`/api/users/${username}/posts?before=${before}&last=${PAGE_SIZE}`)
+}
 
-    /**
-     * @param {string} username
-     * @returns {Promise<import('../types.js').ToggleFollowOutput>}
-     */
-    toggleFollow: username =>
-        doPost(`/api/users/${username}/toggle_follow`),
+/**
+ * @param {string} username
+ * @returns {Promise<import('../types.js').ToggleFollowOutput>}
+ */
+function toggleFollow(username) {
+    return doPost(`/api/users/${username}/toggle_follow`)
 }

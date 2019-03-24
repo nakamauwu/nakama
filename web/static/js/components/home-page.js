@@ -18,10 +18,10 @@ template.innerHTML = `
 `
 
 export default async function renderHomePage() {
-    const timeline = await http.fetchTimeline()
+    const timeline = await fetchTimeline()
     const list = renderList({
         items: timeline,
-        fetchMoreItems: http.fetchTimeline,
+        fetchMoreItems: fetchTimeline,
         pageSize: PAGE_SIZE,
         renderItem: renderTimelineItem,
     })
@@ -43,7 +43,7 @@ export default async function renderHomePage() {
         postFormButton.disabled = true
 
         try {
-            const timelineItem = await http.publishPost({ content })
+            const timelineItem = await publishPost({ content })
 
             list.addItemToQueue(timelineItem)
             list.flushQueue()
@@ -68,7 +68,7 @@ export default async function renderHomePage() {
 
     const onTimelineItemArrive = list.addItemToQueue
 
-    const unsubscribeFromTimeline = http.subscribeToTimeline(onTimelineItemArrive)
+    const unsubscribeFromTimeline = subscribeToTimeline(onTimelineItemArrive)
 
     const onPageDisconnect = () => {
         unsubscribeFromTimeline()
@@ -91,24 +91,27 @@ function renderTimelineItem(timelineItem) {
     return renderPost(timelineItem.post, timelineItem.id)
 }
 
-const http = {
-    /**
-     * @param {import('../types.js').CreatePostInput} input
-     * @returns {Promise<import('../types.js').TimelineItem>}
-     */
-    publishPost: input => doPost('/api/posts', input).then(timelineItem => {
-        timelineItem.post.user = getAuthUser()
-        return timelineItem
-    }),
+/**
+ * @param {import('../types.js').CreatePostInput} input
+ * @returns {Promise<import('../types.js').TimelineItem>}
+ */
+async function publishPost(input) {
+    const timelineItem = await doPost('/api/posts', input)
+    timelineItem.post.user = getAuthUser()
+    return timelineItem
+}
 
-    /**
-     * @param {bigint=} before
-     * @returns {Promise<import('../types.js').TimelineItem[]>}
-     */
-    fetchTimeline: (before = 0n) => doGet(`/api/timeline?before=${before}&last=${PAGE_SIZE}`),
+/**
+ * @param {bigint=} before
+ * @returns {Promise<import('../types.js').TimelineItem[]>}
+ */
+function fetchTimeline(before = 0n) {
+    return doGet(`/api/timeline?before=${before}&last=${PAGE_SIZE}`)
+}
 
-    /**
-     * @param {function(import('../types.js').TimelineItem): any} cb
-     */
-    subscribeToTimeline: cb => subscribe('/api/timeline', cb),
+/**
+ * @param {function(import('../types.js').TimelineItem): any} cb
+ */
+function subscribeToTimeline(cb) {
+    return subscribe('/api/timeline', cb)
 }
