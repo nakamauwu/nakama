@@ -74,13 +74,13 @@ export default function renderList(opts) {
     let loadMoreButton = /** @type {HTMLButtonElement=} */ (null)
     let queueButton = /** @type {HTMLButtonElement=} */ (null)
 
-    const addItemToQueue = item => {
+    const enqueue = item => {
         if (queueButton === null) {
             queueButton = document.createElement('button')
             queueButton.className = 'queue-button'
             queueButton.setAttribute('aria-live', 'assertive')
             queueButton.setAttribute('aria-atomic', 'true')
-            queueButton.addEventListener('click', flushQueue)
+            queueButton.addEventListener('click', flush)
             feed.el.insertAdjacentElement(opts.reverse ? 'afterend' : 'beforebegin', queueButton)
         }
 
@@ -92,7 +92,7 @@ export default function renderList(opts) {
         queueButton.hidden = false
     }
 
-    const flushQueue = () => {
+    const flush = () => {
         let item = queue.pop()
 
         while (item !== undefined) {
@@ -117,7 +117,7 @@ export default function renderList(opts) {
             loadMoreButton.removeEventListener('click', onLoadMoreButtonClick)
         }
         if (queueButton !== null) {
-            queueButton.removeEventListener('click', flushQueue)
+            queueButton.removeEventListener('click', flush)
         }
     }
 
@@ -180,5 +180,5 @@ export default function renderList(opts) {
         })
     }
 
-    return { el: feed.el, addItemToQueue, flushQueue, teardown }
+    return { el: feed.el, enqueue, flush, teardown }
 }

@@ -71,8 +71,8 @@ export default async function renderPostPage(params) {
         try {
             const comment = await createComment(post.id, content)
 
-            list.addItemToQueue(comment)
-            list.flushQueue()
+            list.enqueue(comment)
+            list.flush()
             incrementCommentsCount()
 
             commentForm.reset()
@@ -92,7 +92,7 @@ export default async function renderPostPage(params) {
      * @param {import('../types.js').Comment} comment
      */
     const onCommentArrive = comment => {
-        list.addItemToQueue(comment)
+        list.enqueue(comment)
         incrementCommentsCount()
     }
 

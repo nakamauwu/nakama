@@ -45,8 +45,8 @@ export default async function renderHomePage() {
         try {
             const timelineItem = await publishPost({ content })
 
-            list.addItemToQueue(timelineItem)
-            list.flushQueue()
+            list.enqueue(timelineItem)
+            list.flush()
 
             postForm.reset()
             postFormButton.hidden = true
@@ -66,7 +66,7 @@ export default async function renderHomePage() {
         postFormButton.hidden = postFormTextArea.value === ''
     }
 
-    const onTimelineItemArrive = list.addItemToQueue
+    const onTimelineItemArrive = list.enqueue
 
     const unsubscribeFromTimeline = subscribeToTimeline(onTimelineItemArrive)
 
