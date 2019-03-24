@@ -61,7 +61,7 @@ function renderFeed() {
  * @param {Object} opts
  * @param {any[]} opts.items
  * @param {function(any): HTMLElement} opts.renderItem
- * @param {function(any):Promise<any[]>} opts.fetchMoreItems
+ * @param {function(any):Promise<any[]>} opts.loadMoreFunc
  * @param {number} opts.pageSize
  * @param {function(number):string=} opts.newItemsMessageFunc
  * @param {boolean=} opts.reverse
@@ -133,7 +133,7 @@ export default function renderList(opts) {
         loadMoreButton.disabled = true
 
         try {
-            const newItems = await opts.fetchMoreItems(lastID)
+            const newItems = await opts.loadMoreFunc(lastID)
 
             opts.items.push(...newItems)
 

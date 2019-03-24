@@ -21,7 +21,7 @@ export default async function renderHomePage() {
     const timeline = await fetchTimeline()
     const list = renderList({
         items: timeline,
-        fetchMoreItems: fetchTimeline,
+        loadMoreFunc: fetchTimeline,
         pageSize: PAGE_SIZE,
         renderItem: renderTimelineItem,
     })

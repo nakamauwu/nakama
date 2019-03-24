@@ -38,7 +38,7 @@ export default async function renderUserPage(params) {
 
     const list = renderList({
         items: posts,
-        fetchMoreItems: loadMore,
+        loadMoreFunc: loadMore,
         pageSize: PAGE_SIZE,
         renderItem: renderPost,
     })
