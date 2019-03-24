@@ -18,11 +18,11 @@ export default function renderPost(post, timelineItemID) {
     const content = linkify(escapeHTML(post.content))
 
     const article = document.createElement('article')
-    article.className = 'post'
+    article.className = 'micro-post'
     article.setAttribute('aria-label', `${user.username}'s post`)
     article.innerHTML = `
-        <div class="post-header">
-            <a class="post-user" href="/users/${user.username}">
+        <div class="micro-post-header">
+            <a class="micro-post-user" href="/users/${user.username}">
                 ${renderAvatarHTML(user)}
                 <span>${user.username}</span>
             </a>
@@ -30,8 +30,8 @@ export default function renderPost(post, timelineItemID) {
                 <time datetime="${post.createdAt}">${timestamp}</time>
             </a>
         </div>
-        <div class="post-content">${content}</div>
-        <div class="post-controls">
+        <div class="micro-post-content">${content}</div>
+        <div class="micro-post-controls">
             ${authenticated ? `
                 <button class="like-button"
                     title="${post.liked ? 'Unlike' : 'Like'}"

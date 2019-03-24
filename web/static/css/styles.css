@@ -317,17 +317,6 @@ a.brick:active {
     }
 }
 
-@keyframes slide-middle-bottom {
-    from {
-        opacity: 0;
-        transform: translate(-50%, 100%);
-    }
-    to {
-        opacity: 1;
-        transform: translate(-50%, 0);
-    }
-}
-
 [role="feed"]:not([aria-busy=true]):empty {
     padding-top: 1rem;
     text-align: center;
@@ -337,53 +326,53 @@ a.brick:active {
     content: 'Empty.';
 }
 
-.post + .post {
+.micro-post + .micro-post {
     border-top: 1px solid var(--color-border);
 }
 
-.post {
+.micro-post {
     padding: 1rem;
 }
 
-.post:focus {
+.micro-post:focus {
     outline: 3px dashed var(--color-accent);
 }
 
-.post-header {
+.micro-post-header {
     display: flex;
     justify-content: space-between;
 }
 
-.post-user {
+.micro-post-user {
     display: inline-flex;
     align-items: center;
 }
 
-.post-user .avatar {
+.micro-post-user .avatar {
     margin-right: .5rem;
 }
 
-.post-header a {
+.micro-post-header a {
     color: inherit;
     text-decoration: none;
 }
 
-.post-content {
+.micro-post-content {
     margin: 1rem 0;
     word-wrap: break-word;
 }
 
-.post-controls {
+.micro-post-controls {
     color: var(--color-muted);
     display: flex;
     align-items: center;
 }
 
-.post-controls button {
+.micro-post-controls button {
     background-color: transparent;
 }
 
-.post-controls > * + * {
+.micro-post-controls > * + * {
     margin-left: .5rem;
 }
 
