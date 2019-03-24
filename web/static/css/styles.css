@@ -384,12 +384,16 @@ a.brick:active {
     fill: var(--color-red);
 }
 
-.posts-wrapper .load-more-button {
+.load-more-button {
     display: flex;
+}
+
+.posts-wrapper .load-more-button {
     margin: 1rem auto 0 auto;
 }
 
-.user-wrapper {
+.user-wrapper,
+.post-wrapper {
     padding: 2rem 0;
     margin-bottom: 2rem;
     background-color: var(--bgcolor-secondary);
@@ -432,4 +436,32 @@ a.brick:active {
     display: inline-flex;
     flex-direction: column;
     justify-content: center;
+}
+
+.comments-wrapper .load-more-button {
+    margin: 0 auto 1rem auto;
+}
+
+.comments-wrapper .queue-button {
+    bottom: 3rem;
+    animation: slide-middle-bottom 300ms ease-in-out;
+}
+
+@keyframes slide-middle-bottom {
+    from {
+        opacity: 0;
+        transform: translate(-50%, 100%);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+}
+
+.comment-form {
+    margin-top: 1rem;
+}
+
+.comment-form button {
+    margin-top: .5rem;
 }

@@ -47,6 +47,17 @@
  */
 
 /**
+ * @typedef Comment
+ * @property {bigint} id
+ * @property {string} content
+ * @property {number} likesCount
+ * @property {string|Date} createdAt
+ * @property {User=} user
+ * @property {boolean} mine
+ * @property {boolean} liked
+ */
+
+/**
  * @typedef CreatePostInput
  * @property {string} content
  * @property {boolean=} NSFW
@@ -57,6 +68,12 @@
  * @typedef ToggleFollowOutput
  * @property {number} followersCount
  * @property {boolean} following
+ */
+
+/**
+ * @typedef ToggleLikeOutput
+ * @property {number} likesCount
+ * @property {boolean} liked
  */
 
 export default undefined

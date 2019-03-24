@@ -1,4 +1,5 @@
 import { isAuthenticated } from '../auth.js';
+import { doPost } from '../http.js';
 import { escapeHTML, linkify } from '../utils.js';
 import renderAvatarHTML from './avatar.js';
 import heartIconSVG from './heart-icon.js';
@@ -42,8 +43,7 @@ export default function renderPost(post, timelineItemID) {
                 </button>
             ` : `
                 <span class="brick" aria-label="${post.likesCount} likes">
-                    <span>${post.likesCount}</span>
-                    ${heartIconSVG}
+                    ${post.likesCount} ${heartIconSVG}
                 </span>
             `}
             <a class="brick comments-link"
@@ -56,5 +56,40 @@ export default function renderPost(post, timelineItemID) {
         </div>
     `
 
+    const likeButton = /** @type {HTMLButtonElement=} */ (article.querySelector('.like-button'))
+    if (likeButton !== null) {
+        const likesCountEl = likeButton.querySelector('.likes-count')
+
+        const onLikeButtonClick = async () => {
+            likeButton.disabled = true
+            try {
+                const out = await togglePostLike(post.id)
+
+                post.likesCount = out.likesCount
+                post.liked = out.liked
+
+                likeButton.title = out.liked ? 'Unlike' : 'Like'
+                likeButton.setAttribute('aria-pressed', String(out.liked))
+                likeButton.setAttribute('aria-label', out.likesCount + ' likes')
+                likesCountEl.textContent = String(out.likesCount)
+            } catch (err) {
+                console.error(err)
+                alert(err.message)
+            } finally {
+                likeButton.disabled = false
+            }
+        }
+
+        likeButton.addEventListener('click', onLikeButtonClick)
+    }
+
     return article
+}
+
+/**
+ * @param {bigint} postID
+ * @returns {Promise<import('../types.js').ToggleLikeOutput>}
+ */
+function togglePostLike(postID) {
+    return doPost(`/api/posts/${postID}/toggle_like`)
 }
