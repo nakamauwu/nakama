@@ -1,4 +1,3 @@
-
 /**
  * @param {import('../types.js').User} user
  */
