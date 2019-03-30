@@ -30,9 +30,15 @@ go build
 ## Dependencies
 
 These are the Go libraries used in the source code. Thank you very much.
+
  - [github.com/disintegration/imaging](https://github.com/disintegration/imaging)
+ - [github.com/golang/protobuf/proto](https://github.com/golang/protobuf/tree/master/proto)
+ - [github.com/golang/protobuf/ptypes](https://github.com/golang/protobuf/tree/master/ptypes)
  - [github.com/hako/branca](https://github.com/hako/branca)
  - [github.com/joho/godotenv](https://github.com/joho/godotenv)
  - [github.com/lib/pq](https://github.com/lib/pq)
+ - [github.com/nats-io/go-nats](https://github.com/nats-io/go-nats)
  - [github.com/matoous/go-nanoid](https://github.com/matoous/go-nanoid)
  - [github.com/matryer/way](https://github.com/matryer/way)
+
+[Eva Icons](https://github.com/akveo/eva-icons) are being used in the front-end. Thank you as well.
