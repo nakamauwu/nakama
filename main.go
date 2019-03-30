@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -41,6 +42,10 @@ func run() error {
 		smtpPassword = mustEnv("SMTP_PASSWORD")
 	)
 
+	var useNats bool
+	flag.BoolVar(&useNats, "nats", false, "Whether use nats")
+	flag.Parse()
+
 	origin, err := url.Parse(originStr)
 	if err != nil || !origin.IsAbs() {
 		return errors.New("invalid origin url")
@@ -58,9 +63,7 @@ func run() error {
 	}
 
 	var ps pubsub.PubSub
-	if origin.Hostname() == "localhost" {
-		ps = &pubsub.Inmem{}
-	} else {
+	if useNats {
 		c, err := nats.Connect(natsURL)
 		if err != nil {
 			return fmt.Errorf("could not connect to nats: %v", err)
@@ -69,6 +72,8 @@ func run() error {
 		defer c.Close()
 
 		ps = &pubsub.Nats{Conn: c}
+	} else {
+		ps = &pubsub.Inmem{}
 	}
 
 	sender := mailing.NewSMTPSender(
