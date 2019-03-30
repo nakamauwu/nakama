@@ -8,6 +8,10 @@ import (
 	"log"
 	"strings"
 	"time"
+
+	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
+	"github.com/nicolasparada/nakama/internal/service/pb"
 )
 
 // ErrCommentNotFound denotes a not found comment.
@@ -167,22 +171,38 @@ func (s *Service) Comments(ctx context.Context, postID int64, last int, before i
 	return cc, nil
 }
 
-// CommentSubscription to receive comments in realtime.
-func (s *Service) CommentSubscription(ctx context.Context, postID int64) chan Comment {
+// SubscribeToComments to receive comments in realtime.
+func (s *Service) SubscribeToComments(ctx context.Context, postID int64) (chan Comment, error) {
 	cc := make(chan Comment)
-	c := &commentClient{comments: cc, postID: postID}
-	if uid, ok := ctx.Value(KeyAuthUserID).(int64); ok {
-		c.userID = &uid
+	uid, auth := ctx.Value(KeyAuthUserID).(int64)
+
+	topic := fmt.Sprintf("comment:%d", postID)
+	unsub, err := s.pubsub.Sub(topic, func(b []byte) {
+		var pb pb.Comment
+		if err := proto.Unmarshal(b, &pb); err != nil {
+			log.Printf("could not unmarshal comment pb: %v\n", err)
+			return
+		}
+
+		c := commentFromPB(&pb)
+		if !auth || (auth && c.UserID != uid) {
+			cc <- *c
+		}
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("could not subscribe to comments: %v", err)
 	}
-	s.commentClients.Store(c, nil)
 
 	go func() {
 		<-ctx.Done()
-		s.commentClients.Delete(c)
+		if err := unsub(); err != nil {
+			log.Printf("could not unsubscribe from comments: %v\n", err)
+		}
 		close(cc)
 	}()
 
-	return cc
+	return cc, nil
 }
 
 // ToggleCommentLike 🖤
@@ -245,11 +265,59 @@ func (s *Service) ToggleCommentLike(ctx context.Context, commentID int64) (Toggl
 }
 
 func (s *Service) broadcastComment(c Comment) {
-	s.commentClients.Range(func(key, _ interface{}) bool {
-		client := key.(*commentClient)
-		if client.postID == c.PostID && !(client.userID != nil && *client.userID == c.UserID) {
-			client.comments <- c
-		}
-		return true
-	})
+	b, err := proto.Marshal(c.PB())
+	if err != nil {
+		log.Printf("could not marshal comment pb: %v\n", err)
+		return
+	}
+
+	topic := fmt.Sprintf("comment:%d", c.PostID)
+	if err := s.pubsub.Pub(topic, b); err != nil {
+		log.Printf("could not broadcast comment: %v\n", err)
+	}
+}
+
+// PB is the protocol buffer representation.
+func (c *Comment) PB() *pb.Comment {
+	if c == nil {
+		return nil
+	}
+
+	pb := pb.Comment{
+		Id:         c.ID,
+		UserId:     c.UserID,
+		PostId:     c.PostID,
+		Content:    c.Content,
+		LikesCount: int32(c.LikesCount),
+		User:       c.User.PB(),
+		Mine:       c.Mine,
+		Liked:      c.Liked,
+	}
+	createdAt, err := ptypes.TimestampProto(c.CreatedAt)
+	if err == nil {
+		pb.CreatedAt = createdAt
+	}
+	return &pb
+}
+
+func commentFromPB(pb *pb.Comment) *Comment {
+	if pb == nil {
+		return nil
+	}
+
+	c := Comment{
+		ID:         pb.GetId(),
+		UserID:     pb.GetUserId(),
+		PostID:     pb.GetPostId(),
+		Content:    pb.GetContent(),
+		LikesCount: int(pb.GetLikesCount()),
+		User:       userFromPB(pb.GetUser()),
+		Mine:       pb.GetMine(),
+		Liked:      pb.GetLiked(),
+	}
+	createdAt, err := ptypes.Timestamp(pb.GetCreatedAt())
+	if err == nil {
+		c.CreatedAt = createdAt
+	}
+	return &c
 }

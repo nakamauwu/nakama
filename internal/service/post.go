@@ -8,6 +8,9 @@ import (
 	"log"
 	"strings"
 	"time"
+
+	"github.com/golang/protobuf/ptypes"
+	"github.com/nicolasparada/nakama/internal/service/pb"
 )
 
 var (
@@ -373,4 +376,60 @@ func (s *Service) TogglePostSubscription(ctx context.Context, postID int64) (Tog
 	out.Subscribed = !out.Subscribed
 
 	return out, nil
+}
+
+// PB is the protocol buffer representation.
+func (p *Post) PB() *pb.Post {
+	if p == nil {
+		return nil
+	}
+
+	pb := pb.Post{
+		Id:            p.ID,
+		UserId:        p.UserID,
+		Content:       p.Content,
+		Nsfw:          p.NSFW,
+		LikesCount:    int32(p.LikesCount),
+		CommentsCount: int32(p.CommentsCount),
+		User:          p.User.PB(),
+		Mine:          p.Mine,
+		Liked:         p.Liked,
+		Subscribed:    p.Subscribed,
+	}
+	if p.SpoilerOf != nil {
+		pb.SpoilerOf = *p.SpoilerOf
+	}
+	createdAt, err := ptypes.TimestampProto(p.CreatedAt)
+	if err == nil {
+		pb.CreatedAt = createdAt
+	}
+	return &pb
+}
+
+func postFromPB(pb *pb.Post) *Post {
+	if pb == nil {
+		return nil
+	}
+
+	p := Post{
+		ID:            pb.GetId(),
+		UserID:        pb.GetUserId(),
+		Content:       pb.GetContent(),
+		NSFW:          pb.GetNsfw(),
+		LikesCount:    int(pb.GetLikesCount()),
+		CommentsCount: int(pb.GetCommentsCount()),
+		User:          userFromPB(pb.GetUser()),
+		Mine:          pb.GetMine(),
+		Liked:         pb.GetLiked(),
+		Subscribed:    pb.GetSubscribed(),
+	}
+	spoilerOf := pb.GetSpoilerOf()
+	if spoilerOf != "" {
+		p.SpoilerOf = &spoilerOf
+	}
+	createdAt, err := ptypes.Timestamp(pb.GetCreatedAt())
+	if err == nil {
+		p.CreatedAt = createdAt
+	}
+	return &p
 }

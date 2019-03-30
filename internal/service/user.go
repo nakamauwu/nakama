@@ -16,6 +16,7 @@ import (
 
 	"github.com/disintegration/imaging"
 	gonanoid "github.com/matoous/go-nanoid"
+	"github.com/nicolasparada/nakama/internal/service/pb"
 )
 
 // MaxAvatarBytes to read.
@@ -631,4 +632,36 @@ func (s *Service) avatarURL(avatar sql.NullString) *string {
 	avatarURL.Path = "/img/avatars/" + avatar.String
 	str := avatarURL.String()
 	return &str
+}
+
+// PB is the protocol buffer representation.
+func (u *User) PB() *pb.User {
+	if u == nil {
+		return nil
+	}
+
+	pb := pb.User{
+		Id:       u.ID,
+		Username: u.Username,
+	}
+	if u.AvatarURL != nil {
+		pb.AvatarUrl = *u.AvatarURL
+	}
+	return &pb
+}
+
+func userFromPB(pb *pb.User) *User {
+	if pb == nil {
+		return nil
+	}
+
+	u := User{
+		ID:       pb.GetId(),
+		Username: pb.GetUsername(),
+	}
+	avatarURL := pb.GetAvatarUrl()
+	if avatarURL != "" {
+		u.AvatarURL = &avatarURL
+	}
+	return &u
 }

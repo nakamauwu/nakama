@@ -7,7 +7,10 @@ import (
 	"log"
 	"time"
 
+	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
 	"github.com/lib/pq"
+	"github.com/nicolasparada/nakama/internal/service/pb"
 )
 
 // Notification model.
@@ -73,20 +76,35 @@ func (s *Service) Notifications(ctx context.Context, last int, before int64) ([]
 	return nn, nil
 }
 
-// NotificationSubscription to receive notifications in realtime.
-func (s *Service) NotificationSubscription(ctx context.Context) (chan Notification, error) {
+// SubscribeToNotifications to receive notifications in realtime.
+func (s *Service) SubscribeToNotifications(ctx context.Context) (chan Notification, error) {
 	uid, ok := ctx.Value(KeyAuthUserID).(int64)
 	if !ok {
 		return nil, ErrUnauthenticated
 	}
 
+	topic := fmt.Sprintf("notification:%d", uid)
 	nn := make(chan Notification)
-	c := &notificationClient{notifications: nn, userID: uid}
-	s.notificationClients.Store(c, nil)
+	unsub, err := s.pubsub.Sub(topic, func(b []byte) {
+		var pb pb.Notification
+		if err := proto.Unmarshal(b, &pb); err != nil {
+			log.Printf("could not unmarshal notification pb: %v\n", err)
+			return
+		}
+
+		n := notificationFromPB(&pb)
+		nn <- *n
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("could not subscribe to notifications: %v", err)
+	}
 
 	go func() {
 		<-ctx.Done()
-		s.notificationClients.Delete(c)
+		if err := unsub(); err != nil {
+			log.Printf("could not unsubscribe from notifications: %v\n", err)
+		}
 		close(nn)
 	}()
 
@@ -356,11 +374,60 @@ func (s *Service) notifyCommentMention(c Comment) {
 }
 
 func (s *Service) broadcastNotification(n Notification) {
-	s.notificationClients.Range(func(key, _ interface{}) bool {
-		client := key.(*notificationClient)
-		if client.userID == n.UserID {
-			client.notifications <- n
-		}
-		return true
-	})
+	b, err := proto.Marshal(n.PB())
+	if err != nil {
+		log.Printf("could not marshal notification pb: %v\n", err)
+		return
+	}
+
+	topic := fmt.Sprintf("notification:%d", n.UserID)
+	if err = s.pubsub.Pub(topic, b); err != nil {
+		log.Printf("could not broadcast notification: %v\n", err)
+	}
+}
+
+// PB is the protocol buffer representation.
+func (n *Notification) PB() *pb.Notification {
+	if n == nil {
+		return nil
+	}
+
+	pb := pb.Notification{
+		Id:     n.ID,
+		UserId: n.UserID,
+		Actors: n.Actors,
+		Type:   n.Type,
+		Read:   n.Read,
+	}
+	if n.PostID != nil {
+		pb.PostId = *n.PostID
+	}
+	issuedAt, err := ptypes.TimestampProto(n.IssuedAt)
+	if err == nil {
+		pb.IssuedAt = issuedAt
+	}
+	return &pb
+}
+
+func notificationFromPB(pb *pb.Notification) *Notification {
+	if pb == nil {
+		return nil
+	}
+
+	n := Notification{
+		ID:     pb.GetId(),
+		UserID: pb.GetUserId(),
+		Actors: pb.GetActors(),
+		Type:   pb.GetType(),
+		Read:   pb.GetRead(),
+	}
+	postID := pb.GetPostId()
+	if postID > 0 {
+		n.PostID = &postID
+	}
+	issuedAt, err := ptypes.Timestamp(pb.GetIssuedAt())
+	if err == nil {
+		n.IssuedAt = issuedAt
+	}
+	return &n
 }

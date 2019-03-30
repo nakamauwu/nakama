@@ -50,7 +50,7 @@ func (h *handler) createComment(w http.ResponseWriter, r *http.Request) {
 
 func (h *handler) comments(w http.ResponseWriter, r *http.Request) {
 	if a, _, err := mime.ParseMediaType(r.Header.Get("Accept")); err == nil && a == "text/event-stream" {
-		h.commentSubscription(w, r)
+		h.subscribeToComments(w, r)
 		return
 	}
 
@@ -68,7 +68,7 @@ func (h *handler) comments(w http.ResponseWriter, r *http.Request) {
 	respond(w, cc, http.StatusOK)
 }
 
-func (h *handler) commentSubscription(w http.ResponseWriter, r *http.Request) {
+func (h *handler) subscribeToComments(w http.ResponseWriter, r *http.Request) {
 	f, ok := w.(http.Flusher)
 	if !ok {
 		respondErr(w, errStreamingUnsupported)
@@ -77,13 +77,18 @@ func (h *handler) commentSubscription(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	postID, _ := strconv.ParseInt(way.Param(ctx, "post_id"), 10, 64)
+	cc, err := h.SubscribeToComments(ctx, postID)
+	if err != nil {
+		respondErr(w, err)
+		return
+	}
 
 	header := w.Header()
 	header.Set("Cache-Control", "no-cache")
 	header.Set("Connection", "keep-alive")
 	header.Set("Content-Type", "text/event-stream; charset=utf-8")
 
-	for c := range h.CommentSubscription(ctx, postID) {
+	for c := range cc {
 		writeSSE(w, c)
 		f.Flush()
 	}
