@@ -167,10 +167,9 @@ func (s *Service) Comments(ctx context.Context, postID int64, last int, before i
 
 // SubscribeToComments to receive comments in realtime.
 func (s *Service) SubscribeToComments(ctx context.Context, postID int64) (chan Comment, error) {
-	cc := make(chan Comment)
 	uid, auth := ctx.Value(KeyAuthUserID).(int64)
-
 	topic := fmt.Sprintf("comment:%d", postID)
+	cc := make(chan Comment)
 	unsub, err := s.pubsub.Sub(topic, func(b []byte) {
 		var pb pb.Comment
 		if err := proto.Unmarshal(b, &pb); err != nil {
