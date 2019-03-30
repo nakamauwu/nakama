@@ -1,16 +1,15 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
+	"encoding/gob"
 	"fmt"
 	"log"
 	"time"
 
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes"
 	"github.com/lib/pq"
-	"github.com/nicolasparada/nakama/internal/service/pb"
 )
 
 // Notification model.
@@ -81,14 +80,13 @@ func (s *Service) SubscribeToNotifications(ctx context.Context) (chan Notificati
 	topic := fmt.Sprintf("notification:%d", uid)
 	nn := make(chan Notification)
 	unsub, err := s.pubsub.Sub(topic, func(b []byte) {
-		var pb pb.Notification
-		if err := proto.Unmarshal(b, &pb); err != nil {
-			log.Printf("could not unmarshal notification pb: %v\n", err)
+		var n Notification
+		if err := gob.NewDecoder(bytes.NewBuffer(b)).Decode(&n); err != nil {
+			log.Printf("could not decode notification gob: %v\n", err)
 			return
 		}
 
-		n := notificationFromPB(&pb)
-		nn <- *n
+		nn <- n
 	})
 
 	if err != nil {
@@ -369,60 +367,14 @@ func (s *Service) notifyCommentMention(c Comment) {
 }
 
 func (s *Service) broadcastNotification(n Notification) {
-	b, err := proto.Marshal(n.PB())
-	if err != nil {
-		log.Printf("could not marshal notification pb: %v\n", err)
+	var b bytes.Buffer
+	if err := gob.NewEncoder(&b).Encode(n); err != nil {
+		log.Printf("could not encode notification gob: %v\n", err)
 		return
 	}
 
 	topic := fmt.Sprintf("notification:%d", n.UserID)
-	if err = s.pubsub.Pub(topic, b); err != nil {
+	if err := s.pubsub.Pub(topic, b.Bytes()); err != nil {
 		log.Printf("could not broadcast notification: %v\n", err)
 	}
-}
-
-// PB is the protocol buffer representation.
-func (n *Notification) PB() *pb.Notification {
-	if n == nil {
-		return nil
-	}
-
-	pb := pb.Notification{
-		Id:     n.ID,
-		UserId: n.UserID,
-		Actors: n.Actors,
-		Type:   n.Type,
-		Read:   n.Read,
-	}
-	if n.PostID != nil {
-		pb.PostId = *n.PostID
-	}
-	issuedAt, err := ptypes.TimestampProto(n.IssuedAt)
-	if err == nil {
-		pb.IssuedAt = issuedAt
-	}
-	return &pb
-}
-
-func notificationFromPB(pb *pb.Notification) *Notification {
-	if pb == nil {
-		return nil
-	}
-
-	n := Notification{
-		ID:     pb.GetId(),
-		UserID: pb.GetUserId(),
-		Actors: pb.GetActors(),
-		Type:   pb.GetType(),
-		Read:   pb.GetRead(),
-	}
-	postID := pb.GetPostId()
-	if postID > 0 {
-		n.PostID = &postID
-	}
-	issuedAt, err := ptypes.Timestamp(pb.GetIssuedAt())
-	if err == nil {
-		n.IssuedAt = issuedAt
-	}
-	return &n
 }

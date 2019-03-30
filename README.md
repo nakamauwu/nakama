@@ -32,8 +32,6 @@ go build
 These are the Go libraries used in the source code. Thank you very much.
 
  - [github.com/disintegration/imaging](https://github.com/disintegration/imaging)
- - [github.com/golang/protobuf/proto](https://github.com/golang/protobuf/tree/master/proto)
- - [github.com/golang/protobuf/ptypes](https://github.com/golang/protobuf/tree/master/ptypes)
  - [github.com/hako/branca](https://github.com/hako/branca)
  - [github.com/joho/godotenv](https://github.com/joho/godotenv)
  - [github.com/lib/pq](https://github.com/lib/pq)

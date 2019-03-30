@@ -1,13 +1,12 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
+	"encoding/gob"
 	"fmt"
 	"log"
-
-	"github.com/golang/protobuf/proto"
-	"github.com/nicolasparada/nakama/internal/service/pb"
 )
 
 // TimelineItem model.
@@ -105,14 +104,13 @@ func (s *Service) SubscribeToTimeline(ctx context.Context) (chan TimelineItem, e
 	topic := fmt.Sprintf("timeline_item:%d", uid)
 	tt := make(chan TimelineItem)
 	unsub, err := s.pubsub.Sub(topic, func(b []byte) {
-		var pb pb.TimelineItem
-		if err := proto.Unmarshal(b, &pb); err != nil {
-			log.Printf("could not unmarshal timeline item pb: %v\n", err)
+		var ti TimelineItem
+		if err := gob.NewDecoder(bytes.NewBuffer(b)).Decode(&ti); err != nil {
+			log.Printf("could not decode timeline item gob: %v\n", err)
 			return
 		}
 
-		ti := timelineItemFromPB(&pb)
-		tt <- *ti
+		tt <- ti
 	})
 
 	if err != nil {
@@ -179,38 +177,14 @@ func (s *Service) fanoutPost(p Post) {
 }
 
 func (s *Service) broadcastTimelineItem(ti TimelineItem) {
-	b, err := proto.Marshal(ti.PB())
-	if err != nil {
-		log.Printf("could not marshal timeline item pb: %v\n", err)
+	var b bytes.Buffer
+	if err := gob.NewEncoder(&b).Encode(ti); err != nil {
+		log.Printf("could not encode timeline item gob: %v\n", err)
 		return
 	}
 
 	topic := fmt.Sprintf("timeline_item:%d", ti.UserID)
-	if err = s.pubsub.Pub(topic, b); err != nil {
+	if err := s.pubsub.Pub(topic, b.Bytes()); err != nil {
 		log.Printf("could not broadcast timeline item: %v\n", err)
-	}
-}
-
-// PB is the protocol buffer representation.
-func (ti *TimelineItem) PB() *pb.TimelineItem {
-	pb := pb.TimelineItem{
-		Id:     ti.ID,
-		UserId: ti.UserID,
-		PostId: ti.PostID,
-		Post:   ti.Post.PB(),
-	}
-	return &pb
-}
-
-func timelineItemFromPB(pb *pb.TimelineItem) *TimelineItem {
-	if pb == nil {
-		return nil
-	}
-
-	return &TimelineItem{
-		ID:     pb.GetId(),
-		UserID: pb.GetUserId(),
-		PostID: pb.GetPostId(),
-		Post:   postFromPB(pb.GetPost()),
 	}
 }

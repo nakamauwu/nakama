@@ -1,17 +1,15 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
+	"encoding/gob"
 	"errors"
 	"fmt"
 	"log"
 	"strings"
 	"time"
-
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes"
-	"github.com/nicolasparada/nakama/internal/service/pb"
 )
 
 // ErrCommentNotFound denotes a not found comment.
@@ -171,15 +169,14 @@ func (s *Service) SubscribeToComments(ctx context.Context, postID int64) (chan C
 	topic := fmt.Sprintf("comment:%d", postID)
 	cc := make(chan Comment)
 	unsub, err := s.pubsub.Sub(topic, func(b []byte) {
-		var pb pb.Comment
-		if err := proto.Unmarshal(b, &pb); err != nil {
-			log.Printf("could not unmarshal comment pb: %v\n", err)
+		var c Comment
+		if err := gob.NewDecoder(bytes.NewBuffer(b)).Decode(&c); err != nil {
+			log.Printf("could not decode comment gob: %v\n", err)
 			return
 		}
 
-		c := commentFromPB(&pb)
 		if !auth || (auth && c.UserID != uid) {
-			cc <- *c
+			cc <- c
 		}
 	})
 
@@ -258,59 +255,14 @@ func (s *Service) ToggleCommentLike(ctx context.Context, commentID int64) (Toggl
 }
 
 func (s *Service) broadcastComment(c Comment) {
-	b, err := proto.Marshal(c.PB())
-	if err != nil {
-		log.Printf("could not marshal comment pb: %v\n", err)
+	var b bytes.Buffer
+	if err := gob.NewEncoder(&b).Encode(c); err != nil {
+		log.Printf("could not encode comment gob: %v\n", err)
 		return
 	}
 
 	topic := fmt.Sprintf("comment:%d", c.PostID)
-	if err := s.pubsub.Pub(topic, b); err != nil {
+	if err := s.pubsub.Pub(topic, b.Bytes()); err != nil {
 		log.Printf("could not broadcast comment: %v\n", err)
 	}
-}
-
-// PB is the protocol buffer representation.
-func (c *Comment) PB() *pb.Comment {
-	if c == nil {
-		return nil
-	}
-
-	pb := pb.Comment{
-		Id:         c.ID,
-		UserId:     c.UserID,
-		PostId:     c.PostID,
-		Content:    c.Content,
-		LikesCount: int32(c.LikesCount),
-		User:       c.User.PB(),
-		Mine:       c.Mine,
-		Liked:      c.Liked,
-	}
-	createdAt, err := ptypes.TimestampProto(c.CreatedAt)
-	if err == nil {
-		pb.CreatedAt = createdAt
-	}
-	return &pb
-}
-
-func commentFromPB(pb *pb.Comment) *Comment {
-	if pb == nil {
-		return nil
-	}
-
-	c := Comment{
-		ID:         pb.GetId(),
-		UserID:     pb.GetUserId(),
-		PostID:     pb.GetPostId(),
-		Content:    pb.GetContent(),
-		LikesCount: int(pb.GetLikesCount()),
-		User:       userFromPB(pb.GetUser()),
-		Mine:       pb.GetMine(),
-		Liked:      pb.GetLiked(),
-	}
-	createdAt, err := ptypes.Timestamp(pb.GetCreatedAt())
-	if err == nil {
-		c.CreatedAt = createdAt
-	}
-	return &c
 }
