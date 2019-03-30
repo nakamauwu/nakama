@@ -187,7 +187,7 @@ func (s *Service) broadcastTimelineItem(ti TimelineItem) {
 
 	topic := fmt.Sprintf("timeline_item:%d", ti.UserID)
 	if err = s.pubsub.Pub(topic, b); err != nil {
-		log.Printf("could not broadcast timeline item: %v", err)
+		log.Printf("could not broadcast timeline item: %v\n", err)
 	}
 }
 
