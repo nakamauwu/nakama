@@ -54,7 +54,7 @@ func run() error {
 		return fmt.Errorf("could not ping to db: %v", err)
 	}
 
-	sender := mailing.NewSender(
+	sender := mailing.NewSMTPSender(
 		"noreply@"+origin.Hostname(),
 		smtpHost,
 		smtpPort,
