@@ -30,12 +30,6 @@ type Comment struct {
 	Liked      bool      `json:"liked"`
 }
 
-type commentClient struct {
-	comments chan Comment
-	postID   int64
-	userID   *int64
-}
-
 // CreateComment on a post.
 func (s *Service) CreateComment(ctx context.Context, postID int64, content string) (Comment, error) {
 	var c Comment

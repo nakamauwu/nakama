@@ -18,11 +18,6 @@ type TimelineItem struct {
 	Post   *Post `json:"post,omitempty"`
 }
 
-type timelineItemClient struct {
-	timeline chan TimelineItem
-	userID   int64
-}
-
 // Timeline of the authenticated user in descending order and with backward pagination.
 func (s *Service) Timeline(ctx context.Context, last int, before int64) ([]TimelineItem, error) {
 	uid, ok := ctx.Value(KeyAuthUserID).(int64)

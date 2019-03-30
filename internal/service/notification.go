@@ -24,11 +24,6 @@ type Notification struct {
 	IssuedAt time.Time `json:"issuedAt"`
 }
 
-type notificationClient struct {
-	notifications chan Notification
-	userID        int64
-}
-
 // Notifications from the authenticated user in descending order with backward pagination.
 func (s *Service) Notifications(ctx context.Context, last int, before int64) ([]Notification, error) {
 	uid, ok := ctx.Value(KeyAuthUserID).(int64)
