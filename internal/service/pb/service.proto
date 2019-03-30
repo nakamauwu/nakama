@@ -1,0 +1,54 @@
+syntax = "proto3";
+package pb;
+
+import "google/protobuf/timestamp.proto";
+
+message User {
+    int64 id = 1;
+    string username = 2;
+    string avatar_url = 3;
+}
+
+message Post {
+    int64 id = 1;
+    int64 user_id = 2;
+    string content = 3;
+    string spoiler_of = 4;
+    bool nsfw = 5;
+    int32 likes_count = 6;
+    int32 comments_count = 7;
+    google.protobuf.Timestamp created_at = 8;
+    User user = 9;
+    bool mine = 10;
+    bool liked = 11;
+    bool subscribed = 12;
+}
+
+message TimelineItem {
+    int64 id = 1;
+    int64 user_id = 2;
+    int64 post_id = 3;
+    Post post = 4;
+}
+
+message Comment {
+    int64 id = 1;
+    int64 user_id = 2;
+    int64 post_id = 3;
+    string content = 4;
+    int32 likes_count = 5;
+    google.protobuf.Timestamp created_at = 6;
+    User user = 7;
+    bool mine = 8;
+    bool liked = 9;
+}
+
+message Notification {
+    int64 id = 1;
+    int64 user_id = 2;
+    repeated string actors = 3;
+    string type = 4;
+    int64 post_id = 5;
+    bool read = 6;
+    google.protobuf.Timestamp issued_at = 7;
+}
