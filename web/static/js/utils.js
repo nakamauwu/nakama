@@ -29,3 +29,28 @@ export function linkify(s) {
         .replace(mentionsRegExp, '<a href="/users/$1">@$1</a>')
         .replace(urlsRegExp, '<a href="$1" target="_blank" rel="noopener">$1</a>')
 }
+
+/**
+ * @param {string|Date} date
+ */
+export function ago(date) {
+    if (!(date instanceof Date)) {
+        date = new Date(date)
+    }
+    const now = new Date()
+    let diff = (now.getTime() - date.getTime()) / 1000
+    if (diff <= 60) {
+        return 'Just now'
+    } else if ((diff /= 60) < 60) {
+        return (diff | 0) + 'm'
+    } else if ((diff /= 60) < 24) {
+        return (diff | 0) + 'h'
+    } else if ((diff /= 24) < 7) {
+        return (diff | 0) + 'd'
+    }
+    let text = String(date).split(' ')[1] + ' ' + date.getDate()
+    if (now.getFullYear() !== date.getFullYear()) {
+        text += ', ' + date.getFullYear()
+    }
+    return text
+}

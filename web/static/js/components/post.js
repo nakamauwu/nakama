@@ -1,6 +1,6 @@
 import { isAuthenticated } from '../auth.js';
 import { doPost } from '../http.js';
-import { escapeHTML, linkify } from '../utils.js';
+import { ago, escapeHTML, linkify } from '../utils.js';
 import renderAvatarHTML from './avatar.js';
 import heartIconSVG from './heart-icon.js';
 
@@ -15,7 +15,6 @@ const messageIconSVG = `<svg class="icon" xmlns="http://www.w3.org/2000/svg" vie
 export default function renderPost(post, timelineItemID) {
     const authenticated = isAuthenticated()
     const { user } = post
-    const timestamp = new Date(post.createdAt).toLocaleString()
     const content = linkify(escapeHTML(post.content))
 
     const article = document.createElement('article')
@@ -28,7 +27,7 @@ export default function renderPost(post, timelineItemID) {
                 <span>${user.username}</span>
             </a>
             <a href="/posts/${post.id}">
-                <time datetime="${post.createdAt}">${timestamp}</time>
+                <time datetime="${post.createdAt}">${ago(post.createdAt)}</time>
             </a>
         </div>
         <div class="micro-post-content">${content}</div>

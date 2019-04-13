@@ -1,6 +1,6 @@
 import { getAuthUser, isAuthenticated } from '../auth.js';
 import { doGet, doPost, subscribe } from '../http.js';
-import { escapeHTML, linkify } from '../utils.js';
+import { ago, escapeHTML, linkify } from '../utils.js';
 import renderAvatarHTML from './avatar.js';
 import heartIconSVG from './heart-icon.js';
 import renderList from './list.js';
@@ -122,7 +122,6 @@ export default async function renderPostPage(params) {
 function renderComment(comment) {
     const authenticated = isAuthenticated()
     const { user } = comment
-    const timestamp = new Date(comment.createdAt).toLocaleString()
     const content = linkify(escapeHTML(comment.content))
 
     const article = document.createElement('article')
@@ -134,7 +133,7 @@ function renderComment(comment) {
                 ${renderAvatarHTML(user)}
                 <span>${user.username}</span>
             </a>
-            <time datetime="${comment.createdAt}">${timestamp}</time>
+            <time datetime="${comment.createdAt}">${ago(comment.createdAt)}</time>
         </div>
         <div class="micro-post-content">${content}</div>
         <div class="micro-post-controls">
