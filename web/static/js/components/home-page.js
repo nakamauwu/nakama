@@ -4,6 +4,7 @@ import renderList from './list.js';
 import renderPost from './post.js';
 
 const PAGE_SIZE = 10
+let timeline = /** @type {import('../types.js').TimelineItem[]} */ (null)
 
 const template = document.createElement('template')
 template.innerHTML = `
@@ -18,7 +19,9 @@ template.innerHTML = `
 `
 
 export default async function renderHomePage() {
-    const timeline = await fetchTimeline()
+    if (timeline === null || timeline.length === 0) {
+        timeline = await fetchTimeline()
+    }
     const list = renderList({
         items: timeline,
         loadMoreFunc: fetchTimeline,

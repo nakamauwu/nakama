@@ -3,6 +3,7 @@ import renderErrorPage from './components/error-page.js';
 import { createRouter } from './lib/router.js';
 
 let currentPage
+const viewsCache = new Map()
 const disconnectEvent = new CustomEvent('disconnect')
 const r = createRouter()
 r.route('/', guard(view('home'), view('access')))
@@ -13,8 +14,17 @@ r.subscribe(renderInto(document.querySelector('main')))
 r.install()
 
 function view(name) {
-    return (...args) => import(`/js/components/${name}-page.js`)
-        .then(m => m.default(...args))
+    return (...args) => {
+        if (viewsCache.has(name)) {
+            const renderPage = viewsCache.get(name)
+            return renderPage(...args)
+        }
+        return import(`/js/components/${name}-page.js`).then(m => {
+            const renderPage = m.default
+            viewsCache.set(name, renderPage)
+            return renderPage(...args)
+        })
+    }
 }
 
 /**
