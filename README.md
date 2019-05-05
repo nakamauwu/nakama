@@ -1,3 +1,5 @@
+![banner](assets/banner.svg)
+
 # Nakama
 
 Source code of the next social network for anime fans. Still on development.
