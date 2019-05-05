@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"strconv"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -30,23 +31,29 @@ func main() {
 
 func run() error {
 	var (
-		port         = env("PORT", "3000")
-		originStr    = env("ORIGIN", "http://localhost:"+port)
+		port, _      = strconv.Atoi(env("PORT", "3000"))
+		originStr    = env("ORIGIN", fmt.Sprintf("http://localhost:%d", port))
 		dbURL        = env("DATABASE_URL", "postgresql://root@127.0.0.1:26257/nakama?sslmode=disable")
 		tokenKey     = env("TOKEN_KEY", "supersecretkeyyoushouldnotcommit")
 		smtpHost     = env("SMTP_HOST", "smtp.mailtrap.io")
-		smtpPort     = env("SMTP_PORT", "25")
+		smtpPort, _  = strconv.Atoi(env("SMTP_PORT", "25"))
 		smtpUsername = mustEnv("SMTP_USERNAME")
 		smtpPassword = mustEnv("SMTP_PASSWORD")
 	)
-
-	var useNats bool
-	flag.BoolVar(&useNats, "nats", false, "Whether use nats")
+	flag.Usage = func() {
+		flag.PrintDefaults()
+		fmt.Println("\nDon't forget to set TOKEN_KEY, SMTP_USERNAME and SMTP_PASSWORD.")
+	}
+	flag.IntVar(&port, "port", port, "Port in which this server will run")
+	flag.StringVar(&originStr, "origin", originStr, "URL origin for this service")
+	flag.StringVar(&dbURL, "db", dbURL, "Database URL")
+	flag.StringVar(&smtpHost, "smtp.host", smtpHost, "SMTP server host")
+	flag.IntVar(&smtpPort, "smtp.port", smtpPort, "SMTP server port")
 	flag.Parse()
 
 	origin, err := url.Parse(originStr)
 	if err != nil || !origin.IsAbs() {
-		return errors.New("invalid origin url")
+		return errors.New("invalid url origin")
 	}
 
 	db, err := sql.Open("postgres", dbURL)
@@ -64,7 +71,7 @@ func run() error {
 	sender := mailing.NewSMTPSender(
 		"noreply@"+origin.Hostname(),
 		smtpHost,
-		smtpPort,
+		strconv.Itoa(smtpPort),
 		smtpUsername,
 		smtpPassword,
 	)
@@ -76,7 +83,7 @@ func run() error {
 		tokenKey,
 	)
 	server := http.Server{
-		Addr:              ":" + port,
+		Addr:              fmt.Sprintf(":%d", port),
 		Handler:           handler.New(service, origin.Hostname() == "localhost"),
 		ReadHeaderTimeout: time.Second * 5,
 		ReadTimeout:       time.Second * 15,
@@ -101,7 +108,7 @@ func run() error {
 	}()
 
 	go func() {
-		log.Printf("accepting connections on port %s\n", port)
+		log.Printf("accepting connections on port %d\n", port)
 		log.Printf("starting server at %s\n", origin)
 		if err = server.ListenAndServe(); err != http.ErrServerClosed {
 			errs <- fmt.Errorf("could not listen and serve: %v", err)
