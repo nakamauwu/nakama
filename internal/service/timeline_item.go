@@ -95,34 +95,30 @@ func (s *Service) Timeline(ctx context.Context, last int, before int64) ([]Timel
 }
 
 // SubscribeToTimeline to receive timeline items in realtime.
-func (s *Service) SubscribeToTimeline(ctx context.Context) (chan TimelineItem, error) {
+func (s *Service) SubscribeToTimeline(ctx context.Context) (<-chan TimelineItem, error) {
 	uid, ok := ctx.Value(KeyAuthUserID).(int64)
 	if !ok {
 		return nil, ErrUnauthenticated
 	}
 
-	topic := fmt.Sprintf("timeline_item:%d", uid)
+	name := fmt.Sprintf("timeline_item:%d", uid)
 	tt := make(chan TimelineItem)
-	unsub, err := s.pubsub.Sub(topic, func(b []byte) {
-		var ti TimelineItem
-		if err := gob.NewDecoder(bytes.NewBuffer(b)).Decode(&ti); err != nil {
-			log.Printf("could not decode timeline item gob: %v\n", err)
-			return
-		}
-
-		tt <- ti
-	})
-
-	if err != nil {
-		return nil, fmt.Errorf("could not subscribe to timeline: %v", err)
-	}
 
 	go func() {
-		<-ctx.Done()
-		if err := unsub(); err != nil {
-			log.Printf("could not unsubscribe from timeline: %v\n", err)
+		defer close(tt)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case b := <-s.transport.Receive(name):
+				var ti TimelineItem
+				if err := gob.NewDecoder(bytes.NewBuffer(b)).Decode(&ti); err != nil {
+					log.Printf("could not decode timeline item gob: %v\n", err)
+				} else {
+					tt <- ti
+				}
+			}
 		}
-		close(tt)
 	}()
 
 	return tt, nil
@@ -183,8 +179,6 @@ func (s *Service) broadcastTimelineItem(ti TimelineItem) {
 		return
 	}
 
-	topic := fmt.Sprintf("timeline_item:%d", ti.UserID)
-	if err := s.pubsub.Pub(topic, b.Bytes()); err != nil {
-		log.Printf("could not broadcast timeline item: %v\n", err)
-	}
+	name := fmt.Sprintf("timeline_item:%d", ti.UserID)
+	s.transport.Send(name) <- b.Bytes()
 }

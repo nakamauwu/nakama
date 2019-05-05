@@ -164,35 +164,29 @@ func (s *Service) Comments(ctx context.Context, postID int64, last int, before i
 }
 
 // SubscribeToComments to receive comments in realtime.
-func (s *Service) SubscribeToComments(ctx context.Context, postID int64) (chan Comment, error) {
+func (s *Service) SubscribeToComments(ctx context.Context, postID int64) <-chan Comment {
 	uid, auth := ctx.Value(KeyAuthUserID).(int64)
-	topic := fmt.Sprintf("comment:%d", postID)
+	name := fmt.Sprintf("comment:%d", postID)
 	cc := make(chan Comment)
-	unsub, err := s.pubsub.Sub(topic, func(b []byte) {
-		var c Comment
-		if err := gob.NewDecoder(bytes.NewBuffer(b)).Decode(&c); err != nil {
-			log.Printf("could not decode comment gob: %v\n", err)
-			return
-		}
-
-		if !auth || (auth && c.UserID != uid) {
-			cc <- c
-		}
-	})
-
-	if err != nil {
-		return nil, fmt.Errorf("could not subscribe to comments: %v", err)
-	}
 
 	go func() {
-		<-ctx.Done()
-		if err := unsub(); err != nil {
-			log.Printf("could not unsubscribe from comments: %v\n", err)
+		defer close(cc)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case b := <-s.transport.Receive(name):
+				var c Comment
+				if err := gob.NewDecoder(bytes.NewBuffer(b)).Decode(&c); err != nil {
+					log.Printf("could not decode comment gob: %v\n", err)
+				} else if !auth || (auth && c.UserID != uid) {
+					cc <- c
+				}
+			}
 		}
-		close(cc)
 	}()
 
-	return cc, nil
+	return cc
 }
 
 // ToggleCommentLike 🖤
@@ -261,8 +255,6 @@ func (s *Service) broadcastComment(c Comment) {
 		return
 	}
 
-	topic := fmt.Sprintf("comment:%d", c.PostID)
-	if err := s.pubsub.Pub(topic, b.Bytes()); err != nil {
-		log.Printf("could not broadcast comment: %v\n", err)
-	}
+	name := fmt.Sprintf("comment:%d", c.PostID)
+	s.transport.Send(name) <- b.Bytes()
 }

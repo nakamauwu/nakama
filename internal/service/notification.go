@@ -71,34 +71,30 @@ func (s *Service) Notifications(ctx context.Context, last int, before int64) ([]
 }
 
 // SubscribeToNotifications to receive notifications in realtime.
-func (s *Service) SubscribeToNotifications(ctx context.Context) (chan Notification, error) {
+func (s *Service) SubscribeToNotifications(ctx context.Context) (<-chan Notification, error) {
 	uid, ok := ctx.Value(KeyAuthUserID).(int64)
 	if !ok {
 		return nil, ErrUnauthenticated
 	}
 
-	topic := fmt.Sprintf("notification:%d", uid)
+	name := fmt.Sprintf("notification:%d", uid)
 	nn := make(chan Notification)
-	unsub, err := s.pubsub.Sub(topic, func(b []byte) {
-		var n Notification
-		if err := gob.NewDecoder(bytes.NewBuffer(b)).Decode(&n); err != nil {
-			log.Printf("could not decode notification gob: %v\n", err)
-			return
-		}
-
-		nn <- n
-	})
-
-	if err != nil {
-		return nil, fmt.Errorf("could not subscribe to notifications: %v", err)
-	}
 
 	go func() {
-		<-ctx.Done()
-		if err := unsub(); err != nil {
-			log.Printf("could not unsubscribe from notifications: %v\n", err)
+		defer close(nn)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case b := <-s.transport.Receive(name):
+				var n Notification
+				if err := gob.NewDecoder(bytes.NewBuffer(b)).Decode(&n); err != nil {
+					log.Printf("could not decode notification gob: %v\n", err)
+				} else {
+					nn <- n
+				}
+			}
 		}
-		close(nn)
 	}()
 
 	return nn, nil
@@ -373,8 +369,6 @@ func (s *Service) broadcastNotification(n Notification) {
 		return
 	}
 
-	topic := fmt.Sprintf("notification:%d", n.UserID)
-	if err := s.pubsub.Pub(topic, b.Bytes()); err != nil {
-		log.Printf("could not broadcast notification: %v\n", err)
-	}
+	name := fmt.Sprintf("notification:%d", n.UserID)
+	s.transport.Send(name) <- b.Bytes()
 }

@@ -15,10 +15,9 @@ import (
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
-	"github.com/nats-io/go-nats"
+	"github.com/matryer/vice/queues/nats"
 	"github.com/nicolasparada/nakama/internal/handler"
 	"github.com/nicolasparada/nakama/internal/mailing"
-	"github.com/nicolasparada/nakama/internal/pubsub"
 	"github.com/nicolasparada/nakama/internal/service"
 )
 
@@ -34,7 +33,6 @@ func run() error {
 		port         = env("PORT", "3000")
 		originStr    = env("ORIGIN", "http://localhost:"+port)
 		dbURL        = env("DATABASE_URL", "postgresql://root@127.0.0.1:26257/nakama?sslmode=disable")
-		natsURL      = env("NATS_URL", nats.DefaultURL)
 		tokenKey     = env("TOKEN_KEY", "supersecretkeyyoushouldnotcommit")
 		smtpHost     = env("SMTP_HOST", "smtp.mailtrap.io")
 		smtpPort     = env("SMTP_PORT", "25")
@@ -62,20 +60,7 @@ func run() error {
 		return fmt.Errorf("could not ping to db: %v", err)
 	}
 
-	var ps pubsub.PubSub
-	if useNats {
-		c, err := nats.Connect(natsURL)
-		if err != nil {
-			return fmt.Errorf("could not connect to nats: %v", err)
-		}
-
-		defer c.Close()
-
-		ps = &pubsub.Nats{Conn: c}
-	} else {
-		ps = &pubsub.Inmem{}
-	}
-
+	transport := nats.New()
 	sender := mailing.NewSMTPSender(
 		"noreply@"+origin.Hostname(),
 		smtpHost,
@@ -85,7 +70,7 @@ func run() error {
 	)
 	service := service.New(
 		db,
-		ps,
+		transport,
 		sender,
 		*origin,
 		tokenKey,

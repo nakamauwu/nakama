@@ -77,18 +77,13 @@ func (h *handler) subscribeToComments(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	postID, _ := strconv.ParseInt(way.Param(ctx, "post_id"), 10, 64)
-	cc, err := h.SubscribeToComments(ctx, postID)
-	if err != nil {
-		respondErr(w, err)
-		return
-	}
 
 	header := w.Header()
 	header.Set("Cache-Control", "no-cache")
 	header.Set("Connection", "keep-alive")
 	header.Set("Content-Type", "text/event-stream; charset=utf-8")
 
-	for c := range cc {
+	for c := range h.SubscribeToComments(ctx, postID) {
 		writeSSE(w, c)
 		f.Flush()
 	}
