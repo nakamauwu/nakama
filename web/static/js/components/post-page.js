@@ -125,7 +125,7 @@ function renderComment(comment) {
     const content = linkify(escapeHTML(comment.content))
 
     const article = document.createElement('article')
-    article.className = 'micro-post'
+    article.className = 'card micro-post'
     article.setAttribute('aria-label', `${user.username}'s comment`)
     article.innerHTML = `
         <div class="micro-post-header">

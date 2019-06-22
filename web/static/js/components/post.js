@@ -16,9 +16,12 @@ export default function renderPost(post, timelineItemID) {
     const authenticated = isAuthenticated()
     const { user } = post
     const content = linkify(escapeHTML(post.content))
+        .split('\n')
+        .map(l => l.trim() === '' ? `<br>` : `<p>${l}</p>`)
+        .join('\n')
 
     const article = document.createElement('article')
-    article.className = 'micro-post'
+    article.className = 'card micro-post'
     article.setAttribute('aria-label', `${user.username}'s post`)
     article.innerHTML = `
         <div class="micro-post-header">
