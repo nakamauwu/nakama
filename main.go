@@ -36,12 +36,12 @@ func run() error {
 		tokenKey     = env("TOKEN_KEY", "supersecretkeyyoushouldnotcommit")
 		smtpHost     = env("SMTP_HOST", "smtp.mailtrap.io")
 		smtpPort, _  = strconv.Atoi(env("SMTP_PORT", "25"))
-		smtpUsername = mustEnv("SMTP_USERNAME")
-		smtpPassword = mustEnv("SMTP_PASSWORD")
+		smtpUsername = os.Getenv("SMTP_USERNAME")
+		smtpPassword = os.Getenv("SMTP_PASSWORD")
 	)
 	flag.Usage = func() {
 		flag.PrintDefaults()
-		fmt.Println("\nDon't forget to set TOKEN_KEY, SMTP_USERNAME and SMTP_PASSWORD.")
+		fmt.Println("\nDon't forget to set TOKEN_KEY, SMTP_USERNAME and SMTP_PASSWORD for real usage.")
 	}
 	flag.IntVar(&port, "port", port, "Port in which this server will run")
 	flag.StringVar(&originStr, "origin", originStr, "URL origin for this service")
@@ -66,13 +66,23 @@ func run() error {
 		return fmt.Errorf("could not ping to db: %v", err)
 	}
 
-	sender := mailing.NewSMTPSender(
-		"noreply@"+origin.Hostname(),
-		smtpHost,
-		strconv.Itoa(smtpPort),
-		smtpUsername,
-		smtpPassword,
-	)
+	var sender mailing.Sender
+	if smtpUsername != "" && smtpPassword != "" {
+		log.Println("using smtp mailing implementation")
+		sender = mailing.NewSMTPSender(
+			"noreply@"+origin.Hostname(),
+			smtpHost,
+			strconv.Itoa(smtpPort),
+			smtpUsername,
+			smtpPassword,
+		)
+	} else {
+		log.Println("using log mailing implementation")
+		sender = mailing.NewLogSender(
+			"noreply@"+origin.Hostname(),
+			log.New(os.Stderr, "mailing", log.LstdFlags),
+		)
+	}
 	service := service.New(
 		db,
 		sender,
@@ -122,14 +132,6 @@ func env(key, fallbackValue string) string {
 	s, ok := os.LookupEnv(key)
 	if !ok {
 		return fallbackValue
-	}
-	return s
-}
-
-func mustEnv(key string) string {
-	s, ok := os.LookupEnv(key)
-	if !ok {
-		panic(fmt.Sprintf("%s missing on environment variables", key))
 	}
 	return s
 }
