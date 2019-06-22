@@ -1,10 +1,8 @@
 package service
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
-	"encoding/gob"
 	"fmt"
 	"log"
 	"time"
@@ -21,6 +19,11 @@ type Notification struct {
 	PostID   *int64    `json:"postID,omitempty"`
 	Read     bool      `json:"read"`
 	IssuedAt time.Time `json:"issuedAt"`
+}
+
+type notificationClient struct {
+	notifications chan Notification
+	userID        int64
 }
 
 // Notifications from the authenticated user in descending order with backward pagination.
@@ -70,31 +73,21 @@ func (s *Service) Notifications(ctx context.Context, last int, before int64) ([]
 	return nn, nil
 }
 
-// SubscribeToNotifications to receive notifications in realtime.
-func (s *Service) SubscribeToNotifications(ctx context.Context) (<-chan Notification, error) {
+// NotificationStream to receive notifications in realtime.
+func (s *Service) NotificationStream(ctx context.Context) (<-chan Notification, error) {
 	uid, ok := ctx.Value(KeyAuthUserID).(int64)
 	if !ok {
 		return nil, ErrUnauthenticated
 	}
 
-	name := fmt.Sprintf("notification:%d", uid)
 	nn := make(chan Notification)
+	client := &notificationClient{notifications: nn, userID: uid}
+	s.notificationClients.Store(client, nil)
 
 	go func() {
-		defer close(nn)
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case b := <-s.transport.Receive(name):
-				var n Notification
-				if err := gob.NewDecoder(bytes.NewBuffer(b)).Decode(&n); err != nil {
-					log.Printf("could not decode notification gob: %v\n", err)
-				} else {
-					nn <- n
-				}
-			}
-		}
+		<-ctx.Done()
+		s.notificationClients.Delete(client)
+		close(nn)
 	}()
 
 	return nn, nil
@@ -363,12 +356,17 @@ func (s *Service) notifyCommentMention(c Comment) {
 }
 
 func (s *Service) broadcastNotification(n Notification) {
-	var b bytes.Buffer
-	if err := gob.NewEncoder(&b).Encode(n); err != nil {
-		log.Printf("could not encode notification gob: %v\n", err)
-		return
-	}
+	s.notificationClients.Range(func(key, _ interface{}) bool {
+		client, ok := key.(*notificationClient)
+		if !ok {
+			log.Println("broadcast notification: no client type")
+			return false
+		}
 
-	name := fmt.Sprintf("notification:%d", n.UserID)
-	s.transport.Send(name) <- b.Bytes()
+		if client.userID == n.UserID {
+			client.notifications <- n
+		}
+
+		return true
+	})
 }

@@ -18,7 +18,7 @@ const (
 )
 
 var queriesCache sync.Map
-var rxMentions = regexp.MustCompile(`\B@([a-zA-Z][a-zA-Z0-9_-]{0,17})`)
+var reMentions = regexp.MustCompile(`\B@([a-zA-Z][a-zA-Z0-9_-]{0,17})`)
 
 func isUniqueViolation(err error) bool {
 	pqerr, ok := err.(*pq.Error)
@@ -79,7 +79,7 @@ func normalizePageSize(i int) int {
 func collectMentions(s string) []string {
 	m := map[string]struct{}{}
 	u := []string{}
-	for _, submatch := range rxMentions.FindAllStringSubmatch(s, -1) {
+	for _, submatch := range reMentions.FindAllStringSubmatch(s, -1) {
 		val := submatch[1]
 		if _, ok := m[val]; !ok {
 			m[val] = struct{}{}

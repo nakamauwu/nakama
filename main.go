@@ -16,7 +16,6 @@ import (
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
-	"github.com/matryer/vice/queues/nats"
 	"github.com/nicolasparada/nakama/internal/handler"
 	"github.com/nicolasparada/nakama/internal/mailing"
 	"github.com/nicolasparada/nakama/internal/service"
@@ -67,7 +66,6 @@ func run() error {
 		return fmt.Errorf("could not ping to db: %v", err)
 	}
 
-	transport := nats.New()
 	sender := mailing.NewSMTPSender(
 		"noreply@"+origin.Hostname(),
 		smtpHost,
@@ -77,14 +75,13 @@ func run() error {
 	)
 	service := service.New(
 		db,
-		transport,
 		sender,
 		*origin,
 		tokenKey,
 	)
 	server := http.Server{
 		Addr:              fmt.Sprintf(":%d", port),
-		Handler:           handler.New(service, origin.Hostname() == "localhost"),
+		Handler:           handler.New(service, *origin),
 		ReadHeaderTimeout: time.Second * 5,
 		ReadTimeout:       time.Second * 15,
 	}

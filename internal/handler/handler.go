@@ -3,6 +3,7 @@ package handler
 import (
 	"mime"
 	"net/http"
+	"net/url"
 
 	"github.com/matryer/way"
 	"github.com/nicolasparada/nakama/internal/service"
@@ -13,7 +14,7 @@ type handler struct {
 }
 
 // New makes use of the service to provide an http.Handler with predefined routing.
-func New(s *service.Service, inLocalhost bool) http.Handler {
+func New(s *service.Service, origin url.URL) http.Handler {
 	h := &handler{s}
 
 	api := way.NewRouter()
@@ -48,7 +49,7 @@ func New(s *service.Service, inLocalhost bool) http.Handler {
 	mime.AddExtensionType(".js", "application/javascript; charset=utf-8")
 
 	fs := http.FileServer(&spaFileSystem{http.Dir("web/static")})
-	if inLocalhost {
+	if origin.Hostname() == "localhost" {
 		fs = withoutCache(fs)
 	}
 

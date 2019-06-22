@@ -1,10 +1,8 @@
 package service
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
-	"encoding/gob"
 	"errors"
 	"fmt"
 	"log"
@@ -26,6 +24,12 @@ type Comment struct {
 	User       *User     `json:"user,omitempty"`
 	Mine       bool      `json:"mine"`
 	Liked      bool      `json:"liked"`
+}
+
+type commentClient struct {
+	comments chan Comment
+	postID   int64
+	userID   *int64
 }
 
 // CreateComment on a post.
@@ -163,27 +167,19 @@ func (s *Service) Comments(ctx context.Context, postID int64, last int, before i
 	return cc, nil
 }
 
-// SubscribeToComments to receive comments in realtime.
-func (s *Service) SubscribeToComments(ctx context.Context, postID int64) <-chan Comment {
-	uid, auth := ctx.Value(KeyAuthUserID).(int64)
-	name := fmt.Sprintf("comment:%d", postID)
+// CommentStream to receive comments in realtime.
+func (s *Service) CommentStream(ctx context.Context, postID int64) <-chan Comment {
 	cc := make(chan Comment)
+	client := &commentClient{comments: cc, postID: postID}
+	if uid, auth := ctx.Value(KeyAuthUserID).(int64); auth {
+		client.userID = &uid
+	}
+	s.commentClients.Store(client, nil)
 
 	go func() {
-		defer close(cc)
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case b := <-s.transport.Receive(name):
-				var c Comment
-				if err := gob.NewDecoder(bytes.NewBuffer(b)).Decode(&c); err != nil {
-					log.Printf("could not decode comment gob: %v\n", err)
-				} else if !auth || (auth && c.UserID != uid) {
-					cc <- c
-				}
-			}
-		}
+		<-ctx.Done()
+		s.commentClients.Delete(client)
+		close(cc)
 	}()
 
 	return cc
@@ -249,12 +245,17 @@ func (s *Service) ToggleCommentLike(ctx context.Context, commentID int64) (Toggl
 }
 
 func (s *Service) broadcastComment(c Comment) {
-	var b bytes.Buffer
-	if err := gob.NewEncoder(&b).Encode(c); err != nil {
-		log.Printf("could not encode comment gob: %v\n", err)
-		return
-	}
+	s.commentClients.Range(func(key, _ interface{}) bool {
+		client, ok := key.(*commentClient)
+		if !ok {
+			log.Println("broadcast comment: no client type")
+			return false
+		}
 
-	name := fmt.Sprintf("comment:%d", c.PostID)
-	s.transport.Send(name) <- b.Bytes()
+		if client.postID == c.PostID && !(client.userID != nil && *client.userID == c.UserID) {
+			client.comments <- c
+		}
+
+		return true
+	})
 }

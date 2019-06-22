@@ -1,10 +1,8 @@
 package service
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
-	"encoding/gob"
 	"fmt"
 	"log"
 )
@@ -15,6 +13,11 @@ type TimelineItem struct {
 	UserID int64 `json:"-"`
 	PostID int64 `json:"-"`
 	Post   *Post `json:"post,omitempty"`
+}
+
+type timelineItemClient struct {
+	timeline chan TimelineItem
+	userID   int64
 }
 
 // Timeline of the authenticated user in descending order and with backward pagination.
@@ -94,31 +97,21 @@ func (s *Service) Timeline(ctx context.Context, last int, before int64) ([]Timel
 	return tt, nil
 }
 
-// SubscribeToTimeline to receive timeline items in realtime.
-func (s *Service) SubscribeToTimeline(ctx context.Context) (<-chan TimelineItem, error) {
+// TimelineItemStream to receive timeline items in realtime.
+func (s *Service) TimelineItemStream(ctx context.Context) (<-chan TimelineItem, error) {
 	uid, ok := ctx.Value(KeyAuthUserID).(int64)
 	if !ok {
 		return nil, ErrUnauthenticated
 	}
 
-	name := fmt.Sprintf("timeline_item:%d", uid)
 	tt := make(chan TimelineItem)
+	client := &timelineItemClient{timeline: tt, userID: uid}
+	s.timelineItemClients.Store(client, nil)
 
 	go func() {
-		defer close(tt)
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case b := <-s.transport.Receive(name):
-				var ti TimelineItem
-				if err := gob.NewDecoder(bytes.NewBuffer(b)).Decode(&ti); err != nil {
-					log.Printf("could not decode timeline item gob: %v\n", err)
-				} else {
-					tt <- ti
-				}
-			}
-		}
+		<-ctx.Done()
+		s.timelineItemClients.Delete(client)
+		close(tt)
 	}()
 
 	return tt, nil
@@ -173,12 +166,17 @@ func (s *Service) fanoutPost(p Post) {
 }
 
 func (s *Service) broadcastTimelineItem(ti TimelineItem) {
-	var b bytes.Buffer
-	if err := gob.NewEncoder(&b).Encode(ti); err != nil {
-		log.Printf("could not encode timeline item gob: %v\n", err)
-		return
-	}
+	s.timelineItemClients.Range(func(key, _ interface{}) bool {
+		client, ok := key.(*timelineItemClient)
+		if !ok {
+			log.Println("broadcast timeline item: no client type")
+			return false
+		}
 
-	name := fmt.Sprintf("timeline_item:%d", ti.UserID)
-	s.transport.Send(name) <- b.Bytes()
+		if client.userID == ti.UserID {
+			client.timeline <- ti
+		}
+
+		return true
+	})
 }

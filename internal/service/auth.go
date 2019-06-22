@@ -36,7 +36,7 @@ var (
 	ErrVerificationCodeNotFound = errors.New("verification code not found")
 )
 
-var rxUUID = regexp.MustCompile("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+var reUUID = regexp.MustCompile("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 
 var magicLinkMailTmpl *template.Template
 
@@ -58,7 +58,7 @@ type DevLoginOutput struct {
 // SendMagicLink to login without passwords.
 func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) error {
 	email = strings.TrimSpace(email)
-	if !rxEmail.MatchString(email) {
+	if !reEmail.MatchString(email) {
 		return ErrInvalidEmail
 	}
 
@@ -115,7 +115,7 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 // It contains the token in the hash fragment.
 func (s *Service) AuthURI(ctx context.Context, verificationCode, redirectURI string) (string, error) {
 	verificationCode = strings.TrimSpace(verificationCode)
-	if !rxUUID.MatchString(verificationCode) {
+	if !reUUID.MatchString(verificationCode) {
 		return "", ErrInvalidVerificationCode
 	}
 
@@ -163,7 +163,7 @@ func (s *Service) DevLogin(ctx context.Context, email string) (DevLoginOutput, e
 	}
 
 	email = strings.TrimSpace(email)
-	if !rxEmail.MatchString(email) {
+	if !reEmail.MatchString(email) {
 		return out, ErrInvalidEmail
 	}
 

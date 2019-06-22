@@ -11,7 +11,7 @@ import (
 
 func (h *handler) timeline(w http.ResponseWriter, r *http.Request) {
 	if a, _, err := mime.ParseMediaType(r.Header.Get("Accept")); err == nil && a == "text/event-stream" {
-		h.subscribeToTimeline(w, r)
+		h.timelineItemStream(w, r)
 		return
 	}
 
@@ -33,14 +33,14 @@ func (h *handler) timeline(w http.ResponseWriter, r *http.Request) {
 	respond(w, tt, http.StatusOK)
 }
 
-func (h *handler) subscribeToTimeline(w http.ResponseWriter, r *http.Request) {
+func (h *handler) timelineItemStream(w http.ResponseWriter, r *http.Request) {
 	f, ok := w.(http.Flusher)
 	if !ok {
 		respondErr(w, errStreamingUnsupported)
 		return
 	}
 
-	tt, err := h.SubscribeToTimeline(r.Context())
+	tt, err := h.TimelineItemStream(r.Context())
 	if err == service.ErrUnauthenticated {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return

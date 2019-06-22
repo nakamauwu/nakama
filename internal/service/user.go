@@ -22,8 +22,8 @@ import (
 const MaxAvatarBytes = 5 << 20 // 5MB
 
 var (
-	rxEmail    = regexp.MustCompile(`^[^\s@]+@[^\s@]+\.[^\s@]+$`)
-	rxUsername = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_-]{0,17}$`)
+	reEmail    = regexp.MustCompile(`^[^\s@]+@[^\s@]+\.[^\s@]+$`)
+	reUsername = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_-]{0,17}$`)
 	avatarsDir = path.Join("web", "static", "img", "avatars")
 )
 
@@ -73,12 +73,12 @@ type ToggleFollowOutput struct {
 // CreateUser with the given email and name.
 func (s *Service) CreateUser(ctx context.Context, email, username string) error {
 	email = strings.TrimSpace(email)
-	if !rxEmail.MatchString(email) {
+	if !reEmail.MatchString(email) {
 		return ErrInvalidEmail
 	}
 
 	username = strings.TrimSpace(username)
-	if !rxUsername.MatchString(username) {
+	if !reUsername.MatchString(username) {
 		return ErrInvalidUsername
 	}
 
@@ -250,7 +250,7 @@ func (s *Service) User(ctx context.Context, username string) (UserProfile, error
 	var u UserProfile
 
 	username = strings.TrimSpace(username)
-	if !rxUsername.MatchString(username) {
+	if !reUsername.MatchString(username) {
 		return u, ErrInvalidUsername
 	}
 
@@ -378,7 +378,7 @@ func (s *Service) ToggleFollow(ctx context.Context, username string) (ToggleFoll
 	}
 
 	username = strings.TrimSpace(username)
-	if !rxUsername.MatchString(username) {
+	if !reUsername.MatchString(username) {
 		return out, ErrInvalidUsername
 	}
 
@@ -467,7 +467,7 @@ func (s *Service) ToggleFollow(ctx context.Context, username string) (ToggleFoll
 // Followers in ascending order with forward pagination.
 func (s *Service) Followers(ctx context.Context, username string, first int, after string) ([]UserProfile, error) {
 	username = strings.TrimSpace(username)
-	if !rxUsername.MatchString(username) {
+	if !reUsername.MatchString(username) {
 		return nil, ErrInvalidUsername
 	}
 
@@ -546,7 +546,7 @@ func (s *Service) Followers(ctx context.Context, username string, first int, aft
 // Followees in ascending order with forward pagination.
 func (s *Service) Followees(ctx context.Context, username string, first int, after string) ([]UserProfile, error) {
 	username = strings.TrimSpace(username)
-	if !rxUsername.MatchString(username) {
+	if !reUsername.MatchString(username) {
 		return nil, ErrInvalidUsername
 	}
 

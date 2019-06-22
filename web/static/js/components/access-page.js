@@ -1,7 +1,7 @@
 import { doPost } from '../http.js';
 import { stringifyJSON } from '../lib/json.js';
 
-const rxUsername = /^[a-zA-Z][a-zA-Z0-9_-]{0,17}$/
+const reUsername = /^[a-zA-Z][a-zA-Z0-9_-]{0,17}$/
 
 const template = document.createElement('template')
 template.innerHTML = `
@@ -77,7 +77,7 @@ async function runRegistrationProgram(email, username) {
     }
 
     username = username.trim()
-    if (!rxUsername.test(username)) {
+    if (!reUsername.test(username)) {
         alert('invalid username')
         runRegistrationProgram(email, username)
         return
