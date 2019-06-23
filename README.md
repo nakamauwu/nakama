@@ -25,6 +25,8 @@ go build
 ./nakama
 ```
 
+Front-end doesn't need any tools or building because it's standard vanilla JavaScript 🙂
+
 ## Dependencies
 
 These are the Go libraries used in the source code. Thank you very much.
