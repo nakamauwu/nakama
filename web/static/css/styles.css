@@ -198,6 +198,7 @@ textarea:focus {
     margin: 0 auto;
     max-width: 65ch;
     width: 100%;
+    padding: 0 1rem;
 }
 
 .icon {
@@ -209,6 +210,7 @@ textarea:focus {
 
 header .profile-link {
     padding: 0;
+    margin-left: auto;
 }
 
 .card {
