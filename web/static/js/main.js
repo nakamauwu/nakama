@@ -2,7 +2,6 @@ import { guard } from './auth.js';
 import renderErrorPage from './components/error-page.js';
 import { createRouter } from './lib/router.js';
 
-let currentPage
 const viewsCache = new Map()
 const disconnectEvent = new CustomEvent('disconnect')
 const r = createRouter()
@@ -31,6 +30,7 @@ function view(name) {
  * @param {Element} target
  */
 function renderInto(target) {
+    let currentPage = /** @type {Node=} */ (null)
     return async result => {
         if (currentPage instanceof Node) {
             currentPage.dispatchEvent(disconnectEvent)
