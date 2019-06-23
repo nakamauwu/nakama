@@ -29,7 +29,7 @@ export default function renderPost(post, timelineItemID) {
                 ${renderAvatarHTML(user)}
                 <span>${user.username}</span>
             </a>
-            <a href="/posts/${post.id}">
+            <a class="micro-post-ts" href="/posts/${post.id}">
                 <time datetime="${post.createdAt}">${ago(post.createdAt)}</time>
             </a>
         </div>
@@ -44,11 +44,11 @@ export default function renderPost(post, timelineItemID) {
                     ${heartIconSVG}
                 </button>
             ` : `
-                <span class="brick" aria-label="${post.likesCount} likes">
+                <span aria-label="${post.likesCount} likes">
                     ${post.likesCount} ${heartIconSVG}
                 </span>
             `}
-            <a class="brick comments-link"
+            <a class="comments-link"
                 href="/posts/${post.id}"
                 title="Comments"
                 aria-label="${post.commentsCount} comments">

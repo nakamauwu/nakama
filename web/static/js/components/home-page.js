@@ -34,6 +34,7 @@ export default async function renderHomePage() {
     const postFormTextArea = postForm.querySelector('textarea')
     const postFormButton = postForm.querySelector('button')
     const timelineOutlet = page.getElementById('timeline-outlet')
+    let initialPostFormTextAreaHeight = /** @type {string=} */ (undefined)
 
     /**
      * @param {Event} ev
@@ -67,6 +68,11 @@ export default async function renderHomePage() {
 
     const onPostFormTextAreaInput = () => {
         postFormButton.hidden = postFormTextArea.value === ''
+        if (initialPostFormTextAreaHeight === undefined) {
+            initialPostFormTextAreaHeight = postFormTextArea.style.height
+        }
+        postFormTextArea.style.height = initialPostFormTextAreaHeight
+        postFormTextArea.style.height = postFormTextArea.scrollHeight + 'px'
     }
 
     const onTimelineItemArrive = list.enqueue

@@ -19,7 +19,7 @@ template.innerHTML = `
         <div id="comments-outlet" class="comments-wrapper"></div>
         <form id="comment-form" class="comment-form" hidden>
             <textarea placeholder="Say something..." maxlength="480" required></textarea>
-            <button>Comment</button>
+            <button class="comment-form-button" hidden>Comment</button>
         </form>
     </div>
 `
@@ -47,6 +47,7 @@ export default async function renderPostPage(params) {
     const commentForm = /** @type {HTMLFormElement} */ (page.getElementById('comment-form'))
     const commentFormTextArea = commentForm.querySelector('textarea')
     const commentFormButton = commentForm.querySelector('button')
+    let initialPostFormTextAreaHeight = /** @type {string=} */ (undefined)
 
     const incrementCommentsCount = () => {
         if (commentsLink === null) {
@@ -88,6 +89,15 @@ export default async function renderPostPage(params) {
         }
     }
 
+    const onCommentFormTextAreaInput = () => {
+        commentFormButton.hidden = commentFormTextArea.value === ''
+        if (initialPostFormTextAreaHeight === undefined) {
+            initialPostFormTextAreaHeight = commentFormTextArea.style.height
+        }
+        commentFormTextArea.style.height = initialPostFormTextAreaHeight
+        commentFormTextArea.style.height = commentFormTextArea.scrollHeight + 'px'
+    }
+
     /**
      * @param {import('../types.js').Comment} comment
      */
@@ -108,6 +118,7 @@ export default async function renderPostPage(params) {
     if (isAuthenticated()) {
         commentForm.hidden = false
         commentForm.addEventListener('submit', onCommentFormSubmit)
+        commentFormTextArea.addEventListener('input', onCommentFormTextAreaInput)
     } else {
         commentForm.remove()
     }
@@ -123,6 +134,9 @@ function renderComment(comment) {
     const authenticated = isAuthenticated()
     const { user } = comment
     const content = linkify(escapeHTML(comment.content))
+        .split('\n')
+        .map(l => l.trim() === '' ? `<br>` : `<p>${l}</p>`)
+        .join('\n')
 
     const article = document.createElement('article')
     article.className = 'card micro-post'
@@ -146,7 +160,7 @@ function renderComment(comment) {
                     ${heartIconSVG}
                 </button>
             ` : `
-                <span class="brick" aria-label="${comment.likesCount} likes">
+                <span aria-label="${comment.likesCount} likes">
                     <span>${comment.likesCount}</span>
                     ${heartIconSVG}
                 </span>
