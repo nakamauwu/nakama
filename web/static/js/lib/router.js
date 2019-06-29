@@ -28,7 +28,7 @@ export function createRouter() {
         const pathname = location.pathname
         let result
         for (const route of routes) {
-            if (typeof route.pattern === 'string') {
+            if (typeof route.pattern === "string") {
                 if (route.pattern !== pathname) {
                     continue
                 }
@@ -43,7 +43,7 @@ export function createRouter() {
             }
 
             const params = match.slice(1).map(decodeURIComponent)
-            if (typeof match.groups === 'object' && match.groups !== null) {
+            if (typeof match.groups === "object" && match.groups !== null) {
                 for (const [k, v] of Object.entries(match.groups)) {
                     params[k] = decodeURIComponent(v)
                 }
@@ -60,26 +60,26 @@ export function createRouter() {
 
     const install = () => {
         if (!installed) {
-            addEventListener('popstate', onNavigation)
-            addEventListener('pushstate', onNavigation)
-            addEventListener('replacestate', onNavigation)
-            addEventListener('hashchange', onNavigation)
+            addEventListener("popstate", onNavigation)
+            addEventListener("pushstate", onNavigation)
+            addEventListener("replacestate", onNavigation)
+            addEventListener("hashchange", onNavigation)
             setTimeout(onNavigation, 0)
             installed = true
             routersCount++
         }
 
         if (!clicksHijacked) {
-            document.addEventListener('click', hijackClicks)
+            document.addEventListener("click", hijackClicks)
             clicksHijacked = true
         }
 
         return () => {
             if (installed) {
-                removeEventListener('popstate', onNavigation)
-                removeEventListener('pushstate', onNavigation)
-                removeEventListener('replacestate', onNavigation)
-                removeEventListener('hashchange', onNavigation)
+                removeEventListener("popstate", onNavigation)
+                removeEventListener("pushstate", onNavigation)
+                removeEventListener("replacestate", onNavigation)
+                removeEventListener("hashchange", onNavigation)
                 installed = false
                 routersCount--
                 if (routersCount < 0) {
@@ -88,7 +88,7 @@ export function createRouter() {
             }
 
             if (clicksHijacked && routersCount === 0) {
-                document.removeEventListener('click', hijackClicks)
+                document.removeEventListener("click", hijackClicks)
                 clicksHijacked = false
             }
         }
@@ -102,12 +102,12 @@ export function navigate(to = location.pathname, replace = false) {
     const title = document.title
     if (replace) {
         history.replaceState(state, title, to)
-        dispatchEvent(new PopStateEvent('replacestate', { state }))
+        dispatchEvent(new PopStateEvent("replacestate", { state }))
         return
     }
 
     history.pushState(state, title, to)
-    dispatchEvent(new PopStateEvent('pushstate', { state }))
+    dispatchEvent(new PopStateEvent("pushstate", { state }))
 }
 
 /**
@@ -123,9 +123,9 @@ function hijackClicks(ev) {
         return
     }
 
-    const a = /** @type {Element} */ (ev.target).closest('a')
+    const a = /** @type {Element} */ (ev.target).closest("a")
     if (a === null
-        || (a.target !== '' && a.target !== '_self')
+        || (a.target !== "" && a.target !== "_self")
         || a.hostname !== location.hostname) {
         return
     }

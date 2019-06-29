@@ -1,9 +1,9 @@
-import { doPost } from '../http.js';
-import { stringifyJSON } from '../lib/json.js';
+import { doPost } from "../http.js";
+import { stringifyJSON } from "../lib/json.js";
 
 const reUsername = /^[a-zA-Z][a-zA-Z0-9_-]{0,17}$/
 
-const template = document.createElement('template')
+const template = document.createElement("template")
 template.innerHTML = `
     <div class="container">
         <h1>Nakama</h1>
@@ -18,8 +18,8 @@ template.innerHTML = `
 
 export default function renderAccessPage() {
     const page = /** @type {DocumentFragment} */ (template.content.cloneNode(true))
-    const loginForm = /** @type {HTMLFormElement} */ (page.getElementById('login-form'))
-    loginForm.addEventListener('submit', onLoginFormSubmit)
+    const loginForm = /** @type {HTMLFormElement} */ (page.getElementById("login-form"))
+    loginForm.addEventListener("submit", onLoginFormSubmit)
     return page
 }
 
@@ -29,8 +29,8 @@ export default function renderAccessPage() {
 async function onLoginFormSubmit(ev) {
     ev.preventDefault()
     const form = /** @type {HTMLFormElement} */ (ev.currentTarget)
-    const input = form.querySelector('input')
-    const button = form.querySelector('button')
+    const input = form.querySelector("input")
+    const button = form.querySelector("button")
     const email = input.value
 
     input.disabled = true
@@ -41,8 +41,8 @@ async function onLoginFormSubmit(ev) {
         location.reload()
     } catch (err) {
         console.error(err)
-        if (err.name === 'UserNotFoundError') {
-            if (confirm('User not found. Do you want to create an account?')) {
+        if (err.name === "UserNotFoundError") {
+            if (confirm("User not found. Do you want to create an account?")) {
                 runRegistrationProgram(email)
             }
             return
@@ -58,12 +58,12 @@ async function onLoginFormSubmit(ev) {
 }
 
 /**
- * @param {import('../types.js').DevLoginOutput} payload
+ * @param {import("../types.js").DevLoginOutput} payload
  */
 function saveLogin(payload) {
-    localStorage.setItem('token', payload.token)
-    localStorage.setItem('expires_at', String(payload.expiresAt))
-    localStorage.setItem('auth_user', stringifyJSON(payload.authUser))
+    localStorage.setItem("token", payload.token)
+    localStorage.setItem("expires_at", String(payload.expiresAt))
+    localStorage.setItem("auth_user", stringifyJSON(payload.authUser))
 }
 
 /**
@@ -71,14 +71,14 @@ function saveLogin(payload) {
  * @param {string=} username
  */
 async function runRegistrationProgram(email, username) {
-    username = prompt('Username:', username)
+    username = prompt("Username:", username)
     if (username === null) {
         return
     }
 
     username = username.trim()
     if (!reUsername.test(username)) {
-        alert('invalid username')
+        alert("invalid username")
         runRegistrationProgram(email, username)
         return
     }
@@ -90,17 +90,17 @@ async function runRegistrationProgram(email, username) {
     } catch (err) {
         console.error(err)
         alert(err.message)
-        if (err.name === 'UsernameTakenError') {
+        if (err.name === "UsernameTakenError") {
             runRegistrationProgram(email)
         }
     }
 }
 
 /**
- * @returns {Promise<import('../types.js').DevLoginOutput>}
+ * @returns {Promise<import("../types.js").DevLoginOutput>}
  */
 function login(email) {
-    return doPost('/api/dev_login', { email })
+    return doPost("/api/dev_login", { email })
 }
 
 /**
@@ -109,5 +109,5 @@ function login(email) {
  * @returns {Promise<void>}
  */
 function createUser(email, username) {
-    return doPost('/api/users', { email, username })
+    return doPost("/api/users", { email, username })
 }

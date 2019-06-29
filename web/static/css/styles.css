@@ -288,6 +288,17 @@ header .profile-link {
     background-color: var(--surface-2);
 }
 
+.micro-post-content p {
+    white-space: pre-line;
+}
+
+.post-form,
+.comment-form {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
 .post-form {
     margin-bottom: .5rem;
 }
@@ -299,6 +310,7 @@ header .profile-link {
 .post-form-button,
 .comment-form-button {
     margin-top: .5rem;
+    margin-left: auto;
 }
 
 .post-wrapper {
@@ -327,4 +339,59 @@ header .profile-link {
 
 .user-profile h1 {
     margin-top: 0;
+}
+
+.load-more-button {
+    display: flex;
+    margin: .5rem auto;
+}
+
+.queue-button {
+    position: fixed;
+    background-color: var(--surface-1);
+    box-shadow: 0 0 .25rem rgba(0, 0, 0, .38);
+    left: 50%;
+    transform: translateX(-50%);
+    will-change: opacity transform;
+}
+
+.queue-button:hover {
+    background-color: var(--surface-2);
+}
+
+.queue-button:active {
+    background-color: var(--surface-3);
+}
+
+.posts-wrapper .queue-button {
+    top: 4.5rem;
+    animation: slide-middle-offset-down .2s ease-out;
+}
+
+.comments-wrapper .queue-button {
+    bottom: .5rem;
+    animation: slide-middle-offset-up .2s ease-out;
+    z-index: 3;
+}
+
+@keyframes slide-middle-offset-down {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -100%);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+}
+
+@keyframes slide-middle-offset-up {
+    from {
+        opacity: 0;
+        transform: translate(-50%, 100%);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
 }

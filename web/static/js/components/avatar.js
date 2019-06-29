@@ -1,5 +1,5 @@
 /**
- * @param {import('../types.js').User} user
+ * @param {import("../types.js").User} user
  */
 export default function renderAvatarHTML(user) {
     return user.avatarURL !== null

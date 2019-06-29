@@ -1,12 +1,12 @@
-import { isAuthenticated } from '../auth.js';
-import { doGet, doPost } from '../http.js';
-import renderAvatarHTML from './avatar.js';
-import renderList from './list.js';
-import renderPost from './post.js';
+import { isAuthenticated } from "../auth.js";
+import { doGet, doPost } from "../http.js";
+import renderAvatarHTML from "./avatar.js";
+import renderList from "./list.js";
+import renderPost from "./post.js";
 
 const PAGE_SIZE = 10
 
-const template = document.createElement('template')
+const template = document.createElement("template")
 template.innerHTML = `
     <div class="user-wrapper">
         <div class="container wide">
@@ -44,24 +44,24 @@ export default async function renderUserPage(params) {
     })
 
     const page = /** @type {DocumentFragment} */ (template.content.cloneNode(true))
-    const userOutlet = page.getElementById('user-outlet')
-    const postsOutlet = page.getElementById('posts-outlet')
+    const userOutlet = page.getElementById("user-outlet")
+    const postsOutlet = page.getElementById("posts-outlet")
 
     userOutlet.appendChild(renderUserProfile(user))
     postsOutlet.appendChild(list.el)
 
-    page.addEventListener('disconnect', list.teardown)
+    page.addEventListener("disconnect", list.teardown)
 
     return page
 }
 
 /**
- * @param {import('../types.js').UserProfile} user
+ * @param {import("../types.js").UserProfile} user
  */
 function renderUserProfile(user) {
     const authenticated = isAuthenticated()
-    const div = document.createElement('div')
-    div.className = 'user-profile'
+    const div = document.createElement("div")
+    div.className = "user-profile"
     div.innerHTML = `
         ${renderAvatarHTML(user)}
         <div class="center-vertically">
@@ -69,7 +69,7 @@ function renderUserProfile(user) {
                 <h1>${user.username}</h1>
                 ${user.followeed ? `
                     <span class="badge">Follows you</span>
-                ` : ''}
+                ` : ""}
             </div>
             <div class="user-stats">
                 <a href="/users/${user.username}/followers">
@@ -81,13 +81,13 @@ function renderUserProfile(user) {
         </div>
         ${authenticated && !user.me ? `
             <button class="follow-button" aria-pressed="${user.following}">
-                ${user.following ? 'Following' : 'Follow'}
+                ${user.following ? "Following" : "Follow"}
             </button>
-        ` : ''}
+        ` : ""}
     `
 
-    const followersCountSpan = /** @type {HTMLSpanElement} */ (div.querySelector('.followers-count-span'))
-    const followButton = /** @type {HTMLButtonElement=} */ (div.querySelector('.follow-button'))
+    const followersCountSpan = /** @type {HTMLSpanElement} */ (div.querySelector(".followers-count-span"))
+    const followButton = /** @type {HTMLButtonElement=} */ (div.querySelector(".follow-button"))
 
     if (followButton !== null) {
         const onFollowButtonClick = async () => {
@@ -96,8 +96,8 @@ function renderUserProfile(user) {
             try {
                 const out = await toggleFollow(user.username)
                 followersCountSpan.textContent = String(out.followersCount)
-                followButton.setAttribute('aria-pressed', String(out.following))
-                followButton.textContent = out.following ? 'Following' : 'Follow'
+                followButton.setAttribute("aria-pressed", String(out.following))
+                followButton.textContent = out.following ? "Following" : "Follow"
             } catch (err) {
                 console.log(err)
                 alert(err.message)
@@ -106,7 +106,7 @@ function renderUserProfile(user) {
             }
         }
 
-        followButton.addEventListener('click', onFollowButtonClick)
+        followButton.addEventListener("click", onFollowButtonClick)
     }
 
     return div
@@ -114,16 +114,16 @@ function renderUserProfile(user) {
 
 /**
  * @param {string} username
- * @returns {Promise<import('../types.js').UserProfile>}
+ * @returns {Promise<import("../types.js").UserProfile>}
  */
 function fetchUser(username) {
-    return doGet('/api/users/' + username)
+    return doGet("/api/users/" + username)
 }
 
 /**
  * @param {string} username
  * @param {bigint=} before
- * @returns {Promise<import('../types.js').Post[]>}
+ * @returns {Promise<import("../types.js").Post[]>}
  */
 function fetchPosts(username, before = 0n) {
     return doGet(`/api/users/${username}/posts?before=${before}&last=${PAGE_SIZE}`)
@@ -131,7 +131,7 @@ function fetchPosts(username, before = 0n) {
 
 /**
  * @param {string} username
- * @returns {Promise<import('../types.js').ToggleFollowOutput>}
+ * @returns {Promise<import("../types.js").ToggleFollowOutput>}
  */
 function toggleFollow(username) {
     return doPost(`/api/users/${username}/toggle_follow`)

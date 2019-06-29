@@ -1,6 +1,6 @@
-import { isAuthenticated } from './auth.js';
-import { parseJSON, stringifyJSON } from './lib/json.js';
-import { isPlainObject } from './utils.js';
+import { isAuthenticated } from "./auth.js";
+import { parseJSON, stringifyJSON } from "./lib/json.js";
+import { isPlainObject } from "./utils.js";
 
 /**
  * @param {string} url
@@ -19,12 +19,12 @@ export function doGet(url, headers) {
  */
 export function doPost(url, body, headers) {
     const init = {
-        method: 'POST',
+        method: "POST",
         headers: defaultHeaders(),
     }
     if (isPlainObject(body)) {
-        init['body'] = stringifyJSON(body)
-        init.headers['content-type'] = 'application/json; charset=utf-8'
+        init["body"] = stringifyJSON(body)
+        init.headers["content-type"] = "application/json; charset=utf-8"
     }
     Object.assign(init.headers, headers)
     return fetch(url, init).then(parseResponse)
@@ -37,7 +37,7 @@ export function doPost(url, body, headers) {
 export function subscribe(url, cb) {
     if (isAuthenticated()) {
         const _url = new URL(url, location.origin)
-        _url.searchParams.set('token', localStorage.getItem('token'))
+        _url.searchParams.set("token", localStorage.getItem("token"))
         url = _url.toString()
     }
     const eventSource = new EventSource(url)
@@ -53,7 +53,7 @@ export function subscribe(url, cb) {
 
 function defaultHeaders() {
     return isAuthenticated() ? {
-        authorization: 'Bearer ' + localStorage.getItem('token'),
+        authorization: "Bearer " + localStorage.getItem("token"),
     } : {}
 }
 
@@ -69,13 +69,13 @@ async function parseResponse(res) {
         const err = new Error(msg)
         err.name = msg
             .toLowerCase()
-            .split(' ')
+            .split(" ")
             .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-            .join('')
-            + 'Error'
-        err['statusCode'] = res.status
-        err['statusText'] = res.statusText
-        err['url'] = res.url
+            .join("")
+            + "Error"
+        err["statusCode"] = res.status
+        err["statusText"] = res.statusText
+        err["url"] = res.url
         throw err
     }
     return body

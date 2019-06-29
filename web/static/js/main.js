@@ -1,15 +1,15 @@
-import { guard } from './auth.js';
-import renderErrorPage from './components/error-page.js';
-import { createRouter } from './lib/router.js';
+import { guard } from "./auth.js";
+import renderErrorPage from "./components/error-page.js";
+import { createRouter } from "./lib/router.js";
 
 const viewsCache = new Map()
-const disconnectEvent = new CustomEvent('disconnect')
+const disconnectEvent = new CustomEvent("disconnect")
 const r = createRouter()
-r.route('/', guard(view('home'), view('access')))
-r.route(/^\/users\/(?<username>[a-zA-Z][a-zA-Z0-9_-]{0,17})$/, view('user'))
-r.route(/^\/posts\/(?<postID>\d+)$/, view('post'))
-r.route(/\//, view('not-found'))
-r.subscribe(renderInto(document.querySelector('main')))
+r.route("/", guard(view("home"), view("access")))
+r.route(/^\/users\/(?<username>[a-zA-Z][a-zA-Z0-9_-]{0,17})$/, view("user"))
+r.route(/^\/posts\/(?<postID>\d+)$/, view("post"))
+r.route(/\//, view("not-found"))
+r.subscribe(renderInto(document.querySelector("main")))
 r.install()
 
 function view(name) {
@@ -34,7 +34,7 @@ function renderInto(target) {
     return async result => {
         if (currentPage instanceof Node) {
             currentPage.dispatchEvent(disconnectEvent)
-            target.innerHTML = ''
+            target.innerHTML = ""
         }
         try {
             currentPage = await result
@@ -49,12 +49,12 @@ function renderInto(target) {
 
 function activateLinks() {
     const { pathname } = location
-    const links = Array.from(document.querySelectorAll('a'))
+    const links = Array.from(document.querySelectorAll("a"))
     for (const link of links) {
         if (link.pathname === pathname) {
-            link.setAttribute('aria-current', 'page')
+            link.setAttribute("aria-current", "page")
         } else {
-            link.removeAttribute('aria-current')
+            link.removeAttribute("aria-current")
         }
     }
 }

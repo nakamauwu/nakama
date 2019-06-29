@@ -1,14 +1,14 @@
-import { getAuthUser, isAuthenticated } from '../auth.js';
-import { doGet, doPost, subscribe } from '../http.js';
-import { ago, escapeHTML, linkify } from '../utils.js';
-import renderAvatarHTML from './avatar.js';
-import heartIconSVG from './heart-icon.js';
-import renderList from './list.js';
-import renderPost from './post.js';
+import { getAuthUser, isAuthenticated } from "../auth.js";
+import { doGet, doPost, subscribe } from "../http.js";
+import { ago, escapeHTML, linkify, smartTrim } from "../utils.js";
+import renderAvatarHTML from "./avatar.js";
+import heartIconSVG from "./heart-icon.js";
+import renderList from "./list.js";
+import renderPost from "./post.js";
 
 const PAGE_SIZE = 3
 
-const template = document.createElement('template')
+const template = document.createElement("template")
 template.innerHTML = `
     <div class="post-wrapper">
         <div class="container">
@@ -40,24 +40,24 @@ export default async function renderPostPage(params) {
     })
 
     const page = /** @type {DocumentFragment} */ (template.content.cloneNode(true))
-    const postOutlet = page.getElementById('post-outlet')
+    const postOutlet = page.getElementById("post-outlet")
     let commentsLink = /** @type {HTMLAnchorElement} */ (null)
     let commentsCountEl = /** @type {HTMLElement=} */ (null)
-    const commentsOutlet = page.getElementById('comments-outlet')
-    const commentForm = /** @type {HTMLFormElement} */ (page.getElementById('comment-form'))
-    const commentFormTextArea = commentForm.querySelector('textarea')
-    const commentFormButton = commentForm.querySelector('button')
+    const commentsOutlet = page.getElementById("comments-outlet")
+    const commentForm = /** @type {HTMLFormElement} */ (page.getElementById("comment-form"))
+    const commentFormTextArea = commentForm.querySelector("textarea")
+    const commentFormButton = commentForm.querySelector("button")
     let initialPostFormTextAreaHeight = /** @type {string=} */ (undefined)
 
     const incrementCommentsCount = () => {
         if (commentsLink === null) {
-            commentsLink = postOutlet.querySelector('.comments-link')
+            commentsLink = postOutlet.querySelector(".comments-link")
         }
         if (commentsCountEl === null) {
-            commentsCountEl = postOutlet.querySelector('.comments-count')
+            commentsCountEl = postOutlet.querySelector(".comments-count")
         }
         post.commentsCount++
-        commentsLink.setAttribute('aria-title', post.commentsCount + ' comments')
+        commentsLink.setAttribute("aria-title", post.commentsCount + " comments")
         commentsCountEl.textContent = String(post.commentsCount)
     }
 
@@ -66,7 +66,13 @@ export default async function renderPostPage(params) {
      */
     const onCommentFormSubmit = async ev => {
         ev.preventDefault()
-        const content = commentFormTextArea.value
+        const content = smartTrim(commentFormTextArea.value)
+        if (content === "") {
+            commentFormTextArea.setCustomValidity("Empty")
+            commentFormTextArea.reportValidity()
+            return
+        }
+
         commentFormTextArea.disabled = true
         commentFormButton.disabled = true
         try {
@@ -90,16 +96,17 @@ export default async function renderPostPage(params) {
     }
 
     const onCommentFormTextAreaInput = () => {
-        commentFormButton.hidden = commentFormTextArea.value === ''
+        commentFormTextArea.setCustomValidity("")
+        commentFormButton.hidden = commentFormTextArea.value === ""
         if (initialPostFormTextAreaHeight === undefined) {
             initialPostFormTextAreaHeight = commentFormTextArea.style.height
         }
         commentFormTextArea.style.height = initialPostFormTextAreaHeight
-        commentFormTextArea.style.height = commentFormTextArea.scrollHeight + 'px'
+        commentFormTextArea.style.height = commentFormTextArea.scrollHeight + "px"
     }
 
     /**
-     * @param {import('../types.js').Comment} comment
+     * @param {import("../types.js").Comment} comment
      */
     const onCommentArrive = comment => {
         list.enqueue(comment)
@@ -117,43 +124,42 @@ export default async function renderPostPage(params) {
     commentsOutlet.appendChild(list.el)
     if (isAuthenticated()) {
         commentForm.hidden = false
-        commentForm.addEventListener('submit', onCommentFormSubmit)
-        commentFormTextArea.addEventListener('input', onCommentFormTextAreaInput)
+        commentForm.addEventListener("submit", onCommentFormSubmit)
+        commentFormTextArea.addEventListener("input", onCommentFormTextAreaInput)
     } else {
         commentForm.remove()
     }
-    page.addEventListener('disconnect', onPageDisconnect)
+    page.addEventListener("disconnect", onPageDisconnect)
 
     return page
 }
 
 /**
- * @param {import('../types.js').Comment} comment
+ * @param {import("../types.js").Comment} comment
  */
 function renderComment(comment) {
     const authenticated = isAuthenticated()
     const { user } = comment
     const content = linkify(escapeHTML(comment.content))
-        .split('\n')
-        .map(l => l.trim() === '' ? `<br>` : `<p>${l}</p>`)
-        .join('\n')
 
-    const article = document.createElement('article')
-    article.className = 'card micro-post'
-    article.setAttribute('aria-label', `${user.username}'s comment`)
+    const article = document.createElement("article")
+    article.className = "card micro-post"
+    article.setAttribute("aria-label", `${user.username}'s comment`)
     article.innerHTML = `
         <div class="micro-post-header">
             <a class="micro-post-user" href="/users/${user.username}">
                 ${renderAvatarHTML(user)}
                 <span>${user.username}</span>
             </a>
-            <time datetime="${comment.createdAt}">${ago(comment.createdAt)}</time>
+            <time class="micro-post-ts" datetime="${comment.createdAt}">${ago(comment.createdAt)}</time>
         </div>
-        <div class="micro-post-content">${content}</div>
+        <div class="micro-post-content">
+            <p>${content}</p>
+        </div>
         <div class="micro-post-controls">
             ${authenticated ? `
                 <button class="like-button"
-                    title="${comment.liked ? 'Unlike' : 'Like'}"
+                    title="${comment.liked ? "Unlike" : "Like"}"
                     aria-pressed="${comment.liked}"
                     aria-label="${comment.likesCount} likes">
                     <span class="likes-count">${comment.likesCount}</span>
@@ -168,9 +174,9 @@ function renderComment(comment) {
         </div>
     `
 
-    const likeButton = /** @type {HTMLButtonElement=} */ (article.querySelector('.like-button'))
+    const likeButton = /** @type {HTMLButtonElement=} */ (article.querySelector(".like-button"))
     if (likeButton !== null) {
-        const likesCountEl = likeButton.querySelector('.likes-count')
+        const likesCountEl = likeButton.querySelector(".likes-count")
 
         const onLikeButtonClick = async () => {
             likeButton.disabled = true
@@ -180,9 +186,9 @@ function renderComment(comment) {
                 comment.likesCount = out.likesCount
                 comment.liked = out.liked
 
-                likeButton.title = out.liked ? 'Unlike' : 'Like'
-                likeButton.setAttribute('aria-pressed', String(out.liked))
-                likeButton.setAttribute('aria-label', out.likesCount + ' likes')
+                likeButton.title = out.liked ? "Unlike" : "Like"
+                likeButton.setAttribute("aria-pressed", String(out.liked))
+                likeButton.setAttribute("aria-label", out.likesCount + " likes")
                 likesCountEl.textContent = String(out.likesCount)
             } catch (err) {
                 console.error(err)
@@ -192,7 +198,7 @@ function renderComment(comment) {
             }
         }
 
-        likeButton.addEventListener('click', onLikeButtonClick)
+        likeButton.addEventListener("click", onLikeButtonClick)
     }
 
     return article
@@ -200,16 +206,16 @@ function renderComment(comment) {
 
 /**
  * @param {bigint} postID
- * @returns {Promise<import('../types.js').Post>}
+ * @returns {Promise<import("../types.js").Post>}
  */
 function fetchPost(postID) {
-    return doGet('/api/posts/' + postID)
+    return doGet("/api/posts/" + postID)
 }
 
 /**
  * @param {bigint} postID
  * @param {bigint=} before
- * @returns {Promise<import('../types.js').Comment[]>}
+ * @returns {Promise<import("../types.js").Comment[]>}
  */
 function fetchComments(postID, before = 0n) {
     return doGet(`/api/posts/${postID}/comments?before=${before}&last=${PAGE_SIZE}`)
@@ -218,7 +224,7 @@ function fetchComments(postID, before = 0n) {
 /**
  * @param {bigint} postID
  * @param {string} content
- * @returns {Promise<import('../types.js').Comment>}
+ * @returns {Promise<import("../types.js").Comment>}
  */
 async function createComment(postID, content) {
     const comment = await doPost(`/api/posts/${postID}/comments`, { content })
@@ -229,7 +235,7 @@ async function createComment(postID, content) {
 /**
  *
  * @param {bigint} postID
- * @param {function(import('../types.js').Comment):any} cb
+ * @param {function(import("../types.js").Comment):any} cb
  */
 function subscribeToComments(postID, cb) {
     return subscribe(`/api/posts/${postID}/comments`, cb)
@@ -237,7 +243,7 @@ function subscribeToComments(postID, cb) {
 
 /**
  * @param {bigint} commentID
- * @returns {Promise<import('../types.js').ToggleLikeOutput>}
+ * @returns {Promise<import("../types.js").ToggleLikeOutput>}
  */
 function toggleCommentLike(commentID) {
     return doPost(`/api/comments/${commentID}/toggle_like`)

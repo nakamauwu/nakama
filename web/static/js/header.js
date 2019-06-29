@@ -1,9 +1,9 @@
-import { getAuthUser } from './auth.js';
-import renderAvatarHTML from './components/avatar.js';
+import { getAuthUser } from "./auth.js";
+import renderAvatarHTML from "./components/avatar.js";
 
 const authUser = getAuthUser()
 const authenticated = authUser !== null
-const header = document.querySelector('header')
+const header = document.querySelector("header")
 header.innerHTML = `
     <div class="container wide">
         <nav>
@@ -15,14 +15,14 @@ header.innerHTML = `
                     ${renderAvatarHTML(authUser)}
                 </a>
                 <button id="logout-button">Logout</button>
-            ` : ''}
+            ` : ""}
         </nav>
     </div>
 `
 
 if (authenticated) {
-    const logoutButton = /** @type {HTMLButtonElement} */ (header.querySelector('#logout-button'))
-    logoutButton.addEventListener('click', onLogoutButtonClick)
+    const logoutButton = /** @type {HTMLButtonElement} */ (header.querySelector("#logout-button"))
+    logoutButton.addEventListener("click", onLogoutButtonClick)
 }
 
 /**
