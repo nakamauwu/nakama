@@ -59,13 +59,13 @@ func (s *Service) CreatePost(
 		return ti, ErrUnauthenticated
 	}
 
-	content = strings.TrimSpace(content)
+	content = smartTrim(content)
 	if content == "" || len([]rune(content)) > 480 {
 		return ti, ErrInvalidContent
 	}
 
 	if spoilerOf != nil {
-		*spoilerOf = strings.TrimSpace(*spoilerOf)
+		*spoilerOf = smartTrim(*spoilerOf)
 		if *spoilerOf == "" || len([]rune(*spoilerOf)) > 64 {
 			return ti, ErrInvalidSpoiler
 		}

@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"strings"
 	"time"
 )
 
@@ -40,7 +39,7 @@ func (s *Service) CreateComment(ctx context.Context, postID int64, content strin
 		return c, ErrUnauthenticated
 	}
 
-	content = strings.TrimSpace(content)
+	content = smartTrim(content)
 	if content == "" || len([]rune(content)) > 480 {
 		return c, ErrInvalidContent
 	}

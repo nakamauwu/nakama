@@ -18,7 +18,11 @@ const (
 )
 
 var queriesCache sync.Map
-var reMentions = regexp.MustCompile(`\B@([a-zA-Z][a-zA-Z0-9_-]{0,17})`)
+var (
+	reMultiSpace          = regexp.MustCompile(`(\s)+`)
+	reMoreThan2Linebreaks = regexp.MustCompile(`(\n){2,}`)
+	reMentions            = regexp.MustCompile(`\B@([a-zA-Z][a-zA-Z0-9_-]{0,17})`)
+)
 
 func isUniqueViolation(err error) bool {
 	pqerr, ok := err.(*pq.Error)
@@ -74,6 +78,18 @@ func normalizePageSize(i int) int {
 		return maxPageSize
 	}
 	return i
+}
+
+func smartTrim(s string) string {
+	oldLines := strings.Split(s, "\n")
+	newLines := []string{}
+	for _, line := range oldLines {
+		line = strings.TrimSpace(reMultiSpace.ReplaceAllString(line, "$1"))
+		newLines = append(newLines, line)
+	}
+	s = strings.Join(newLines, "\n")
+	s = reMoreThan2Linebreaks.ReplaceAllString(s, "$1$1")
+	return strings.TrimSpace(s)
 }
 
 func collectMentions(s string) []string {
