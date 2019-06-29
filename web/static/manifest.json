@@ -2,7 +2,11 @@
     "name": "Nakama",
     "short_name": "Nakama",
     "description": "The next social network for anime fans.",
+    "categories": [
+        "social"
+    ],
     "icons": [],
+    "screenshots": [],
     "start_url": "/?source=pwa",
     "background_color": "#000000",
     "display": "standalone",
