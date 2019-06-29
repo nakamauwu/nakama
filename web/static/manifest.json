@@ -1,0 +1,11 @@
+{
+    "name": "Nakama",
+    "short_name": "Nakama",
+    "description": "The next social network for anime fans.",
+    "icons": [],
+    "start_url": "/?source=pwa",
+    "background_color": "#000000",
+    "display": "standalone",
+    "scope": "/",
+    "theme_color": "#8CA6D9"
+}
