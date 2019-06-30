@@ -1,7 +1,6 @@
 import { guard } from "./auth.js"
 import renderErrorPage from "./components/error-page.js"
 import { createRouter } from "./lib/router.js"
-import importModule from "./lib/import-module.js"
 
 const modulesCache = new Map()
 const viewsCache = new Map()
@@ -20,7 +19,7 @@ function view(name) {
             const renderPage = viewsCache.get(name)
             return renderPage(...args)
         }
-        return importWithCache(`/js/components/${name}-page.js`).then(m => {
+        return import(`/js/components/${name}-page.js`).then(m => {
             const renderPage = m.default
             viewsCache.set(name, renderPage)
             return renderPage(...args)
