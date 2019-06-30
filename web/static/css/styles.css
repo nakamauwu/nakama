@@ -327,18 +327,27 @@ header .profile-link {
     margin-bottom: 4.5rem;
 }
 
-.user-profile {
+.user-wrapper .user-profile {
     position: relative;
-    padding: 1.5rem 0;
+    padding-left: 0;
+    padding-right: 0;
 }
 
-.user-profile .avatar {
+.user-wrapper .avatar {
     --size: 8rem;
     font-size: 2.5rem;
     position: absolute;
     left: 0;
     top: calc(100% - 4rem);
     border: .1875rem solid var(--background);
+}
+
+.user-username {
+    margin-left: .5rem;
+}
+
+.user-wrapper .user-username {
+    margin-left: 0;
 }
 
 .user-profile h1 {
@@ -359,16 +368,34 @@ header .profile-link {
 
 .user-stats {
     margin-top: .5rem;
+    margin-bottom: 0;
+}
+
+.user-wrapper .user-stats {
     margin-bottom: 4rem;
 }
 
-.user-stats a {
+.user-wrapper .user-controls {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+}
+
+.user-profile a {
     color: inherit;
     text-decoration: none;
+    white-space: nowrap;
 }
 
 .user-stats > * + * {
     margin-left: .5rem;
+}
+
+@media screen and (max-width: 414px) {
+    .search-results .user-stats a {
+        display: block;
+        margin-left: 0;
+    }
 }
 
 .badge {
@@ -377,7 +404,15 @@ header .profile-link {
     font-size: .875rem;
     border-radius: .25rem;
     padding: .1rem .25rem;
-    vertical-align: super;
+    box-shadow: var(--box-shadow);
+}
+
+.user-profile .badge {
+    margin-left: .5rem;
+}
+
+.user-wrapper .badge {
+    vertical-align: text-top;
 }
 
 .label {
@@ -386,16 +421,7 @@ header .profile-link {
 
 .user-controls {
     float: right;
-}
-
-.user-controls > * + * {
-    margin-left: .5rem;
-}
-
-.avatar-button,
-.logout-button,
-.follow-button {
-    box-shadow: var(--box-shadow);
+    margin-bottom: .5rem;
 }
 
 .load-more-button {
@@ -455,4 +481,8 @@ header .profile-link {
 
 .like-button[aria-pressed=true] .icon {
     fill: var(--error);
+}
+
+.search-form {
+    margin-bottom: .5rem;
 }
