@@ -392,7 +392,7 @@ header .profile-link {
 }
 
 @media screen and (max-width: 414px) {
-    .search-results .user-stats a {
+    .users-wrapper .user-stats a {
         display: block;
         margin-left: 0;
     }
@@ -421,7 +421,7 @@ header .profile-link {
 
 .user-controls {
     float: right;
-    margin-bottom: .5rem;
+    margin-bottom: 1.5rem;
 }
 
 .load-more-button {
@@ -485,4 +485,37 @@ header .profile-link {
 
 .search-form {
     margin-bottom: .5rem;
+}
+
+.search-input {
+    width: 100%;
+}
+
+[role=feed]:empty {
+    padding: 1.5rem 0;
+    text-align: center;
+}
+
+[role=feed]:empty::after {
+    content: "0 items yet.";
+}
+
+.posts-wrapper [role=feed]:empty::after {
+    content: "No posts yet.";
+}
+
+.comments-wrapper [role=feed]:empty::after {
+    content: "No comments yet.";
+}
+
+.search-results-wrapper [role=feed]:empty::after {
+    content: "0 results.";
+}
+
+.followers-wrapper [role=feed]:empty::after {
+    content: "0 followers.";
+}
+
+.followees-wrapper [role=feed]:empty::after {
+    content: "0 followees.";
 }
