@@ -1,5 +1,5 @@
-import { doPost } from "../http.js";
-import { stringifyJSON } from "../lib/json.js";
+import { doPost } from "../http.js"
+import { stringifyJSON } from "../lib/json.js"
 
 const reUsername = /^[a-zA-Z][a-zA-Z0-9_-]{0,17}$/
 

@@ -1,7 +1,9 @@
-import { guard } from "./auth.js";
-import renderErrorPage from "./components/error-page.js";
-import { createRouter } from "./lib/router.js";
+import { guard } from "./auth.js"
+import renderErrorPage from "./components/error-page.js"
+import { createRouter } from "./lib/router.js"
+import importModule from "./lib/import-module.js"
 
+const modulesCache = new Map()
 const viewsCache = new Map()
 const disconnectEvent = new CustomEvent("disconnect")
 const r = createRouter()
@@ -18,12 +20,21 @@ function view(name) {
             const renderPage = viewsCache.get(name)
             return renderPage(...args)
         }
-        return import(`/js/components/${name}-page.js`).then(m => {
+        return importWithCache(`/js/components/${name}-page.js`).then(m => {
             const renderPage = m.default
             viewsCache.set(name, renderPage)
             return renderPage(...args)
         })
     }
+}
+
+async function importWithCache(identifier) {
+    if (modulesCache.has(identifier)) {
+        return modulesCache.get(identifier)
+    }
+    const m = await importModule(identifier)
+    modulesCache.set(identifier, m)
+    return m
 }
 
 /**

@@ -88,7 +88,7 @@ export default function renderList(opts) {
 
         queueButton.textContent = typeof opts.newItemsMessageFunc === "function"
             ? opts.newItemsMessageFunc(queue.length)
-            : queue.length + " new items"
+            : queue.length + " new item" + (queue.length === 1 ? "" : "s")
         queueButton.hidden = false
     }
 

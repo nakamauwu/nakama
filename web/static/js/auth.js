@@ -1,4 +1,4 @@
-import { parseJSON } from "./lib/json.js";
+import { parseJSON } from "./lib/json.js"
 
 /**
  * @returns {import("./types.js").User}

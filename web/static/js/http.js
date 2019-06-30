@@ -1,6 +1,6 @@
-import { isAuthenticated } from "./auth.js";
-import { parseJSON, stringifyJSON } from "./lib/json.js";
-import { isPlainObject } from "./utils.js";
+import { isAuthenticated } from "./auth.js"
+import { parseJSON, stringifyJSON } from "./lib/json.js"
+import { isPlainObject } from "./utils.js"
 
 /**
  * @param {string} url

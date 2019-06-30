@@ -5,7 +5,6 @@
     --surface-1: hsl(var(--hue), 10%, 7%);
     --surface-2: hsl(var(--hue), 10%, 8%);
     --surface-3: hsl(var(--hue), 10%, 9%);
-    --surface-4: hsl(var(--hue), 10%, 11%);
     --primary: hsl(var(--hue), 50%, 75%);
     --secondary: hsl(calc(var(--hue) + 180), 50%, 75%);
     --error: hsl(349, 52%, 61%);
@@ -14,6 +13,8 @@
     --on-primary: hsl(var(--hue), 0%, 0%);
     --on-secondary: hsl(var(--hue), 0%, 0%);
     --on-error: hsl(var(--hue), 0%, 0%);
+    --on-surface-muted: hsla(var(--hue), 100%, 100%, .6);
+    --box-shadow: 0 0 .25rem rgba(0, 0, 0, .38);
 
     box-sizing: border-box;
 }
@@ -52,7 +53,7 @@ img {
 header {
     background-color: var(--surface-0);
     padding: .5rem 0;
-    box-shadow: 0 0 .25rem rgba(0, 0, 0, .38);
+    box-shadow: var(--box-shadow);
     position: sticky;
     top: 0;
     z-index: 1;
@@ -89,7 +90,7 @@ main:empty::after {
 
 time {
     font-size: .875rem;
-    opacity: .6;
+    color: var(--on-surface-muted);
 }
 
 a {
@@ -203,10 +204,13 @@ textarea:focus {
 }
 
 .icon {
-    color: var(--on-surface);
     fill: var(--on-surface);
     width: 1.25rem;
     height: 1.25rem;
+}
+
+header a:not([aria-current=page]) .icon {
+    fill: var(--on-surface-muted);
 }
 
 header .profile-link {
@@ -320,25 +324,78 @@ header .profile-link {
 
 .user-wrapper {
     background-color: var(--surface-0);
-    margin-bottom: 3.5rem;
+    margin-bottom: 4.5rem;
 }
 
 .user-profile {
     position: relative;
-    padding-top: 1.5rem;
-    padding-bottom: 4.5rem;
+    padding: 1.5rem 0;
 }
 
 .user-profile .avatar {
-    --size: 6rem;
+    --size: 8rem;
+    font-size: 2.5rem;
     position: absolute;
     left: 0;
-    top: calc(100% - 3rem);
+    top: calc(100% - 4rem);
     border: .1875rem solid var(--background);
 }
 
 .user-profile h1 {
-    margin-top: 0;
+    display: inline;
+}
+
+.user-profile button {
+    background-color: var(--surface-1);
+}
+
+.user-profile button:hover {
+    background-color: var(--surface-2);
+}
+
+.user-profile button:active {
+    background-color: var(--surface-3);
+}
+
+.user-stats {
+    margin-top: .5rem;
+    margin-bottom: 4rem;
+}
+
+.user-stats a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.user-stats > * + * {
+    margin-left: .5rem;
+}
+
+.badge {
+    background-color: var(--primary);
+    color: var(--on-primary);
+    font-size: .875rem;
+    border-radius: .25rem;
+    padding: .1rem .25rem;
+    vertical-align: super;
+}
+
+.label {
+    color: var(--on-surface-muted);
+}
+
+.user-controls {
+    float: right;
+}
+
+.user-controls > * + * {
+    margin-left: .5rem;
+}
+
+.avatar-button,
+.logout-button,
+.follow-button {
+    box-shadow: var(--box-shadow);
 }
 
 .load-more-button {
@@ -349,7 +406,7 @@ header .profile-link {
 .queue-button {
     position: fixed;
     background-color: var(--surface-1);
-    box-shadow: 0 0 .25rem rgba(0, 0, 0, .38);
+    box-shadow: var(--box-shadow);
     left: 50%;
     transform: translateX(-50%);
     will-change: opacity transform;
@@ -394,4 +451,8 @@ header .profile-link {
         opacity: 1;
         transform: translate(-50%, 0);
     }
+}
+
+.like-button[aria-pressed=true] .icon {
+    fill: var(--error);
 }

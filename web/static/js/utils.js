@@ -63,3 +63,24 @@ export function ago(date) {
     }
     return text
 }
+
+/**
+ * @param {Node} oldNode
+ * @param {Node} newNode
+ */
+export function replaceNode(oldNode, newNode) {
+    oldNode.parentNode.insertBefore(newNode, oldNode)
+    oldNode.parentNode.removeChild(oldNode)
+    return newNode
+}
+
+/**
+ * @param {string} html
+ */
+export function el(html) {
+    const template = document.createElement("template")
+    template.innerHTML = html
+    return template.content.childElementCount === 1
+        ? template.content.firstElementChild
+        : template.content
+}

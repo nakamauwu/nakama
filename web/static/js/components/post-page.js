@@ -1,10 +1,10 @@
-import { getAuthUser, isAuthenticated } from "../auth.js";
-import { doGet, doPost, subscribe } from "../http.js";
-import { ago, escapeHTML, linkify, smartTrim } from "../utils.js";
-import renderAvatarHTML from "./avatar.js";
-import heartIconSVG from "./heart-icon.js";
-import renderList from "./list.js";
-import renderPost from "./post.js";
+import { getAuthUser, isAuthenticated } from "../auth.js"
+import { doGet, doPost, subscribe } from "../http.js"
+import { ago, escapeHTML, linkify, smartTrim, replaceNode, el } from "../utils.js"
+import renderAvatarHTML from "./avatar.js"
+import { heartIconSVG, heartOulineIconSVG } from "./icons.js"
+import renderList from "./list.js"
+import renderPost from "./post.js"
 
 const PAGE_SIZE = 3
 
@@ -19,7 +19,10 @@ template.innerHTML = `
         <div id="comments-outlet" class="comments-wrapper"></div>
         <form id="comment-form" class="comment-form" hidden>
             <textarea placeholder="Say something..." maxlength="480" required></textarea>
-            <button class="comment-form-button" hidden>Comment</button>
+            <button class="comment-form-button" hidden>
+                <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g data-name="Layer 2"><g data-name="paper-plane"><rect width="24" height="24" opacity="0"/><path d="M21 4a1.31 1.31 0 0 0-.06-.27v-.09a1 1 0 0 0-.2-.3 1 1 0 0 0-.29-.19h-.09a.86.86 0 0 0-.31-.15H20a1 1 0 0 0-.3 0l-18 6a1 1 0 0 0 0 1.9l8.53 2.84 2.84 8.53a1 1 0 0 0 1.9 0l6-18A1 1 0 0 0 21 4zm-4.7 2.29l-5.57 5.57L5.16 10zM14 18.84l-1.86-5.57 5.57-5.57z"/></g></g></svg>
+                <span>Comment</span>
+            </button>
         </form>
     </div>
 `
@@ -97,7 +100,7 @@ export default async function renderPostPage(params) {
 
     const onCommentFormTextAreaInput = () => {
         commentFormTextArea.setCustomValidity("")
-        commentFormButton.hidden = commentFormTextArea.value === ""
+        commentFormButton.hidden = smartTrim(commentFormTextArea.value) === ""
         if (initialPostFormTextAreaHeight === undefined) {
             initialPostFormTextAreaHeight = commentFormTextArea.style.height
         }
@@ -163,12 +166,12 @@ function renderComment(comment) {
                     aria-pressed="${comment.liked}"
                     aria-label="${comment.likesCount} likes">
                     <span class="likes-count">${comment.likesCount}</span>
-                    ${heartIconSVG}
+                    ${comment.liked ? heartIconSVG : heartOulineIconSVG}
                 </button>
             ` : `
                 <span aria-label="${comment.likesCount} likes">
                     <span>${comment.likesCount}</span>
-                    ${heartIconSVG}
+                    ${heartOulineIconSVG}
                 </span>
             `}
         </div>
@@ -189,6 +192,10 @@ function renderComment(comment) {
                 likeButton.title = out.liked ? "Unlike" : "Like"
                 likeButton.setAttribute("aria-pressed", String(out.liked))
                 likeButton.setAttribute("aria-label", out.likesCount + " likes")
+                replaceNode(
+                    likeButton.querySelector("svg"),
+                    el(out.liked ? heartIconSVG : heartOulineIconSVG),
+                )
                 likesCountEl.textContent = String(out.likesCount)
             } catch (err) {
                 console.error(err)
