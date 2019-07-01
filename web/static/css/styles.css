@@ -228,6 +228,22 @@ header .profile-link {
     margin-top: .5rem;
 }
 
+.login-form {
+    display: grid;
+    grid-template-columns: 1fr max-content;
+    grid-gap: .5rem;
+}
+
+.login-form button {
+    justify-self: start;
+}
+
+@media screen and (max-width: 414px) {
+    .login-form {
+        grid-template-columns: auto;
+    }
+}
+
 .avatar {
     --size: 3rem;
     width: var(--size);
