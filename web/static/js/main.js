@@ -19,7 +19,7 @@ function view(name) {
             const renderPage = viewsCache.get(name)
             return renderPage(...args)
         }
-        return import(`/js/components/${name}-page.js`).then(m => {
+        return importWithCache(`/js/components/${name}-page.js`).then(m => {
             const renderPage = m.default
             viewsCache.set(name, renderPage)
             return renderPage(...args)
@@ -31,7 +31,7 @@ async function importWithCache(identifier) {
     if (modulesCache.has(identifier)) {
         return modulesCache.get(identifier)
     }
-    const m = await importModule(identifier)
+    const m = await import(identifier)
     modulesCache.set(identifier, m)
     return m
 }
