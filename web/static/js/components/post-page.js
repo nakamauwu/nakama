@@ -169,11 +169,16 @@ function renderComment(comment) {
                     ${comment.liked ? heartIconSVG : heartOulineIconSVG}
                 </button>
             ` : `
-                <span aria-label="${comment.likesCount} likes">
+                <span class="likes-count-wrapper" aria-label="${comment.likesCount} likes">
                     <span>${comment.likesCount}</span>
                     ${heartOulineIconSVG}
                 </span>
             `}
+            ${comment.mine ? `
+                <button title="More">
+                    <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g data-name="Layer 2"><g data-name="more-horizotnal"><rect width="24" height="24" opacity="0"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="12" r="2"/></g></g></svg>
+                </button>
+            ` : ""}
         </div>
     `
 

@@ -519,3 +519,15 @@ header .profile-link {
 .followees-wrapper [role=feed]:empty::after {
     content: "0 followees.";
 }
+
+.likes-count-wrapper {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 3rem;
+    padding: 0 1.5rem;
+}
+
+.likes-count-wrapper > * + * {
+    margin-left: .5rem;
+}
