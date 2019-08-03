@@ -9,20 +9,20 @@ import (
 
 // TimelineItem model.
 type TimelineItem struct {
-	ID     int64 `json:"id"`
-	UserID int64 `json:"-"`
-	PostID int64 `json:"-"`
-	Post   *Post `json:"post,omitempty"`
+	ID     string `json:"id"`
+	UserID string `json:"-"`
+	PostID string `json:"-"`
+	Post   *Post  `json:"post,omitempty"`
 }
 
 type timelineItemClient struct {
 	timeline chan TimelineItem
-	userID   int64
+	userID   string
 }
 
 // Timeline of the authenticated user in descending order and with backward pagination.
-func (s *Service) Timeline(ctx context.Context, last int, before int64) ([]TimelineItem, error) {
-	uid, ok := ctx.Value(KeyAuthUserID).(int64)
+func (s *Service) Timeline(ctx context.Context, last int, before string) ([]TimelineItem, error) {
+	uid, ok := ctx.Value(KeyAuthUserID).(string)
 	if !ok {
 		return nil, ErrUnauthenticated
 	}
@@ -42,7 +42,7 @@ func (s *Service) Timeline(ctx context.Context, last int, before int64) ([]Timel
 		LEFT JOIN post_subscriptions AS subscriptions
 			ON subscriptions.user_id = @uid AND subscriptions.post_id = posts.id
 		WHERE timeline.user_id = @uid
-		{{if gt .before 0}}AND timeline.id < @before{{end}}
+		{{if .before}}AND timeline.id < @before{{end}}
 		ORDER BY created_at DESC
 		LIMIT @last`, map[string]interface{}{
 		"uid":    uid,
@@ -99,7 +99,7 @@ func (s *Service) Timeline(ctx context.Context, last int, before int64) ([]Timel
 
 // TimelineItemStream to receive timeline items in realtime.
 func (s *Service) TimelineItemStream(ctx context.Context) (<-chan TimelineItem, error) {
-	uid, ok := ctx.Value(KeyAuthUserID).(int64)
+	uid, ok := ctx.Value(KeyAuthUserID).(string)
 	if !ok {
 		return nil, ErrUnauthenticated
 	}
@@ -118,8 +118,8 @@ func (s *Service) TimelineItemStream(ctx context.Context) (<-chan TimelineItem, 
 }
 
 // DeleteTimelineItem from the auth user timeline.
-func (s *Service) DeleteTimelineItem(ctx context.Context, timelineItemID int64) error {
-	uid, ok := ctx.Value(KeyAuthUserID).(int64)
+func (s *Service) DeleteTimelineItem(ctx context.Context, timelineItemID string) error {
+	uid, ok := ctx.Value(KeyAuthUserID).(string)
 	if !ok {
 		return ErrUnauthenticated
 	}

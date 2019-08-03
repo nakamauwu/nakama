@@ -21,8 +21,8 @@ var (
 
 // Post model.
 type Post struct {
-	ID            int64     `json:"id"`
-	UserID        int64     `json:"-"`
+	ID            string    `json:"id"`
+	UserID        string    `json:"-"`
 	Content       string    `json:"content"`
 	SpoilerOf     *string   `json:"spoilerOf"`
 	NSFW          bool      `json:"NSFW"`
@@ -54,7 +54,7 @@ func (s *Service) CreatePost(
 	nsfw bool,
 ) (TimelineItem, error) {
 	var ti TimelineItem
-	uid, ok := ctx.Value(KeyAuthUserID).(int64)
+	uid, ok := ctx.Value(KeyAuthUserID).(string)
 	if !ok {
 		return ti, ErrUnauthenticated
 	}
@@ -134,13 +134,13 @@ func (s *Service) postCreated(p Post) {
 }
 
 // Posts from a user in descending order and with backward pagination.
-func (s *Service) Posts(ctx context.Context, username string, last int, before int64) ([]Post, error) {
+func (s *Service) Posts(ctx context.Context, username string, last int, before string) ([]Post, error) {
 	username = strings.TrimSpace(username)
 	if !reUsername.MatchString(username) {
 		return nil, ErrInvalidUsername
 	}
 
-	uid, auth := ctx.Value(KeyAuthUserID).(int64)
+	uid, auth := ctx.Value(KeyAuthUserID).(string)
 	last = normalizePageSize(last)
 	query, args, err := buildQuery(`
 		SELECT id, content, spoiler_of, nsfw, likes_count, comments_count, created_at
@@ -157,7 +157,7 @@ func (s *Service) Posts(ctx context.Context, username string, last int, before i
 			ON subscriptions.user_id = @uid AND subscriptions.post_id = posts.id
 		{{end}}
 		WHERE posts.user_id = (SELECT id FROM users WHERE username = @username)
-		{{if gt .before 0}}AND posts.id < @before{{end}}
+		{{if .before}}AND posts.id < @before{{end}}
 		ORDER BY created_at DESC
 		LIMIT @last`, map[string]interface{}{
 		"auth":     auth,
@@ -208,9 +208,9 @@ func (s *Service) Posts(ctx context.Context, username string, last int, before i
 }
 
 // Post with the given ID.
-func (s *Service) Post(ctx context.Context, postID int64) (Post, error) {
+func (s *Service) Post(ctx context.Context, postID string) (Post, error) {
 	var p Post
-	uid, auth := ctx.Value(KeyAuthUserID).(int64)
+	uid, auth := ctx.Value(KeyAuthUserID).(string)
 	query, args, err := buildQuery(`
 		SELECT posts.id, content, spoiler_of, nsfw, likes_count, comments_count, created_at
 		, users.username, users.avatar
@@ -268,9 +268,9 @@ func (s *Service) Post(ctx context.Context, postID int64) (Post, error) {
 }
 
 // TogglePostLike 🖤
-func (s *Service) TogglePostLike(ctx context.Context, postID int64) (ToggleLikeOutput, error) {
+func (s *Service) TogglePostLike(ctx context.Context, postID string) (ToggleLikeOutput, error) {
 	var out ToggleLikeOutput
-	uid, ok := ctx.Value(KeyAuthUserID).(int64)
+	uid, ok := ctx.Value(KeyAuthUserID).(string)
 	if !ok {
 		return out, ErrUnauthenticated
 	}
@@ -328,9 +328,9 @@ func (s *Service) TogglePostLike(ctx context.Context, postID int64) (ToggleLikeO
 }
 
 // TogglePostSubscription so you can stop receiving notifications from a thread.
-func (s *Service) TogglePostSubscription(ctx context.Context, postID int64) (ToggleSubscriptionOutput, error) {
+func (s *Service) TogglePostSubscription(ctx context.Context, postID string) (ToggleSubscriptionOutput, error) {
 	var out ToggleSubscriptionOutput
-	uid, ok := ctx.Value(KeyAuthUserID).(int64)
+	uid, ok := ctx.Value(KeyAuthUserID).(string)
 	if !ok {
 		return out, ErrUnauthenticated
 	}

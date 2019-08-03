@@ -17,7 +17,7 @@ func (h *handler) notifications(w http.ResponseWriter, r *http.Request) {
 
 	q := r.URL.Query()
 	last, _ := strconv.Atoi(q.Get("last"))
-	before, _ := strconv.ParseInt(q.Get("before"), 10, 64)
+	before := q.Get("before")
 	nn, err := h.Notifications(r.Context(), last, before)
 	if err == service.ErrUnauthenticated {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
@@ -78,7 +78,7 @@ func (h *handler) hasUnreadNotifications(w http.ResponseWriter, r *http.Request)
 
 func (h *handler) markNotificationAsRead(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	notificationID, _ := strconv.ParseInt(way.Param(ctx, "notification_id"), 10, 64)
+	notificationID := way.Param(ctx, "notification_id")
 	err := h.MarkNotificationAsRead(ctx, notificationID)
 	if err == service.ErrUnauthenticated {
 		http.Error(w, err.Error(), http.StatusUnauthorized)

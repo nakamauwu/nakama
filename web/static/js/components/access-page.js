@@ -1,5 +1,4 @@
 import { doPost } from "../http.js"
-import { stringifyJSON } from "../lib/json.js"
 
 const reUsername = /^[a-zA-Z][a-zA-Z0-9_-]{0,17}$/
 
@@ -10,7 +9,7 @@ template.innerHTML = `
         <p>Welcome to Nakama, the next social network for anime fans 🤗</p>
         <h2>Access</h2>
         <form id="login-form" class="login-form">
-            <input type="email" name="email" placeholder="Email" autocomplete="email" value="john@example.org" required>
+            <input type="email" name="email" placeholder="Email" autocomplete="email" value="shinji@example.org" required>
             <button>
                 <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g data-name="Layer 2"><g data-name="log-in"><rect width="24" height="24" transform="rotate(-90 12 12)" opacity="0"/><path d="M19 4h-2a1 1 0 0 0 0 2h1v12h-1a1 1 0 0 0 0 2h2a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1z"/><path d="M11.8 7.4a1 1 0 0 0-1.6 1.2L12 11H4a1 1 0 0 0 0 2h8.09l-1.72 2.44a1 1 0 0 0 .24 1.4 1 1 0 0 0 .58.18 1 1 0 0 0 .81-.42l2.82-4a1 1 0 0 0 0-1.18z"/></g></g></svg>
                 <span>Login</span>
@@ -64,9 +63,9 @@ async function onLoginFormSubmit(ev) {
  * @param {import("../types.js").DevLoginOutput} payload
  */
 function saveLogin(payload) {
-    localStorage.setItem("token", payload.token)
-    localStorage.setItem("expires_at", String(payload.expiresAt))
-    localStorage.setItem("auth_user", stringifyJSON(payload.authUser))
+    localStorage.setItem("auth_user", JSON.stringify(payload.user))
+    localStorage.setItem("auth_token", payload.token)
+    localStorage.setItem("auth_expires_at", String(payload.expiresAt))
 }
 
 /**

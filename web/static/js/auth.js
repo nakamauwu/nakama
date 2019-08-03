@@ -1,26 +1,24 @@
-import { parseJSON } from "./lib/json.js"
-
 /**
  * @returns {import("./types.js").User}
  */
 export function getAuthUser() {
-    const authUserRaw = localStorage.getItem("auth_user")
-    if (authUserRaw === null) {
+    const userItem = localStorage.getItem("auth_user")
+    if (userItem === null) {
         return null
     }
-    if (localStorage.getItem("token") === null) {
+    if (localStorage.getItem("auth_token") === null) {
         return null
     }
-    const expiresAtRaw = localStorage.getItem("expires_at")
-    if (expiresAtRaw === null) {
+    const expiresAtItem = localStorage.getItem("auth_expires_at")
+    if (expiresAtItem === null) {
         return null
     }
-    const expiresAt = new Date(expiresAtRaw)
+    const expiresAt = new Date(expiresAtItem)
     if (isNaN(expiresAt.valueOf()) || expiresAt <= new Date()) {
         return null
     }
     try {
-        return parseJSON(authUserRaw)
+        return JSON.parse(userItem)
     } catch (_) { }
     return null
 }

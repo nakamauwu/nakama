@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
 
@@ -135,7 +136,7 @@ func (h *handler) token(w http.ResponseWriter, r *http.Request) {
 
 func (h *handler) withAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token := strings.TrimSpace(r.URL.Query().Get("token"))
+		token := strings.TrimSpace(r.URL.Query().Get("auth_token"))
 
 		if token == "" {
 			if a := r.Header.Get("Authorization"); strings.HasPrefix(a, "Bearer ") {
@@ -143,10 +144,12 @@ func (h *handler) withAuth(next http.Handler) http.Handler {
 			}
 		}
 
-		if token == "" {
+		if token == "" || token == "null" || token == "undefined" {
 			next.ServeHTTP(w, r)
 			return
 		}
+
+		log.Printf("with auth: token=%s\n", token)
 
 		uid, err := h.AuthUserIDFromToken(token)
 		if err != nil {

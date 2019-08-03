@@ -10,7 +10,6 @@ import (
 	"log"
 	"net/url"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -50,9 +49,9 @@ type TokenOutput struct {
 
 // DevLoginOutput response.
 type DevLoginOutput struct {
+	User      User      `json:"user"`
 	Token     string    `json:"token"`
 	ExpiresAt time.Time `json:"expiresAt"`
-	AuthUser  User      `json:"authUser"`
 }
 
 // SendMagicLink to login without passwords.
@@ -124,7 +123,7 @@ func (s *Service) AuthURI(ctx context.Context, verificationCode, redirectURI str
 		return "", ErrInvalidRedirectURI
 	}
 
-	var uid int64
+	var uid string
 	err = s.db.QueryRowContext(ctx, `
 		DELETE FROM verification_codes WHERE id = $1
 		RETURNING user_id`, verificationCode).Scan(&uid)
@@ -136,7 +135,7 @@ func (s *Service) AuthURI(ctx context.Context, verificationCode, redirectURI str
 		return "", fmt.Errorf("could not delete verification code: %v", err)
 	}
 
-	token, err := s.codec.EncodeToString(strconv.FormatInt(uid, 10))
+	token, err := s.codec.EncodeToString(uid)
 	if err != nil {
 		return "", fmt.Errorf("could not create token: %v", err)
 	}
@@ -166,7 +165,7 @@ func (s *Service) DevLogin(ctx context.Context, email string) (DevLoginOutput, e
 
 	var avatar sql.NullString
 	query := "SELECT id, username, avatar FROM users WHERE email = $1"
-	err := s.db.QueryRowContext(ctx, query, email).Scan(&out.AuthUser.ID, &out.AuthUser.Username, &avatar)
+	err := s.db.QueryRowContext(ctx, query, email).Scan(&out.User.ID, &out.User.Username, &avatar)
 
 	if err == sql.ErrNoRows {
 		return out, ErrUserNotFound
@@ -176,9 +175,9 @@ func (s *Service) DevLogin(ctx context.Context, email string) (DevLoginOutput, e
 		return out, fmt.Errorf("could not query select user: %v", err)
 	}
 
-	out.AuthUser.AvatarURL = s.avatarURL(avatar)
+	out.User.AvatarURL = s.avatarURL(avatar)
 
-	out.Token, err = s.codec.EncodeToString(strconv.FormatInt(out.AuthUser.ID, 10))
+	out.Token, err = s.codec.EncodeToString(out.User.ID)
 	if err != nil {
 		return out, fmt.Errorf("could not create token: %v", err)
 	}
@@ -189,24 +188,19 @@ func (s *Service) DevLogin(ctx context.Context, email string) (DevLoginOutput, e
 }
 
 // AuthUserIDFromToken decodes the token into a user ID.
-func (s *Service) AuthUserIDFromToken(token string) (int64, error) {
-	str, err := s.codec.DecodeToString(token)
+func (s *Service) AuthUserIDFromToken(token string) (string, error) {
+	uid, err := s.codec.DecodeToString(token)
 	if err != nil {
-		return 0, fmt.Errorf("could not decode token: %v", err)
+		return "", fmt.Errorf("could not decode token: %v", err)
 	}
 
-	i, err := strconv.ParseInt(str, 10, 64)
-	if err != nil {
-		return 0, fmt.Errorf("could not parse auth user id from token: %v", err)
-	}
-
-	return i, nil
+	return uid, nil
 }
 
 // AuthUser is the current authenticated user.
 func (s *Service) AuthUser(ctx context.Context) (User, error) {
 	var u User
-	uid, ok := ctx.Value(KeyAuthUserID).(int64)
+	uid, ok := ctx.Value(KeyAuthUserID).(string)
 	if !ok {
 		return u, ErrUnauthenticated
 	}
@@ -217,13 +211,13 @@ func (s *Service) AuthUser(ctx context.Context) (User, error) {
 // Token to authenticate requests.
 func (s *Service) Token(ctx context.Context) (TokenOutput, error) {
 	var out TokenOutput
-	uid, ok := ctx.Value(KeyAuthUserID).(int64)
+	uid, ok := ctx.Value(KeyAuthUserID).(string)
 	if !ok {
 		return out, ErrUnauthenticated
 	}
 
 	var err error
-	out.Token, err = s.codec.EncodeToString(strconv.FormatInt(uid, 10))
+	out.Token, err = s.codec.EncodeToString(uid)
 	if err != nil {
 		return out, fmt.Errorf("could not create token: %v", err)
 	}

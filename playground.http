@@ -1,5 +1,5 @@
 # This file is VSCode specific
-# you must have "humao.rest-client" installed.
+# you must have "humao.rest-client" extension installed.
 
 @host = http://localhost:3000
 
@@ -69,6 +69,7 @@ GET {{host}}/api/users/john/followees?first=&after=
 Authorization: Bearer {{login.response.body.token}}
 
 ###
+# @name createPost
 POST {{host}}/api/posts
 Authorization: Bearer {{login.response.body.token}}
 Content-Type: application/json
@@ -82,15 +83,15 @@ GET {{host}}/api/users/john/posts?last=&before=
 Authorization: Bearer {{login.response.body.token}}
 
 ###
-GET {{host}}/api/posts/1
+GET {{host}}/api/posts/{{createPost.response.body.id}}
 Authorization: Bearer {{login.response.body.token}}
 
 ###
-POST {{host}}/api/posts/1/toggle_like
+POST {{host}}/api/posts/{{createPost.response.body.id}}/toggle_like
 Authorization: Bearer {{login.response.body.token}}
 
 ###
-POST {{host}}/api/posts/1/toggle_subscription
+POST {{host}}/api/posts/{{createPost.response.body.id}}/toggle_subscription
 Authorization: Bearer {{login.response.body.token}}
 
 ###
@@ -98,7 +99,8 @@ GET {{host}}/api/timeline?last=&before=
 Authorization: Bearer {{login.response.body.token}}
 
 ###
-POST {{host}}/api/posts/1/comments
+# @name createComment
+POST {{host}}/api/posts/{{createPost.response.body.id}}/comments
 Authorization: Bearer {{login.response.body.token}}
 Content-Type: application/json
 
@@ -107,14 +109,15 @@ Content-Type: application/json
 }
 
 ###
-GET {{host}}/api/posts/1/comments?last=&before=
+GET {{host}}/api/posts/{{createPost.response.body.id}}/comments?last=&before=
 Authorization: Bearer {{login.response.body.token}}
 
 ###
-POST {{host}}/api/comments/1/toggle_like
+POST {{host}}/api/comments/{{createComment.response.body.id}}/toggle_like
 Authorization: Bearer {{login.response.body.token}}
 
 ###
+# @name notifications
 GET {{host}}/api/notifications?last=&before=
 Authorization: Bearer {{login.response.body.token}}
 
@@ -123,7 +126,7 @@ GET {{host}}/api/has_unread_notifications
 Authorization: Bearer {{login.response.body.token}}
 
 ###
-POST {{host}}/api/notifications/0/mark_as_read
+POST {{host}}/api/notifications/{{notifications.response.body[0].id}}/mark_as_read
 Authorization: Bearer {{login.response.body.token}}
 
 ###

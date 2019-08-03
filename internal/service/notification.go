@@ -12,23 +12,23 @@ import (
 
 // Notification model.
 type Notification struct {
-	ID       int64     `json:"id"`
-	UserID   int64     `json:"-"`
+	ID       string    `json:"id"`
+	UserID   string    `json:"-"`
 	Actors   []string  `json:"actors"`
 	Type     string    `json:"type"`
-	PostID   *int64    `json:"postID,omitempty"`
+	PostID   *string   `json:"postID,omitempty"`
 	Read     bool      `json:"read"`
 	IssuedAt time.Time `json:"issuedAt"`
 }
 
 type notificationClient struct {
 	notifications chan Notification
-	userID        int64
+	userID        string
 }
 
 // Notifications from the authenticated user in descending order with backward pagination.
-func (s *Service) Notifications(ctx context.Context, last int, before int64) ([]Notification, error) {
-	uid, ok := ctx.Value(KeyAuthUserID).(int64)
+func (s *Service) Notifications(ctx context.Context, last int, before string) ([]Notification, error) {
+	uid, ok := ctx.Value(KeyAuthUserID).(string)
 	if !ok {
 		return nil, ErrUnauthenticated
 	}
@@ -38,7 +38,7 @@ func (s *Service) Notifications(ctx context.Context, last int, before int64) ([]
 		SELECT id, actors, type, post_id, read, issued_at
 		FROM notifications
 		WHERE user_id = @uid
-		{{if gt .before 0}}AND id < @before{{end}}
+		{{if .before}}AND id < @before{{end}}
 		ORDER BY issued_at DESC
 		LIMIT @last`, map[string]interface{}{
 		"uid":    uid,
@@ -75,7 +75,7 @@ func (s *Service) Notifications(ctx context.Context, last int, before int64) ([]
 
 // NotificationStream to receive notifications in realtime.
 func (s *Service) NotificationStream(ctx context.Context) (<-chan Notification, error) {
-	uid, ok := ctx.Value(KeyAuthUserID).(int64)
+	uid, ok := ctx.Value(KeyAuthUserID).(string)
 	if !ok {
 		return nil, ErrUnauthenticated
 	}
@@ -95,7 +95,7 @@ func (s *Service) NotificationStream(ctx context.Context) (<-chan Notification, 
 
 // HasUnreadNotifications checks if the authenticated user has any unread notification.
 func (s *Service) HasUnreadNotifications(ctx context.Context) (bool, error) {
-	uid, ok := ctx.Value(KeyAuthUserID).(int64)
+	uid, ok := ctx.Value(KeyAuthUserID).(string)
 	if !ok {
 		return false, ErrUnauthenticated
 	}
@@ -111,8 +111,8 @@ func (s *Service) HasUnreadNotifications(ctx context.Context) (bool, error) {
 }
 
 // MarkNotificationAsRead sets a notification from the authenticated user as read.
-func (s *Service) MarkNotificationAsRead(ctx context.Context, notificationID int64) error {
-	uid, ok := ctx.Value(KeyAuthUserID).(int64)
+func (s *Service) MarkNotificationAsRead(ctx context.Context, notificationID string) error {
+	uid, ok := ctx.Value(KeyAuthUserID).(string)
 	if !ok {
 		return ErrUnauthenticated
 	}
@@ -128,7 +128,7 @@ func (s *Service) MarkNotificationAsRead(ctx context.Context, notificationID int
 
 // MarkNotificationsAsRead sets all notification from the authenticated user as read.
 func (s *Service) MarkNotificationsAsRead(ctx context.Context) error {
-	uid, ok := ctx.Value(KeyAuthUserID).(int64)
+	uid, ok := ctx.Value(KeyAuthUserID).(string)
 	if !ok {
 		return ErrUnauthenticated
 	}
@@ -142,7 +142,7 @@ func (s *Service) MarkNotificationsAsRead(ctx context.Context) error {
 	return nil
 }
 
-func (s *Service) notifyFollow(followerID, followeeID int64) {
+func (s *Service) notifyFollow(followerID, followeeID string) {
 	tx, err := s.db.Begin()
 	if err != nil {
 		log.Printf("could not begin tx: %v\n", err)
@@ -174,7 +174,7 @@ func (s *Service) notifyFollow(followerID, followeeID int64) {
 		return
 	}
 
-	var nid int64
+	var nid string
 	query = "SELECT id FROM notifications WHERE user_id = $1 AND type = 'follow' AND read = false"
 	err = tx.QueryRow(query, followeeID).Scan(&nid)
 	if err != nil && err != sql.ErrNoRows {

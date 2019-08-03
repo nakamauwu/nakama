@@ -27,11 +27,14 @@ template.innerHTML = `
     </div>
 `
 
+/**
+ * @param {object} params
+ * @param {string} params.postID
+ */
 export default async function renderPostPage(params) {
-    const postID = BigInt(params.postID)
     const [post, comments] = await Promise.all([
-        fetchPost(postID),
-        fetchComments(postID),
+        fetchPost(params.postID),
+        fetchComments(params.postID),
     ])
 
     const list = renderList({
@@ -217,7 +220,7 @@ function renderComment(comment) {
 }
 
 /**
- * @param {bigint} postID
+ * @param {string} postID
  * @returns {Promise<import("../types.js").Post>}
  */
 function fetchPost(postID) {
@@ -225,16 +228,16 @@ function fetchPost(postID) {
 }
 
 /**
- * @param {bigint} postID
- * @param {bigint=} before
+ * @param {string} postID
+ * @param {string=} before
  * @returns {Promise<import("../types.js").Comment[]>}
  */
-function fetchComments(postID, before = 0n) {
+function fetchComments(postID, before = "") {
     return doGet(`/api/posts/${postID}/comments?before=${before}&last=${PAGE_SIZE}`)
 }
 
 /**
- * @param {bigint} postID
+ * @param {string} postID
  * @param {string} content
  * @returns {Promise<import("../types.js").Comment>}
  */
@@ -246,7 +249,7 @@ async function createComment(postID, content) {
 
 /**
  *
- * @param {bigint} postID
+ * @param {string} postID
  * @param {function(import("../types.js").Comment):any} cb
  */
 function subscribeToComments(postID, cb) {
@@ -254,7 +257,7 @@ function subscribeToComments(postID, cb) {
 }
 
 /**
- * @param {bigint} commentID
+ * @param {string} commentID
  * @returns {Promise<import("../types.js").ToggleLikeOutput>}
  */
 function toggleCommentLike(commentID) {

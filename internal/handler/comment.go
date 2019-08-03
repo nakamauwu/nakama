@@ -23,7 +23,7 @@ func (h *handler) createComment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	postID, _ := strconv.ParseInt(way.Param(ctx, "post_id"), 10, 64)
+	postID := way.Param(ctx, "post_id")
 	c, err := h.CreateComment(ctx, postID, in.Content)
 	if err == service.ErrUnauthenticated {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
@@ -56,9 +56,9 @@ func (h *handler) comments(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	q := r.URL.Query()
-	postID, _ := strconv.ParseInt(way.Param(ctx, "post_id"), 10, 64)
+	postID := way.Param(ctx, "post_id")
 	last, _ := strconv.Atoi(q.Get("last"))
-	before, _ := strconv.ParseInt(q.Get("before"), 10, 64)
+	before := q.Get("before")
 	cc, err := h.Comments(ctx, postID, last, before)
 	if err != nil {
 		respondErr(w, err)
@@ -76,7 +76,7 @@ func (h *handler) commentStream(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	postID, _ := strconv.ParseInt(way.Param(ctx, "post_id"), 10, 64)
+	postID := way.Param(ctx, "post_id")
 
 	header := w.Header()
 	header.Set("Cache-Control", "no-cache")
@@ -91,7 +91,7 @@ func (h *handler) commentStream(w http.ResponseWriter, r *http.Request) {
 
 func (h *handler) toggleCommentLike(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	commentID, _ := strconv.ParseInt(way.Param(ctx, "comment_id"), 10, 64)
+	commentID := way.Param(ctx, "comment_id")
 	out, err := h.ToggleCommentLike(ctx, commentID)
 	if err == service.ErrUnauthenticated {
 		http.Error(w, err.Error(), http.StatusUnauthorized)

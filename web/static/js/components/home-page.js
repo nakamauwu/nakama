@@ -121,10 +121,10 @@ async function publishPost(input) {
 }
 
 /**
- * @param {bigint=} before
+ * @param {string=} before
  * @returns {Promise<import("../types.js").TimelineItem[]>}
  */
-function fetchTimeline(before = 0n) {
+function fetchTimeline(before = "") {
     return doGet(`/api/timeline?before=${before}&last=${PAGE_SIZE}`)
 }
 

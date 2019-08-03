@@ -48,7 +48,7 @@ var (
 
 // User model.
 type User struct {
-	ID        int64   `json:"id,omitempty"`
+	ID        string  `json:"id,omitempty"`
 	Username  string  `json:"username"`
 	AvatarURL *string `json:"avatarURL"`
 }
@@ -106,7 +106,7 @@ func (s *Service) Users(ctx context.Context, search string, first int, after str
 	search = strings.TrimSpace(search)
 	first = normalizePageSize(first)
 	after = strings.TrimSpace(after)
-	uid, auth := ctx.Value(KeyAuthUserID).(int64)
+	uid, auth := ctx.Value(KeyAuthUserID).(string)
 	query, args, err := buildQuery(`
 		SELECT id, email, username, avatar, followers_count, followees_count
 		{{if .auth}}
@@ -162,7 +162,7 @@ func (s *Service) Users(ctx context.Context, search string, first int, after str
 
 		u.Me = auth && uid == u.ID
 		if !u.Me {
-			u.ID = 0
+			u.ID = ""
 			u.Email = ""
 		}
 		u.AvatarURL = s.avatarURL(avatar)
@@ -183,7 +183,7 @@ func (s *Service) Usernames(ctx context.Context, startingWith string, first int,
 		return nil, ErrUsernameStartRequired
 	}
 
-	uid, auth := ctx.Value(KeyAuthUserID).(int64)
+	uid, auth := ctx.Value(KeyAuthUserID).(string)
 	first = normalizePageSize(first)
 	query, args, err := buildQuery(`
 		SELECT username FROM users
@@ -226,7 +226,7 @@ func (s *Service) Usernames(ctx context.Context, startingWith string, first int,
 	return uu, nil
 }
 
-func (s *Service) userByID(ctx context.Context, id int64) (User, error) {
+func (s *Service) userByID(ctx context.Context, id string) (User, error) {
 	var u User
 	var avatar sql.NullString
 	query := "SELECT username, avatar FROM users WHERE id = $1"
@@ -254,7 +254,7 @@ func (s *Service) User(ctx context.Context, username string) (UserProfile, error
 		return u, ErrInvalidUsername
 	}
 
-	uid, auth := ctx.Value(KeyAuthUserID).(int64)
+	uid, auth := ctx.Value(KeyAuthUserID).(string)
 	query, args, err := buildQuery(`
 		SELECT id, email, avatar, followers_count, followees_count
 		{{if .auth}}
@@ -294,7 +294,7 @@ func (s *Service) User(ctx context.Context, username string) (UserProfile, error
 	u.Username = username
 	u.Me = auth && uid == u.ID
 	if !u.Me {
-		u.ID = 0
+		u.ID = ""
 		u.Email = ""
 	}
 	u.AvatarURL = s.avatarURL(avatar)
@@ -303,7 +303,7 @@ func (s *Service) User(ctx context.Context, username string) (UserProfile, error
 
 // UpdateAvatar of the authenticated user returning the new avatar URL.
 func (s *Service) UpdateAvatar(ctx context.Context, r io.Reader) (string, error) {
-	uid, ok := ctx.Value(KeyAuthUserID).(int64)
+	uid, ok := ctx.Value(KeyAuthUserID).(string)
 	if !ok {
 		return "", ErrUnauthenticated
 	}
@@ -372,7 +372,7 @@ func (s *Service) UpdateAvatar(ctx context.Context, r io.Reader) (string, error)
 // ToggleFollow between two users.
 func (s *Service) ToggleFollow(ctx context.Context, username string) (ToggleFollowOutput, error) {
 	var out ToggleFollowOutput
-	followerID, ok := ctx.Value(KeyAuthUserID).(int64)
+	followerID, ok := ctx.Value(KeyAuthUserID).(string)
 	if !ok {
 		return out, ErrUnauthenticated
 	}
@@ -389,7 +389,7 @@ func (s *Service) ToggleFollow(ctx context.Context, username string) (ToggleFoll
 
 	defer tx.Rollback()
 
-	var followeeID int64
+	var followeeID string
 	query := "SELECT id FROM users WHERE username = $1"
 	err = tx.QueryRowContext(ctx, query, username).Scan(&followeeID)
 	if err == sql.ErrNoRows {
@@ -473,7 +473,7 @@ func (s *Service) Followers(ctx context.Context, username string, first int, aft
 
 	first = normalizePageSize(first)
 	after = strings.TrimSpace(after)
-	uid, auth := ctx.Value(KeyAuthUserID).(int64)
+	uid, auth := ctx.Value(KeyAuthUserID).(string)
 	query, args, err := buildQuery(`
 		SELECT id, email, username, avatar, followers_count, followees_count
 		{{if .auth}}
@@ -529,7 +529,7 @@ func (s *Service) Followers(ctx context.Context, username string, first int, aft
 
 		u.Me = auth && uid == u.ID
 		if !u.Me {
-			u.ID = 0
+			u.ID = ""
 			u.Email = ""
 		}
 		u.AvatarURL = s.avatarURL(avatar)
@@ -552,7 +552,7 @@ func (s *Service) Followees(ctx context.Context, username string, first int, aft
 
 	first = normalizePageSize(first)
 	after = strings.TrimSpace(after)
-	uid, auth := ctx.Value(KeyAuthUserID).(int64)
+	uid, auth := ctx.Value(KeyAuthUserID).(string)
 	query, args, err := buildQuery(`
 		SELECT id, email, username, avatar, followers_count, followees_count
 		{{if .auth}}
@@ -608,7 +608,7 @@ func (s *Service) Followees(ctx context.Context, username string, first int, aft
 
 		u.Me = auth && uid == u.ID
 		if !u.Me {
-			u.ID = 0
+			u.ID = ""
 			u.Email = ""
 		}
 		u.AvatarURL = s.avatarURL(avatar)

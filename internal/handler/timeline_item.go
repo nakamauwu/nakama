@@ -18,7 +18,7 @@ func (h *handler) timeline(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	q := r.URL.Query()
 	last, _ := strconv.Atoi(q.Get("last"))
-	before, _ := strconv.ParseInt(q.Get("before"), 10, 64)
+	before := q.Get("before")
 	tt, err := h.Timeline(ctx, last, before)
 	if err == service.ErrUnauthenticated {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
@@ -64,7 +64,7 @@ func (h *handler) timelineItemStream(w http.ResponseWriter, r *http.Request) {
 
 func (h *handler) deleteTimelineItem(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	timelineItemID, _ := strconv.ParseInt(way.Param(ctx, "timeline_item_id"), 10, 64)
+	timelineItemID := way.Param(ctx, "timeline_item_id")
 	err := h.DeleteTimelineItem(ctx, timelineItemID)
 	if err == service.ErrUnauthenticated {
 		http.Error(w, err.Error(), http.StatusUnauthorized)

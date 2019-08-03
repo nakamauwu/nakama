@@ -14,9 +14,9 @@ var ErrCommentNotFound = errors.New("comment not found")
 
 // Comment model.
 type Comment struct {
-	ID         int64     `json:"id"`
-	UserID     int64     `json:"-"`
-	PostID     int64     `json:"-"`
+	ID         string    `json:"id"`
+	UserID     string    `json:"-"`
+	PostID     string    `json:"-"`
 	Content    string    `json:"content"`
 	LikesCount int       `json:"likesCount"`
 	CreatedAt  time.Time `json:"createdAt"`
@@ -27,14 +27,14 @@ type Comment struct {
 
 type commentClient struct {
 	comments chan Comment
-	postID   int64
-	userID   *int64
+	postID   string
+	userID   *string
 }
 
 // CreateComment on a post.
-func (s *Service) CreateComment(ctx context.Context, postID int64, content string) (Comment, error) {
+func (s *Service) CreateComment(ctx context.Context, postID string, content string) (Comment, error) {
 	var c Comment
-	uid, ok := ctx.Value(KeyAuthUserID).(int64)
+	uid, ok := ctx.Value(KeyAuthUserID).(string)
 	if !ok {
 		return c, ErrUnauthenticated
 	}
@@ -105,8 +105,8 @@ func (s *Service) commentCreated(c Comment) {
 }
 
 // Comments from a post in descending order with backward pagination.
-func (s *Service) Comments(ctx context.Context, postID int64, last int, before int64) ([]Comment, error) {
-	uid, auth := ctx.Value(KeyAuthUserID).(int64)
+func (s *Service) Comments(ctx context.Context, postID string, last int, before string) ([]Comment, error) {
+	uid, auth := ctx.Value(KeyAuthUserID).(string)
 	last = normalizePageSize(last)
 	query, args, err := buildQuery(`
 		SELECT comments.id, content, likes_count, created_at, username, avatar
@@ -121,7 +121,7 @@ func (s *Service) Comments(ctx context.Context, postID int64, last int, before i
 			ON likes.comment_id = comments.id AND likes.user_id = @uid
 		{{end}}
 		WHERE comments.post_id = @post_id
-		{{if gt .before 0}}AND comments.id < @before{{end}}
+		{{if .before}}AND comments.id < @before{{end}}
 		ORDER BY created_at DESC
 		LIMIT @last`, map[string]interface{}{
 		"auth":    auth,
@@ -167,10 +167,10 @@ func (s *Service) Comments(ctx context.Context, postID int64, last int, before i
 }
 
 // CommentStream to receive comments in realtime.
-func (s *Service) CommentStream(ctx context.Context, postID int64) <-chan Comment {
+func (s *Service) CommentStream(ctx context.Context, postID string) <-chan Comment {
 	cc := make(chan Comment)
 	client := &commentClient{comments: cc, postID: postID}
-	if uid, auth := ctx.Value(KeyAuthUserID).(int64); auth {
+	if uid, auth := ctx.Value(KeyAuthUserID).(string); auth {
 		client.userID = &uid
 	}
 	s.commentClients.Store(client, nil)
@@ -185,9 +185,9 @@ func (s *Service) CommentStream(ctx context.Context, postID int64) <-chan Commen
 }
 
 // ToggleCommentLike 🖤
-func (s *Service) ToggleCommentLike(ctx context.Context, commentID int64) (ToggleLikeOutput, error) {
+func (s *Service) ToggleCommentLike(ctx context.Context, commentID string) (ToggleLikeOutput, error) {
 	var out ToggleLikeOutput
-	uid, ok := ctx.Value(KeyAuthUserID).(int64)
+	uid, ok := ctx.Value(KeyAuthUserID).(string)
 	if !ok {
 		return out, ErrUnauthenticated
 	}

@@ -1,13 +1,13 @@
 /**
  * @typedef User
- * @property {bigint=} id
+ * @property {string=} id
  * @property {string} username
  * @property {string=} avatarURL
  */
 
 /**
  * @typedef UserProfile
- * @property {bigint=} id
+ * @property {string=} id
  * @property {string=} email
  * @property {string} username
  * @property {string=} avatarURL
@@ -22,12 +22,12 @@
  * @typedef DevLoginOutput
  * @property {string} token
  * @property {string|Date} expiresAt
- * @property {User} authUser
+ * @property {User} user
  */
 
 /**
  * @typedef Post
- * @property {bigint} id
+ * @property {string} id
  * @property {string} content
  * @property {boolean} NSFW
  * @property {string=} spoilerOf
@@ -42,13 +42,13 @@
 
 /**
  * @typedef TimelineItem
- * @property {bigint} id
+ * @property {string} id
  * @property {Post=} post
  */
 
 /**
  * @typedef Comment
- * @property {bigint} id
+ * @property {string} id
  * @property {string} content
  * @property {number} likesCount
  * @property {string|Date} createdAt

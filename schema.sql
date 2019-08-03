@@ -5,7 +5,7 @@ CREATE DATABASE IF NOT EXISTS nakama;
 SET DATABASE = nakama;
 
 CREATE TABLE IF NOT EXISTS users (
-    id SERIAL NOT NULL PRIMARY KEY,
+    id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
     email VARCHAR NOT NULL UNIQUE,
     username VARCHAR NOT NULL UNIQUE,
     avatar VARCHAR,
@@ -15,18 +15,18 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS verification_codes (
     id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id INT NOT NULL REFERENCES users
+    user_id UUID NOT NULL REFERENCES users
 );
 
 CREATE TABLE IF NOT EXISTS follows (
-    follower_id INT NOT NULL REFERENCES users,
-    followee_id INT NOT NULL REFERENCES users,
+    follower_id UUID NOT NULL REFERENCES users,
+    followee_id UUID NOT NULL REFERENCES users,
     PRIMARY KEY (follower_id, followee_id)
 );
 
 CREATE TABLE IF NOT EXISTS posts (
-    id SERIAL NOT NULL PRIMARY KEY,
-    user_id INT NOT NULL REFERENCES users,
+    id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users,
     content VARCHAR NOT NULL,
     spoiler_of VARCHAR,
     nsfw BOOLEAN NOT NULL DEFAULT false,
@@ -38,29 +38,29 @@ CREATE TABLE IF NOT EXISTS posts (
 CREATE INDEX IF NOT EXISTS sorted_posts ON posts (created_at DESC);
 
 CREATE TABLE IF NOT EXISTS post_likes (
-    user_id INT NOT NULL REFERENCES users,
-    post_id INT NOT NULL REFERENCES posts,
+    user_id UUID NOT NULL REFERENCES users,
+    post_id UUID NOT NULL REFERENCES posts,
     PRIMARY KEY (user_id, post_id)
 );
 
 CREATE TABLE IF NOT EXISTS post_subscriptions (
-    user_id INT NOT NULL REFERENCES users,
-    post_id INT NOT NULL REFERENCES posts,
+    user_id UUID NOT NULL REFERENCES users,
+    post_id UUID NOT NULL REFERENCES posts,
     PRIMARY KEY (user_id, post_id)
 );
 
 CREATE TABLE IF NOT EXISTS timeline (
-    id SERIAL NOT NULL PRIMARY KEY,
-    user_id INT NOT NULL REFERENCES users,
-    post_id INT NOT NULL REFERENCES posts
+    id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users,
+    post_id UUID NOT NULL REFERENCES posts
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS unique_timeline_items ON timeline (user_id, post_id);
 
 CREATE TABLE IF NOT EXISTS comments (
-    id SERIAL NOT NULL PRIMARY KEY,
-    user_id INT NOT NULL REFERENCES users,
-    post_id INT NOT NULL REFERENCES posts,
+    id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users,
+    post_id UUID NOT NULL REFERENCES posts,
     content VARCHAR NOT NULL,
     likes_count INT NOT NULL DEFAULT 0 CHECK (likes_count >= 0),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -69,17 +69,17 @@ CREATE TABLE IF NOT EXISTS comments (
 CREATE INDEX IF NOT EXISTS sorted_comments ON comments (created_at DESC);
 
 CREATE TABLE IF NOT EXISTS comment_likes (
-    user_id INT NOT NULL REFERENCES users,
-    comment_id INT NOT NULL REFERENCES comments,
+    user_id UUID NOT NULL REFERENCES users,
+    comment_id UUID NOT NULL REFERENCES comments,
     PRIMARY KEY (user_id, comment_id)
 );
 
 CREATE TABLE IF NOT EXISTS notifications (
-    id SERIAL NOT NULL PRIMARY KEY,
-    user_id INT NOT NULL REFERENCES users,
+    id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users,
     actors VARCHAR[] NOT NULL,
     type VARCHAR NOT NULL,
-    post_id INT REFERENCES posts,
+    post_id UUID REFERENCES posts,
     read BOOLEAN NOT NULL DEFAULT false,
     issued_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -89,15 +89,15 @@ CREATE INDEX IF NOT EXISTS sorted_notifications ON notifications (issued_at DESC
 CREATE UNIQUE INDEX IF NOT EXISTS unique_notifications ON notifications (user_id, type, post_id, read);
 
 INSERT INTO users (id, email, username) VALUES
-    (1, 'john@example.org', 'john'),
-    (2, 'jane@example.org', 'jane');
+    ('24ca6ce6-b3e9-4276-a99a-45c77115cc9f', 'shinji@example.org', 'shinji'),
+    ('93dfcef9-0b45-46ae-933c-ea52fbf80edb', 'rei@example.org', 'rei');
 
 INSERT INTO posts (id, user_id, content, comments_count) VALUES
-    (1, 1, 'sample post', 1);
+    ('c592451b-fdd2-430d-8d49-e75f058c3dce', '24ca6ce6-b3e9-4276-a99a-45c77115cc9f', 'sample post', 1);
 INSERT INTO post_subscriptions (user_id, post_id) VALUES
-    (1, 1);
+    ('24ca6ce6-b3e9-4276-a99a-45c77115cc9f', 'c592451b-fdd2-430d-8d49-e75f058c3dce');
 INSERT INTO timeline (id, user_id, post_id) VALUES
-    (1, 1, 1);
+    ('d7490258-1f2f-4a75-8fbb-1846ccde9543', '24ca6ce6-b3e9-4276-a99a-45c77115cc9f', 'c592451b-fdd2-430d-8d49-e75f058c3dce');
 
 INSERT INTO comments (id, user_id, post_id, content) VALUES
-    (1, 1, 1, 'sample comment');
+    ('648e60bf-b0ab-42e6-8e48-10f797b19c49', '24ca6ce6-b3e9-4276-a99a-45c77115cc9f', 'c592451b-fdd2-430d-8d49-e75f058c3dce', 'sample comment');

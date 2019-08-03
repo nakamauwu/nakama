@@ -18,6 +18,10 @@ template.innerHTML = `
     </div>
 `
 
+/**
+ * @param {object} params
+ * @param {string} params.username
+ */
 export default async function renderUserPage(params) {
     const [user, posts] = await Promise.all([
         fetchUser(params.username),
@@ -64,9 +68,9 @@ function fetchUser(username) {
 
 /**
  * @param {string} username
- * @param {bigint=} before
+ * @param {string=} before
  * @returns {Promise<import("../types.js").Post[]>}
  */
-function fetchPosts(username, before = 0n) {
+function fetchPosts(username, before = "") {
     return doGet(`/api/users/${username}/posts?before=${before}&last=${PAGE_SIZE}`)
 }

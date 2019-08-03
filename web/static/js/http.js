@@ -1,5 +1,4 @@
 import { isAuthenticated } from "./auth.js"
-import { parseJSON, stringifyJSON } from "./lib/json.js"
 import { isPlainObject } from "./utils.js"
 
 /**
@@ -23,7 +22,7 @@ export function doPost(url, body, headers) {
         headers: defaultHeaders(),
     }
     if (isPlainObject(body)) {
-        init["body"] = stringifyJSON(body)
+        init["body"] = JSON.stringify(body)
         init.headers["content-type"] = "application/json; charset=utf-8"
     }
     Object.assign(init.headers, headers)
@@ -37,13 +36,13 @@ export function doPost(url, body, headers) {
 export function subscribe(url, cb) {
     if (isAuthenticated()) {
         const _url = new URL(url, location.origin)
-        _url.searchParams.set("token", localStorage.getItem("token"))
+        _url.searchParams.set("auth_token", localStorage.getItem("auth_token"))
         url = _url.toString()
     }
     const eventSource = new EventSource(url)
     eventSource.onmessage = ev => {
         try {
-            cb(parseJSON(ev.data))
+            cb(JSON.parse(ev.data))
         } catch (_) { }
     }
     return () => {
@@ -53,7 +52,7 @@ export function subscribe(url, cb) {
 
 function defaultHeaders() {
     return isAuthenticated() ? {
-        authorization: "Bearer " + localStorage.getItem("token"),
+        authorization: "Bearer " + localStorage.getItem("auth_token"),
     } : {}
 }
 
@@ -62,13 +61,11 @@ function defaultHeaders() {
  * @returns {Promise<any>}
  */
 async function parseResponse(res) {
-    let body = await res.text()
-    try { body = parseJSON(body) } catch (_) { }
+    let body = await res.clone().json().catch(() => res.text())
     if (!res.ok) {
-        const msg = String(body).trim()
+        const msg = String(body).trim().toLowerCase()
         const err = new Error(msg)
         err.name = msg
-            .toLowerCase()
             .split(" ")
             .map(word => word.charAt(0).toUpperCase() + word.slice(1))
             .join("")

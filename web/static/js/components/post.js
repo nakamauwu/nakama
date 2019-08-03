@@ -8,7 +8,7 @@ const messageIconSVG = `<svg class="icon" xmlns="http://www.w3.org/2000/svg" vie
 
 /**
  * @param {import("../types.js").Post} post
- * @param {bigint=} timelineItemID
+ * @param {string=} timelineItemID
  */
 export default function renderPost(post, timelineItemID) {
     const authenticated = isAuthenticated()
@@ -96,7 +96,7 @@ export default function renderPost(post, timelineItemID) {
 }
 
 /**
- * @param {bigint} postID
+ * @param {string} postID
  * @returns {Promise<import("../types.js").ToggleLikeOutput>}
  */
 function togglePostLike(postID) {
