@@ -155,12 +155,9 @@ func (s *Service) AuthURI(ctx context.Context, verificationCode, redirectURI str
 }
 
 // DevLogin is a login for development purposes only.
+// TODO: disable dev login on production.
 func (s *Service) DevLogin(ctx context.Context, email string) (DevLoginOutput, error) {
 	var out DevLoginOutput
-
-	if s.origin.Hostname() != "localhost" {
-		return out, ErrUnimplemented
-	}
 
 	email = strings.TrimSpace(email)
 	if !reEmail.MatchString(email) {
