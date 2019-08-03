@@ -10,7 +10,7 @@ import { personAddIconSVG, personDoneIconSVG } from "./icons.js"
 export default function renderUserProfile(user, full = false) {
     const authenticated = isAuthenticated()
     const article = document.createElement("article")
-    article.className = "user-profile card"
+    article.className = "user-profile"
     article.innerHTML = `
         ${full ? `
             ${renderAvatarHTML(user, "Double click to update avatar")}

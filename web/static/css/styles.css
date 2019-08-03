@@ -51,9 +51,10 @@ img {
 }
 
 header {
-    background-color: var(--surface-0);
+    background-color: var(--background);
     padding: .5rem 0;
     box-shadow: var(--box-shadow);
+    border-bottom: 1px solid var(--surface-0);
     position: sticky;
     top: 0;
     z-index: 1;
@@ -218,14 +219,9 @@ header .profile-link {
     margin-left: auto;
 }
 
-.card {
-    background-color: var(--surface-0);
-    padding: 1.5rem;
-    border-radius: 1.5rem;
-}
-
 [role=feed] article + article {
     margin-top: .5rem;
+    border-top: 1px solid var(--surface-0);
 }
 
 .login-form {
@@ -262,6 +258,10 @@ header .profile-link {
 
 .avatar[data-initial]::after {
     content: attr(data-initial);
+}
+
+.micro-post {
+    padding: 1.5rem 0;
 }
 
 .micro-post-header,
@@ -364,6 +364,10 @@ header .profile-link {
 
 .user-wrapper .user-username {
     margin-left: 0;
+}
+
+.user-profile {
+    padding: 1.5rem 0;
 }
 
 .user-profile h1 {
