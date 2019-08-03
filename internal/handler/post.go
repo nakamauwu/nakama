@@ -48,7 +48,7 @@ func (h *handler) posts(w http.ResponseWriter, r *http.Request) {
 	last, _ := strconv.Atoi(q.Get("last"))
 	before := q.Get("before")
 	pp, err := h.Posts(ctx, way.Param(ctx, "username"), last, before)
-	if err == service.ErrInvalidUsername {
+	if err == service.ErrInvalidUsername || err == service.ErrInvalidPostID {
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
@@ -65,6 +65,11 @@ func (h *handler) post(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	postID := way.Param(ctx, "post_id")
 	p, err := h.Post(ctx, postID)
+	if err == service.ErrInvalidPostID {
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		return
+	}
+
 	if err == service.ErrPostNotFound {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -87,6 +92,11 @@ func (h *handler) togglePostLike(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err == service.ErrInvalidPostID {
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		return
+	}
+
 	if err == service.ErrPostNotFound {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -106,6 +116,11 @@ func (h *handler) togglePostSubscription(w http.ResponseWriter, r *http.Request)
 	out, err := h.TogglePostSubscription(ctx, postID)
 	if err == service.ErrUnauthenticated {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	if err == service.ErrInvalidPostID {
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
 

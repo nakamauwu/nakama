@@ -28,8 +28,8 @@ var (
 )
 
 var (
-	// ErrUserNotFound denotes a not found user.
-	ErrUserNotFound = errors.New("user not found")
+	// ErrInvalidUserID denotes an invalid user id; that is not uuid.
+	ErrInvalidUserID = errors.New("invalid user id")
 	// ErrInvalidEmail denotes an invalid email address.
 	ErrInvalidEmail = errors.New("invalid email")
 	// ErrInvalidUsername denotes an invalid username.
@@ -38,8 +38,8 @@ var (
 	ErrEmailTaken = errors.New("email taken")
 	// ErrUsernameTaken denotes a username already taken.
 	ErrUsernameTaken = errors.New("username taken")
-	// ErrUsernameStartRequired denotes a required username start.
-	ErrUsernameStartRequired = errors.New("username start required")
+	// ErrUserNotFound denotes a not found user.
+	ErrUserNotFound = errors.New("user not found")
 	// ErrForbiddenFollow denotes a forbiden follow. Like following yourself.
 	ErrForbiddenFollow = errors.New("forbidden follow")
 	// ErrUnsupportedAvatarFormat denotes an unsupported avatar image format.
@@ -180,7 +180,7 @@ func (s *Service) Users(ctx context.Context, search string, first int, after str
 func (s *Service) Usernames(ctx context.Context, startingWith string, first int, after string) ([]string, error) {
 	startingWith = strings.TrimSpace(startingWith)
 	if startingWith == "" {
-		return nil, ErrUsernameStartRequired
+		return []string{}, nil
 	}
 
 	uid, auth := ctx.Value(KeyAuthUserID).(string)

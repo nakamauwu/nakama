@@ -11,6 +11,8 @@ import (
 )
 
 var (
+	// ErrInvalidPostID denotes an invalid post id; that is not uuid.
+	ErrInvalidPostID = errors.New("invalid post id")
 	// ErrInvalidContent denotes an invalid content.
 	ErrInvalidContent = errors.New("invalid content")
 	// ErrInvalidSpoiler denotes an invalid spoiler title.
@@ -47,12 +49,7 @@ type ToggleSubscriptionOutput struct {
 }
 
 // CreatePost publishes a post to the user timeline and fan-outs it to his followers.
-func (s *Service) CreatePost(
-	ctx context.Context,
-	content string,
-	spoilerOf *string,
-	nsfw bool,
-) (TimelineItem, error) {
+func (s *Service) CreatePost(ctx context.Context, content string, spoilerOf *string, nsfw bool) (TimelineItem, error) {
 	var ti TimelineItem
 	uid, ok := ctx.Value(KeyAuthUserID).(string)
 	if !ok {
@@ -140,6 +137,10 @@ func (s *Service) Posts(ctx context.Context, username string, last int, before s
 		return nil, ErrInvalidUsername
 	}
 
+	if before != "" && !reUUID.MatchString(before) {
+		return nil, ErrInvalidPostID
+	}
+
 	uid, auth := ctx.Value(KeyAuthUserID).(string)
 	last = normalizePageSize(last)
 	query, args, err := buildQuery(`
@@ -210,6 +211,10 @@ func (s *Service) Posts(ctx context.Context, username string, last int, before s
 // Post with the given ID.
 func (s *Service) Post(ctx context.Context, postID string) (Post, error) {
 	var p Post
+	if !reUUID.MatchString(postID) {
+		return p, ErrInvalidPostID
+	}
+
 	uid, auth := ctx.Value(KeyAuthUserID).(string)
 	query, args, err := buildQuery(`
 		SELECT posts.id, content, spoiler_of, nsfw, likes_count, comments_count, created_at
@@ -275,6 +280,10 @@ func (s *Service) TogglePostLike(ctx context.Context, postID string) (ToggleLike
 		return out, ErrUnauthenticated
 	}
 
+	if !reUUID.MatchString(postID) {
+		return out, ErrInvalidPostID
+	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return out, fmt.Errorf("could not begin tx: %v", err)
@@ -333,6 +342,10 @@ func (s *Service) TogglePostSubscription(ctx context.Context, postID string) (To
 	uid, ok := ctx.Value(KeyAuthUserID).(string)
 	if !ok {
 		return out, ErrUnauthenticated
+	}
+
+	if !reUUID.MatchString(postID) {
+		return out, ErrInvalidPostID
 	}
 
 	tx, err := s.db.BeginTx(ctx, nil)

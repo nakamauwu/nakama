@@ -212,6 +212,10 @@ func (s *Service) AuthUserIDFromToken(token string) (string, error) {
 		return "", fmt.Errorf("could not decode token: %v", err)
 	}
 
+	if !reUUID.MatchString(uid) {
+		return "", ErrInvalidUserID
+	}
+
 	return uid, nil
 }
 

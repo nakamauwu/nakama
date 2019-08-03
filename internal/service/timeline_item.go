@@ -3,9 +3,13 @@ package service
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 )
+
+// ErrInvalidTimelineItemID denotes an invalid timeline item id; that is not uuid.
+var ErrInvalidTimelineItemID = errors.New("invalid timeline item id")
 
 // TimelineItem model.
 type TimelineItem struct {
@@ -122,6 +126,10 @@ func (s *Service) DeleteTimelineItem(ctx context.Context, timelineItemID string)
 	uid, ok := ctx.Value(KeyAuthUserID).(string)
 	if !ok {
 		return ErrUnauthenticated
+	}
+
+	if !reUUID.MatchString(timelineItemID) {
+		return ErrInvalidTimelineItemID
 	}
 
 	if _, err := s.db.ExecContext(ctx, `

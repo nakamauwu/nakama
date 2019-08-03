@@ -24,6 +24,11 @@ func (h *handler) notifications(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err == service.ErrInvalidNotificationID {
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		return
+	}
+
 	if err != nil {
 		respondErr(w, err)
 		return
@@ -82,6 +87,11 @@ func (h *handler) markNotificationAsRead(w http.ResponseWriter, r *http.Request)
 	err := h.MarkNotificationAsRead(ctx, notificationID)
 	if err == service.ErrUnauthenticated {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	if err == service.ErrInvalidNotificationID {
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
 

@@ -71,5 +71,15 @@ func (h *handler) deleteTimelineItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err == service.ErrInvalidTimelineItemID {
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		return
+	}
+
+	if err != nil {
+		respondErr(w, err)
+		return
+	}
+
 	w.WriteHeader(http.StatusNoContent)
 }

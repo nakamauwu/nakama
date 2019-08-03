@@ -9,8 +9,12 @@ import (
 	"time"
 )
 
-// ErrCommentNotFound denotes a not found comment.
-var ErrCommentNotFound = errors.New("comment not found")
+var (
+	// ErrInvalidCommentID denotes an invalid comment id; that is not uuid.
+	ErrInvalidCommentID = errors.New("invalid comment id")
+	// ErrCommentNotFound denotes a not found comment.
+	ErrCommentNotFound = errors.New("comment not found")
+)
 
 // Comment model.
 type Comment struct {
@@ -37,6 +41,10 @@ func (s *Service) CreateComment(ctx context.Context, postID string, content stri
 	uid, ok := ctx.Value(KeyAuthUserID).(string)
 	if !ok {
 		return c, ErrUnauthenticated
+	}
+
+	if !reUUID.MatchString(postID) {
+		return c, ErrInvalidPostID
 	}
 
 	content = smartTrim(content)
@@ -106,6 +114,14 @@ func (s *Service) commentCreated(c Comment) {
 
 // Comments from a post in descending order with backward pagination.
 func (s *Service) Comments(ctx context.Context, postID string, last int, before string) ([]Comment, error) {
+	if !reUUID.MatchString(postID) {
+		return nil, ErrInvalidPostID
+	}
+
+	if before != "" && !reUUID.MatchString(before) {
+		return nil, ErrInvalidCommentID
+	}
+
 	uid, auth := ctx.Value(KeyAuthUserID).(string)
 	last = normalizePageSize(last)
 	query, args, err := buildQuery(`
@@ -167,7 +183,11 @@ func (s *Service) Comments(ctx context.Context, postID string, last int, before 
 }
 
 // CommentStream to receive comments in realtime.
-func (s *Service) CommentStream(ctx context.Context, postID string) <-chan Comment {
+func (s *Service) CommentStream(ctx context.Context, postID string) (<-chan Comment, error) {
+	if !reUUID.MatchString(postID) {
+		return nil, ErrInvalidPostID
+	}
+
 	cc := make(chan Comment)
 	client := &commentClient{comments: cc, postID: postID}
 	if uid, auth := ctx.Value(KeyAuthUserID).(string); auth {
@@ -181,7 +201,7 @@ func (s *Service) CommentStream(ctx context.Context, postID string) <-chan Comme
 		close(cc)
 	}()
 
-	return cc
+	return cc, nil
 }
 
 // ToggleCommentLike 🖤
@@ -190,6 +210,10 @@ func (s *Service) ToggleCommentLike(ctx context.Context, commentID string) (Togg
 	uid, ok := ctx.Value(KeyAuthUserID).(string)
 	if !ok {
 		return out, ErrUnauthenticated
+	}
+
+	if !reUUID.MatchString(commentID) {
+		return out, ErrInvalidCommentID
 	}
 
 	tx, err := s.db.BeginTx(ctx, nil)

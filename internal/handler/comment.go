@@ -30,7 +30,7 @@ func (h *handler) createComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err == service.ErrInvalidContent {
+	if err == service.ErrInvalidPostID || err == service.ErrInvalidContent {
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
@@ -60,6 +60,11 @@ func (h *handler) comments(w http.ResponseWriter, r *http.Request) {
 	last, _ := strconv.Atoi(q.Get("last"))
 	before := q.Get("before")
 	cc, err := h.Comments(ctx, postID, last, before)
+	if err == service.ErrInvalidPostID || err == service.ErrInvalidCommentID {
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		return
+	}
+
 	if err != nil {
 		respondErr(w, err)
 		return
@@ -77,13 +82,23 @@ func (h *handler) commentStream(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	postID := way.Param(ctx, "post_id")
+	cc, err := h.CommentStream(ctx, postID)
+	if err == service.ErrInvalidPostID {
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		return
+	}
+
+	if err != nil {
+		respondErr(w, err)
+		return
+	}
 
 	header := w.Header()
 	header.Set("Cache-Control", "no-cache")
 	header.Set("Connection", "keep-alive")
 	header.Set("Content-Type", "text/event-stream; charset=utf-8")
 
-	for c := range h.CommentStream(ctx, postID) {
+	for c := range cc {
 		writeSSE(w, c)
 		f.Flush()
 	}
@@ -95,6 +110,11 @@ func (h *handler) toggleCommentLike(w http.ResponseWriter, r *http.Request) {
 	out, err := h.ToggleCommentLike(ctx, commentID)
 	if err == service.ErrUnauthenticated {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	if err == service.ErrInvalidCommentID {
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
 

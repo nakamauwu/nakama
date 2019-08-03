@@ -3,12 +3,16 @@ package service
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"time"
 
 	"github.com/lib/pq"
 )
+
+// ErrInvalidNotificationID denotes an invalid notification id; that is not uuid.
+var ErrInvalidNotificationID = errors.New("invalid notification id")
 
 // Notification model.
 type Notification struct {
@@ -31,6 +35,10 @@ func (s *Service) Notifications(ctx context.Context, last int, before string) ([
 	uid, ok := ctx.Value(KeyAuthUserID).(string)
 	if !ok {
 		return nil, ErrUnauthenticated
+	}
+
+	if before != "" && !reUUID.MatchString(before) {
+		return nil, ErrInvalidNotificationID
 	}
 
 	last = normalizePageSize(last)
@@ -115,6 +123,10 @@ func (s *Service) MarkNotificationAsRead(ctx context.Context, notificationID str
 	uid, ok := ctx.Value(KeyAuthUserID).(string)
 	if !ok {
 		return ErrUnauthenticated
+	}
+
+	if !reUUID.MatchString(notificationID) {
+		return ErrInvalidNotificationID
 	}
 
 	if _, err := s.db.Exec(`
