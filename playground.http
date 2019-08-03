@@ -17,7 +17,7 @@ POST {{host}}/api/dev_login
 Content-Type: application/json
 
 {
-    "email": "john@example.org"
+    "email": "shinji@example.org"
 }
 
 ###
@@ -25,7 +25,7 @@ POST {{host}}/api/send_magic_link
 Content-Type: application/json
 
 {
-    "email": "john@example.org",
+    "email": "shinji@example.org",
     "redirectURI": "http://localhost:3000/auth_redirect"
 }
 
@@ -46,7 +46,7 @@ GET {{host}}/api/usernames?starting_with=&first=&after=
 # Authorization: Bearer {{login.response.body.token}}
 
 ###
-GET {{host}}/api/users/john
+GET {{host}}/api/users/shinji
 Authorization: Bearer {{login.response.body.token}}
 
 ###
@@ -57,15 +57,15 @@ Content-Type: image/png
 < assets/sample_avatar.png
 
 ###
-POST {{host}}/api/users/jane/toggle_follow
+POST {{host}}/api/users/rei/toggle_follow
 Authorization: Bearer {{login.response.body.token}}
 
 ###
-GET {{host}}/api/users/john/followers?first=&after=
+GET {{host}}/api/users/shinji/followers?first=&after=
 Authorization: Bearer {{login.response.body.token}}
 
 ###
-GET {{host}}/api/users/john/followees?first=&after=
+GET {{host}}/api/users/shinji/followees?first=&after=
 Authorization: Bearer {{login.response.body.token}}
 
 ###
@@ -79,7 +79,7 @@ Content-Type: application/json
 }
 
 ###
-GET {{host}}/api/users/john/posts?last=&before=
+GET {{host}}/api/users/shinji/posts?last=&before=
 Authorization: Bearer {{login.response.body.token}}
 
 ###

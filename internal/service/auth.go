@@ -9,7 +9,6 @@ import (
 	"html/template"
 	"log"
 	"net/url"
-	"regexp"
 	"strings"
 	"time"
 )
@@ -29,13 +28,15 @@ var (
 	ErrUnauthenticated = errors.New("unauthenticated")
 	// ErrInvalidRedirectURI denotes an invalid redirect uri.
 	ErrInvalidRedirectURI = errors.New("invalid redirect uri")
+	// ErrInvalidToken denotes an invalid token.
+	ErrInvalidToken = errors.New("invalid token")
+	// ErrExpiredToken denotes that the token already expired.
+	ErrExpiredToken = errors.New("expired token")
 	// ErrInvalidVerificationCode denotes an invalid verification code.
 	ErrInvalidVerificationCode = errors.New("invalid verification code")
 	// ErrVerificationCodeNotFound denotes a not found verification code.
 	ErrVerificationCodeNotFound = errors.New("verification code not found")
 )
-
-var reUUID = regexp.MustCompile("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 
 var magicLinkMailTmpl *template.Template
 
@@ -79,6 +80,15 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 		return fmt.Errorf("could not insert verification code: %v", err)
 	}
 
+	defer func() {
+		if err != nil {
+			_, err := s.db.Exec("DELETE FROM verification_codes WHERE id = $1", code)
+			if err != nil {
+				log.Printf("could not delete verification code: %v", err)
+			}
+		}
+	}()
+
 	link := s.origin
 	link.Path = "/api/auth_redirect"
 	q := link.Query()
@@ -105,8 +115,6 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 		return fmt.Errorf("could not send magic link: %v", err)
 	}
 
-	go s.deleteVerificationCodeWhenExpires(code)
-
 	return nil
 }
 
@@ -124,9 +132,10 @@ func (s *Service) AuthURI(ctx context.Context, verificationCode, redirectURI str
 	}
 
 	var uid string
+	var createdAt time.Time
 	err = s.db.QueryRowContext(ctx, `
 		DELETE FROM verification_codes WHERE id = $1
-		RETURNING user_id`, verificationCode).Scan(&uid)
+		RETURNING user_id, created_at`, verificationCode).Scan(&uid, &createdAt)
 	if err == sql.ErrNoRows {
 		return "", ErrVerificationCodeNotFound
 	}
@@ -135,19 +144,20 @@ func (s *Service) AuthURI(ctx context.Context, verificationCode, redirectURI str
 		return "", fmt.Errorf("could not delete verification code: %v", err)
 	}
 
+	now := time.Now()
+	exp := createdAt.Add(verificationCodeLifespan)
+	if exp.Equal(now) || exp.Before(now) {
+		return "", ErrExpiredToken
+	}
+
 	token, err := s.codec.EncodeToString(uid)
 	if err != nil {
 		return "", fmt.Errorf("could not create token: %v", err)
 	}
 
-	exp, err := time.Now().Add(tokenLifespan).MarshalText()
-	if err != nil {
-		return "", fmt.Errorf("could not marshall token expiration timestamp: %v", err)
-	}
-
 	f := url.Values{}
 	f.Set("token", token)
-	f.Set("expires_at", string(exp))
+	f.Set("expires_at", now.Add(tokenLifespan).Format(time.RFC3339Nano))
 	uri.Fragment = f.Encode()
 
 	return uri.String(), nil
@@ -191,6 +201,14 @@ func (s *Service) DevLogin(ctx context.Context, email string) (DevLoginOutput, e
 func (s *Service) AuthUserIDFromToken(token string) (string, error) {
 	uid, err := s.codec.DecodeToString(token)
 	if err != nil {
+		// We check error string because branca doesn't export errors.
+		msg := err.Error()
+		if msg == "invalid base62 token" || msg == "invalid token version" {
+			return "", ErrInvalidToken
+		}
+		if msg == "token is expired" {
+			return "", ErrExpiredToken
+		}
 		return "", fmt.Errorf("could not decode token: %v", err)
 	}
 
@@ -227,9 +245,27 @@ func (s *Service) Token(ctx context.Context) (TokenOutput, error) {
 	return out, nil
 }
 
-func (s *Service) deleteVerificationCodeWhenExpires(code string) {
-	<-time.After(verificationCodeLifespan)
-	if _, err := s.db.Exec("DELETE FROM verification_codes WHERE id = $1", code); err != nil {
-		log.Printf("could not delete expired verification code: %v\n", err)
+func (s *Service) deleteExpiredVerificationCodesJob() {
+	ticker := time.NewTicker(time.Hour * 24)
+	ctx := context.Background()
+	done := ctx.Done()
+	for {
+		select {
+		case <-ticker.C:
+			if err := s.deleteExpiredVerificationCodes(ctx); err != nil {
+				log.Println(err)
+			}
+		case <-done:
+			ticker.Stop()
+			return
+		}
 	}
+}
+
+func (s *Service) deleteExpiredVerificationCodes(ctx context.Context) error {
+	query := fmt.Sprintf("DELETE FROM verification_codes WHERE (created_at - INTERVAL '%dm') <= now()", int64(verificationCodeLifespan.Minutes()))
+	if _, err := s.db.ExecContext(ctx, query); err != nil {
+		return fmt.Errorf("could not delete expired verification code: %v", err)
+	}
+	return nil
 }

@@ -19,6 +19,7 @@ const (
 
 var queriesCache sync.Map
 var (
+	reUUID                = regexp.MustCompile("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 	reMultiSpace          = regexp.MustCompile(`(\s)+`)
 	reMoreThan2Linebreaks = regexp.MustCompile(`(\n){2,}`)
 	reMentions            = regexp.MustCompile(`\B@([a-zA-Z][a-zA-Z0-9_-]{0,17})`)

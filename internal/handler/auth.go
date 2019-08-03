@@ -3,7 +3,6 @@ package handler
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"net/http"
 	"strings"
 
@@ -55,7 +54,12 @@ func (h *handler) authRedirect(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err == service.ErrVerificationCodeNotFound {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		http.Error(w, err.Error(), http.StatusGone)
+		return
+	}
+
+	if err == service.ErrExpiredToken {
+		http.Error(w, err.Error(), http.StatusGone)
 		return
 	}
 
@@ -148,8 +152,6 @@ func (h *handler) withAuth(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 			return
 		}
-
-		log.Printf("with auth: token=%s\n", token)
 
 		uid, err := h.AuthUserIDFromToken(token)
 		if err != nil {
