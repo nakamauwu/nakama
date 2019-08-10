@@ -148,7 +148,7 @@ func (h *handler) withAuth(next http.Handler) http.Handler {
 			}
 		}
 
-		if token == "" || token == "null" || token == "undefined" {
+		if token == "" {
 			next.ServeHTTP(w, r)
 			return
 		}
