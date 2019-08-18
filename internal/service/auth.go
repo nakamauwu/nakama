@@ -11,6 +11,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/hako/branca"
 )
 
 // KeyAuthUserID to use in context.
@@ -150,7 +152,7 @@ func (s *Service) AuthURI(ctx context.Context, verificationCode, redirectURI str
 		return "", ErrExpiredToken
 	}
 
-	token, err := s.codec.EncodeToString(uid)
+	token, err := s.codec().EncodeToString(uid)
 	if err != nil {
 		return "", fmt.Errorf("could not create token: %v", err)
 	}
@@ -187,7 +189,7 @@ func (s *Service) DevLogin(ctx context.Context, email string) (DevLoginOutput, e
 
 	out.User.AvatarURL = s.avatarURL(avatar)
 
-	out.Token, err = s.codec.EncodeToString(out.User.ID)
+	out.Token, err = s.codec().EncodeToString(out.User.ID)
 	if err != nil {
 		return out, fmt.Errorf("could not create token: %v", err)
 	}
@@ -199,7 +201,7 @@ func (s *Service) DevLogin(ctx context.Context, email string) (DevLoginOutput, e
 
 // AuthUserIDFromToken decodes the token into a user ID.
 func (s *Service) AuthUserIDFromToken(token string) (string, error) {
-	uid, err := s.codec.DecodeToString(token)
+	uid, err := s.codec().DecodeToString(token)
 	if err != nil {
 		// We check error string because branca doesn't export errors.
 		msg := err.Error()
@@ -239,7 +241,7 @@ func (s *Service) Token(ctx context.Context) (TokenOutput, error) {
 	}
 
 	var err error
-	out.Token, err = s.codec.EncodeToString(uid)
+	out.Token, err = s.codec().EncodeToString(uid)
 	if err != nil {
 		return out, fmt.Errorf("could not create token: %v", err)
 	}
@@ -272,4 +274,10 @@ func (s *Service) deleteExpiredVerificationCodes(ctx context.Context) error {
 		return fmt.Errorf("could not delete expired verification code: %v", err)
 	}
 	return nil
+}
+
+func (s *Service) codec() *branca.Branca {
+	cdc := branca.NewBranca(s.tokenKey)
+	cdc.SetTTL(uint32(tokenLifespan.Seconds()))
+	return cdc
 }

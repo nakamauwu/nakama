@@ -5,7 +5,6 @@ import (
 	"net/url"
 	"sync"
 
-	"github.com/hako/branca"
 	"github.com/nicolasparada/nakama/internal/mailing"
 )
 
@@ -15,7 +14,7 @@ type Service struct {
 	db                  *sql.DB
 	sender              mailing.Sender
 	origin              url.URL
-	codec               *branca.Branca
+	tokenKey            string
 	timelineItemClients sync.Map
 	commentClients      sync.Map
 	notificationClients sync.Map
@@ -23,14 +22,11 @@ type Service struct {
 
 // New service implementation.
 func New(db *sql.DB, sender mailing.Sender, origin url.URL, tokenKey string) *Service {
-	cdc := branca.NewBranca(tokenKey)
-	cdc.SetTTL(uint32(tokenLifespan.Seconds()))
-
 	s := &Service{
-		db:     db,
-		sender: sender,
-		origin: origin,
-		codec:  cdc,
+		db:       db,
+		sender:   sender,
+		origin:   origin,
+		tokenKey: tokenKey,
 	}
 
 	go s.deleteExpiredVerificationCodesJob()
