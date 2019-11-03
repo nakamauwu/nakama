@@ -551,3 +551,24 @@ header .profile-link {
 .likes-count-wrapper > * + * {
     margin-left: .5rem;
 }
+
+.notification.read {
+    opacity: .6;
+    text-decoration: line-through;
+}
+
+.notifications-link.has-unread-notifications {
+    position: relative;
+}
+
+.notifications-link.has-unread-notifications::after {
+    content: "";
+    display: block;
+    position: absolute;
+    top: .5rem;
+    right: 1rem;
+    background-color: var(--primary);
+    width: .5rem;
+    height: .5rem;
+    border-radius: 50%;
+}

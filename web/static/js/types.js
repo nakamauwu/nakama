@@ -76,4 +76,14 @@
  * @property {boolean} liked
  */
 
+/**
+ * @typedef Notification
+ * @property {string} id
+ * @property {string[]} actors
+ * @property {"follow"|"comment"|"post_mention"|"comment_mention"} type
+ * @property {string=} postID
+ * @property {boolean} read
+ * @property {string|Date} issuedAt
+ */
+
 export default undefined
