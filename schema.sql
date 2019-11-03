@@ -81,13 +81,13 @@ CREATE TABLE IF NOT EXISTS notifications (
     actors VARCHAR[] NOT NULL,
     type VARCHAR NOT NULL,
     post_id UUID REFERENCES posts,
-    read BOOLEAN NOT NULL DEFAULT false,
+    read_at TIMESTAMPTZ,
     issued_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE INDEX IF NOT EXISTS sorted_notifications ON notifications (issued_at DESC);
 
-CREATE UNIQUE INDEX IF NOT EXISTS unique_notifications ON notifications (user_id, type, post_id, read);
+CREATE UNIQUE INDEX IF NOT EXISTS unique_notifications ON notifications (user_id, type, post_id, read_at);
 
 INSERT INTO users (id, email, username) VALUES
     ('24ca6ce6-b3e9-4276-a99a-45c77115cc9f', 'shinji@example.org', 'shinji'),

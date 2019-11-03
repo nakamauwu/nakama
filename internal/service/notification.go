@@ -43,7 +43,7 @@ func (s *Service) Notifications(ctx context.Context, last int, before string) ([
 
 	last = normalizePageSize(last)
 	query, args, err := buildQuery(`
-		SELECT id, actors, type, post_id, read, issued_at
+		SELECT id, actors, type, post_id, read_at, issued_at
 		FROM notifications
 		WHERE user_id = @uid
 		{{if .before}}AND id < @before{{end}}
@@ -67,10 +67,12 @@ func (s *Service) Notifications(ctx context.Context, last int, before string) ([
 	nn := make([]Notification, 0, last)
 	for rows.Next() {
 		var n Notification
-		if err = rows.Scan(&n.ID, pq.Array(&n.Actors), &n.Type, &n.PostID, &n.Read, &n.IssuedAt); err != nil {
+		var readAt *time.Time
+		if err = rows.Scan(&n.ID, pq.Array(&n.Actors), &n.Type, &n.PostID, &readAt, &n.IssuedAt); err != nil {
 			return nil, fmt.Errorf("could not scan notification: %v", err)
 		}
 
+		n.Read = readAt != nil && !readAt.IsZero()
 		nn = append(nn, n)
 	}
 
@@ -110,7 +112,7 @@ func (s *Service) HasUnreadNotifications(ctx context.Context) (bool, error) {
 
 	var unread bool
 	if err := s.db.QueryRowContext(ctx, `SELECT EXISTS (
-		SELECT 1 FROM notifications WHERE user_id = $1 AND read = false
+		SELECT 1 FROM notifications WHERE user_id = $1 AND read_at IS NULL
 	)`, uid).Scan(&unread); err != nil {
 		return false, fmt.Errorf("could not query select unread notifications existence: %v", err)
 	}
@@ -130,8 +132,8 @@ func (s *Service) MarkNotificationAsRead(ctx context.Context, notificationID str
 	}
 
 	if _, err := s.db.Exec(`
-		UPDATE notifications SET read = true
-		WHERE id = $1 AND user_id = $2`, notificationID, uid); err != nil {
+		UPDATE notifications SET read_at = now()
+		WHERE id = $1 AND user_id = $2 AND read_at IS NULL`, notificationID, uid); err != nil {
 		return fmt.Errorf("could not update and mark notification as read: %v", err)
 	}
 
@@ -146,8 +148,8 @@ func (s *Service) MarkNotificationsAsRead(ctx context.Context) error {
 	}
 
 	if _, err := s.db.Exec(`
-		UPDATE notifications SET read = true
-		WHERE user_id = $1`, uid); err != nil {
+		UPDATE notifications SET read_at = now()
+		WHERE user_id = $1 AND read_at IS NULL`, uid); err != nil {
 		return fmt.Errorf("could not update and mark notifications as read: %v", err)
 	}
 
@@ -187,7 +189,7 @@ func (s *Service) notifyFollow(followerID, followeeID string) {
 	}
 
 	var nid string
-	query = "SELECT id FROM notifications WHERE user_id = $1 AND type = 'follow' AND read = false"
+	query = "SELECT id FROM notifications WHERE user_id = $1 AND type = 'follow' AND read_at IS NULL"
 	err = tx.QueryRow(query, followeeID).Scan(&nid)
 	if err != nil && err != sql.ErrNoRows {
 		log.Printf("could not query select unread follow notification: %v\n", err)
@@ -239,7 +241,7 @@ func (s *Service) notifyComment(c Comment) {
 		SELECT user_id, $1, 'comment', $2 FROM post_subscriptions
 		WHERE post_subscriptions.user_id != $3
 			AND post_subscriptions.post_id = $2
-		ON CONFLICT (user_id, type, post_id, read) DO UPDATE SET
+		ON CONFLICT (user_id, type, post_id, read_at) DO UPDATE SET
 			actors = array_prepend($4, array_remove(notifications.actors, $4)),
 			issued_at = now()
 		RETURNING id, user_id, actors, issued_at`,
@@ -331,7 +333,7 @@ func (s *Service) notifyCommentMention(c Comment) {
 		SELECT users.id, $1, 'comment_mention', $2 FROM users
 		WHERE users.id != $3
 			AND username = ANY($4)
-		ON CONFLICT (user_id, type, post_id, read) DO UPDATE SET
+		ON CONFLICT (user_id, type, post_id, read_at) DO UPDATE SET
 			actors = array_prepend($5, array_remove(notifications.actors, $5)),
 			issued_at = now()
 		RETURNING id, user_id, actors, issued_at`,

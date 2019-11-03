@@ -17,7 +17,7 @@ POST {{host}}/api/dev_login
 Content-Type: application/json
 
 {
-    "email": "shinji@example.org"
+    "email": "rei@example.org"
 }
 
 ###
@@ -126,7 +126,7 @@ GET {{host}}/api/has_unread_notifications
 Authorization: Bearer {{login.response.body.token}}
 
 ###
-POST {{host}}/api/notifications/{{notifications.response.body.$.id}}/mark_as_read
+POST {{host}}/api/notifications/{{notifications.response.body.0.id}}/mark_as_read
 Authorization: Bearer {{login.response.body.token}}
 
 ###
