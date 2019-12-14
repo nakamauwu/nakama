@@ -6,11 +6,11 @@ Source code of the next social network for anime fans. Still on development.
 
 ## Building
 
-Besides having [Go](https://golang.org/) installed, the server needs a SQL database; we are using [CockroachDB](https://www.cockroachlabs.com/), but [Postgres](https://www.postgresql.org/) should work too.
+Besides having [Go](https://golang.org/) installed, the server needs a SQL database; we are using [CockroachDB](https://www.cockroachlabs.com/).
 
-First, you need a CockroachDB instance running.
+First, you need a cockroach node running.
 ```bash
-cockroach start --insecure --host 127.0.0.1
+cockroach start-single-node --insecure --host 127.0.0.1
 ```
 
 Then, you need to create the database and tables.
