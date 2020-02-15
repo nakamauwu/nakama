@@ -111,6 +111,8 @@ export function collectMedia(el) {
             video.src = link.href
             video.controls = true
             video.loop = true
+            video.volume = 0.5
+            video.muted = true
             video.className = "media-item"
             media.push(video)
             continue
