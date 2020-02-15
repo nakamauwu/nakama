@@ -1,6 +1,6 @@
 import { isAuthenticated } from "../auth.js"
 import { doPost } from "../http.js"
-import { ago, escapeHTML, linkify, replaceNode, el } from "../utils.js"
+import { ago, escapeHTML, linkify, replaceNode, el, collectMedia } from "../utils.js"
 import renderAvatarHTML from "./avatar.js"
 import { heartIconSVG, heartOulineIconSVG } from "./icons.js"
 
@@ -61,6 +61,11 @@ export default function renderPost(post, timelineItemID) {
         </div>
     `
 
+    const contentEl = article.querySelector(".micro-post-content")
+    for (const el of collectMedia(contentEl.querySelector("p"))) {
+        contentEl.appendChild(el)
+    }
+
     const likeButton = /** @type {HTMLButtonElement=} */ (article.querySelector(".like-button"))
     if (likeButton !== null) {
         const likesCountEl = likeButton.querySelector(".likes-count")
@@ -102,3 +107,4 @@ export default function renderPost(post, timelineItemID) {
 function togglePostLike(postID) {
     return doPost(`/api/posts/${postID}/toggle_like`)
 }
+

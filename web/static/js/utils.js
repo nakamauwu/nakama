@@ -1,5 +1,7 @@
 const mentionsRegExp = /\B@([a-zA-Z][a-zA-Z0-9_-]{0,17})/g
 const urlsRegExp = /\b(https?:\/\/[\-A-Za-z0-9+&@#\/%?=~_|!:,\.;]*[\-A-Za-z0-9+&@#\/%=~_|])/gi
+const imageExtRegExp = /(\.gif|\.jpg|\.png)$/
+const videoExtRegExp = /(\.mp4|\.webm)$/
 
 export function isObject(x) {
     return typeof x === "object" && x !== null
@@ -83,4 +85,36 @@ export function el(html) {
     return template.content.childElementCount === 1
         ? template.content.firstElementChild
         : template.content
+}
+
+/**
+ * @param {ParentNode} el
+ */
+export function collectMedia(el) {
+    const media = /** @type {Node[]} */ ([])
+    for (const link of Array.from(el.querySelectorAll("a"))) {
+        if (imageExtRegExp.test(link.href)) {
+            const img = document.createElement("img")
+            img.src = link.href
+            const a = document.createElement("a")
+            a.href = link.href
+            a.target = "_blank"
+            a.rel = "noopener"
+            a.className = "media-item"
+            a.appendChild(img)
+            media.push(a)
+            continue
+        }
+
+        if (videoExtRegExp.test(link.href)) {
+            const video = document.createElement("video")
+            video.src = link.href
+            video.controls = true
+            video.loop = true
+            video.className = "media-item"
+            media.push(video)
+            continue
+        }
+    }
+    return media
 }

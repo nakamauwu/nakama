@@ -572,3 +572,22 @@ header .profile-link {
     height: .5rem;
     border-radius: 50%;
 }
+
+.micro-post-content {
+    padding: 1rem 0;
+}
+
+.micro-post-content > * {
+    display: block;
+    margin: 0;
+}
+
+.micro-post-content > * + * {
+    margin-top: 1rem;
+}
+
+.micro-post-content img,
+.micro-post-content video {
+    border-radius: .5rem;
+    /* overflow: hidden; */
+}

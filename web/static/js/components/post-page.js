@@ -1,6 +1,6 @@
 import { getAuthUser, isAuthenticated } from "../auth.js"
 import { doGet, doPost, subscribe } from "../http.js"
-import { ago, escapeHTML, linkify, smartTrim, replaceNode, el } from "../utils.js"
+import { ago, escapeHTML, linkify, smartTrim, replaceNode, el, collectMedia } from "../utils.js"
 import renderAvatarHTML from "./avatar.js"
 import { heartIconSVG, heartOulineIconSVG } from "./icons.js"
 import renderList from "./list.js"
@@ -184,6 +184,11 @@ function renderComment(comment) {
             ` : ""}
         </div>
     `
+
+    const contentEl = article.querySelector(".micro-post-content")
+    for (const el of collectMedia(contentEl.querySelector("p"))) {
+        contentEl.appendChild(el)
+    }
 
     const likeButton = /** @type {HTMLButtonElement=} */ (article.querySelector(".like-button"))
     if (likeButton !== null) {
