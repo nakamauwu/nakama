@@ -606,5 +606,22 @@ header .profile-link {
 .micro-post-content img,
 .micro-post-content video {
     border-radius: .5rem;
-    /* overflow: hidden; */
+}
+
+.youtube-video-wrapper {
+    position: relative;
+}
+
+.youtube-video-wrapper::after {
+    content: "";
+    background-image: url("/img/youtube-2017.svg");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 18%;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    z-index: 1;
 }

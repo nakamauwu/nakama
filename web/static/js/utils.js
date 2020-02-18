@@ -117,6 +117,42 @@ export function collectMedia(el) {
             media.push(video)
             continue
         }
+
+        const youtubeVideoID = findYouTubeVideoID(link.href)
+        if (youtubeVideoID !== null) {
+            const img = document.createElement("img")
+            img.src = `https://img.youtube.com/vi/${youtubeVideoID}/maxresdefault.jpg`
+            const a = document.createElement("a")
+            a.href = link.href
+            a.target = "_blank"
+            a.rel = "noopener"
+            a.className = "media-item youtube-video-wrapper"
+            a.appendChild(img)
+            media.push(a)
+            continue
+        }
     }
     return media
+}
+
+/***
+ * @param {string} href
+ * @returns {string|null}
+ */
+function findYouTubeVideoID(href) {
+    try {
+        const url = new URL(href)
+        if ((url.hostname === "www.youtube.com" || url.hostname === "m.youtube.com") && url.pathname === "/watch" && url.searchParams.has("v")) {
+            return url.searchParams.get("v")
+        }
+
+        if (url.hostname === "youtu.be" && url.pathname !== "" && url.pathname !== "/") {
+            return url.pathname
+        }
+
+        if (url.hostname === "www.youtube.com" && url.pathname.startsWith("/embed/") && url.pathname !== "/embed/") {
+            return url.pathname.substr(7)
+        }
+    } catch (_) { }
+    return null
 }
