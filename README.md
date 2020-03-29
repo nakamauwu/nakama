@@ -6,7 +6,7 @@ Source code of the next social network for anime fans. Still on development.
 
 ## Building
 
-Besides having [Go](https://golang.org) installed, the server needs a SQL database; we are using [CockroachDB](https://www.cockroachlabs.com) and (NATS server)[https://nats.io].
+Besides having [Go](https://golang.org) installed, the server needs a SQL database; we are using [CockroachDB](https://www.cockroachlabs.com) and [NATS](https://nats.io).
 
 First, you need a cockroach node running.
 ```bash
