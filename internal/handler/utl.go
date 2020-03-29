@@ -14,7 +14,7 @@ var errStreamingUnsupported = errors.New("streaming unsupported")
 func respond(w http.ResponseWriter, v interface{}, statusCode int) {
 	b, err := json.Marshal(v)
 	if err != nil {
-		respondErr(w, fmt.Errorf("could not marshal response: %v", err))
+		respondErr(w, fmt.Errorf("could not marshal response: %w", err))
 		return
 	}
 

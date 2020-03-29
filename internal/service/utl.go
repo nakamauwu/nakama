@@ -42,7 +42,7 @@ func buildQuery(text string, data map[string]interface{}) (string, []interface{}
 		var err error
 		t, err = template.New("query").Parse(text)
 		if err != nil {
-			return "", nil, fmt.Errorf("could not parse sql query template: %v", err)
+			return "", nil, fmt.Errorf("could not parse sql query template: %w", err)
 		}
 
 		queriesCache.Store(text, t)
@@ -52,7 +52,7 @@ func buildQuery(text string, data map[string]interface{}) (string, []interface{}
 
 	var wr bytes.Buffer
 	if err := t.Execute(&wr, data); err != nil {
-		return "", nil, fmt.Errorf("could not apply sql query data: %v", err)
+		return "", nil, fmt.Errorf("could not apply sql query data: %w", err)
 	}
 
 	query := wr.String()

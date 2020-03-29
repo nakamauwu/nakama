@@ -1,10 +1,13 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
+	"encoding/gob"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 )
 
@@ -17,11 +20,6 @@ type TimelineItem struct {
 	UserID string `json:"-"`
 	PostID string `json:"-"`
 	Post   *Post  `json:"post,omitempty"`
-}
-
-type timelineItemClient struct {
-	timeline chan TimelineItem
-	userID   string
 }
 
 // Timeline of the authenticated user in descending order and with backward pagination.
@@ -54,12 +52,12 @@ func (s *Service) Timeline(ctx context.Context, last int, before string) ([]Time
 		"before": before,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("could not build timeline sql query: %v", err)
+		return nil, fmt.Errorf("could not build timeline sql query: %w", err)
 	}
 
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, fmt.Errorf("could not query select timeline: %v", err)
+		return nil, fmt.Errorf("could not query select timeline: %w", err)
 	}
 
 	defer rows.Close()
@@ -85,7 +83,7 @@ func (s *Service) Timeline(ctx context.Context, last int, before string) ([]Time
 			&u.Username,
 			&avatar,
 		); err != nil {
-			return nil, fmt.Errorf("could not scan timeline item: %v", err)
+			return nil, fmt.Errorf("could not scan timeline item: %w", err)
 		}
 
 		u.AvatarURL = s.avatarURL(avatar)
@@ -95,7 +93,7 @@ func (s *Service) Timeline(ctx context.Context, last int, before string) ([]Time
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("could not iterate timeline rows: %v", err)
+		return nil, fmt.Errorf("could not iterate timeline rows: %w", err)
 	}
 
 	return tt, nil
@@ -109,12 +107,29 @@ func (s *Service) TimelineItemStream(ctx context.Context) (<-chan TimelineItem, 
 	}
 
 	tt := make(chan TimelineItem)
-	client := &timelineItemClient{timeline: tt, userID: uid}
-	s.timelineItemClients.Store(client, nil)
+	unsub, err := s.pubsub.Sub(timelineTopic(uid), func(data []byte) {
+		go func(r io.Reader) {
+			var ti TimelineItem
+			err := gob.NewDecoder(r).Decode(&ti)
+			if err != nil {
+				log.Printf("could not gob decode timeline item: %v\n", err)
+				return
+			}
+
+			tt <- ti
+		}(bytes.NewReader(data))
+	})
+	if err != nil {
+		return nil, fmt.Errorf("could not subscribe to timeline: %w", err)
+	}
 
 	go func() {
 		<-ctx.Done()
-		s.timelineItemClients.Delete(client)
+		if err := unsub(); err != nil {
+			log.Printf("could not unsubcribe from timeline: %v\n", err)
+			// don't return
+		}
+
 		close(tt)
 	}()
 
@@ -135,7 +150,7 @@ func (s *Service) DeleteTimelineItem(ctx context.Context, timelineItemID string)
 	if _, err := s.db.ExecContext(ctx, `
 		DELETE FROM timeline
 		WHERE id = $1 AND user_id = $2`, timelineItemID, uid); err != nil {
-		return fmt.Errorf("could not delete timeline item: %v", err)
+		return fmt.Errorf("could not delete timeline item: %w", err)
 	}
 
 	return nil
@@ -174,17 +189,18 @@ func (s *Service) fanoutPost(p Post) {
 }
 
 func (s *Service) broadcastTimelineItem(ti TimelineItem) {
-	s.timelineItemClients.Range(func(key, _ interface{}) bool {
-		client, ok := key.(*timelineItemClient)
-		if !ok {
-			log.Println("broadcast timeline item: no client type")
-			return false
-		}
+	var b bytes.Buffer
+	err := gob.NewEncoder(&b).Encode(ti)
+	if err != nil {
+		log.Printf("could not gob encode timeline item: %v\n", err)
+		return
+	}
 
-		if client.userID == ti.UserID {
-			client.timeline <- ti
-		}
-
-		return true
-	})
+	err = s.pubsub.Pub(timelineTopic(ti.UserID), b.Bytes())
+	if err != nil {
+		log.Printf("could not publish timeline item: %v\n", err)
+		return
+	}
 }
+
+func timelineTopic(userID string) string { return "timeline_item_" + userID }
