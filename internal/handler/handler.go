@@ -14,7 +14,7 @@ type handler struct {
 }
 
 // New makes use of the service to provide an http.Handler with predefined routing.
-func New(s *service.Service, origin url.URL) http.Handler {
+func New(s *service.Service, origin *url.URL) http.Handler {
 	h := &handler{s}
 
 	api := way.NewRouter()

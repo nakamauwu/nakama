@@ -13,7 +13,7 @@ import (
 type Service struct {
 	db       *sql.DB
 	sender   mailing.Sender
-	origin   url.URL
+	origin   *url.URL
 	tokenKey string
 	pubsub   pubsub.PubSub
 }
@@ -22,7 +22,7 @@ type Service struct {
 type Conf struct {
 	DB       *sql.DB
 	Sender   mailing.Sender
-	Origin   url.URL
+	Origin   *url.URL
 	TokenKey string
 	PubSub   pubsub.PubSub
 }

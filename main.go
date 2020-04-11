@@ -96,13 +96,13 @@ func run() error {
 	service := service.New(service.Conf{
 		DB:       db,
 		Sender:   sender,
-		Origin:   *origin,
+		Origin:   origin,
 		TokenKey: tokenKey,
 		PubSub:   pubsub,
 	})
 	server := http.Server{
 		Addr:              fmt.Sprintf(":%d", port),
-		Handler:           handler.New(service, *origin),
+		Handler:           handler.New(service, origin),
 		ReadHeaderTimeout: time.Second * 5,
 		ReadTimeout:       time.Second * 15,
 	}

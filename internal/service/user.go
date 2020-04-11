@@ -363,7 +363,7 @@ func (s *Service) UpdateAvatar(ctx context.Context, r io.Reader) (string, error)
 		defer os.Remove(path.Join(avatarsDir, oldAvatar.String))
 	}
 
-	avatarURL := s.origin
+	avatarURL := cloneURL(s.origin)
 	avatarURL.Path = "/img/avatars/" + avatar
 
 	return avatarURL.String(), nil
@@ -627,7 +627,7 @@ func (s *Service) avatarURL(avatar sql.NullString) *string {
 		return nil
 	}
 
-	avatarURL := s.origin
+	avatarURL := cloneURL(s.origin)
 	avatarURL.Path = "/img/avatars/" + avatar.String
 	str := avatarURL.String()
 	return &str

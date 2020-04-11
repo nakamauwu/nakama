@@ -91,7 +91,7 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 		}
 	}()
 
-	link := s.origin
+	link := cloneURL(s.origin)
 	link.Path = "/api/auth_redirect"
 	q := link.Query()
 	q.Set("verification_code", code)
