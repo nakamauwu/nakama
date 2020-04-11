@@ -86,7 +86,7 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 		if err != nil {
 			_, err := s.db.Exec("DELETE FROM verification_codes WHERE id = $1", code)
 			if err != nil {
-				log.Printf("could not delete verification code: %w", err)
+				log.Printf("could not delete verification code: %v\n", err)
 			}
 		}
 	}()

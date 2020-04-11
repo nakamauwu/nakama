@@ -24,7 +24,7 @@ import (
 )
 
 func main() {
-	godotenv.Load()
+	_ = godotenv.Load()
 	if err := run(); err != nil {
 		log.Fatalln(err)
 	}

@@ -20,7 +20,7 @@ func respond(w http.ResponseWriter, v interface{}, statusCode int) {
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(statusCode)
-	w.Write(b)
+	_, _ = w.Write(b)
 }
 
 func respondErr(w http.ResponseWriter, err error) {

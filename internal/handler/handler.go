@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"mime"
 	"net/http"
 	"net/url"
 
@@ -45,8 +44,6 @@ func New(s *service.Service, origin *url.URL) http.Handler {
 	api.HandleFunc("GET", "/has_unread_notifications", h.hasUnreadNotifications)
 	api.HandleFunc("POST", "/notifications/:notification_id/mark_as_read", h.markNotificationAsRead)
 	api.HandleFunc("POST", "/mark_notifications_as_read", h.markNotificationsAsRead)
-
-	mime.AddExtensionType(".js", "application/javascript; charset=utf-8")
 
 	fs := http.FileServer(&spaFileSystem{http.Dir("web/static")})
 	if origin.Hostname() == "localhost" {
