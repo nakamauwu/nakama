@@ -10,6 +10,8 @@ import (
 	"io"
 	"log"
 	"time"
+
+	"github.com/cockroachdb/cockroach-go/crdb"
 )
 
 var (
@@ -49,44 +51,40 @@ func (s *Service) CreateComment(ctx context.Context, postID string, content stri
 		return c, ErrInvalidContent
 	}
 
-	tx, err := s.db.BeginTx(ctx, nil)
+	err := crdb.ExecuteTx(ctx, s.db, nil, func(tx *sql.Tx) error {
+		query := `
+			INSERT INTO comments (user_id, post_id, content) VALUES ($1, $2, $3)
+			RETURNING id, created_at`
+		err := tx.QueryRowContext(ctx, query, uid, postID, content).Scan(&c.ID, &c.CreatedAt)
+		if isForeignKeyViolation(err) {
+			return ErrPostNotFound
+		}
+
+		if err != nil {
+			return fmt.Errorf("could not insert comment: %w", err)
+		}
+
+		c.UserID = uid
+		c.PostID = postID
+		c.Content = content
+		c.Mine = true
+
+		query = `
+			INSERT INTO post_subscriptions (user_id, post_id) VALUES ($1, $2)
+			ON CONFLICT (user_id, post_id) DO NOTHING`
+		if _, err = tx.ExecContext(ctx, query, uid, postID); err != nil {
+			return fmt.Errorf("could not insert post subcription after commenting: %w", err)
+		}
+
+		query = "UPDATE posts SET comments_count = comments_count + 1 WHERE id = $1"
+		if _, err = tx.ExecContext(ctx, query, postID); err != nil {
+			return fmt.Errorf("could not update and increment post comments count: %w", err)
+		}
+
+		return nil
+	})
 	if err != nil {
-		return c, fmt.Errorf("could not begin tx: %w", err)
-	}
-
-	defer tx.Rollback()
-
-	query := `
-		INSERT INTO comments (user_id, post_id, content) VALUES ($1, $2, $3)
-		RETURNING id, created_at`
-	err = tx.QueryRowContext(ctx, query, uid, postID, content).Scan(&c.ID, &c.CreatedAt)
-	if isForeignKeyViolation(err) {
-		return c, ErrPostNotFound
-	}
-
-	if err != nil {
-		return c, fmt.Errorf("could not insert comment: %w", err)
-	}
-
-	c.UserID = uid
-	c.PostID = postID
-	c.Content = content
-	c.Mine = true
-
-	query = `
-		INSERT INTO post_subscriptions (user_id, post_id) VALUES ($1, $2)
-		ON CONFLICT (user_id, post_id) DO NOTHING`
-	if _, err = tx.ExecContext(ctx, query, uid, postID); err != nil {
-		return c, fmt.Errorf("could not insert post subcription after commenting: %w", err)
-	}
-
-	query = "UPDATE posts SET comments_count = comments_count + 1 WHERE id = $1"
-	if _, err = tx.ExecContext(ctx, query, postID); err != nil {
-		return c, fmt.Errorf("could not update and increment post comments count: %w", err)
-	}
-
-	if err = tx.Commit(); err != nil {
-		return c, fmt.Errorf("could not commit to create comment: %w", err)
+		return c, err
 	}
 
 	go s.commentCreated(c)
@@ -231,50 +229,49 @@ func (s *Service) ToggleCommentLike(ctx context.Context, commentID string) (Togg
 		return out, ErrInvalidCommentID
 	}
 
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return out, fmt.Errorf("could not begin tx: %w", err)
-	}
-
-	defer tx.Rollback()
-
-	query := `
-		SELECT EXISTS (
-			SELECT 1 FROM comment_likes WHERE user_id = $1 AND comment_id = $2
-		)`
-	if err = tx.QueryRowContext(ctx, query, uid, commentID).Scan(&out.Liked); err != nil {
-		return out, fmt.Errorf("could not query select comment like existence: %w", err)
-	}
-
-	if out.Liked {
-		query = "DELETE FROM comment_likes WHERE user_id = $1 AND comment_id = $2"
-		if _, err = tx.ExecContext(ctx, query, uid, commentID); err != nil {
-			return out, fmt.Errorf("could not delete comment like: %w", err)
-		}
-
-		query = "UPDATE comments SET likes_count = likes_count - 1 WHERE id = $1 RETURNING likes_count"
-		if err = tx.QueryRowContext(ctx, query, commentID).Scan(&out.LikesCount); err != nil {
-			return out, fmt.Errorf("could not update and decrement comment likes count: %w", err)
-		}
-	} else {
-		query = "INSERT INTO comment_likes (user_id, comment_id) VALUES ($1, $2)"
-		_, err = tx.ExecContext(ctx, query, uid, commentID)
-		if isForeignKeyViolation(err) {
-			return out, ErrCommentNotFound
-		}
-
+	err := crdb.ExecuteTx(ctx, s.db, nil, func(tx *sql.Tx) error {
+		query := `
+			SELECT EXISTS (
+				SELECT 1 FROM comment_likes WHERE user_id = $1 AND comment_id = $2
+			)`
+		err := tx.QueryRowContext(ctx, query, uid, commentID).Scan(&out.Liked)
 		if err != nil {
-			return out, fmt.Errorf("could not insert comment like: %w", err)
+			return fmt.Errorf("could not query select comment like existence: %w", err)
 		}
 
-		query = "UPDATE comments SET likes_count = likes_count + 1 WHERE id = $1 RETURNING likes_count"
-		if err = tx.QueryRowContext(ctx, query, commentID).Scan(&out.LikesCount); err != nil {
-			return out, fmt.Errorf("could not update and increment comment likes count: %w", err)
-		}
-	}
+		if out.Liked {
+			query = "DELETE FROM comment_likes WHERE user_id = $1 AND comment_id = $2"
+			if _, err = tx.ExecContext(ctx, query, uid, commentID); err != nil {
+				return fmt.Errorf("could not delete comment like: %w", err)
+			}
 
-	if err = tx.Commit(); err != nil {
-		return out, fmt.Errorf("could not commit to toggle comment like: %w", err)
+			query = "UPDATE comments SET likes_count = likes_count - 1 WHERE id = $1 RETURNING likes_count"
+			err = tx.QueryRowContext(ctx, query, commentID).Scan(&out.LikesCount)
+			if err != nil {
+				return fmt.Errorf("could not update and decrement comment likes count: %w", err)
+			}
+		} else {
+			query = "INSERT INTO comment_likes (user_id, comment_id) VALUES ($1, $2)"
+			_, err = tx.ExecContext(ctx, query, uid, commentID)
+			if isForeignKeyViolation(err) {
+				return ErrCommentNotFound
+			}
+
+			if err != nil {
+				return fmt.Errorf("could not insert comment like: %w", err)
+			}
+
+			query = "UPDATE comments SET likes_count = likes_count + 1 WHERE id = $1 RETURNING likes_count"
+			err = tx.QueryRowContext(ctx, query, commentID).Scan(&out.LikesCount)
+			if err != nil {
+				return fmt.Errorf("could not update and increment comment likes count: %w", err)
+			}
+		}
+
+		return nil
+	})
+	if err != nil {
+		return out, err
 	}
 
 	out.Liked = !out.Liked

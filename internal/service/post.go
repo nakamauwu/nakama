@@ -8,6 +8,8 @@ import (
 	"log"
 	"strings"
 	"time"
+
+	"github.com/cockroachdb/cockroach-go/crdb"
 )
 
 var (
@@ -68,46 +70,44 @@ func (s *Service) CreatePost(ctx context.Context, content string, spoilerOf *str
 		}
 	}
 
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return ti, fmt.Errorf("could not begin tx: %w", err)
-	}
-
-	defer tx.Rollback()
-
 	var p Post
-	query := `
-		INSERT INTO posts (user_id, content, spoiler_of, nsfw) VALUES ($1, $2, $3, $4)
-		RETURNING id, created_at`
-	if err = tx.QueryRowContext(ctx, query, uid, content, spoilerOf, nsfw).
-		Scan(&p.ID, &p.CreatedAt); err != nil {
-		return ti, fmt.Errorf("could not insert post: %w", err)
-	}
+	err := crdb.ExecuteTx(ctx, s.db, nil, func(tx *sql.Tx) error {
+		query := `
+			INSERT INTO posts (user_id, content, spoiler_of, nsfw) VALUES ($1, $2, $3, $4)
+			RETURNING id, created_at`
+		row := tx.QueryRowContext(ctx, query, uid, content, spoilerOf, nsfw)
+		err := row.Scan(&p.ID, &p.CreatedAt)
+		if err != nil {
+			return fmt.Errorf("could not insert post: %w", err)
+		}
 
-	p.UserID = uid
-	p.Content = content
-	p.SpoilerOf = spoilerOf
-	p.NSFW = nsfw
-	p.Mine = true
+		p.UserID = uid
+		p.Content = content
+		p.SpoilerOf = spoilerOf
+		p.NSFW = nsfw
+		p.Mine = true
 
-	query = "INSERT INTO post_subscriptions (user_id, post_id) VALUES ($1, $2)"
-	if _, err = tx.ExecContext(ctx, query, uid, p.ID); err != nil {
-		return ti, fmt.Errorf("could not insert post subscription: %w", err)
-	}
+		query = "INSERT INTO post_subscriptions (user_id, post_id) VALUES ($1, $2)"
+		if _, err = tx.ExecContext(ctx, query, uid, p.ID); err != nil {
+			return fmt.Errorf("could not insert post subscription: %w", err)
+		}
 
-	p.Subscribed = true
+		p.Subscribed = true
 
-	query = "INSERT INTO timeline (user_id, post_id) VALUES ($1, $2) RETURNING id"
-	if err = tx.QueryRowContext(ctx, query, uid, p.ID).Scan(&ti.ID); err != nil {
-		return ti, fmt.Errorf("could not insert timeline item: %w", err)
-	}
+		query = "INSERT INTO timeline (user_id, post_id) VALUES ($1, $2) RETURNING id"
+		err = tx.QueryRowContext(ctx, query, uid, p.ID).Scan(&ti.ID)
+		if err != nil {
+			return fmt.Errorf("could not insert timeline item: %w", err)
+		}
 
-	ti.UserID = uid
-	ti.PostID = p.ID
-	ti.Post = &p
+		ti.UserID = uid
+		ti.PostID = p.ID
+		ti.Post = &p
 
-	if err = tx.Commit(); err != nil {
-		return ti, fmt.Errorf("could not commit to create post: %w", err)
+		return nil
+	})
+	if err != nil {
+		return ti, err
 	}
 
 	go s.postCreated(p)
@@ -284,51 +284,50 @@ func (s *Service) TogglePostLike(ctx context.Context, postID string) (ToggleLike
 		return out, ErrInvalidPostID
 	}
 
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return out, fmt.Errorf("could not begin tx: %w", err)
-	}
-
-	defer tx.Rollback()
-
-	query := `
-		SELECT EXISTS (
-			SELECT 1 FROM post_likes WHERE user_id = $1 AND post_id = $2
-		)`
-	if err = tx.QueryRowContext(ctx, query, uid, postID).Scan(&out.Liked); err != nil {
-		return out, fmt.Errorf("could not query select post like existence: %w", err)
-	}
-
-	if out.Liked {
-		query = "DELETE FROM post_likes WHERE user_id = $1 AND post_id = $2"
-		if _, err = tx.ExecContext(ctx, query, uid, postID); err != nil {
-			return out, fmt.Errorf("could not delete post like: %w", err)
-		}
-
-		query = "UPDATE posts SET likes_count = likes_count - 1 WHERE id = $1 RETURNING likes_count"
-		if err = tx.QueryRowContext(ctx, query, postID).Scan(&out.LikesCount); err != nil {
-			return out, fmt.Errorf("could not update and decrement post likes count: %w", err)
-		}
-	} else {
-		query = "INSERT INTO post_likes (user_id, post_id) VALUES ($1, $2)"
-		_, err = tx.ExecContext(ctx, query, uid, postID)
-
-		if isForeignKeyViolation(err) {
-			return out, ErrPostNotFound
-		}
-
+	err := crdb.ExecuteTx(ctx, s.db, nil, func(tx *sql.Tx) error {
+		query := `
+			SELECT EXISTS (
+				SELECT 1 FROM post_likes WHERE user_id = $1 AND post_id = $2
+			)`
+		err := tx.QueryRowContext(ctx, query, uid, postID).Scan(&out.Liked)
 		if err != nil {
-			return out, fmt.Errorf("could not insert post like: %w", err)
+			return fmt.Errorf("could not query select post like existence: %w", err)
 		}
 
-		query = "UPDATE posts SET likes_count = likes_count + 1 WHERE id = $1 RETURNING likes_count"
-		if err = tx.QueryRowContext(ctx, query, postID).Scan(&out.LikesCount); err != nil {
-			return out, fmt.Errorf("could not update and increment post likes count: %w", err)
-		}
-	}
+		if out.Liked {
+			query = "DELETE FROM post_likes WHERE user_id = $1 AND post_id = $2"
+			if _, err = tx.ExecContext(ctx, query, uid, postID); err != nil {
+				return fmt.Errorf("could not delete post like: %w", err)
+			}
 
-	if err = tx.Commit(); err != nil {
-		return out, fmt.Errorf("could not commit to toggle post like: %w", err)
+			query = "UPDATE posts SET likes_count = likes_count - 1 WHERE id = $1 RETURNING likes_count"
+			err = tx.QueryRowContext(ctx, query, postID).Scan(&out.LikesCount)
+			if err != nil {
+				return fmt.Errorf("could not update and decrement post likes count: %w", err)
+			}
+		} else {
+			query = "INSERT INTO post_likes (user_id, post_id) VALUES ($1, $2)"
+			_, err = tx.ExecContext(ctx, query, uid, postID)
+
+			if isForeignKeyViolation(err) {
+				return ErrPostNotFound
+			}
+
+			if err != nil {
+				return fmt.Errorf("could not insert post like: %w", err)
+			}
+
+			query = "UPDATE posts SET likes_count = likes_count + 1 WHERE id = $1 RETURNING likes_count"
+			err = tx.QueryRowContext(ctx, query, postID).Scan(&out.LikesCount)
+			if err != nil {
+				return fmt.Errorf("could not update and increment post likes count: %w", err)
+			}
+		}
+
+		return nil
+	})
+	if err != nil {
+		return out, err
 	}
 
 	out.Liked = !out.Liked
@@ -348,39 +347,36 @@ func (s *Service) TogglePostSubscription(ctx context.Context, postID string) (To
 		return out, ErrInvalidPostID
 	}
 
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return out, fmt.Errorf("could not begin tx: %w", err)
-	}
-
-	defer tx.Rollback()
-
-	query := `SELECT EXISTS (
-		SELECT 1 FROM post_subscriptions WHERE user_id = $1 AND post_id = $2
-	)`
-	if err = tx.QueryRowContext(ctx, query, uid, postID).Scan(&out.Subscribed); err != nil {
-		return out, fmt.Errorf("could not query select post subscription existence: %w", err)
-	}
-
-	if out.Subscribed {
-		query = "DELETE FROM post_subscriptions WHERE user_id = $1 AND post_id = $2"
-		if _, err = tx.ExecContext(ctx, query, uid, postID); err != nil {
-			return out, fmt.Errorf("could not delete post subscription: %w", err)
-		}
-	} else {
-		query = "INSERT INTO post_subscriptions (user_id, post_id) VALUES ($1, $2)"
-		_, err = tx.ExecContext(ctx, query, uid, postID)
-		if isForeignKeyViolation(err) {
-			return out, ErrPostNotFound
-		}
-
+	err := crdb.ExecuteTx(ctx, s.db, nil, func(tx *sql.Tx) error {
+		query := `SELECT EXISTS (
+			SELECT 1 FROM post_subscriptions WHERE user_id = $1 AND post_id = $2
+		)`
+		err := tx.QueryRowContext(ctx, query, uid, postID).Scan(&out.Subscribed)
 		if err != nil {
-			return out, fmt.Errorf("could not insert post subscription: %w", err)
+			return fmt.Errorf("could not query select post subscription existence: %w", err)
 		}
-	}
 
-	if err = tx.Commit(); err != nil {
-		return out, fmt.Errorf("could not commit to toggle post subscription: %w", err)
+		if out.Subscribed {
+			query = "DELETE FROM post_subscriptions WHERE user_id = $1 AND post_id = $2"
+			if _, err = tx.ExecContext(ctx, query, uid, postID); err != nil {
+				return fmt.Errorf("could not delete post subscription: %w", err)
+			}
+		} else {
+			query = "INSERT INTO post_subscriptions (user_id, post_id) VALUES ($1, $2)"
+			_, err = tx.ExecContext(ctx, query, uid, postID)
+			if isForeignKeyViolation(err) {
+				return ErrPostNotFound
+			}
+
+			if err != nil {
+				return fmt.Errorf("could not insert post subscription: %w", err)
+			}
+		}
+
+		return nil
+	})
+	if err != nil {
+		return out, err
 	}
 
 	out.Subscribed = !out.Subscribed

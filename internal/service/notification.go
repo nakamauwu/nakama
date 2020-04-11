@@ -11,6 +11,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/cockroachdb/cockroach-go/crdb"
 	"github.com/lib/pq"
 )
 
@@ -171,77 +172,74 @@ func (s *Service) MarkNotificationsAsRead(ctx context.Context) error {
 }
 
 func (s *Service) notifyFollow(followerID, followeeID string) {
-	tx, err := s.db.Begin()
-	if err != nil {
-		log.Printf("could not begin tx: %v\n", err)
-		return
-	}
-
-	defer tx.Rollback()
-
-	var actor string
-	query := "SELECT username FROM users WHERE id = $1"
-	if err = tx.QueryRow(query, followerID).Scan(&actor); err != nil {
-		log.Printf("could not query select follow notification actor: %v\n", err)
-		return
-	}
-
-	var notified bool
-	query = `SELECT EXISTS (
-		SELECT 1 FROM notifications
-		WHERE user_id = $1
-			AND $2:::VARCHAR = ANY(actors)
-			AND type = 'follow'
-	)`
-	if err = tx.QueryRow(query, followeeID, actor).Scan(&notified); err != nil {
-		log.Printf("could not query select follow notification existence: %v\n", err)
-		return
-	}
-
-	if notified {
-		return
-	}
-
-	var nid string
-	query = "SELECT id FROM notifications WHERE user_id = $1 AND type = 'follow' AND read_at IS NULL"
-	err = tx.QueryRow(query, followeeID).Scan(&nid)
-	if err != nil && err != sql.ErrNoRows {
-		log.Printf("could not query select unread follow notification: %v\n", err)
-		return
-	}
-
+	ctx := context.Background()
 	var n Notification
-	if err == sql.ErrNoRows {
-		actors := []string{actor}
-		query = `
-			INSERT INTO notifications (user_id, actors, type) VALUES ($1, $2, 'follow')
-			RETURNING id, issued_at`
-		if err = tx.QueryRow(query, followeeID, pq.Array(actors)).Scan(&n.ID, &n.IssuedAt); err != nil {
-			log.Printf("could not insert follow notification: %v\n", err)
-			return
+	err := crdb.ExecuteTx(ctx, s.db, nil, func(tx *sql.Tx) error {
+		var actor string
+		query := "SELECT username FROM users WHERE id = $1"
+		err := tx.QueryRowContext(ctx, query, followerID).Scan(&actor)
+		if err != nil {
+			return fmt.Errorf("could not query select follow notification actor: %w", err)
 		}
 
-		n.Actors = actors
-	} else {
-		query = `
-			UPDATE notifications SET
-				actors = array_prepend($1, notifications.actors),
-				issued_at = now()
-			WHERE id = $2
-			RETURNING actors, issued_at`
-		if err = tx.QueryRow(query, actor, nid).Scan(pq.Array(&n.Actors), &n.IssuedAt); err != nil {
-			log.Printf("could not update follow notification: %v\n", err)
-			return
+		var notified bool
+		query = `SELECT EXISTS (
+			SELECT 1 FROM notifications
+			WHERE user_id = $1
+				AND $2:::VARCHAR = ANY(actors)
+				AND type = 'follow'
+		)`
+		err = tx.QueryRowContext(ctx, query, followeeID, actor).Scan(&notified)
+		if err != nil {
+			return fmt.Errorf("could not query select follow notification existence: %w", err)
 		}
 
-		n.ID = nid
-	}
+		if notified {
+			return nil
+		}
 
-	n.UserID = followeeID
-	n.Type = "follow"
+		var nid string
+		query = "SELECT id FROM notifications WHERE user_id = $1 AND type = 'follow' AND read_at IS NULL"
+		err = tx.QueryRowContext(ctx, query, followeeID).Scan(&nid)
+		if err != nil && err != sql.ErrNoRows {
+			return fmt.Errorf("could not query select unread follow notification: %w", err)
+		}
 
-	if err = tx.Commit(); err != nil {
-		log.Printf("could not commit to notify follow: %v\n", err)
+		if err == sql.ErrNoRows {
+			actors := []string{actor}
+			query = `
+				INSERT INTO notifications (user_id, actors, type) VALUES ($1, $2, 'follow')
+				RETURNING id, issued_at`
+			row := tx.QueryRowContext(ctx, query, followeeID, pq.Array(actors))
+			err = row.Scan(&n.ID, &n.IssuedAt)
+			if err != nil {
+				return fmt.Errorf("could not insert follow notification: %w", err)
+			}
+
+			n.Actors = actors
+		} else {
+			query = `
+				UPDATE notifications SET
+					actors = array_prepend($1, notifications.actors),
+					issued_at = now()
+				WHERE id = $2
+				RETURNING actors, issued_at`
+			row := tx.QueryRowContext(ctx, query, actor, nid)
+			err = row.Scan(pq.Array(&n.Actors), &n.IssuedAt)
+			if err != nil {
+				return fmt.Errorf("could not update follow notification: %w", err)
+			}
+
+			n.ID = nid
+		}
+
+		n.UserID = followeeID
+		n.Type = "follow"
+
+		return nil
+	})
+	if err != nil {
+		log.Printf("could not notify follow: %v\n", err)
 		return
 	}
 

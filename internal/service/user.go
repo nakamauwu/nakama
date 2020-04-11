@@ -14,6 +14,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/cockroachdb/cockroach-go/crdb"
 	"github.com/disintegration/imaging"
 	gonanoid "github.com/matoous/go-nanoid"
 )
@@ -382,77 +383,77 @@ func (s *Service) ToggleFollow(ctx context.Context, username string) (ToggleFoll
 		return out, ErrInvalidUsername
 	}
 
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return out, fmt.Errorf("could not begin tx: %w", err)
-	}
-
-	defer tx.Rollback()
-
 	var followeeID string
-	query := "SELECT id FROM users WHERE username = $1"
-	err = tx.QueryRowContext(ctx, query, username).Scan(&followeeID)
-	if err == sql.ErrNoRows {
-		return out, ErrUserNotFound
-	}
+	err := crdb.ExecuteTx(ctx, s.db, nil, func(tx *sql.Tx) error {
+		query := "SELECT id FROM users WHERE username = $1"
+		err := tx.QueryRowContext(ctx, query, username).Scan(&followeeID)
+		if err == sql.ErrNoRows {
+			return ErrUserNotFound
+		}
 
+		if err != nil {
+			return fmt.Errorf("could not query select user id from username: %w", err)
+		}
+
+		if followeeID == followerID {
+			return ErrForbiddenFollow
+		}
+
+		query = `
+			SELECT EXISTS (
+				SELECT 1 FROM follows WHERE follower_id = $1 AND followee_id = $2
+			)`
+		row := tx.QueryRowContext(ctx, query, followerID, followeeID)
+		err = row.Scan(&out.Following)
+		if err != nil {
+			return fmt.Errorf("could not query select existence of follow: %w", err)
+		}
+
+		if out.Following {
+			query = "DELETE FROM follows WHERE follower_id = $1 AND followee_id = $2"
+			_, err = tx.ExecContext(ctx, query, followerID, followeeID)
+			if err != nil {
+				return fmt.Errorf("could not delete follow: %w", err)
+			}
+
+			query = "UPDATE users SET followees_count = followees_count - 1 WHERE id = $1"
+			if _, err = tx.ExecContext(ctx, query, followerID); err != nil {
+				return fmt.Errorf("could not decrement followees count: %w", err)
+			}
+
+			query = `
+				UPDATE users SET followers_count = followers_count - 1 WHERE id = $1
+				RETURNING followers_count`
+			if err = tx.QueryRowContext(ctx, query, followeeID).
+				Scan(&out.FollowersCount); err != nil {
+				return fmt.Errorf("could not decrement followers count: %w", err)
+			}
+		} else {
+			query = "INSERT INTO follows (follower_id, followee_id) VALUES ($1, $2)"
+			_, err = tx.ExecContext(ctx, query, followerID, followeeID)
+			if err != nil {
+				return fmt.Errorf("could not insert follow: %w", err)
+			}
+
+			query = "UPDATE users SET followees_count = followees_count + 1 WHERE id = $1"
+			if _, err = tx.ExecContext(ctx, query, followerID); err != nil {
+				return fmt.Errorf("could not increment followees count: %w", err)
+			}
+
+			query = `
+				UPDATE users SET followers_count = followers_count + 1 WHERE id = $1
+				RETURNING followers_count`
+			row = tx.QueryRowContext(ctx, query, followeeID)
+			err = row.Scan(&out.FollowersCount)
+			if err != nil {
+				return fmt.Errorf("could not increment followers count: %w", err)
+			}
+		}
+
+		return nil
+	})
 	if err != nil {
-		return out, fmt.Errorf("could not query select user id from username: %w", err)
-	}
-
-	if followeeID == followerID {
-		return out, ErrForbiddenFollow
-	}
-
-	query = `
-		SELECT EXISTS (
-			SELECT 1 FROM follows WHERE follower_id = $1 AND followee_id = $2
-		)`
-	if err = tx.QueryRowContext(ctx, query, followerID, followeeID).
-		Scan(&out.Following); err != nil {
-		return out, fmt.Errorf("could not query select existence of follow: %w", err)
-	}
-
-	if out.Following {
-		query = "DELETE FROM follows WHERE follower_id = $1 AND followee_id = $2"
-		if _, err = tx.ExecContext(ctx, query, followerID, followeeID); err != nil {
-			return out, fmt.Errorf("could not delete follow: %w", err)
-		}
-
-		query = "UPDATE users SET followees_count = followees_count - 1 WHERE id = $1"
-		if _, err = tx.ExecContext(ctx, query, followerID); err != nil {
-			return out, fmt.Errorf("could not decrement followees count: %w", err)
-		}
-
-		query = `
-			UPDATE users SET followers_count = followers_count - 1 WHERE id = $1
-			RETURNING followers_count`
-		if err = tx.QueryRowContext(ctx, query, followeeID).
-			Scan(&out.FollowersCount); err != nil {
-			return out, fmt.Errorf("could not decrement followers count: %w", err)
-		}
-	} else {
-		query = "INSERT INTO follows (follower_id, followee_id) VALUES ($1, $2)"
-		if _, err = tx.ExecContext(ctx, query, followerID, followeeID); err != nil {
-			return out, fmt.Errorf("could not insert follow: %w", err)
-		}
-
-		query = "UPDATE users SET followees_count = followees_count + 1 WHERE id = $1"
-		if _, err = tx.ExecContext(ctx, query, followerID); err != nil {
-			return out, fmt.Errorf("could not increment followees count: %w", err)
-		}
-
-		query = `
-			UPDATE users SET followers_count = followers_count + 1 WHERE id = $1
-			RETURNING followers_count`
-		if err = tx.QueryRowContext(ctx, query, followeeID).
-			Scan(&out.FollowersCount); err != nil {
-			return out, fmt.Errorf("could not increment followers count: %w", err)
-		}
-	}
-
-	if err = tx.Commit(); err != nil {
-		return out, fmt.Errorf("could not commit toggle follow: %w", err)
+		return out, err
 	}
 
 	out.Following = !out.Following
