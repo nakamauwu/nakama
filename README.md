@@ -6,7 +6,7 @@ Source code of the next social network for anime fans. Still on development.
 
 ## Building
 
-Besides having [Go](https://golang.org) installed, the server needs a SQL database ([CockroachDB](https://www.cockroachlabs.com)) and [NATS](https://nats.io).
+Besides having [Go](https://golang.org) installed, the server needs [CockroachDB](https://www.cockroachlabs.com) and [NATS](https://nats.io).
 
 First, you need a cockroach node running.
 ```bash
@@ -43,5 +43,6 @@ These are the Go libraries used in the source code. Thank you very much.
  - [github.com/matoous/go-nanoid](https://github.com/matoous/go-nanoid)
  - [github.com/matryer/way](https://github.com/matryer/way)
  - [github.com/nats-io/nats.go](https://github.com/nats-io/nats.go)
+ - [github.com/cockroachdb/cockroach-go/crdb](https://github.com/cockroachdb/cockroach-go)
 
 [Eva Icons](https://github.com/akveo/eva-icons) are being used in the front-end. Thank you as well.
