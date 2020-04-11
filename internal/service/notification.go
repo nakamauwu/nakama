@@ -1,13 +1,10 @@
 package service
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
-	"encoding/gob"
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"time"
 
@@ -26,6 +23,11 @@ type Notification struct {
 	PostID   *string   `json:"postID,omitempty"`
 	Read     bool      `json:"read"`
 	IssuedAt time.Time `json:"issuedAt"`
+}
+
+type notificationClient struct {
+	notifications chan Notification
+	userID        string
 }
 
 // Notifications from the authenticated user in descending order with backward pagination.
@@ -52,12 +54,12 @@ func (s *Service) Notifications(ctx context.Context, last int, before string) ([
 		"last":   last,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("could not build notifications sql query: %w", err)
+		return nil, fmt.Errorf("could not build notifications sql query: %v", err)
 	}
 
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, fmt.Errorf("could not query select notifications: %w", err)
+		return nil, fmt.Errorf("could not query select notifications: %v", err)
 	}
 
 	defer rows.Close()
@@ -67,7 +69,7 @@ func (s *Service) Notifications(ctx context.Context, last int, before string) ([
 		var n Notification
 		var readAt *time.Time
 		if err = rows.Scan(&n.ID, pq.Array(&n.Actors), &n.Type, &n.PostID, &readAt, &n.IssuedAt); err != nil {
-			return nil, fmt.Errorf("could not scan notification: %w", err)
+			return nil, fmt.Errorf("could not scan notification: %v", err)
 		}
 
 		n.Read = readAt != nil && !readAt.IsZero()
@@ -75,7 +77,7 @@ func (s *Service) Notifications(ctx context.Context, last int, before string) ([
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("could not iterate over notification rows: %w", err)
+		return nil, fmt.Errorf("could not iterate over notification rows: %v", err)
 	}
 
 	return nn, nil
@@ -89,28 +91,12 @@ func (s *Service) NotificationStream(ctx context.Context) (<-chan Notification, 
 	}
 
 	nn := make(chan Notification)
-	unsub, err := s.pubsub.Sub(notificationTopic(uid), func(data []byte) {
-		go func(r io.Reader) {
-			var n Notification
-			err := gob.NewDecoder(r).Decode(&n)
-			if err != nil {
-				log.Printf("could not gob decode notification: %v\n", err)
-				return
-			}
-
-			nn <- n
-		}(bytes.NewReader(data))
-	})
-	if err != nil {
-		return nil, fmt.Errorf("could not subcribe to notifications: %w", err)
-	}
+	client := &notificationClient{notifications: nn, userID: uid}
+	s.notificationClients.Store(client, nil)
 
 	go func() {
 		<-ctx.Done()
-		if err := unsub(); err != nil {
-			log.Printf("could not unsubcribe from notifications: %v\n", err)
-			// don't return
-		}
+		s.notificationClients.Delete(client)
 		close(nn)
 	}()
 
@@ -128,7 +114,7 @@ func (s *Service) HasUnreadNotifications(ctx context.Context) (bool, error) {
 	if err := s.db.QueryRowContext(ctx, `SELECT EXISTS (
 		SELECT 1 FROM notifications WHERE user_id = $1 AND read_at IS NULL
 	)`, uid).Scan(&unread); err != nil {
-		return false, fmt.Errorf("could not query select unread notifications existence: %w", err)
+		return false, fmt.Errorf("could not query select unread notifications existence: %v", err)
 	}
 
 	return unread, nil
@@ -148,7 +134,7 @@ func (s *Service) MarkNotificationAsRead(ctx context.Context, notificationID str
 	if _, err := s.db.Exec(`
 		UPDATE notifications SET read_at = now()
 		WHERE id = $1 AND user_id = $2 AND read_at IS NULL`, notificationID, uid); err != nil {
-		return fmt.Errorf("could not update and mark notification as read: %w", err)
+		return fmt.Errorf("could not update and mark notification as read: %v", err)
 	}
 
 	return nil
@@ -164,7 +150,7 @@ func (s *Service) MarkNotificationsAsRead(ctx context.Context) error {
 	if _, err := s.db.Exec(`
 		UPDATE notifications SET read_at = now()
 		WHERE user_id = $1 AND read_at IS NULL`, uid); err != nil {
-		return fmt.Errorf("could not update and mark notifications as read: %w", err)
+		return fmt.Errorf("could not update and mark notifications as read: %v", err)
 	}
 
 	return nil
@@ -384,18 +370,17 @@ func (s *Service) notifyCommentMention(c Comment) {
 }
 
 func (s *Service) broadcastNotification(n Notification) {
-	var b bytes.Buffer
-	err := gob.NewEncoder(&b).Encode(n)
-	if err != nil {
-		log.Printf("could not gob encode notification: %v\n", err)
-		return
-	}
+	s.notificationClients.Range(func(key, _ interface{}) bool {
+		client, ok := key.(*notificationClient)
+		if !ok {
+			log.Println("broadcast notification: no client type")
+			return false
+		}
 
-	err = s.pubsub.Pub(notificationTopic(n.UserID), b.Bytes())
-	if err != nil {
-		log.Printf("could not publish notification: %v\n", err)
-		return
-	}
+		if client.userID == n.UserID {
+			client.notifications <- n
+		}
+
+		return true
+	})
 }
-
-func notificationTopic(userID string) string { return "notification_" + userID }

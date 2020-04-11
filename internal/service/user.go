@@ -95,7 +95,7 @@ func (s *Service) CreateUser(ctx context.Context, email, username string) error 
 	}
 
 	if err != nil {
-		return fmt.Errorf("could not insert user: %w", err)
+		return fmt.Errorf("could not insert user: %v", err)
 	}
 
 	return nil
@@ -133,12 +133,12 @@ func (s *Service) Users(ctx context.Context, search string, first int, after str
 		"after":  after,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("could not build users sql query: %w", err)
+		return nil, fmt.Errorf("could not build users sql query: %v", err)
 	}
 
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, fmt.Errorf("could not query select users: %w", err)
+		return nil, fmt.Errorf("could not query select users: %v", err)
 	}
 
 	defer rows.Close()
@@ -157,7 +157,7 @@ func (s *Service) Users(ctx context.Context, search string, first int, after str
 			dest = append(dest, &u.Following, &u.Followeed)
 		}
 		if err = rows.Scan(dest...); err != nil {
-			return nil, fmt.Errorf("could not scan user: %w", err)
+			return nil, fmt.Errorf("could not scan user: %v", err)
 		}
 
 		u.Me = auth && uid == u.ID
@@ -170,7 +170,7 @@ func (s *Service) Users(ctx context.Context, search string, first int, after str
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("could not iterate user rows: %w", err)
+		return nil, fmt.Errorf("could not iterate user rows: %v", err)
 	}
 
 	return uu, nil
@@ -199,12 +199,12 @@ func (s *Service) Usernames(ctx context.Context, startingWith string, first int,
 		"first":        first,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("could not build usernames sql query: %w", err)
+		return nil, fmt.Errorf("could not build usernames sql query: %v", err)
 	}
 
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, fmt.Errorf("could not query select usernames: %w", err)
+		return nil, fmt.Errorf("could not query select usernames: %v", err)
 	}
 
 	defer rows.Close()
@@ -213,14 +213,14 @@ func (s *Service) Usernames(ctx context.Context, startingWith string, first int,
 	for rows.Next() {
 		var u string
 		if err = rows.Scan(&u); err != nil {
-			return nil, fmt.Errorf("could not scan username: %w", err)
+			return nil, fmt.Errorf("could not scan username: %v", err)
 		}
 
 		uu = append(uu, u)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("could not iterate username rows: %w", err)
+		return nil, fmt.Errorf("could not iterate username rows: %v", err)
 	}
 
 	return uu, nil
@@ -236,7 +236,7 @@ func (s *Service) userByID(ctx context.Context, id string) (User, error) {
 	}
 
 	if err != nil {
-		return u, fmt.Errorf("could not query select user: %w", err)
+		return u, fmt.Errorf("could not query select user: %v", err)
 	}
 
 	u.ID = id
@@ -274,7 +274,7 @@ func (s *Service) User(ctx context.Context, username string) (UserProfile, error
 		"username": username,
 	})
 	if err != nil {
-		return u, fmt.Errorf("could not build user sql query: %w", err)
+		return u, fmt.Errorf("could not build user sql query: %v", err)
 	}
 
 	var avatar sql.NullString
@@ -288,7 +288,7 @@ func (s *Service) User(ctx context.Context, username string) (UserProfile, error
 	}
 
 	if err != nil {
-		return u, fmt.Errorf("could not query select user: %w", err)
+		return u, fmt.Errorf("could not query select user: %v", err)
 	}
 
 	u.Username = username
@@ -315,7 +315,7 @@ func (s *Service) UpdateAvatar(ctx context.Context, r io.Reader) (string, error)
 	}
 
 	if err != nil {
-		return "", fmt.Errorf("could not read avatar: %w", err)
+		return "", fmt.Errorf("could not read avatar: %v", err)
 	}
 
 	if format != "png" && format != "jpeg" {
@@ -324,7 +324,7 @@ func (s *Service) UpdateAvatar(ctx context.Context, r io.Reader) (string, error)
 
 	avatar, err := gonanoid.Nanoid()
 	if err != nil {
-		return "", fmt.Errorf("could not generate avatar filename: %w", err)
+		return "", fmt.Errorf("could not generate avatar filename: %v", err)
 	}
 
 	if format == "png" {
@@ -336,7 +336,7 @@ func (s *Service) UpdateAvatar(ctx context.Context, r io.Reader) (string, error)
 	avatarPath := path.Join(avatarsDir, avatar)
 	f, err := os.Create(avatarPath)
 	if err != nil {
-		return "", fmt.Errorf("could not create avatar file: %w", err)
+		return "", fmt.Errorf("could not create avatar file: %v", err)
 	}
 
 	defer f.Close()
@@ -347,7 +347,7 @@ func (s *Service) UpdateAvatar(ctx context.Context, r io.Reader) (string, error)
 		err = jpeg.Encode(f, img, nil)
 	}
 	if err != nil {
-		return "", fmt.Errorf("could not write avatar to disk: %w", err)
+		return "", fmt.Errorf("could not write avatar to disk: %v", err)
 	}
 
 	var oldAvatar sql.NullString
@@ -356,7 +356,7 @@ func (s *Service) UpdateAvatar(ctx context.Context, r io.Reader) (string, error)
 		RETURNING (SELECT avatar FROM users WHERE id = $2) AS old_avatar`, avatar, uid).
 		Scan(&oldAvatar); err != nil {
 		defer os.Remove(avatarPath)
-		return "", fmt.Errorf("could not update avatar: %w", err)
+		return "", fmt.Errorf("could not update avatar: %v", err)
 	}
 
 	if oldAvatar.Valid {
@@ -384,7 +384,7 @@ func (s *Service) ToggleFollow(ctx context.Context, username string) (ToggleFoll
 
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return out, fmt.Errorf("could not begin tx: %w", err)
+		return out, fmt.Errorf("could not begin tx: %v", err)
 	}
 
 	defer tx.Rollback()
@@ -397,7 +397,7 @@ func (s *Service) ToggleFollow(ctx context.Context, username string) (ToggleFoll
 	}
 
 	if err != nil {
-		return out, fmt.Errorf("could not query select user id from username: %w", err)
+		return out, fmt.Errorf("could not query select user id from username: %v", err)
 	}
 
 	if followeeID == followerID {
@@ -410,18 +410,18 @@ func (s *Service) ToggleFollow(ctx context.Context, username string) (ToggleFoll
 		)`
 	if err = tx.QueryRowContext(ctx, query, followerID, followeeID).
 		Scan(&out.Following); err != nil {
-		return out, fmt.Errorf("could not query select existence of follow: %w", err)
+		return out, fmt.Errorf("could not query select existence of follow: %v", err)
 	}
 
 	if out.Following {
 		query = "DELETE FROM follows WHERE follower_id = $1 AND followee_id = $2"
 		if _, err = tx.ExecContext(ctx, query, followerID, followeeID); err != nil {
-			return out, fmt.Errorf("could not delete follow: %w", err)
+			return out, fmt.Errorf("could not delete follow: %v", err)
 		}
 
 		query = "UPDATE users SET followees_count = followees_count - 1 WHERE id = $1"
 		if _, err = tx.ExecContext(ctx, query, followerID); err != nil {
-			return out, fmt.Errorf("could not decrement followees count: %w", err)
+			return out, fmt.Errorf("could not decrement followees count: %v", err)
 		}
 
 		query = `
@@ -429,17 +429,17 @@ func (s *Service) ToggleFollow(ctx context.Context, username string) (ToggleFoll
 			RETURNING followers_count`
 		if err = tx.QueryRowContext(ctx, query, followeeID).
 			Scan(&out.FollowersCount); err != nil {
-			return out, fmt.Errorf("could not decrement followers count: %w", err)
+			return out, fmt.Errorf("could not decrement followers count: %v", err)
 		}
 	} else {
 		query = "INSERT INTO follows (follower_id, followee_id) VALUES ($1, $2)"
 		if _, err = tx.ExecContext(ctx, query, followerID, followeeID); err != nil {
-			return out, fmt.Errorf("could not insert follow: %w", err)
+			return out, fmt.Errorf("could not insert follow: %v", err)
 		}
 
 		query = "UPDATE users SET followees_count = followees_count + 1 WHERE id = $1"
 		if _, err = tx.ExecContext(ctx, query, followerID); err != nil {
-			return out, fmt.Errorf("could not increment followees count: %w", err)
+			return out, fmt.Errorf("could not increment followees count: %v", err)
 		}
 
 		query = `
@@ -447,12 +447,12 @@ func (s *Service) ToggleFollow(ctx context.Context, username string) (ToggleFoll
 			RETURNING followers_count`
 		if err = tx.QueryRowContext(ctx, query, followeeID).
 			Scan(&out.FollowersCount); err != nil {
-			return out, fmt.Errorf("could not increment followers count: %w", err)
+			return out, fmt.Errorf("could not increment followers count: %v", err)
 		}
 	}
 
 	if err = tx.Commit(); err != nil {
-		return out, fmt.Errorf("could not commit toggle follow: %w", err)
+		return out, fmt.Errorf("could not commit toggle follow: %v", err)
 	}
 
 	out.Following = !out.Following
@@ -499,12 +499,12 @@ func (s *Service) Followers(ctx context.Context, username string, first int, aft
 		"after":    after,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("could not build followers sql query: %w", err)
+		return nil, fmt.Errorf("could not build followers sql query: %v", err)
 	}
 
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, fmt.Errorf("could not query select followers: %w", err)
+		return nil, fmt.Errorf("could not query select followers: %v", err)
 	}
 
 	defer rows.Close()
@@ -524,7 +524,7 @@ func (s *Service) Followers(ctx context.Context, username string, first int, aft
 			dest = append(dest, &u.Following, &u.Followeed)
 		}
 		if err = rows.Scan(dest...); err != nil {
-			return nil, fmt.Errorf("could not scan follower: %w", err)
+			return nil, fmt.Errorf("could not scan follower: %v", err)
 		}
 
 		u.Me = auth && uid == u.ID
@@ -537,7 +537,7 @@ func (s *Service) Followers(ctx context.Context, username string, first int, aft
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("could not iterate follower rows: %w", err)
+		return nil, fmt.Errorf("could not iterate follower rows: %v", err)
 	}
 
 	return uu, nil
@@ -578,12 +578,12 @@ func (s *Service) Followees(ctx context.Context, username string, first int, aft
 		"after":    after,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("could not build followees sql query: %w", err)
+		return nil, fmt.Errorf("could not build followees sql query: %v", err)
 	}
 
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, fmt.Errorf("could not query select followees: %w", err)
+		return nil, fmt.Errorf("could not query select followees: %v", err)
 	}
 
 	defer rows.Close()
@@ -603,7 +603,7 @@ func (s *Service) Followees(ctx context.Context, username string, first int, aft
 			dest = append(dest, &u.Following, &u.Followeed)
 		}
 		if err = rows.Scan(dest...); err != nil {
-			return nil, fmt.Errorf("could not scan followee: %w", err)
+			return nil, fmt.Errorf("could not scan followee: %v", err)
 		}
 
 		u.Me = auth && uid == u.ID
@@ -616,7 +616,7 @@ func (s *Service) Followees(ctx context.Context, username string, first int, aft
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("could not iterate followee rows: %w", err)
+		return nil, fmt.Errorf("could not iterate followee rows: %v", err)
 	}
 
 	return uu, nil

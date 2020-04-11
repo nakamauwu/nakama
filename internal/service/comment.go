@@ -1,13 +1,10 @@
 package service
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
-	"encoding/gob"
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"time"
 )
@@ -32,6 +29,12 @@ type Comment struct {
 	Liked      bool      `json:"liked"`
 }
 
+type commentClient struct {
+	comments chan Comment
+	postID   string
+	userID   *string
+}
+
 // CreateComment on a post.
 func (s *Service) CreateComment(ctx context.Context, postID string, content string) (Comment, error) {
 	var c Comment
@@ -51,7 +54,7 @@ func (s *Service) CreateComment(ctx context.Context, postID string, content stri
 
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return c, fmt.Errorf("could not begin tx: %w", err)
+		return c, fmt.Errorf("could not begin tx: %v", err)
 	}
 
 	defer tx.Rollback()
@@ -65,7 +68,7 @@ func (s *Service) CreateComment(ctx context.Context, postID string, content stri
 	}
 
 	if err != nil {
-		return c, fmt.Errorf("could not insert comment: %w", err)
+		return c, fmt.Errorf("could not insert comment: %v", err)
 	}
 
 	c.UserID = uid
@@ -77,16 +80,16 @@ func (s *Service) CreateComment(ctx context.Context, postID string, content stri
 		INSERT INTO post_subscriptions (user_id, post_id) VALUES ($1, $2)
 		ON CONFLICT (user_id, post_id) DO NOTHING`
 	if _, err = tx.ExecContext(ctx, query, uid, postID); err != nil {
-		return c, fmt.Errorf("could not insert post subcription after commenting: %w", err)
+		return c, fmt.Errorf("could not insert post subcription after commenting: %v", err)
 	}
 
 	query = "UPDATE posts SET comments_count = comments_count + 1 WHERE id = $1"
 	if _, err = tx.ExecContext(ctx, query, postID); err != nil {
-		return c, fmt.Errorf("could not update and increment post comments count: %w", err)
+		return c, fmt.Errorf("could not update and increment post comments count: %v", err)
 	}
 
 	if err = tx.Commit(); err != nil {
-		return c, fmt.Errorf("could not commit to create comment: %w", err)
+		return c, fmt.Errorf("could not commit to create comment: %v", err)
 	}
 
 	go s.commentCreated(c)
@@ -144,12 +147,12 @@ func (s *Service) Comments(ctx context.Context, postID string, last int, before 
 		"last":    last,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("could not build comments sql query: %w", err)
+		return nil, fmt.Errorf("could not build comments sql query: %v", err)
 	}
 
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, fmt.Errorf("could not query select comments: %w", err)
+		return nil, fmt.Errorf("could not query select comments: %v", err)
 	}
 
 	defer rows.Close()
@@ -164,7 +167,7 @@ func (s *Service) Comments(ctx context.Context, postID string, last int, before 
 			dest = append(dest, &c.Mine, &c.Liked)
 		}
 		if err = rows.Scan(dest...); err != nil {
-			return nil, fmt.Errorf("could not scan comment: %w", err)
+			return nil, fmt.Errorf("could not scan comment: %v", err)
 		}
 
 		u.AvatarURL = s.avatarURL(avatar)
@@ -173,7 +176,7 @@ func (s *Service) Comments(ctx context.Context, postID string, last int, before 
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("could not iterate comment rows: %w", err)
+		return nil, fmt.Errorf("could not iterate comment rows: %v", err)
 	}
 
 	return cc, nil
@@ -186,33 +189,15 @@ func (s *Service) CommentStream(ctx context.Context, postID string) (<-chan Comm
 	}
 
 	cc := make(chan Comment)
-	uid, auth := ctx.Value(KeyAuthUserID).(string)
-	unsub, err := s.pubsub.Sub(commentTopic(postID), func(data []byte) {
-		go func(r io.Reader) {
-			var c Comment
-			err := gob.NewDecoder(r).Decode(&c)
-			if err != nil {
-				log.Printf("could not gob decode comment: %v\n", err)
-				return
-			}
-
-			if auth && uid == c.UserID {
-				return
-			}
-
-			cc <- c
-		}(bytes.NewReader(data))
-	})
-	if err != nil {
-		return nil, fmt.Errorf("could not subscribe to comments: %w", err)
+	client := &commentClient{comments: cc, postID: postID}
+	if uid, auth := ctx.Value(KeyAuthUserID).(string); auth {
+		client.userID = &uid
 	}
+	s.commentClients.Store(client, nil)
 
 	go func() {
 		<-ctx.Done()
-		if err := unsub(); err != nil {
-			log.Printf("could not unsubcribe from comments: %v\n", err)
-			// don't return
-		}
+		s.commentClients.Delete(client)
 		close(cc)
 	}()
 
@@ -233,7 +218,7 @@ func (s *Service) ToggleCommentLike(ctx context.Context, commentID string) (Togg
 
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return out, fmt.Errorf("could not begin tx: %w", err)
+		return out, fmt.Errorf("could not begin tx: %v", err)
 	}
 
 	defer tx.Rollback()
@@ -243,18 +228,18 @@ func (s *Service) ToggleCommentLike(ctx context.Context, commentID string) (Togg
 			SELECT 1 FROM comment_likes WHERE user_id = $1 AND comment_id = $2
 		)`
 	if err = tx.QueryRowContext(ctx, query, uid, commentID).Scan(&out.Liked); err != nil {
-		return out, fmt.Errorf("could not query select comment like existence: %w", err)
+		return out, fmt.Errorf("could not query select comment like existence: %v", err)
 	}
 
 	if out.Liked {
 		query = "DELETE FROM comment_likes WHERE user_id = $1 AND comment_id = $2"
 		if _, err = tx.ExecContext(ctx, query, uid, commentID); err != nil {
-			return out, fmt.Errorf("could not delete comment like: %w", err)
+			return out, fmt.Errorf("could not delete comment like: %v", err)
 		}
 
 		query = "UPDATE comments SET likes_count = likes_count - 1 WHERE id = $1 RETURNING likes_count"
 		if err = tx.QueryRowContext(ctx, query, commentID).Scan(&out.LikesCount); err != nil {
-			return out, fmt.Errorf("could not update and decrement comment likes count: %w", err)
+			return out, fmt.Errorf("could not update and decrement comment likes count: %v", err)
 		}
 	} else {
 		query = "INSERT INTO comment_likes (user_id, comment_id) VALUES ($1, $2)"
@@ -264,17 +249,17 @@ func (s *Service) ToggleCommentLike(ctx context.Context, commentID string) (Togg
 		}
 
 		if err != nil {
-			return out, fmt.Errorf("could not insert comment like: %w", err)
+			return out, fmt.Errorf("could not insert comment like: %v", err)
 		}
 
 		query = "UPDATE comments SET likes_count = likes_count + 1 WHERE id = $1 RETURNING likes_count"
 		if err = tx.QueryRowContext(ctx, query, commentID).Scan(&out.LikesCount); err != nil {
-			return out, fmt.Errorf("could not update and increment comment likes count: %w", err)
+			return out, fmt.Errorf("could not update and increment comment likes count: %v", err)
 		}
 	}
 
 	if err = tx.Commit(); err != nil {
-		return out, fmt.Errorf("could not commit to toggle comment like: %w", err)
+		return out, fmt.Errorf("could not commit to toggle comment like: %v", err)
 	}
 
 	out.Liked = !out.Liked
@@ -283,18 +268,17 @@ func (s *Service) ToggleCommentLike(ctx context.Context, commentID string) (Togg
 }
 
 func (s *Service) broadcastComment(c Comment) {
-	var b bytes.Buffer
-	err := gob.NewEncoder(&b).Encode(c)
-	if err != nil {
-		log.Printf("could not gob encode comment: %v\n", err)
-		return
-	}
+	s.commentClients.Range(func(key, _ interface{}) bool {
+		client, ok := key.(*commentClient)
+		if !ok {
+			log.Println("broadcast comment: no client type")
+			return false
+		}
 
-	err = s.pubsub.Pub(commentTopic(c.PostID), b.Bytes())
-	if err != nil {
-		log.Printf("could not publish comment: %v\n", err)
-		return
-	}
+		if client.postID == c.PostID && !(client.userID != nil && *client.userID == c.UserID) {
+			client.comments <- c
+		}
+
+		return true
+	})
 }
-
-func commentTopic(postID string) string { return "comment_" + postID }

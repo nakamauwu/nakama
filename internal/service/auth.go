@@ -79,14 +79,14 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 	}
 
 	if err != nil {
-		return fmt.Errorf("could not insert verification code: %w", err)
+		return fmt.Errorf("could not insert verification code: %v", err)
 	}
 
 	defer func() {
 		if err != nil {
 			_, err := s.db.Exec("DELETE FROM verification_codes WHERE id = $1", code)
 			if err != nil {
-				log.Printf("could not delete verification code: %w", err)
+				log.Printf("could not delete verification code: %v", err)
 			}
 		}
 	}()
@@ -101,7 +101,7 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 	if magicLinkMailTmpl == nil {
 		magicLinkMailTmpl, err = template.ParseFiles("web/template/mail/magic-link.html")
 		if err != nil {
-			return fmt.Errorf("could not parse magic link mail template: %w", err)
+			return fmt.Errorf("could not parse magic link mail template: %v", err)
 		}
 	}
 
@@ -110,11 +110,11 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 		"MagicLink": link.String(),
 		"Minutes":   int(verificationCodeLifespan.Minutes()),
 	}); err != nil {
-		return fmt.Errorf("could not execute magic link mail template: %w", err)
+		return fmt.Errorf("could not execute magic link mail template: %v", err)
 	}
 
 	if err = s.sender.Send(email, "Magic Link", b.String()); err != nil {
-		return fmt.Errorf("could not send magic link: %w", err)
+		return fmt.Errorf("could not send magic link: %v", err)
 	}
 
 	return nil
@@ -143,7 +143,7 @@ func (s *Service) AuthURI(ctx context.Context, verificationCode, redirectURI str
 	}
 
 	if err != nil {
-		return "", fmt.Errorf("could not delete verification code: %w", err)
+		return "", fmt.Errorf("could not delete verification code: %v", err)
 	}
 
 	now := time.Now()
@@ -154,7 +154,7 @@ func (s *Service) AuthURI(ctx context.Context, verificationCode, redirectURI str
 
 	token, err := s.codec().EncodeToString(uid)
 	if err != nil {
-		return "", fmt.Errorf("could not create token: %w", err)
+		return "", fmt.Errorf("could not create token: %v", err)
 	}
 
 	f := url.Values{}
@@ -184,14 +184,14 @@ func (s *Service) DevLogin(ctx context.Context, email string) (DevLoginOutput, e
 	}
 
 	if err != nil {
-		return out, fmt.Errorf("could not query select user: %w", err)
+		return out, fmt.Errorf("could not query select user: %v", err)
 	}
 
 	out.User.AvatarURL = s.avatarURL(avatar)
 
 	out.Token, err = s.codec().EncodeToString(out.User.ID)
 	if err != nil {
-		return out, fmt.Errorf("could not create token: %w", err)
+		return out, fmt.Errorf("could not create token: %v", err)
 	}
 
 	out.ExpiresAt = time.Now().Add(tokenLifespan)
@@ -211,7 +211,7 @@ func (s *Service) AuthUserIDFromToken(token string) (string, error) {
 		if msg == "token is expired" {
 			return "", ErrExpiredToken
 		}
-		return "", fmt.Errorf("could not decode token: %w", err)
+		return "", fmt.Errorf("could not decode token: %v", err)
 	}
 
 	if !reUUID.MatchString(uid) {
@@ -243,7 +243,7 @@ func (s *Service) Token(ctx context.Context) (TokenOutput, error) {
 	var err error
 	out.Token, err = s.codec().EncodeToString(uid)
 	if err != nil {
-		return out, fmt.Errorf("could not create token: %w", err)
+		return out, fmt.Errorf("could not create token: %v", err)
 	}
 
 	out.ExpiresAt = time.Now().Add(tokenLifespan)
@@ -271,7 +271,7 @@ func (s *Service) deleteExpiredVerificationCodesJob() {
 func (s *Service) deleteExpiredVerificationCodes(ctx context.Context) error {
 	query := fmt.Sprintf("DELETE FROM verification_codes WHERE (created_at - INTERVAL '%dm') <= now()", int64(verificationCodeLifespan.Minutes()))
 	if _, err := s.db.ExecContext(ctx, query); err != nil {
-		return fmt.Errorf("could not delete expired verification code: %w", err)
+		return fmt.Errorf("could not delete expired verification code: %v", err)
 	}
 	return nil
 }
