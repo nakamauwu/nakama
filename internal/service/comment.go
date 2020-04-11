@@ -10,6 +10,7 @@ import (
 	"io"
 	"log"
 	"time"
+	"unicode/utf8"
 
 	"github.com/cockroachdb/cockroach-go/crdb"
 )
@@ -47,7 +48,7 @@ func (s *Service) CreateComment(ctx context.Context, postID string, content stri
 	}
 
 	content = smartTrim(content)
-	if content == "" || len([]rune(content)) > 480 {
+	if content == "" || utf8.RuneCountInString(content) > 480 {
 		return c, ErrInvalidContent
 	}
 

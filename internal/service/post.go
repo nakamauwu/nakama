@@ -8,6 +8,7 @@ import (
 	"log"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/cockroachdb/cockroach-go/crdb"
 )
@@ -59,13 +60,13 @@ func (s *Service) CreatePost(ctx context.Context, content string, spoilerOf *str
 	}
 
 	content = smartTrim(content)
-	if content == "" || len([]rune(content)) > 480 {
+	if content == "" || utf8.RuneCountInString(content) > 480 {
 		return ti, ErrInvalidContent
 	}
 
 	if spoilerOf != nil {
 		*spoilerOf = smartTrim(*spoilerOf)
-		if *spoilerOf == "" || len([]rune(*spoilerOf)) > 64 {
+		if *spoilerOf == "" || utf8.RuneCountInString(*spoilerOf) > 64 {
 			return ti, ErrInvalidSpoiler
 		}
 	}
