@@ -36,6 +36,7 @@ Front-end doesn't need any tools or building because it's standard vanilla JavaS
 
 These are the Go libraries used in the source code. Thank you very much.
 
+ - [github.com/cockroachdb/cockroach-go/crdb](https://github.com/cockroachdb/cockroach-go)
  - [github.com/disintegration/imaging](https://github.com/disintegration/imaging)
  - [github.com/hako/branca](https://github.com/hako/branca)
  - [github.com/joho/godotenv](https://github.com/joho/godotenv)
@@ -43,6 +44,5 @@ These are the Go libraries used in the source code. Thank you very much.
  - [github.com/matoous/go-nanoid](https://github.com/matoous/go-nanoid)
  - [github.com/matryer/way](https://github.com/matryer/way)
  - [github.com/nats-io/nats.go](https://github.com/nats-io/nats.go)
- - [github.com/cockroachdb/cockroach-go/crdb](https://github.com/cockroachdb/cockroach-go)
 
 [Eva Icons](https://github.com/akveo/eva-icons) are being used in the front-end. Thank you as well.
