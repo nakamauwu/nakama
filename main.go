@@ -16,8 +16,10 @@ import (
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	natslib "github.com/nats-io/nats.go"
 	"github.com/nicolasparada/nakama/internal/handler"
 	"github.com/nicolasparada/nakama/internal/mailing"
+	"github.com/nicolasparada/nakama/internal/pubsub/nats"
 	"github.com/nicolasparada/nakama/internal/service"
 )
 
@@ -34,6 +36,7 @@ func run() error {
 		originStr    = env("ORIGIN", fmt.Sprintf("http://localhost:%d", port))
 		dbURL        = env("DATABASE_URL", "postgresql://root@127.0.0.1:26257/nakama?sslmode=disable")
 		tokenKey     = env("TOKEN_KEY", "supersecretkeyyoushouldnotcommit")
+		natsURL      = env("NATS_URL", natslib.DefaultURL)
 		smtpHost     = env("SMTP_HOST", "smtp.mailtrap.io")
 		smtpPort, _  = strconv.Atoi(env("SMTP_PORT", "25"))
 		smtpUsername = os.Getenv("SMTP_USERNAME")
@@ -46,6 +49,7 @@ func run() error {
 	flag.IntVar(&port, "port", port, "Port in which this server will run")
 	flag.StringVar(&originStr, "origin", originStr, "URL origin for this service")
 	flag.StringVar(&dbURL, "db", dbURL, "Database URL")
+	flag.StringVar(&natsURL, "nats", natsURL, "NATS URL")
 	flag.StringVar(&smtpHost, "smtp.host", smtpHost, "SMTP server host")
 	flag.IntVar(&smtpPort, "smtp.port", smtpPort, "SMTP server port")
 	flag.Parse()
@@ -57,14 +61,20 @@ func run() error {
 
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
-		return fmt.Errorf("could not open db connection: %v", err)
+		return fmt.Errorf("could not open db connection: %w", err)
 	}
 
 	defer db.Close()
 
 	if err = db.Ping(); err != nil {
-		return fmt.Errorf("could not ping to db: %v", err)
+		return fmt.Errorf("could not ping to db: %w", err)
 	}
+
+	natsConn, err := natslib.Connect(natsURL)
+	if err != nil {
+		return fmt.Errorf("could not connect to NATS server: %w", err)
+	}
+	pubsub := &nats.PubSub{Conn: natsConn}
 
 	var sender mailing.Sender
 	if smtpUsername != "" && smtpPassword != "" {
@@ -83,12 +93,13 @@ func run() error {
 			log.New(os.Stderr, "mailing", log.LstdFlags),
 		)
 	}
-	service := service.New(
-		db,
-		sender,
-		*origin,
-		tokenKey,
-	)
+	service := service.New(service.Conf{
+		DB:       db,
+		Sender:   sender,
+		Origin:   *origin,
+		TokenKey: tokenKey,
+		PubSub:   pubsub,
+	})
 	server := http.Server{
 		Addr:              fmt.Sprintf(":%d", port),
 		Handler:           handler.New(service, *origin),
@@ -107,7 +118,7 @@ func run() error {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 		defer cancel()
 		if err := server.Shutdown(ctx); err != nil {
-			errs <- fmt.Errorf("could not shutdown server: %v", err)
+			errs <- fmt.Errorf("could not shutdown server: %w", err)
 			return
 		}
 
@@ -118,7 +129,7 @@ func run() error {
 		log.Printf("accepting connections on port %d\n", port)
 		log.Printf("starting server at %s\n", origin)
 		if err = server.ListenAndServe(); err != http.ErrServerClosed {
-			errs <- fmt.Errorf("could not listen and serve: %v", err)
+			errs <- fmt.Errorf("could not listen and serve: %w", err)
 			return
 		}
 
