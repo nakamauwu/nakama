@@ -82,12 +82,14 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 		return fmt.Errorf("could not insert verification code: %w", err)
 	}
 
-	go func() {
+	defer func() {
 		if err != nil {
-			_, err := s.db.Exec("DELETE FROM verification_codes WHERE id = $1", code)
-			if err != nil {
-				log.Printf("could not delete verification code: %v\n", err)
-			}
+			go func() {
+				_, err := s.db.Exec("DELETE FROM verification_codes WHERE id = $1", code)
+				if err != nil {
+					log.Printf("could not delete verification code: %v\n", err)
+				}
+			}()
 		}
 	}()
 
