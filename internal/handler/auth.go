@@ -22,7 +22,7 @@ func (h *handler) sendMagicLink(w http.ResponseWriter, r *http.Request) {
 	var in sendMagicLinkInput
 	defer r.Body.Close()
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
 

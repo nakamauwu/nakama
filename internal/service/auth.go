@@ -28,8 +28,8 @@ var (
 	ErrUnimplemented = errors.New("unimplemented")
 	// ErrUnauthenticated denotes no authenticated user in context.
 	ErrUnauthenticated = errors.New("unauthenticated")
-	// ErrInvalidRedirectURI denotes an invalid redirect uri.
-	ErrInvalidRedirectURI = errors.New("invalid redirect uri")
+	// ErrInvalidRedirectURI denotes an invalid redirect URI.
+	ErrInvalidRedirectURI = errors.New("invalid redirect URI")
 	// ErrInvalidToken denotes an invalid token.
 	ErrInvalidToken = errors.New("invalid token")
 	// ErrExpiredToken denotes that the token already expired.
@@ -82,7 +82,7 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 		return fmt.Errorf("could not insert verification code: %w", err)
 	}
 
-	defer func() {
+	go func() {
 		if err != nil {
 			_, err := s.db.Exec("DELETE FROM verification_codes WHERE id = $1", code)
 			if err != nil {

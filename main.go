@@ -102,7 +102,7 @@ func run() error {
 	})
 	server := http.Server{
 		Addr:              fmt.Sprintf(":%d", port),
-		Handler:           handler.New(service, origin),
+		Handler:           handler.New(service, origin.Hostname() == "localhost"),
 		ReadHeaderTimeout: time.Second * 5,
 		ReadTimeout:       time.Second * 15,
 	}
