@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"syscall"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -111,7 +112,7 @@ func run() error {
 
 	go func() {
 		quit := make(chan os.Signal, 1)
-		signal.Notify(quit, os.Interrupt, os.Kill)
+		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
 		<-quit
 
