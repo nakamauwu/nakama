@@ -1,7 +1,7 @@
-import renderList from "./list.js"
+import { joinActors, markNotificationAsRead } from "../header.js"
 import { doGet } from "../http.js"
 import { ago } from "../utils.js"
-import { markNotificationAsRead, joinActors } from "../header.js"
+import renderList from "./list.js"
 
 const PAGE_SIZE = 10
 const template = document.createElement("template")

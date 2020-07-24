@@ -1,8 +1,8 @@
 import { getAuthUser } from "../auth.js"
 import { doGet, doPost, subscribe } from "../http.js"
+import { smartTrim } from "../utils.js"
 import renderList from "./list.js"
 import renderPost from "./post.js"
-import { smartTrim } from "../utils.js"
 
 const PAGE_SIZE = 10
 let timeline = /** @type {import("../types.js").TimelineItem[]} */ (null)

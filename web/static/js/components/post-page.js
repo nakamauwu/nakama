@@ -1,6 +1,6 @@
 import { getAuthUser, isAuthenticated } from "../auth.js"
 import { doGet, doPost, subscribe } from "../http.js"
-import { ago, escapeHTML, linkify, smartTrim, replaceNode, el, collectMedia } from "../utils.js"
+import { ago, collectMedia, el, escapeHTML, linkify, replaceNode, smartTrim } from "../utils.js"
 import renderAvatarHTML from "./avatar.js"
 import { heartIconSVG, heartOulineIconSVG } from "./icons.js"
 import renderList from "./list.js"

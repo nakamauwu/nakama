@@ -1,6 +1,6 @@
 import { isAuthenticated } from "../auth.js"
 import { doPost } from "../http.js"
-import { ago, escapeHTML, linkify, replaceNode, el, collectMedia } from "../utils.js"
+import { ago, collectMedia, el, escapeHTML, linkify, replaceNode } from "../utils.js"
 import renderAvatarHTML from "./avatar.js"
 import { heartIconSVG, heartOulineIconSVG } from "./icons.js"
 
@@ -107,4 +107,3 @@ export default function renderPost(post, timelineItemID) {
 function togglePostLike(postID) {
     return doPost(`/api/posts/${postID}/toggle_like`)
 }
-

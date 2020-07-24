@@ -1,7 +1,7 @@
 import { doGet } from "../http.js"
-import renderList from "./list.js";
-import renderUserProfile from "./user-profile.js";
-import { navigate } from "../lib/router.js";
+import { navigate } from "../lib/router.js"
+import renderList from "./list.js"
+import renderUserProfile from "./user-profile.js"
 
 const PAGE_SIZE = 3
 const template = document.createElement("template")
