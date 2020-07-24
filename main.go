@@ -78,8 +78,13 @@ func run() error {
 	pubsub := &nats.PubSub{Conn: natsConn}
 
 	var sender mailing.Sender
-	if smtpUsername != "" && smtpPassword != "" {
-		log.Println("using smtp mailing implementation")
+	if smtpUsername == "" || smtpPassword == "" {
+		log.Println("could not setup smtp mailing: username and/or password not provided; using log implementation")
+		sender = mailing.NewLogSender(
+			"noreply@"+origin.Hostname(),
+			log.New(os.Stdout, "mailing ", log.LstdFlags),
+		)
+	} else {
 		sender = mailing.NewSMTPSender(
 			"noreply@"+origin.Hostname(),
 			smtpHost,
@@ -87,12 +92,7 @@ func run() error {
 			smtpUsername,
 			smtpPassword,
 		)
-	} else {
-		log.Println("using log mailing implementation")
-		sender = mailing.NewLogSender(
-			"noreply@"+origin.Hostname(),
-			log.New(os.Stderr, "mailing", log.LstdFlags),
-		)
+
 	}
 	service := service.New(service.Conf{
 		DB:       db,

@@ -27,7 +27,7 @@ func NewLogSender(from string, l *log.Logger) *LogSender {
 func (s *LogSender) Send(to, subject, body string) error {
 	toAddr := mail.Address{Address: to}
 	msg := message(s.From, toAddr, subject, body)
-	s.Logger.Println(msg)
+	s.Logger.Printf("\n\n%s\n\n", msg)
 
 	return nil
 }
