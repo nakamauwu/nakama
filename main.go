@@ -51,13 +51,17 @@ func run() error {
 	flag.StringVar(&originStr, "origin", originStr, "URL origin for this service")
 	flag.StringVar(&dbURL, "db", dbURL, "Database URL")
 	flag.StringVar(&natsURL, "nats", natsURL, "NATS URL")
-	flag.StringVar(&smtpHost, "smtp.host", smtpHost, "SMTP server host")
-	flag.IntVar(&smtpPort, "smtp.port", smtpPort, "SMTP server port")
+	flag.StringVar(&smtpHost, "smtp-host", smtpHost, "SMTP server host")
+	flag.IntVar(&smtpPort, "smtp-port", smtpPort, "SMTP server port")
 	flag.Parse()
 
 	origin, err := url.Parse(originStr)
 	if err != nil || !origin.IsAbs() {
 		return errors.New("invalid url origin")
+	}
+
+	if i, err := strconv.Atoi(origin.Port()); err == nil {
+		port = i
 	}
 
 	db, err := sql.Open("postgres", dbURL)
@@ -75,6 +79,7 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("could not connect to NATS server: %w", err)
 	}
+
 	pubsub := &nats.PubSub{Conn: natsConn}
 
 	var sender mailing.Sender
