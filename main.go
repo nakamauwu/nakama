@@ -95,11 +95,12 @@ func run() error {
 
 	}
 	service := service.New(service.Conf{
-		DB:       db,
-		Sender:   sender,
-		Origin:   origin,
-		TokenKey: tokenKey,
-		PubSub:   pubsub,
+		DB:          db,
+		Sender:      sender,
+		Origin:      origin,
+		TemplateDir: "web/template",
+		TokenKey:    tokenKey,
+		PubSub:      pubsub,
 	})
 	server := http.Server{
 		Addr:              fmt.Sprintf(":%d", port),

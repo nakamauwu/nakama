@@ -9,6 +9,7 @@ import (
 	"html/template"
 	"log"
 	"net/url"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -101,7 +102,7 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 	link.RawQuery = q.Encode()
 
 	if magicLinkMailTmpl == nil {
-		magicLinkMailTmpl, err = template.ParseFiles("web/template/mail/magic-link.html")
+		magicLinkMailTmpl, err = template.ParseFiles(filepath.Join(s.templateDir, "/mail/magic-link.html"))
 		if err != nil {
 			return fmt.Errorf("could not parse magic link mail template: %w", err)
 		}
