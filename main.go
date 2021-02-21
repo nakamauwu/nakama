@@ -87,7 +87,7 @@ func run() error {
 		log.Println("could not setup smtp mailing: username and/or password not provided; using log implementation")
 		sender = mailing.NewLogSender(
 			"noreply@"+origin.Hostname(),
-			&LogWrapper{Logger: log.New(os.Stdout, "mailing ", log.LstdFlags)},
+			&logWrapper{Logger: log.New(os.Stdout, "mailing ", log.LstdFlags)},
 		)
 	} else {
 		sender = mailing.NewSMTPSender(
@@ -154,10 +154,10 @@ func env(key, fallbackValue string) string {
 	return s
 }
 
-type LogWrapper struct {
+type logWrapper struct {
 	Logger *log.Logger
 }
 
-func (l *LogWrapper) Log(args ...interface{}) { l.Logger.Println(args...) }
+func (l *logWrapper) Log(args ...interface{}) { l.Logger.Println(args...) }
 
-func (l *LogWrapper) Logf(format string, args ...interface{}) { l.Logger.Printf(format, args...) }
+func (l *logWrapper) Logf(format string, args ...interface{}) { l.Logger.Printf(format, args...) }
