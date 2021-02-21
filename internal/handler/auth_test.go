@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -149,7 +148,7 @@ func readerText(t *testing.T, rc io.ReadCloser) string {
 
 	defer rc.Close()
 
-	b, err := ioutil.ReadAll(rc)
+	b, err := io.ReadAll(rc)
 	if err != nil {
 		t.Fatalf("failed to read all from reader: %v", err)
 	}
