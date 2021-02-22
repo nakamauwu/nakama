@@ -10,40 +10,6 @@ import (
 	"sync"
 )
 
-var (
-	lockServiceMockAuthURI                 sync.RWMutex
-	lockServiceMockAuthUser                sync.RWMutex
-	lockServiceMockAuthUserIDFromToken     sync.RWMutex
-	lockServiceMockCommentStream           sync.RWMutex
-	lockServiceMockComments                sync.RWMutex
-	lockServiceMockCreateComment           sync.RWMutex
-	lockServiceMockCreatePost              sync.RWMutex
-	lockServiceMockCreateUser              sync.RWMutex
-	lockServiceMockDeleteTimelineItem      sync.RWMutex
-	lockServiceMockDevLogin                sync.RWMutex
-	lockServiceMockFollowees               sync.RWMutex
-	lockServiceMockFollowers               sync.RWMutex
-	lockServiceMockHasUnreadNotifications  sync.RWMutex
-	lockServiceMockMarkNotificationAsRead  sync.RWMutex
-	lockServiceMockMarkNotificationsAsRead sync.RWMutex
-	lockServiceMockNotificationStream      sync.RWMutex
-	lockServiceMockNotifications           sync.RWMutex
-	lockServiceMockPost                    sync.RWMutex
-	lockServiceMockPosts                   sync.RWMutex
-	lockServiceMockSendMagicLink           sync.RWMutex
-	lockServiceMockTimeline                sync.RWMutex
-	lockServiceMockTimelineItemStream      sync.RWMutex
-	lockServiceMockToggleCommentLike       sync.RWMutex
-	lockServiceMockToggleFollow            sync.RWMutex
-	lockServiceMockTogglePostLike          sync.RWMutex
-	lockServiceMockTogglePostSubscription  sync.RWMutex
-	lockServiceMockToken                   sync.RWMutex
-	lockServiceMockUpdateAvatar            sync.RWMutex
-	lockServiceMockUser                    sync.RWMutex
-	lockServiceMockUsernames               sync.RWMutex
-	lockServiceMockUsers                   sync.RWMutex
-)
-
 // Ensure, that ServiceMock does implement Service.
 // If this is not the case, regenerate this file with moq.
 var _ Service = &ServiceMock{}
@@ -493,6 +459,37 @@ type ServiceMock struct {
 			After string
 		}
 	}
+	lockAuthURI                 sync.RWMutex
+	lockAuthUser                sync.RWMutex
+	lockAuthUserIDFromToken     sync.RWMutex
+	lockCommentStream           sync.RWMutex
+	lockComments                sync.RWMutex
+	lockCreateComment           sync.RWMutex
+	lockCreatePost              sync.RWMutex
+	lockCreateUser              sync.RWMutex
+	lockDeleteTimelineItem      sync.RWMutex
+	lockDevLogin                sync.RWMutex
+	lockFollowees               sync.RWMutex
+	lockFollowers               sync.RWMutex
+	lockHasUnreadNotifications  sync.RWMutex
+	lockMarkNotificationAsRead  sync.RWMutex
+	lockMarkNotificationsAsRead sync.RWMutex
+	lockNotificationStream      sync.RWMutex
+	lockNotifications           sync.RWMutex
+	lockPost                    sync.RWMutex
+	lockPosts                   sync.RWMutex
+	lockSendMagicLink           sync.RWMutex
+	lockTimeline                sync.RWMutex
+	lockTimelineItemStream      sync.RWMutex
+	lockToggleCommentLike       sync.RWMutex
+	lockToggleFollow            sync.RWMutex
+	lockTogglePostLike          sync.RWMutex
+	lockTogglePostSubscription  sync.RWMutex
+	lockToken                   sync.RWMutex
+	lockUpdateAvatar            sync.RWMutex
+	lockUser                    sync.RWMutex
+	lockUsernames               sync.RWMutex
+	lockUsers                   sync.RWMutex
 }
 
 // AuthURI calls AuthURIFunc.
@@ -509,9 +506,9 @@ func (mock *ServiceMock) AuthURI(ctx context.Context, verificationCode string, r
 		VerificationCode: verificationCode,
 		RedirectURI:      redirectURI,
 	}
-	lockServiceMockAuthURI.Lock()
+	mock.lockAuthURI.Lock()
 	mock.calls.AuthURI = append(mock.calls.AuthURI, callInfo)
-	lockServiceMockAuthURI.Unlock()
+	mock.lockAuthURI.Unlock()
 	return mock.AuthURIFunc(ctx, verificationCode, redirectURI)
 }
 
@@ -528,9 +525,9 @@ func (mock *ServiceMock) AuthURICalls() []struct {
 		VerificationCode string
 		RedirectURI      string
 	}
-	lockServiceMockAuthURI.RLock()
+	mock.lockAuthURI.RLock()
 	calls = mock.calls.AuthURI
-	lockServiceMockAuthURI.RUnlock()
+	mock.lockAuthURI.RUnlock()
 	return calls
 }
 
@@ -544,9 +541,9 @@ func (mock *ServiceMock) AuthUser(ctx context.Context) (service.User, error) {
 	}{
 		Ctx: ctx,
 	}
-	lockServiceMockAuthUser.Lock()
+	mock.lockAuthUser.Lock()
 	mock.calls.AuthUser = append(mock.calls.AuthUser, callInfo)
-	lockServiceMockAuthUser.Unlock()
+	mock.lockAuthUser.Unlock()
 	return mock.AuthUserFunc(ctx)
 }
 
@@ -559,9 +556,9 @@ func (mock *ServiceMock) AuthUserCalls() []struct {
 	var calls []struct {
 		Ctx context.Context
 	}
-	lockServiceMockAuthUser.RLock()
+	mock.lockAuthUser.RLock()
 	calls = mock.calls.AuthUser
-	lockServiceMockAuthUser.RUnlock()
+	mock.lockAuthUser.RUnlock()
 	return calls
 }
 
@@ -575,9 +572,9 @@ func (mock *ServiceMock) AuthUserIDFromToken(token string) (string, error) {
 	}{
 		Token: token,
 	}
-	lockServiceMockAuthUserIDFromToken.Lock()
+	mock.lockAuthUserIDFromToken.Lock()
 	mock.calls.AuthUserIDFromToken = append(mock.calls.AuthUserIDFromToken, callInfo)
-	lockServiceMockAuthUserIDFromToken.Unlock()
+	mock.lockAuthUserIDFromToken.Unlock()
 	return mock.AuthUserIDFromTokenFunc(token)
 }
 
@@ -590,9 +587,9 @@ func (mock *ServiceMock) AuthUserIDFromTokenCalls() []struct {
 	var calls []struct {
 		Token string
 	}
-	lockServiceMockAuthUserIDFromToken.RLock()
+	mock.lockAuthUserIDFromToken.RLock()
 	calls = mock.calls.AuthUserIDFromToken
-	lockServiceMockAuthUserIDFromToken.RUnlock()
+	mock.lockAuthUserIDFromToken.RUnlock()
 	return calls
 }
 
@@ -608,9 +605,9 @@ func (mock *ServiceMock) CommentStream(ctx context.Context, postID string) (<-ch
 		Ctx:    ctx,
 		PostID: postID,
 	}
-	lockServiceMockCommentStream.Lock()
+	mock.lockCommentStream.Lock()
 	mock.calls.CommentStream = append(mock.calls.CommentStream, callInfo)
-	lockServiceMockCommentStream.Unlock()
+	mock.lockCommentStream.Unlock()
 	return mock.CommentStreamFunc(ctx, postID)
 }
 
@@ -625,9 +622,9 @@ func (mock *ServiceMock) CommentStreamCalls() []struct {
 		Ctx    context.Context
 		PostID string
 	}
-	lockServiceMockCommentStream.RLock()
+	mock.lockCommentStream.RLock()
 	calls = mock.calls.CommentStream
-	lockServiceMockCommentStream.RUnlock()
+	mock.lockCommentStream.RUnlock()
 	return calls
 }
 
@@ -647,9 +644,9 @@ func (mock *ServiceMock) Comments(ctx context.Context, postID string, last int, 
 		Last:   last,
 		Before: before,
 	}
-	lockServiceMockComments.Lock()
+	mock.lockComments.Lock()
 	mock.calls.Comments = append(mock.calls.Comments, callInfo)
-	lockServiceMockComments.Unlock()
+	mock.lockComments.Unlock()
 	return mock.CommentsFunc(ctx, postID, last, before)
 }
 
@@ -668,9 +665,9 @@ func (mock *ServiceMock) CommentsCalls() []struct {
 		Last   int
 		Before string
 	}
-	lockServiceMockComments.RLock()
+	mock.lockComments.RLock()
 	calls = mock.calls.Comments
-	lockServiceMockComments.RUnlock()
+	mock.lockComments.RUnlock()
 	return calls
 }
 
@@ -688,9 +685,9 @@ func (mock *ServiceMock) CreateComment(ctx context.Context, postID string, conte
 		PostID:  postID,
 		Content: content,
 	}
-	lockServiceMockCreateComment.Lock()
+	mock.lockCreateComment.Lock()
 	mock.calls.CreateComment = append(mock.calls.CreateComment, callInfo)
-	lockServiceMockCreateComment.Unlock()
+	mock.lockCreateComment.Unlock()
 	return mock.CreateCommentFunc(ctx, postID, content)
 }
 
@@ -707,9 +704,9 @@ func (mock *ServiceMock) CreateCommentCalls() []struct {
 		PostID  string
 		Content string
 	}
-	lockServiceMockCreateComment.RLock()
+	mock.lockCreateComment.RLock()
 	calls = mock.calls.CreateComment
-	lockServiceMockCreateComment.RUnlock()
+	mock.lockCreateComment.RUnlock()
 	return calls
 }
 
@@ -729,9 +726,9 @@ func (mock *ServiceMock) CreatePost(ctx context.Context, content string, spoiler
 		SpoilerOf: spoilerOf,
 		Nsfw:      nsfw,
 	}
-	lockServiceMockCreatePost.Lock()
+	mock.lockCreatePost.Lock()
 	mock.calls.CreatePost = append(mock.calls.CreatePost, callInfo)
-	lockServiceMockCreatePost.Unlock()
+	mock.lockCreatePost.Unlock()
 	return mock.CreatePostFunc(ctx, content, spoilerOf, nsfw)
 }
 
@@ -750,9 +747,9 @@ func (mock *ServiceMock) CreatePostCalls() []struct {
 		SpoilerOf *string
 		Nsfw      bool
 	}
-	lockServiceMockCreatePost.RLock()
+	mock.lockCreatePost.RLock()
 	calls = mock.calls.CreatePost
-	lockServiceMockCreatePost.RUnlock()
+	mock.lockCreatePost.RUnlock()
 	return calls
 }
 
@@ -770,9 +767,9 @@ func (mock *ServiceMock) CreateUser(ctx context.Context, email string, username 
 		Email:    email,
 		Username: username,
 	}
-	lockServiceMockCreateUser.Lock()
+	mock.lockCreateUser.Lock()
 	mock.calls.CreateUser = append(mock.calls.CreateUser, callInfo)
-	lockServiceMockCreateUser.Unlock()
+	mock.lockCreateUser.Unlock()
 	return mock.CreateUserFunc(ctx, email, username)
 }
 
@@ -789,9 +786,9 @@ func (mock *ServiceMock) CreateUserCalls() []struct {
 		Email    string
 		Username string
 	}
-	lockServiceMockCreateUser.RLock()
+	mock.lockCreateUser.RLock()
 	calls = mock.calls.CreateUser
-	lockServiceMockCreateUser.RUnlock()
+	mock.lockCreateUser.RUnlock()
 	return calls
 }
 
@@ -807,9 +804,9 @@ func (mock *ServiceMock) DeleteTimelineItem(ctx context.Context, timelineItemID 
 		Ctx:            ctx,
 		TimelineItemID: timelineItemID,
 	}
-	lockServiceMockDeleteTimelineItem.Lock()
+	mock.lockDeleteTimelineItem.Lock()
 	mock.calls.DeleteTimelineItem = append(mock.calls.DeleteTimelineItem, callInfo)
-	lockServiceMockDeleteTimelineItem.Unlock()
+	mock.lockDeleteTimelineItem.Unlock()
 	return mock.DeleteTimelineItemFunc(ctx, timelineItemID)
 }
 
@@ -824,9 +821,9 @@ func (mock *ServiceMock) DeleteTimelineItemCalls() []struct {
 		Ctx            context.Context
 		TimelineItemID string
 	}
-	lockServiceMockDeleteTimelineItem.RLock()
+	mock.lockDeleteTimelineItem.RLock()
 	calls = mock.calls.DeleteTimelineItem
-	lockServiceMockDeleteTimelineItem.RUnlock()
+	mock.lockDeleteTimelineItem.RUnlock()
 	return calls
 }
 
@@ -842,9 +839,9 @@ func (mock *ServiceMock) DevLogin(ctx context.Context, email string) (service.De
 		Ctx:   ctx,
 		Email: email,
 	}
-	lockServiceMockDevLogin.Lock()
+	mock.lockDevLogin.Lock()
 	mock.calls.DevLogin = append(mock.calls.DevLogin, callInfo)
-	lockServiceMockDevLogin.Unlock()
+	mock.lockDevLogin.Unlock()
 	return mock.DevLoginFunc(ctx, email)
 }
 
@@ -859,9 +856,9 @@ func (mock *ServiceMock) DevLoginCalls() []struct {
 		Ctx   context.Context
 		Email string
 	}
-	lockServiceMockDevLogin.RLock()
+	mock.lockDevLogin.RLock()
 	calls = mock.calls.DevLogin
-	lockServiceMockDevLogin.RUnlock()
+	mock.lockDevLogin.RUnlock()
 	return calls
 }
 
@@ -881,9 +878,9 @@ func (mock *ServiceMock) Followees(ctx context.Context, username string, first i
 		First:    first,
 		After:    after,
 	}
-	lockServiceMockFollowees.Lock()
+	mock.lockFollowees.Lock()
 	mock.calls.Followees = append(mock.calls.Followees, callInfo)
-	lockServiceMockFollowees.Unlock()
+	mock.lockFollowees.Unlock()
 	return mock.FolloweesFunc(ctx, username, first, after)
 }
 
@@ -902,9 +899,9 @@ func (mock *ServiceMock) FolloweesCalls() []struct {
 		First    int
 		After    string
 	}
-	lockServiceMockFollowees.RLock()
+	mock.lockFollowees.RLock()
 	calls = mock.calls.Followees
-	lockServiceMockFollowees.RUnlock()
+	mock.lockFollowees.RUnlock()
 	return calls
 }
 
@@ -924,9 +921,9 @@ func (mock *ServiceMock) Followers(ctx context.Context, username string, first i
 		First:    first,
 		After:    after,
 	}
-	lockServiceMockFollowers.Lock()
+	mock.lockFollowers.Lock()
 	mock.calls.Followers = append(mock.calls.Followers, callInfo)
-	lockServiceMockFollowers.Unlock()
+	mock.lockFollowers.Unlock()
 	return mock.FollowersFunc(ctx, username, first, after)
 }
 
@@ -945,9 +942,9 @@ func (mock *ServiceMock) FollowersCalls() []struct {
 		First    int
 		After    string
 	}
-	lockServiceMockFollowers.RLock()
+	mock.lockFollowers.RLock()
 	calls = mock.calls.Followers
-	lockServiceMockFollowers.RUnlock()
+	mock.lockFollowers.RUnlock()
 	return calls
 }
 
@@ -961,9 +958,9 @@ func (mock *ServiceMock) HasUnreadNotifications(ctx context.Context) (bool, erro
 	}{
 		Ctx: ctx,
 	}
-	lockServiceMockHasUnreadNotifications.Lock()
+	mock.lockHasUnreadNotifications.Lock()
 	mock.calls.HasUnreadNotifications = append(mock.calls.HasUnreadNotifications, callInfo)
-	lockServiceMockHasUnreadNotifications.Unlock()
+	mock.lockHasUnreadNotifications.Unlock()
 	return mock.HasUnreadNotificationsFunc(ctx)
 }
 
@@ -976,9 +973,9 @@ func (mock *ServiceMock) HasUnreadNotificationsCalls() []struct {
 	var calls []struct {
 		Ctx context.Context
 	}
-	lockServiceMockHasUnreadNotifications.RLock()
+	mock.lockHasUnreadNotifications.RLock()
 	calls = mock.calls.HasUnreadNotifications
-	lockServiceMockHasUnreadNotifications.RUnlock()
+	mock.lockHasUnreadNotifications.RUnlock()
 	return calls
 }
 
@@ -994,9 +991,9 @@ func (mock *ServiceMock) MarkNotificationAsRead(ctx context.Context, notificatio
 		Ctx:            ctx,
 		NotificationID: notificationID,
 	}
-	lockServiceMockMarkNotificationAsRead.Lock()
+	mock.lockMarkNotificationAsRead.Lock()
 	mock.calls.MarkNotificationAsRead = append(mock.calls.MarkNotificationAsRead, callInfo)
-	lockServiceMockMarkNotificationAsRead.Unlock()
+	mock.lockMarkNotificationAsRead.Unlock()
 	return mock.MarkNotificationAsReadFunc(ctx, notificationID)
 }
 
@@ -1011,9 +1008,9 @@ func (mock *ServiceMock) MarkNotificationAsReadCalls() []struct {
 		Ctx            context.Context
 		NotificationID string
 	}
-	lockServiceMockMarkNotificationAsRead.RLock()
+	mock.lockMarkNotificationAsRead.RLock()
 	calls = mock.calls.MarkNotificationAsRead
-	lockServiceMockMarkNotificationAsRead.RUnlock()
+	mock.lockMarkNotificationAsRead.RUnlock()
 	return calls
 }
 
@@ -1027,9 +1024,9 @@ func (mock *ServiceMock) MarkNotificationsAsRead(ctx context.Context) error {
 	}{
 		Ctx: ctx,
 	}
-	lockServiceMockMarkNotificationsAsRead.Lock()
+	mock.lockMarkNotificationsAsRead.Lock()
 	mock.calls.MarkNotificationsAsRead = append(mock.calls.MarkNotificationsAsRead, callInfo)
-	lockServiceMockMarkNotificationsAsRead.Unlock()
+	mock.lockMarkNotificationsAsRead.Unlock()
 	return mock.MarkNotificationsAsReadFunc(ctx)
 }
 
@@ -1042,9 +1039,9 @@ func (mock *ServiceMock) MarkNotificationsAsReadCalls() []struct {
 	var calls []struct {
 		Ctx context.Context
 	}
-	lockServiceMockMarkNotificationsAsRead.RLock()
+	mock.lockMarkNotificationsAsRead.RLock()
 	calls = mock.calls.MarkNotificationsAsRead
-	lockServiceMockMarkNotificationsAsRead.RUnlock()
+	mock.lockMarkNotificationsAsRead.RUnlock()
 	return calls
 }
 
@@ -1058,9 +1055,9 @@ func (mock *ServiceMock) NotificationStream(ctx context.Context) (<-chan service
 	}{
 		Ctx: ctx,
 	}
-	lockServiceMockNotificationStream.Lock()
+	mock.lockNotificationStream.Lock()
 	mock.calls.NotificationStream = append(mock.calls.NotificationStream, callInfo)
-	lockServiceMockNotificationStream.Unlock()
+	mock.lockNotificationStream.Unlock()
 	return mock.NotificationStreamFunc(ctx)
 }
 
@@ -1073,9 +1070,9 @@ func (mock *ServiceMock) NotificationStreamCalls() []struct {
 	var calls []struct {
 		Ctx context.Context
 	}
-	lockServiceMockNotificationStream.RLock()
+	mock.lockNotificationStream.RLock()
 	calls = mock.calls.NotificationStream
-	lockServiceMockNotificationStream.RUnlock()
+	mock.lockNotificationStream.RUnlock()
 	return calls
 }
 
@@ -1093,9 +1090,9 @@ func (mock *ServiceMock) Notifications(ctx context.Context, last int, before str
 		Last:   last,
 		Before: before,
 	}
-	lockServiceMockNotifications.Lock()
+	mock.lockNotifications.Lock()
 	mock.calls.Notifications = append(mock.calls.Notifications, callInfo)
-	lockServiceMockNotifications.Unlock()
+	mock.lockNotifications.Unlock()
 	return mock.NotificationsFunc(ctx, last, before)
 }
 
@@ -1112,9 +1109,9 @@ func (mock *ServiceMock) NotificationsCalls() []struct {
 		Last   int
 		Before string
 	}
-	lockServiceMockNotifications.RLock()
+	mock.lockNotifications.RLock()
 	calls = mock.calls.Notifications
-	lockServiceMockNotifications.RUnlock()
+	mock.lockNotifications.RUnlock()
 	return calls
 }
 
@@ -1130,9 +1127,9 @@ func (mock *ServiceMock) Post(ctx context.Context, postID string) (service.Post,
 		Ctx:    ctx,
 		PostID: postID,
 	}
-	lockServiceMockPost.Lock()
+	mock.lockPost.Lock()
 	mock.calls.Post = append(mock.calls.Post, callInfo)
-	lockServiceMockPost.Unlock()
+	mock.lockPost.Unlock()
 	return mock.PostFunc(ctx, postID)
 }
 
@@ -1147,9 +1144,9 @@ func (mock *ServiceMock) PostCalls() []struct {
 		Ctx    context.Context
 		PostID string
 	}
-	lockServiceMockPost.RLock()
+	mock.lockPost.RLock()
 	calls = mock.calls.Post
-	lockServiceMockPost.RUnlock()
+	mock.lockPost.RUnlock()
 	return calls
 }
 
@@ -1169,9 +1166,9 @@ func (mock *ServiceMock) Posts(ctx context.Context, username string, last int, b
 		Last:     last,
 		Before:   before,
 	}
-	lockServiceMockPosts.Lock()
+	mock.lockPosts.Lock()
 	mock.calls.Posts = append(mock.calls.Posts, callInfo)
-	lockServiceMockPosts.Unlock()
+	mock.lockPosts.Unlock()
 	return mock.PostsFunc(ctx, username, last, before)
 }
 
@@ -1190,9 +1187,9 @@ func (mock *ServiceMock) PostsCalls() []struct {
 		Last     int
 		Before   string
 	}
-	lockServiceMockPosts.RLock()
+	mock.lockPosts.RLock()
 	calls = mock.calls.Posts
-	lockServiceMockPosts.RUnlock()
+	mock.lockPosts.RUnlock()
 	return calls
 }
 
@@ -1210,9 +1207,9 @@ func (mock *ServiceMock) SendMagicLink(ctx context.Context, email string, redire
 		Email:       email,
 		RedirectURI: redirectURI,
 	}
-	lockServiceMockSendMagicLink.Lock()
+	mock.lockSendMagicLink.Lock()
 	mock.calls.SendMagicLink = append(mock.calls.SendMagicLink, callInfo)
-	lockServiceMockSendMagicLink.Unlock()
+	mock.lockSendMagicLink.Unlock()
 	return mock.SendMagicLinkFunc(ctx, email, redirectURI)
 }
 
@@ -1229,9 +1226,9 @@ func (mock *ServiceMock) SendMagicLinkCalls() []struct {
 		Email       string
 		RedirectURI string
 	}
-	lockServiceMockSendMagicLink.RLock()
+	mock.lockSendMagicLink.RLock()
 	calls = mock.calls.SendMagicLink
-	lockServiceMockSendMagicLink.RUnlock()
+	mock.lockSendMagicLink.RUnlock()
 	return calls
 }
 
@@ -1249,9 +1246,9 @@ func (mock *ServiceMock) Timeline(ctx context.Context, last int, before string) 
 		Last:   last,
 		Before: before,
 	}
-	lockServiceMockTimeline.Lock()
+	mock.lockTimeline.Lock()
 	mock.calls.Timeline = append(mock.calls.Timeline, callInfo)
-	lockServiceMockTimeline.Unlock()
+	mock.lockTimeline.Unlock()
 	return mock.TimelineFunc(ctx, last, before)
 }
 
@@ -1268,9 +1265,9 @@ func (mock *ServiceMock) TimelineCalls() []struct {
 		Last   int
 		Before string
 	}
-	lockServiceMockTimeline.RLock()
+	mock.lockTimeline.RLock()
 	calls = mock.calls.Timeline
-	lockServiceMockTimeline.RUnlock()
+	mock.lockTimeline.RUnlock()
 	return calls
 }
 
@@ -1284,9 +1281,9 @@ func (mock *ServiceMock) TimelineItemStream(ctx context.Context) (<-chan service
 	}{
 		Ctx: ctx,
 	}
-	lockServiceMockTimelineItemStream.Lock()
+	mock.lockTimelineItemStream.Lock()
 	mock.calls.TimelineItemStream = append(mock.calls.TimelineItemStream, callInfo)
-	lockServiceMockTimelineItemStream.Unlock()
+	mock.lockTimelineItemStream.Unlock()
 	return mock.TimelineItemStreamFunc(ctx)
 }
 
@@ -1299,9 +1296,9 @@ func (mock *ServiceMock) TimelineItemStreamCalls() []struct {
 	var calls []struct {
 		Ctx context.Context
 	}
-	lockServiceMockTimelineItemStream.RLock()
+	mock.lockTimelineItemStream.RLock()
 	calls = mock.calls.TimelineItemStream
-	lockServiceMockTimelineItemStream.RUnlock()
+	mock.lockTimelineItemStream.RUnlock()
 	return calls
 }
 
@@ -1317,9 +1314,9 @@ func (mock *ServiceMock) ToggleCommentLike(ctx context.Context, commentID string
 		Ctx:       ctx,
 		CommentID: commentID,
 	}
-	lockServiceMockToggleCommentLike.Lock()
+	mock.lockToggleCommentLike.Lock()
 	mock.calls.ToggleCommentLike = append(mock.calls.ToggleCommentLike, callInfo)
-	lockServiceMockToggleCommentLike.Unlock()
+	mock.lockToggleCommentLike.Unlock()
 	return mock.ToggleCommentLikeFunc(ctx, commentID)
 }
 
@@ -1334,9 +1331,9 @@ func (mock *ServiceMock) ToggleCommentLikeCalls() []struct {
 		Ctx       context.Context
 		CommentID string
 	}
-	lockServiceMockToggleCommentLike.RLock()
+	mock.lockToggleCommentLike.RLock()
 	calls = mock.calls.ToggleCommentLike
-	lockServiceMockToggleCommentLike.RUnlock()
+	mock.lockToggleCommentLike.RUnlock()
 	return calls
 }
 
@@ -1352,9 +1349,9 @@ func (mock *ServiceMock) ToggleFollow(ctx context.Context, username string) (ser
 		Ctx:      ctx,
 		Username: username,
 	}
-	lockServiceMockToggleFollow.Lock()
+	mock.lockToggleFollow.Lock()
 	mock.calls.ToggleFollow = append(mock.calls.ToggleFollow, callInfo)
-	lockServiceMockToggleFollow.Unlock()
+	mock.lockToggleFollow.Unlock()
 	return mock.ToggleFollowFunc(ctx, username)
 }
 
@@ -1369,9 +1366,9 @@ func (mock *ServiceMock) ToggleFollowCalls() []struct {
 		Ctx      context.Context
 		Username string
 	}
-	lockServiceMockToggleFollow.RLock()
+	mock.lockToggleFollow.RLock()
 	calls = mock.calls.ToggleFollow
-	lockServiceMockToggleFollow.RUnlock()
+	mock.lockToggleFollow.RUnlock()
 	return calls
 }
 
@@ -1387,9 +1384,9 @@ func (mock *ServiceMock) TogglePostLike(ctx context.Context, postID string) (ser
 		Ctx:    ctx,
 		PostID: postID,
 	}
-	lockServiceMockTogglePostLike.Lock()
+	mock.lockTogglePostLike.Lock()
 	mock.calls.TogglePostLike = append(mock.calls.TogglePostLike, callInfo)
-	lockServiceMockTogglePostLike.Unlock()
+	mock.lockTogglePostLike.Unlock()
 	return mock.TogglePostLikeFunc(ctx, postID)
 }
 
@@ -1404,9 +1401,9 @@ func (mock *ServiceMock) TogglePostLikeCalls() []struct {
 		Ctx    context.Context
 		PostID string
 	}
-	lockServiceMockTogglePostLike.RLock()
+	mock.lockTogglePostLike.RLock()
 	calls = mock.calls.TogglePostLike
-	lockServiceMockTogglePostLike.RUnlock()
+	mock.lockTogglePostLike.RUnlock()
 	return calls
 }
 
@@ -1422,9 +1419,9 @@ func (mock *ServiceMock) TogglePostSubscription(ctx context.Context, postID stri
 		Ctx:    ctx,
 		PostID: postID,
 	}
-	lockServiceMockTogglePostSubscription.Lock()
+	mock.lockTogglePostSubscription.Lock()
 	mock.calls.TogglePostSubscription = append(mock.calls.TogglePostSubscription, callInfo)
-	lockServiceMockTogglePostSubscription.Unlock()
+	mock.lockTogglePostSubscription.Unlock()
 	return mock.TogglePostSubscriptionFunc(ctx, postID)
 }
 
@@ -1439,9 +1436,9 @@ func (mock *ServiceMock) TogglePostSubscriptionCalls() []struct {
 		Ctx    context.Context
 		PostID string
 	}
-	lockServiceMockTogglePostSubscription.RLock()
+	mock.lockTogglePostSubscription.RLock()
 	calls = mock.calls.TogglePostSubscription
-	lockServiceMockTogglePostSubscription.RUnlock()
+	mock.lockTogglePostSubscription.RUnlock()
 	return calls
 }
 
@@ -1455,9 +1452,9 @@ func (mock *ServiceMock) Token(ctx context.Context) (service.TokenOutput, error)
 	}{
 		Ctx: ctx,
 	}
-	lockServiceMockToken.Lock()
+	mock.lockToken.Lock()
 	mock.calls.Token = append(mock.calls.Token, callInfo)
-	lockServiceMockToken.Unlock()
+	mock.lockToken.Unlock()
 	return mock.TokenFunc(ctx)
 }
 
@@ -1470,9 +1467,9 @@ func (mock *ServiceMock) TokenCalls() []struct {
 	var calls []struct {
 		Ctx context.Context
 	}
-	lockServiceMockToken.RLock()
+	mock.lockToken.RLock()
 	calls = mock.calls.Token
-	lockServiceMockToken.RUnlock()
+	mock.lockToken.RUnlock()
 	return calls
 }
 
@@ -1488,9 +1485,9 @@ func (mock *ServiceMock) UpdateAvatar(ctx context.Context, r io.Reader) (string,
 		Ctx: ctx,
 		R:   r,
 	}
-	lockServiceMockUpdateAvatar.Lock()
+	mock.lockUpdateAvatar.Lock()
 	mock.calls.UpdateAvatar = append(mock.calls.UpdateAvatar, callInfo)
-	lockServiceMockUpdateAvatar.Unlock()
+	mock.lockUpdateAvatar.Unlock()
 	return mock.UpdateAvatarFunc(ctx, r)
 }
 
@@ -1505,9 +1502,9 @@ func (mock *ServiceMock) UpdateAvatarCalls() []struct {
 		Ctx context.Context
 		R   io.Reader
 	}
-	lockServiceMockUpdateAvatar.RLock()
+	mock.lockUpdateAvatar.RLock()
 	calls = mock.calls.UpdateAvatar
-	lockServiceMockUpdateAvatar.RUnlock()
+	mock.lockUpdateAvatar.RUnlock()
 	return calls
 }
 
@@ -1523,9 +1520,9 @@ func (mock *ServiceMock) User(ctx context.Context, username string) (service.Use
 		Ctx:      ctx,
 		Username: username,
 	}
-	lockServiceMockUser.Lock()
+	mock.lockUser.Lock()
 	mock.calls.User = append(mock.calls.User, callInfo)
-	lockServiceMockUser.Unlock()
+	mock.lockUser.Unlock()
 	return mock.UserFunc(ctx, username)
 }
 
@@ -1540,9 +1537,9 @@ func (mock *ServiceMock) UserCalls() []struct {
 		Ctx      context.Context
 		Username string
 	}
-	lockServiceMockUser.RLock()
+	mock.lockUser.RLock()
 	calls = mock.calls.User
-	lockServiceMockUser.RUnlock()
+	mock.lockUser.RUnlock()
 	return calls
 }
 
@@ -1562,9 +1559,9 @@ func (mock *ServiceMock) Usernames(ctx context.Context, startingWith string, fir
 		First:        first,
 		After:        after,
 	}
-	lockServiceMockUsernames.Lock()
+	mock.lockUsernames.Lock()
 	mock.calls.Usernames = append(mock.calls.Usernames, callInfo)
-	lockServiceMockUsernames.Unlock()
+	mock.lockUsernames.Unlock()
 	return mock.UsernamesFunc(ctx, startingWith, first, after)
 }
 
@@ -1583,9 +1580,9 @@ func (mock *ServiceMock) UsernamesCalls() []struct {
 		First        int
 		After        string
 	}
-	lockServiceMockUsernames.RLock()
+	mock.lockUsernames.RLock()
 	calls = mock.calls.Usernames
-	lockServiceMockUsernames.RUnlock()
+	mock.lockUsernames.RUnlock()
 	return calls
 }
 
@@ -1605,9 +1602,9 @@ func (mock *ServiceMock) Users(ctx context.Context, search string, first int, af
 		First:  first,
 		After:  after,
 	}
-	lockServiceMockUsers.Lock()
+	mock.lockUsers.Lock()
 	mock.calls.Users = append(mock.calls.Users, callInfo)
-	lockServiceMockUsers.Unlock()
+	mock.lockUsers.Unlock()
 	return mock.UsersFunc(ctx, search, first, after)
 }
 
@@ -1626,8 +1623,8 @@ func (mock *ServiceMock) UsersCalls() []struct {
 		First  int
 		After  string
 	}
-	lockServiceMockUsers.RLock()
+	mock.lockUsers.RLock()
 	calls = mock.calls.Users
-	lockServiceMockUsers.RUnlock()
+	mock.lockUsers.RUnlock()
 	return calls
 }

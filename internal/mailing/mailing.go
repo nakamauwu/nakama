@@ -1,3 +1,5 @@
+//go:generate moq -out sender_mock.go . Sender
+
 package mailing
 
 import (
