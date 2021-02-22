@@ -45,5 +45,6 @@ These are the Go libraries used in the source code. Thank you very much.
  - [github.com/matryer/moq](https://github.com/matryer/moq)
  - [github.com/matryer/way](https://github.com/matryer/way)
  - [github.com/nats-io/nats.go](https://github.com/nats-io/nats.go)
+ - [github.com/ory/dockertest/v3](https://github.com/ory/dockertest)
 
 [Eva Icons](https://github.com/akveo/eva-icons) are being used in the front-end. Thank you as well.
