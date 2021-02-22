@@ -65,8 +65,8 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 		return ErrInvalidEmail
 	}
 
-	uri, err := url.ParseRequestURI(redirectURI)
-	if err != nil {
+	uri, err := url.Parse(redirectURI)
+	if err != nil || !uri.IsAbs() {
 		return ErrInvalidRedirectURI
 	}
 
@@ -75,7 +75,7 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 		INSERT INTO verification_codes (user_id) VALUES (
 			(SELECT id FROM users WHERE email = $1)
 		) RETURNING id`, email).Scan(&code)
-	if isForeignKeyViolation(err) {
+	if isNotNullViolation(err) {
 		return ErrUserNotFound
 	}
 
