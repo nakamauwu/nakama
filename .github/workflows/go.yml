@@ -21,7 +21,7 @@ jobs:
       uses: golangci/golangci-lint-action@v2
       with:
         version: v1.37.1
-        skip-go-installation: true
+        # skip-go-installation: true
 
     - name: Test
       run: go test ./... -race -count 1
