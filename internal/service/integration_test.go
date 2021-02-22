@@ -31,7 +31,11 @@ func testMain(m *testing.M) int {
 		return 1
 	}
 
-	defer cleanup()
+	defer func() {
+		if err := cleanup(); err != nil {
+			fmt.Printf("could not cleanup cockroach container: %v\n", err)
+		}
+	}()
 
 	return m.Run()
 }
