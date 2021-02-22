@@ -7,10 +7,10 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"testing"
 
 	"github.com/nicolasparada/nakama/internal/service"
+	"github.com/nicolasparada/nakama/internal/testutil"
 )
 
 func Test_handler_sendMagicLink(t *testing.T) {
@@ -30,16 +30,16 @@ func Test_handler_sendMagicLink(t *testing.T) {
 		{
 			name: "empty_request_body",
 			testResp: func(t *testing.T, resp *http.Response) {
-				assertEqual(t, http.StatusBadRequest, resp.StatusCode, "status code")
-				assertEqual(t, "bad request", readerText(t, resp.Body), "body")
+				testutil.AssertEqual(t, http.StatusBadRequest, resp.StatusCode, "status code")
+				testutil.AssertEqual(t, "bad request", readerText(t, resp.Body), "body")
 			},
 		},
 		{
 			name: "malformed_request_body",
 			body: []byte(`nope`),
 			testResp: func(t *testing.T, resp *http.Response) {
-				assertEqual(t, http.StatusBadRequest, resp.StatusCode, "status code")
-				assertEqual(t, "bad request", readerText(t, resp.Body), "body")
+				testutil.AssertEqual(t, http.StatusBadRequest, resp.StatusCode, "status code")
+				testutil.AssertEqual(t, "bad request", readerText(t, resp.Body), "body")
 			},
 		},
 		{
@@ -51,8 +51,8 @@ func Test_handler_sendMagicLink(t *testing.T) {
 				},
 			},
 			testResp: func(t *testing.T, resp *http.Response) {
-				assertEqual(t, http.StatusUnprocessableEntity, resp.StatusCode, "status code")
-				assertEqual(t, "invalid email", readerText(t, resp.Body), "body")
+				testutil.AssertEqual(t, http.StatusUnprocessableEntity, resp.StatusCode, "status code")
+				testutil.AssertEqual(t, "invalid email", readerText(t, resp.Body), "body")
 			},
 		},
 		{
@@ -64,8 +64,8 @@ func Test_handler_sendMagicLink(t *testing.T) {
 				},
 			},
 			testResp: func(t *testing.T, resp *http.Response) {
-				assertEqual(t, http.StatusUnprocessableEntity, resp.StatusCode, "status code")
-				assertEqual(t, "invalid redirect URI", readerText(t, resp.Body), "body")
+				testutil.AssertEqual(t, http.StatusUnprocessableEntity, resp.StatusCode, "status code")
+				testutil.AssertEqual(t, "invalid redirect URI", readerText(t, resp.Body), "body")
 			},
 		},
 		{
@@ -77,8 +77,8 @@ func Test_handler_sendMagicLink(t *testing.T) {
 				},
 			},
 			testResp: func(t *testing.T, resp *http.Response) {
-				assertEqual(t, http.StatusNotFound, resp.StatusCode, "status code")
-				assertEqual(t, "user not found", readerText(t, resp.Body), "body")
+				testutil.AssertEqual(t, http.StatusNotFound, resp.StatusCode, "status code")
+				testutil.AssertEqual(t, "user not found", readerText(t, resp.Body), "body")
 			},
 		},
 		{
@@ -90,8 +90,8 @@ func Test_handler_sendMagicLink(t *testing.T) {
 				},
 			},
 			testResp: func(t *testing.T, resp *http.Response) {
-				assertEqual(t, http.StatusInternalServerError, resp.StatusCode, "status code")
-				assertEqual(t, "internal server error", readerText(t, resp.Body), "body")
+				testutil.AssertEqual(t, http.StatusInternalServerError, resp.StatusCode, "status code")
+				testutil.AssertEqual(t, "internal server error", readerText(t, resp.Body), "body")
 			},
 		},
 		{
@@ -103,11 +103,11 @@ func Test_handler_sendMagicLink(t *testing.T) {
 				},
 			},
 			testResp: func(t *testing.T, resp *http.Response) {
-				assertEqual(t, http.StatusNoContent, resp.StatusCode, "status code")
+				testutil.AssertEqual(t, http.StatusNoContent, resp.StatusCode, "status code")
 			},
 			testCall: func(t *testing.T, call call) {
-				assertEqual(t, "user@example.org", call.Email, "email")
-				assertEqual(t, "https://example.org", call.RedirectURI, "redirect URI")
+				testutil.AssertEqual(t, "user@example.org", call.Email, "email")
+				testutil.AssertEqual(t, "https://example.org", call.RedirectURI, "redirect URI")
 			},
 		},
 	}
@@ -132,14 +132,6 @@ func Test_handler_sendMagicLink(t *testing.T) {
 				tc.testCall(t, tc.svc.SendMagicLinkCalls()[0])
 			}
 		})
-	}
-}
-
-func assertEqual(t *testing.T, want, got interface{}, msg string) {
-	t.Helper()
-
-	if !reflect.DeepEqual(want, got) {
-		t.Fatalf("%s: want %v; got %v", msg, want, got)
 	}
 }
 
