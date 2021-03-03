@@ -6,6 +6,7 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/matryer/way"
 	"github.com/nicolasparada/nakama/internal/service"
@@ -87,6 +88,9 @@ func New(s Service, dev bool) http.Handler {
 	api.HandleFunc("GET", "/has_unread_notifications", h.hasUnreadNotifications)
 	api.HandleFunc("POST", "/notifications/:notification_id/mark_as_read", h.markNotificationAsRead)
 	api.HandleFunc("POST", "/mark_notifications_as_read", h.markNotificationsAsRead)
+
+	cache := withCacheControl(time.Hour * 24 * 14)
+	api.HandleFunc("HEAD", "/proxy", cache(proxy))
 
 	fs := http.FileServer(&spaFileSystem{http.Dir("web/static")})
 	if dev {
