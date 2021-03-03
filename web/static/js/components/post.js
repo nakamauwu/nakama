@@ -62,9 +62,12 @@ export default function renderPost(post, timelineItemID) {
     `
 
     const contentEl = article.querySelector(".micro-post-content")
-    for (const el of collectMedia(contentEl.querySelector("p"))) {
-        contentEl.appendChild(el)
-    }
+    void async function(target) {
+        const els = await collectMedia(target)
+        for (const el of els) {
+            contentEl.appendChild(el)
+        }
+    }(contentEl.querySelector("p"))
 
     const likeButton = /** @type {HTMLButtonElement=} */ (article.querySelector(".like-button"))
     if (likeButton !== null) {

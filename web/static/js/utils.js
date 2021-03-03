@@ -90,10 +90,32 @@ export function el(html) {
 /**
  * @param {ParentNode} el
  */
-export function collectMedia(el) {
+export async function collectMedia(el) {
     const media = /** @type {Node[]} */ ([])
     for (const link of Array.from(el.querySelectorAll("a"))) {
-        if (imageExtRegExp.test(link.href)) {
+        if (link.hostname === window.location.hostname && link.pathname.startsWith("/users/")) {
+            continue
+        }
+
+        const youtubeVideoID = findYouTubeVideoID(link.href)
+        if (youtubeVideoID !== null) {
+            const img = document.createElement("img")
+            img.src = `https://img.youtube.com/vi/${youtubeVideoID}/maxresdefault.jpg`
+            // img.crossOrigin = ""
+            img.width = 540
+            img.height = 304
+            const a = document.createElement("a")
+            a.href = link.href
+            a.target = "_blank"
+            a.rel = "noopener"
+            a.className = "media-item youtube-video-wrapper"
+            a.appendChild(img)
+            media.push(a)
+            continue
+        }
+
+        const mt = await mediaType(link.href)
+        if (mt === "image") {
             const img = document.createElement("img")
             img.src = link.href
             const a = document.createElement("a")
@@ -106,7 +128,7 @@ export function collectMedia(el) {
             continue
         }
 
-        if (videoExtRegExp.test(link.href)) {
+        if (mt === "video") {
             const video = document.createElement("video")
             video.src = link.href
             video.controls = true
@@ -117,22 +139,34 @@ export function collectMedia(el) {
             media.push(video)
             continue
         }
-
-        const youtubeVideoID = findYouTubeVideoID(link.href)
-        if (youtubeVideoID !== null) {
-            const img = document.createElement("img")
-            img.src = `https://img.youtube.com/vi/${youtubeVideoID}/maxresdefault.jpg`
-            const a = document.createElement("a")
-            a.href = link.href
-            a.target = "_blank"
-            a.rel = "noopener"
-            a.className = "media-item youtube-video-wrapper"
-            a.appendChild(img)
-            media.push(a)
-            continue
-        }
     }
     return media
+}
+
+/**
+ * @param {string} url
+ */
+async function mediaType(url) {
+    if (imageExtRegExp.test(url)) {
+        return "image"
+    }
+
+    if (videoExtRegExp.test(url)) {
+        return "video"
+    }
+
+    const endpoint = "/api/proxy?target="+encodeURIComponent(url)
+    return fetch(endpoint, { method: "HEAD", redirect: "follow" }).then(res => {
+        const ct = res.headers.get("Content-Type")
+        if (ct.startsWith("image/")) {
+            return "image"
+        }
+        if (ct.startsWith("video/")) {
+            return "video"
+        }
+
+        return ""
+    }).catch(_ => "")
 }
 
 /***

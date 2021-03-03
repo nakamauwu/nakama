@@ -612,6 +612,11 @@ header .profile-link {
     position: relative;
 }
 
+.youtube-video-wrapper img {
+    width: 100%;
+    height: auto;
+}
+
 .youtube-video-wrapper::after {
     content: "";
     background-image: url("/img/youtube-2017.svg");
