@@ -33,10 +33,9 @@ CREATE TABLE IF NOT EXISTS posts (
     nsfw BOOLEAN NOT NULL DEFAULT false,
     likes_count INT NOT NULL DEFAULT 0 CHECK (likes_count >= 0),
     comments_count INT NOT NULL DEFAULT 0 CHECK (comments_count >= 0),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    INDEX sorted_posts (created_at DESC)
 );
-
-CREATE INDEX IF NOT EXISTS sorted_posts ON posts (created_at DESC);
 
 CREATE TABLE IF NOT EXISTS post_likes (
     user_id UUID NOT NULL REFERENCES users,
@@ -53,10 +52,9 @@ CREATE TABLE IF NOT EXISTS post_subscriptions (
 CREATE TABLE IF NOT EXISTS timeline (
     id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users,
-    post_id UUID NOT NULL REFERENCES posts
+    post_id UUID NOT NULL REFERENCES posts,
+    UNIQUE INDEX unique_timeline_items (user_id, post_id)
 );
-
-CREATE UNIQUE INDEX IF NOT EXISTS unique_timeline_items ON timeline (user_id, post_id);
 
 CREATE TABLE IF NOT EXISTS comments (
     id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -64,10 +62,9 @@ CREATE TABLE IF NOT EXISTS comments (
     post_id UUID NOT NULL REFERENCES posts,
     content VARCHAR NOT NULL,
     likes_count INT NOT NULL DEFAULT 0 CHECK (likes_count >= 0),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    INDEX sorted_comments (created_at DESC)
 );
-
-CREATE INDEX IF NOT EXISTS sorted_comments ON comments (created_at DESC);
 
 CREATE TABLE IF NOT EXISTS comment_likes (
     user_id UUID NOT NULL REFERENCES users,
@@ -82,12 +79,10 @@ CREATE TABLE IF NOT EXISTS notifications (
     type VARCHAR NOT NULL,
     post_id UUID REFERENCES posts,
     read_at TIMESTAMPTZ,
-    issued_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    issued_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    INDEX sorted_notifications (issued_at DESC),
+    UNIQUE INDEX unique_notifications (user_id, type, post_id, read_at)
 );
-
-CREATE INDEX IF NOT EXISTS sorted_notifications ON notifications (issued_at DESC);
-
-CREATE UNIQUE INDEX IF NOT EXISTS unique_notifications ON notifications (user_id, type, post_id, read_at);
 
 INSERT INTO users (id, email, username) VALUES
     ('24ca6ce6-b3e9-4276-a99a-45c77115cc9f', 'shinji@example.org', 'shinji'),
