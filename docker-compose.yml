@@ -1,0 +1,17 @@
+version: "3.9"
+services:
+  nakama:
+    depends_on:
+      - "cockroach"
+      - "nats"
+    build: "."
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://root@cockroach:26257/nakama?sslmode=disable
+      - NATS_URL=nats://nats:4222
+  cockroach:
+    image: "cockroachdb/cockroach:latest"
+    command: "start-single-node --insecure --listen-addr=0.0.0.0"
+  nats:
+    image: "nats:latest"

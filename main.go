@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	_ "embed"
 	"errors"
 	"flag"
 	"fmt"
@@ -24,6 +25,9 @@ import (
 	"github.com/nicolasparada/nakama/internal/service"
 )
 
+//go:embed schema.sql
+var schema string
+
 func main() {
 	_ = godotenv.Load()
 	if err := run(); err != nil {
@@ -36,14 +40,15 @@ func run() error {
 		port, _                   = strconv.Atoi(env("PORT", "3000"))
 		originStr                 = env("ORIGIN", fmt.Sprintf("http://localhost:%d", port))
 		dbURL                     = env("DATABASE_URL", "postgresql://root@127.0.0.1:26257/nakama?sslmode=disable")
+		execSchema, _             = strconv.ParseBool(env("EXEC_SCHEMA", "false"))
 		tokenKey                  = env("TOKEN_KEY", "supersecretkeyyoushouldnotcommit")
 		natsURL                   = env("NATS_URL", natslib.DefaultURL)
 		smtpHost                  = env("SMTP_HOST", "smtp.mailtrap.io")
 		smtpPort, _               = strconv.Atoi(env("SMTP_PORT", "25"))
 		smtpUsername              = os.Getenv("SMTP_USERNAME")
 		smtpPassword              = os.Getenv("SMTP_PASSWORD")
-		enableStaticFilesCache, _ = strconv.ParseBool(env("ENABLE_STATIC_FILES_CACHE", "false"))
-		embedStaticFiles, _       = strconv.ParseBool(env("EMBED_STATIC_FILES", "false"))
+		enableStaticFilesCache, _ = strconv.ParseBool(env("STATIC_CACHE", "false"))
+		embedStaticFiles, _       = strconv.ParseBool(env("EMBED_STATIC", "false"))
 	)
 	flag.Usage = func() {
 		flag.PrintDefaults()
@@ -52,11 +57,12 @@ func run() error {
 	flag.IntVar(&port, "port", port, "Port in which this server will run")
 	flag.StringVar(&originStr, "origin", originStr, "URL origin for this service")
 	flag.StringVar(&dbURL, "db", dbURL, "Database URL")
+	flag.BoolVar(&execSchema, "exec-schema", execSchema, "Execute database schema")
 	flag.StringVar(&natsURL, "nats", natsURL, "NATS URL")
 	flag.StringVar(&smtpHost, "smtp-host", smtpHost, "SMTP server host")
 	flag.IntVar(&smtpPort, "smtp-port", smtpPort, "SMTP server port")
-	flag.BoolVar(&enableStaticFilesCache, "enable-static-files-cache", enableStaticFilesCache, "Enable static files cache")
-	flag.BoolVar(&embedStaticFiles, "embed-static-files", embedStaticFiles, "Embed static files")
+	flag.BoolVar(&enableStaticFilesCache, "static-cache", enableStaticFilesCache, "Enable static files cache")
+	flag.BoolVar(&embedStaticFiles, "embed-static", embedStaticFiles, "Embed static files")
 	flag.Parse()
 
 	origin, err := url.Parse(originStr)
@@ -75,8 +81,19 @@ func run() error {
 
 	defer db.Close()
 
-	if err = db.Ping(); err != nil {
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
+	defer cancel()
+
+	if err = db.PingContext(ctx); err != nil {
 		return fmt.Errorf("could not ping to db: %w", err)
+	}
+
+	if execSchema {
+		log.Printf("\nrunning schema:\n%s\n\n", schema)
+		_, err := db.ExecContext(ctx, schema)
+		if err != nil {
+			return fmt.Errorf("could not run schema: %w", err)
+		}
 	}
 
 	natsConn, err := natslib.Connect(natsURL)

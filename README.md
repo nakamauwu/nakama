@@ -4,9 +4,18 @@
 
 Source code of the next social network for anime fans. Still on development.
 
+## Docker build
+
+The easies way to start the server and its dependencies is by using [Docker](https://www.docker.com/).
+```
+docker-compose up --build
+```
+
 ## Building
 
-Besides having [Go](https://golang.org) installed, the server needs [CockroachDB](https://www.cockroachlabs.com) and [NATS](https://nats.io).
+Instead of Docker, you can also install and build stuff by yourself, that way you have complete control.
+
+So, besides having [Go](https://golang.org) installed, the server needs [CockroachDB](https://www.cockroachlabs.com) and [NATS](https://nats.io).
 
 First, you need a cockroach node running.
 ```bash
