@@ -33,15 +33,17 @@ func main() {
 
 func run() error {
 	var (
-		port, _      = strconv.Atoi(env("PORT", "3000"))
-		originStr    = env("ORIGIN", fmt.Sprintf("http://localhost:%d", port))
-		dbURL        = env("DATABASE_URL", "postgresql://root@127.0.0.1:26257/nakama?sslmode=disable")
-		tokenKey     = env("TOKEN_KEY", "supersecretkeyyoushouldnotcommit")
-		natsURL      = env("NATS_URL", natslib.DefaultURL)
-		smtpHost     = env("SMTP_HOST", "smtp.mailtrap.io")
-		smtpPort, _  = strconv.Atoi(env("SMTP_PORT", "25"))
-		smtpUsername = os.Getenv("SMTP_USERNAME")
-		smtpPassword = os.Getenv("SMTP_PASSWORD")
+		port, _                   = strconv.Atoi(env("PORT", "3000"))
+		originStr                 = env("ORIGIN", fmt.Sprintf("http://localhost:%d", port))
+		dbURL                     = env("DATABASE_URL", "postgresql://root@127.0.0.1:26257/nakama?sslmode=disable")
+		tokenKey                  = env("TOKEN_KEY", "supersecretkeyyoushouldnotcommit")
+		natsURL                   = env("NATS_URL", natslib.DefaultURL)
+		smtpHost                  = env("SMTP_HOST", "smtp.mailtrap.io")
+		smtpPort, _               = strconv.Atoi(env("SMTP_PORT", "25"))
+		smtpUsername              = os.Getenv("SMTP_USERNAME")
+		smtpPassword              = os.Getenv("SMTP_PASSWORD")
+		enableStaticFilesCache, _ = strconv.ParseBool(env("ENABLE_STATIC_FILES_CACHE", "false"))
+		embedStaticFiles, _       = strconv.ParseBool(env("EMBED_STATIC_FILES", "false"))
 	)
 	flag.Usage = func() {
 		flag.PrintDefaults()
@@ -53,6 +55,8 @@ func run() error {
 	flag.StringVar(&natsURL, "nats", natsURL, "NATS URL")
 	flag.StringVar(&smtpHost, "smtp-host", smtpHost, "SMTP server host")
 	flag.IntVar(&smtpPort, "smtp-port", smtpPort, "SMTP server port")
+	flag.BoolVar(&enableStaticFilesCache, "enable-static-files-cache", enableStaticFilesCache, "Enable static files cache")
+	flag.BoolVar(&embedStaticFiles, "embed-static-files", embedStaticFiles, "Embed static files")
 	flag.Parse()
 
 	origin, err := url.Parse(originStr)
@@ -100,16 +104,16 @@ func run() error {
 
 	}
 	service := service.New(service.Conf{
-		DB:          db,
-		Sender:      sender,
-		Origin:      origin,
-		TemplateDir: "web/template",
-		TokenKey:    tokenKey,
-		PubSub:      pubsub,
+		DB:       db,
+		Sender:   sender,
+		Origin:   origin,
+		TokenKey: tokenKey,
+		PubSub:   pubsub,
 	})
+	h := handler.New(service, enableStaticFilesCache, embedStaticFiles)
 	server := http.Server{
 		Addr:              fmt.Sprintf(":%d", port),
-		Handler:           handler.New(service, origin.Hostname() == "localhost"),
+		Handler:           h,
 		ReadHeaderTimeout: time.Second * 5,
 		ReadTimeout:       time.Second * 15,
 	}

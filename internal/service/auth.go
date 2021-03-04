@@ -9,11 +9,11 @@ import (
 	"html/template"
 	"log"
 	"net/url"
-	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/hako/branca"
+	webtemplate "github.com/nicolasparada/nakama/web/template"
 )
 
 // KeyAuthUserID to use in context.
@@ -102,7 +102,7 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 	link.RawQuery = q.Encode()
 
 	if magicLinkMailTmpl == nil {
-		magicLinkMailTmpl, err = template.ParseFiles(filepath.Join(s.templateDir, "/mail/magic-link.html"))
+		magicLinkMailTmpl, err = template.ParseFS(webtemplate.Files, "mail/magic-link.html")
 		if err != nil {
 			return fmt.Errorf("could not parse magic link mail template: %w", err)
 		}

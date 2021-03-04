@@ -4,9 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/nicolasparada/nakama/internal/mailing"
@@ -60,15 +59,11 @@ func TestService_SendMagicLink(t *testing.T) {
 		Host:   "localhost:3000",
 	}
 
-	wd, err := os.Getwd()
-	testutil.AssertEqual(t, nil, err, "wd")
-	templateDir := filepath.Join(wd, "..", "..", "web", "template")
 	t.Run("sender_send_error", func(t *testing.T) {
 		errInternal := errors.New("internal error")
 		svc := &Service{
-			db:          testDB,
-			origin:      origin,
-			templateDir: templateDir,
+			db:     testDB,
+			origin: origin,
 			sender: &mailing.SenderMock{
 				SendFunc: func(to, subject, body string) error {
 					return errInternal
@@ -93,10 +88,9 @@ func TestService_SendMagicLink(t *testing.T) {
 			},
 		}
 		svc := &Service{
-			db:          testDB,
-			origin:      origin,
-			templateDir: templateDir,
-			sender:      senderMock,
+			db:     testDB,
+			origin: origin,
+			sender: senderMock,
 		}
 
 		username := testutil.RandStr(t, 8)
@@ -114,7 +108,7 @@ func TestService_SendMagicLink(t *testing.T) {
 		call := calls[0]
 		testutil.AssertEqual(t, email, call.To, "sender send-to")
 		testutil.AssertEqual(t, "Magic Link", call.Subject, "sender send-subject")
-
+		testutil.AssertEqual(t, "text/html; charset=utf-8", http.DetectContentType([]byte(call.Body)), "sender send-subject content type")
 		t.Logf("\nmagic link body:\n%s\n\n", call.Body)
 	})
 }

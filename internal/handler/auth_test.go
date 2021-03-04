@@ -31,7 +31,7 @@ func Test_handler_sendMagicLink(t *testing.T) {
 			name: "empty_request_body",
 			testResp: func(t *testing.T, resp *http.Response) {
 				testutil.AssertEqual(t, http.StatusBadRequest, resp.StatusCode, "status code")
-				testutil.AssertEqual(t, "bad request", readerText(t, resp.Body), "body")
+				testutil.AssertEqual(t, "bad request", string(readAllAndTrim(t, resp.Body)), "body")
 			},
 		},
 		{
@@ -39,7 +39,7 @@ func Test_handler_sendMagicLink(t *testing.T) {
 			body: []byte(`nope`),
 			testResp: func(t *testing.T, resp *http.Response) {
 				testutil.AssertEqual(t, http.StatusBadRequest, resp.StatusCode, "status code")
-				testutil.AssertEqual(t, "bad request", readerText(t, resp.Body), "body")
+				testutil.AssertEqual(t, "bad request", string(readAllAndTrim(t, resp.Body)), "body")
 			},
 		},
 		{
@@ -52,7 +52,7 @@ func Test_handler_sendMagicLink(t *testing.T) {
 			},
 			testResp: func(t *testing.T, resp *http.Response) {
 				testutil.AssertEqual(t, http.StatusUnprocessableEntity, resp.StatusCode, "status code")
-				testutil.AssertEqual(t, "invalid email", readerText(t, resp.Body), "body")
+				testutil.AssertEqual(t, "invalid email", string(readAllAndTrim(t, resp.Body)), "body")
 			},
 		},
 		{
@@ -65,7 +65,7 @@ func Test_handler_sendMagicLink(t *testing.T) {
 			},
 			testResp: func(t *testing.T, resp *http.Response) {
 				testutil.AssertEqual(t, http.StatusUnprocessableEntity, resp.StatusCode, "status code")
-				testutil.AssertEqual(t, "invalid redirect URI", readerText(t, resp.Body), "body")
+				testutil.AssertEqual(t, "invalid redirect URI", string(readAllAndTrim(t, resp.Body)), "body")
 			},
 		},
 		{
@@ -78,7 +78,7 @@ func Test_handler_sendMagicLink(t *testing.T) {
 			},
 			testResp: func(t *testing.T, resp *http.Response) {
 				testutil.AssertEqual(t, http.StatusNotFound, resp.StatusCode, "status code")
-				testutil.AssertEqual(t, "user not found", readerText(t, resp.Body), "body")
+				testutil.AssertEqual(t, "user not found", string(readAllAndTrim(t, resp.Body)), "body")
 			},
 		},
 		{
@@ -91,7 +91,7 @@ func Test_handler_sendMagicLink(t *testing.T) {
 			},
 			testResp: func(t *testing.T, resp *http.Response) {
 				testutil.AssertEqual(t, http.StatusInternalServerError, resp.StatusCode, "status code")
-				testutil.AssertEqual(t, "internal server error", readerText(t, resp.Body), "body")
+				testutil.AssertEqual(t, "internal server error", string(readAllAndTrim(t, resp.Body)), "body")
 			},
 		},
 		{
@@ -113,7 +113,7 @@ func Test_handler_sendMagicLink(t *testing.T) {
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			h := New(tc.svc, true)
+			h := New(tc.svc, false, true)
 			srv := httptest.NewServer(h)
 			defer srv.Close()
 
@@ -127,6 +127,8 @@ func Test_handler_sendMagicLink(t *testing.T) {
 				t.Fatalf("failed to do request to send magic link: %v", err)
 			}
 
+			defer resp.Body.Close()
+
 			tc.testResp(t, resp)
 			if tc.testCall != nil {
 				tc.testCall(t, tc.svc.SendMagicLinkCalls()[0])
@@ -135,15 +137,13 @@ func Test_handler_sendMagicLink(t *testing.T) {
 	}
 }
 
-func readerText(t *testing.T, rc io.ReadCloser) string {
+func readAllAndTrim(t *testing.T, r io.Reader) []byte {
 	t.Helper()
 
-	defer rc.Close()
-
-	b, err := io.ReadAll(rc)
+	b, err := io.ReadAll(r)
 	if err != nil {
 		t.Fatalf("failed to read all from reader: %v", err)
 	}
 
-	return string(bytes.TrimSpace(b))
+	return bytes.TrimSpace(b)
 }

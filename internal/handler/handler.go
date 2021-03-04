@@ -4,12 +4,16 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/matryer/way"
 	"github.com/nicolasparada/nakama/internal/service"
+	"github.com/nicolasparada/nakama/web/static"
 )
 
 type handler struct {
@@ -57,7 +61,7 @@ type Service interface {
 }
 
 // New makes use of the service to provide an http.Handler with predefined routing.
-func New(s Service, dev bool) http.Handler {
+func New(s Service, enableStaticCache, embedStaticFiles bool) http.Handler {
 	h := &handler{s}
 
 	api := way.NewRouter()
@@ -89,17 +93,26 @@ func New(s Service, dev bool) http.Handler {
 	api.HandleFunc("POST", "/notifications/:notification_id/mark_as_read", h.markNotificationAsRead)
 	api.HandleFunc("POST", "/mark_notifications_as_read", h.markNotificationsAsRead)
 
-	cache := withCacheControl(time.Hour * 24 * 14)
-	api.HandleFunc("HEAD", "/proxy", cache(proxy))
+	api.HandleFunc("HEAD", "/proxy", withCacheControl(time.Hour*24*14)(proxy))
 
-	fs := http.FileServer(&spaFileSystem{http.Dir("web/static")})
-	if dev {
-		fs = withoutCache(fs)
+	var fsys http.FileSystem
+	if embedStaticFiles {
+		fsys = http.FS(static.Files)
+	} else {
+		wd, err := os.Getwd()
+		if err != nil {
+			panic(fmt.Sprintf("could not get current working directory: %v\n", err))
+		}
+		fsys = http.Dir(filepath.Join(wd, "..", "..", "web", "static"))
+	}
+	fsrv := http.FileServer(&spaFileSystem{root: fsys})
+	if !enableStaticCache {
+		fsrv = withoutCache(fsrv)
 	}
 
 	r := way.NewRouter()
 	r.Handle("*", "/api...", http.StripPrefix("/api", h.withAuth(api)))
-	r.Handle("GET", "/...", fs)
+	r.Handle("GET", "/...", fsrv)
 
 	return r
 }
