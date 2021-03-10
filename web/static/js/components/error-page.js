@@ -17,7 +17,7 @@ export default function renderErrorPage(err) {
 
     const onReloadButtonClick = () => {
         reloadButton.disabled = true
-        location.reload(true)
+        location.reload()
     }
 
     errorSpan.textContent = err.message

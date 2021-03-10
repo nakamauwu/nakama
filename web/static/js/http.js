@@ -31,6 +31,28 @@ export function doPost(url, body, headers) {
 
 /**
  * @param {string} url
+ * @param {{[field:string]:any}=} body
+ * @param {{[key:string]:string}=} headers
+ */
+export function doPut(url, body, headers) {
+    const init = {
+        method: "PUT",
+        headers: defaultHeaders(),
+    }
+    if (body instanceof File) {
+        init["body"] = body
+        init.headers["content-type"] = body.type
+        init.headers["content-length"] = String(body.size)
+    } else if (isPlainObject(body)) {
+        init["body"] = JSON.stringify(body)
+        init.headers["content-type"] = "application/json; charset=utf-8"
+    }
+    Object.assign(init.headers, headers)
+    return fetch(url, init).then(parseResponse)
+}
+
+/**
+ * @param {string} url
  * @param {function} cb
  */
 export function subscribe(url, cb) {
