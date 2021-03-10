@@ -3,3 +3,4 @@ cockroach-data
 *.exe
 nakama
 web/static/img/avatars
+letsencrypt

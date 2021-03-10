@@ -1,0 +1,62 @@
+version: "3"
+services:
+  traefik:
+    image: "traefik"
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.tls-resolver.acme.tlschallenge=true"
+      - "--certificatesresolvers.tls-resolver.acme.email=contact@nakama.social"
+      - "--certificatesresolvers.tls-resolver.acme.storage=/letsencrypt/acme.json"
+      # - "--api.insecure=true"
+      # - "--log.level=DEBUG"
+      # - "--certificatesresolvers.tls-resolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
+    ports:
+      - "80:80"
+      - "443:443"
+      # - "8085:8080"
+    volumes:
+      - "./letsencrypt:/letsencrypt"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+  nakama:
+    build: "."
+    environment:
+      ORIGIN: https://nakama.social
+      DATABASE_URL: "postgresql://root@cockroach:26257/nakama?sslmode=disable"
+      NATS_URL: "nats://nats:4222"
+    deploy:
+      replicas: 1
+    expose:
+      - 3000
+    restart: "always"
+    depends_on:
+      - traefik
+      - cockroach
+      - nats
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.nakama.rule=Host(`nakama.social`) || PathPrefix(`/`)"
+      - "traefik.http.routers.nakama.entrypoints=websecure"
+      - "traefik.http.routers.nakama.tls.certresolver=tls-resolver"
+  cockroach:
+    image: "cockroachdb/cockroach"
+    command: "start-single-node --insecure --listen-addr=0.0.0.0"
+    volumes:
+      - "./cockroach-data:/cockroach/cockroach-data"
+    expose:
+      - 26257
+      - 8080
+    deploy:
+      replicas: 1
+    restart: "always"
+  nats:
+    image: "nats"
+    expose:
+      - 4222
+    deploy:
+      replicas: 1
+    restart: "always"
