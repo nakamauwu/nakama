@@ -56,7 +56,7 @@ func (s *Service) Notifications(ctx context.Context, last int, before string) ([
 		return nil, fmt.Errorf("could not build notifications sql query: %w", err)
 	}
 
-	rows, err := s.db.QueryContext(ctx, query, args...)
+	rows, err := s.DB.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("could not query select notifications: %w", err)
 	}
@@ -90,7 +90,7 @@ func (s *Service) NotificationStream(ctx context.Context) (<-chan Notification, 
 	}
 
 	nn := make(chan Notification)
-	unsub, err := s.pubsub.Sub(notificationTopic(uid), func(data []byte) {
+	unsub, err := s.PubSub.Sub(notificationTopic(uid), func(data []byte) {
 		go func(r io.Reader) {
 			var n Notification
 			err := gob.NewDecoder(r).Decode(&n)
@@ -126,7 +126,7 @@ func (s *Service) HasUnreadNotifications(ctx context.Context) (bool, error) {
 	}
 
 	var unread bool
-	if err := s.db.QueryRowContext(ctx, `SELECT EXISTS (
+	if err := s.DB.QueryRowContext(ctx, `SELECT EXISTS (
 		SELECT 1 FROM notifications WHERE user_id = $1 AND read_at IS NULL
 	)`, uid).Scan(&unread); err != nil {
 		return false, fmt.Errorf("could not query select unread notifications existence: %w", err)
@@ -146,7 +146,7 @@ func (s *Service) MarkNotificationAsRead(ctx context.Context, notificationID str
 		return ErrInvalidNotificationID
 	}
 
-	if _, err := s.db.Exec(`
+	if _, err := s.DB.Exec(`
 		UPDATE notifications SET read_at = now()
 		WHERE id = $1 AND user_id = $2 AND read_at IS NULL`, notificationID, uid); err != nil {
 		return fmt.Errorf("could not update and mark notification as read: %w", err)
@@ -162,7 +162,7 @@ func (s *Service) MarkNotificationsAsRead(ctx context.Context) error {
 		return ErrUnauthenticated
 	}
 
-	if _, err := s.db.Exec(`
+	if _, err := s.DB.Exec(`
 		UPDATE notifications SET read_at = now()
 		WHERE user_id = $1 AND read_at IS NULL`, uid); err != nil {
 		return fmt.Errorf("could not update and mark notifications as read: %w", err)
@@ -174,7 +174,7 @@ func (s *Service) MarkNotificationsAsRead(ctx context.Context) error {
 func (s *Service) notifyFollow(followerID, followeeID string) {
 	ctx := context.Background()
 	var n Notification
-	err := crdb.ExecuteTx(ctx, s.db, nil, func(tx *sql.Tx) error {
+	err := crdb.ExecuteTx(ctx, s.DB, nil, func(tx *sql.Tx) error {
 		var actor string
 		query := "SELECT username FROM users WHERE id = $1"
 		err := tx.QueryRowContext(ctx, query, followerID).Scan(&actor)
@@ -248,7 +248,7 @@ func (s *Service) notifyFollow(followerID, followeeID string) {
 
 func (s *Service) notifyComment(c Comment) {
 	actor := c.User.Username
-	rows, err := s.db.Query(`
+	rows, err := s.DB.Query(`
 		INSERT INTO notifications (user_id, actors, type, post_id)
 		SELECT user_id, $1, 'comment', $2 FROM post_subscriptions
 		WHERE post_subscriptions.user_id != $3
@@ -295,7 +295,7 @@ func (s *Service) notifyPostMention(p Post) {
 	}
 
 	actors := []string{p.User.Username}
-	rows, err := s.db.Query(`
+	rows, err := s.DB.Query(`
 		INSERT INTO notifications (user_id, actors, type, post_id)
 		SELECT users.id, $1, 'post_mention', $2 FROM users
 		WHERE users.id != $3
@@ -340,7 +340,7 @@ func (s *Service) notifyCommentMention(c Comment) {
 	}
 
 	actor := c.User.Username
-	rows, err := s.db.Query(`
+	rows, err := s.DB.Query(`
 		INSERT INTO notifications (user_id, actors, type, post_id)
 		SELECT users.id, $1, 'comment_mention', $2 FROM users
 		WHERE users.id != $3
@@ -389,7 +389,7 @@ func (s *Service) broadcastNotification(n Notification) {
 		return
 	}
 
-	err = s.pubsub.Pub(notificationTopic(n.UserID), b.Bytes())
+	err = s.PubSub.Pub(notificationTopic(n.UserID), b.Bytes())
 	if err != nil {
 		log.Printf("could not publish notification: %v\n", err)
 		return

@@ -72,7 +72,7 @@ func (s *Service) CreatePost(ctx context.Context, content string, spoilerOf *str
 	}
 
 	var p Post
-	err := crdb.ExecuteTx(ctx, s.db, nil, func(tx *sql.Tx) error {
+	err := crdb.ExecuteTx(ctx, s.DB, nil, func(tx *sql.Tx) error {
 		query := `
 			INSERT INTO posts (user_id, content, spoiler_of, nsfw) VALUES ($1, $2, $3, $4)
 			RETURNING id, created_at`
@@ -172,7 +172,7 @@ func (s *Service) Posts(ctx context.Context, username string, last int, before s
 		return nil, fmt.Errorf("could not build posts sql query: %w", err)
 	}
 
-	rows, err := s.db.QueryContext(ctx, query, args...)
+	rows, err := s.DB.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("could not query select posts: %w", err)
 	}
@@ -258,7 +258,7 @@ func (s *Service) Post(ctx context.Context, postID string) (Post, error) {
 	if auth {
 		dest = append(dest, &p.Mine, &p.Liked, &p.Subscribed)
 	}
-	err = s.db.QueryRowContext(ctx, query, args...).Scan(dest...)
+	err = s.DB.QueryRowContext(ctx, query, args...).Scan(dest...)
 	if err == sql.ErrNoRows {
 		return p, ErrPostNotFound
 	}
@@ -285,7 +285,7 @@ func (s *Service) TogglePostLike(ctx context.Context, postID string) (ToggleLike
 		return out, ErrInvalidPostID
 	}
 
-	err := crdb.ExecuteTx(ctx, s.db, nil, func(tx *sql.Tx) error {
+	err := crdb.ExecuteTx(ctx, s.DB, nil, func(tx *sql.Tx) error {
 		query := `
 			SELECT EXISTS (
 				SELECT 1 FROM post_likes WHERE user_id = $1 AND post_id = $2
@@ -348,7 +348,7 @@ func (s *Service) TogglePostSubscription(ctx context.Context, postID string) (To
 		return out, ErrInvalidPostID
 	}
 
-	err := crdb.ExecuteTx(ctx, s.db, nil, func(tx *sql.Tx) error {
+	err := crdb.ExecuteTx(ctx, s.DB, nil, func(tx *sql.Tx) error {
 		query := `SELECT EXISTS (
 			SELECT 1 FROM post_subscriptions WHERE user_id = $1 AND post_id = $2
 		)`

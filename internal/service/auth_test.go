@@ -46,7 +46,7 @@ func TestService_SendMagicLink(t *testing.T) {
 	redirectURI := "https://example.org/login-callback"
 	t.Run("user_not_found", func(t *testing.T) {
 		svc := &Service{
-			db: testDB,
+			DB: testDB,
 		}
 		ctx := context.Background()
 		email := testutil.RandStr(t, 10) + "@example.org"
@@ -62,9 +62,9 @@ func TestService_SendMagicLink(t *testing.T) {
 	t.Run("sender_send_error", func(t *testing.T) {
 		errInternal := errors.New("internal error")
 		svc := &Service{
-			db:     testDB,
-			origin: origin,
-			sender: &mailing.SenderMock{
+			DB:     testDB,
+			Origin: origin,
+			Sender: &mailing.SenderMock{
 				SendFunc: func(to, subject, body string) error {
 					return errInternal
 				},
@@ -88,9 +88,9 @@ func TestService_SendMagicLink(t *testing.T) {
 			},
 		}
 		svc := &Service{
-			db:     testDB,
-			origin: origin,
-			sender: senderMock,
+			DB:     testDB,
+			Origin: origin,
+			Sender: senderMock,
 		}
 
 		username := testutil.RandStr(t, 8)

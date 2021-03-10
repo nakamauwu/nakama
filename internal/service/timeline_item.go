@@ -55,7 +55,7 @@ func (s *Service) Timeline(ctx context.Context, last int, before string) ([]Time
 		return nil, fmt.Errorf("could not build timeline sql query: %w", err)
 	}
 
-	rows, err := s.db.QueryContext(ctx, query, args...)
+	rows, err := s.DB.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("could not query select timeline: %w", err)
 	}
@@ -107,7 +107,7 @@ func (s *Service) TimelineItemStream(ctx context.Context) (<-chan TimelineItem, 
 	}
 
 	tt := make(chan TimelineItem)
-	unsub, err := s.pubsub.Sub(timelineTopic(uid), func(data []byte) {
+	unsub, err := s.PubSub.Sub(timelineTopic(uid), func(data []byte) {
 		go func(r io.Reader) {
 			var ti TimelineItem
 			err := gob.NewDecoder(r).Decode(&ti)
@@ -147,7 +147,7 @@ func (s *Service) DeleteTimelineItem(ctx context.Context, timelineItemID string)
 		return ErrInvalidTimelineItemID
 	}
 
-	if _, err := s.db.ExecContext(ctx, `
+	if _, err := s.DB.ExecContext(ctx, `
 		DELETE FROM timeline
 		WHERE id = $1 AND user_id = $2`, timelineItemID, uid); err != nil {
 		return fmt.Errorf("could not delete timeline item: %w", err)
@@ -161,7 +161,7 @@ func (s *Service) fanoutPost(p Post) {
 		INSERT INTO timeline (user_id, post_id)
 		SELECT follower_id, $1 FROM follows WHERE followee_id = $2
 		RETURNING id, user_id`
-	rows, err := s.db.Query(query, p.ID, p.UserID)
+	rows, err := s.DB.Query(query, p.ID, p.UserID)
 	if err != nil {
 		log.Printf("could not insert timeline: %v\n", err)
 		return
@@ -196,7 +196,7 @@ func (s *Service) broadcastTimelineItem(ti TimelineItem) {
 		return
 	}
 
-	err = s.pubsub.Pub(timelineTopic(ti.UserID), b.Bytes())
+	err = s.PubSub.Pub(timelineTopic(ti.UserID), b.Bytes())
 	if err != nil {
 		log.Printf("could not publish timeline item: %v\n", err)
 		return

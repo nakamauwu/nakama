@@ -52,7 +52,7 @@ func (s *Service) CreateComment(ctx context.Context, postID string, content stri
 		return c, ErrInvalidContent
 	}
 
-	err := crdb.ExecuteTx(ctx, s.db, nil, func(tx *sql.Tx) error {
+	err := crdb.ExecuteTx(ctx, s.DB, nil, func(tx *sql.Tx) error {
 		query := `
 			INSERT INTO comments (user_id, post_id, content) VALUES ($1, $2, $3)
 			RETURNING id, created_at`
@@ -146,7 +146,7 @@ func (s *Service) Comments(ctx context.Context, postID string, last int, before 
 		return nil, fmt.Errorf("could not build comments sql query: %w", err)
 	}
 
-	rows, err := s.db.QueryContext(ctx, query, args...)
+	rows, err := s.DB.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("could not query select comments: %w", err)
 	}
@@ -186,7 +186,7 @@ func (s *Service) CommentStream(ctx context.Context, postID string) (<-chan Comm
 
 	cc := make(chan Comment)
 	uid, auth := ctx.Value(KeyAuthUserID).(string)
-	unsub, err := s.pubsub.Sub(commentTopic(postID), func(data []byte) {
+	unsub, err := s.PubSub.Sub(commentTopic(postID), func(data []byte) {
 		go func(r io.Reader) {
 			var c Comment
 			err := gob.NewDecoder(r).Decode(&c)
@@ -230,7 +230,7 @@ func (s *Service) ToggleCommentLike(ctx context.Context, commentID string) (Togg
 		return out, ErrInvalidCommentID
 	}
 
-	err := crdb.ExecuteTx(ctx, s.db, nil, func(tx *sql.Tx) error {
+	err := crdb.ExecuteTx(ctx, s.DB, nil, func(tx *sql.Tx) error {
 		query := `
 			SELECT EXISTS (
 				SELECT 1 FROM comment_likes WHERE user_id = $1 AND comment_id = $2
@@ -288,7 +288,7 @@ func (s *Service) broadcastComment(c Comment) {
 		return
 	}
 
-	err = s.pubsub.Pub(commentTopic(c.PostID), b.Bytes())
+	err = s.PubSub.Pub(commentTopic(c.PostID), b.Bytes())
 	if err != nil {
 		log.Printf("could not publish comment: %v\n", err)
 		return

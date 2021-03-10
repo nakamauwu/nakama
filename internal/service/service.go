@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"database/sql"
 	"net/url"
 
@@ -11,16 +12,8 @@ import (
 
 // Service contains the core business logic separated from the transport layer.
 // You can use it to back a REST, gRPC or GraphQL API.
+// You must call RunBackgroundJobs afterward.
 type Service struct {
-	db       *sql.DB
-	sender   mailing.Sender
-	origin   *url.URL
-	tokenKey string
-	pubsub   pubsub.PubSub
-}
-
-// Conf contains all service configuration.
-type Conf struct {
 	DB       *sql.DB
 	Sender   mailing.Sender
 	Origin   *url.URL
@@ -29,17 +22,7 @@ type Conf struct {
 	Store    storage.Store
 }
 
-// New service implementation.
-func New(conf Conf) *Service {
-	s := &Service{
-		db:       conf.DB,
-		sender:   conf.Sender,
-		origin:   conf.Origin,
-		tokenKey: conf.TokenKey,
-		pubsub:   conf.PubSub,
-	}
-
-	go s.deleteExpiredVerificationCodesJob()
-
-	return s
+// RunBackgroundJobs -
+func (s *Service) RunBackgroundJobs(ctx context.Context) {
+	go s.deleteExpiredVerificationCodesJob(ctx)
 }

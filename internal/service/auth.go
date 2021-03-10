@@ -71,7 +71,7 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 	}
 
 	var code string
-	err = s.db.QueryRowContext(ctx, `
+	err = s.DB.QueryRowContext(ctx, `
 		INSERT INTO verification_codes (user_id) VALUES (
 			(SELECT id FROM users WHERE email = $1)
 		) RETURNING id`, email).Scan(&code)
@@ -86,7 +86,7 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 	defer func() {
 		if err != nil {
 			go func() {
-				_, err := s.db.Exec("DELETE FROM verification_codes WHERE id = $1", code)
+				_, err := s.DB.Exec("DELETE FROM verification_codes WHERE id = $1", code)
 				if err != nil {
 					log.Printf("could not delete verification code: %v\n", err)
 				}
@@ -94,7 +94,7 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 		}
 	}()
 
-	link := cloneURL(s.origin)
+	link := cloneURL(s.Origin)
 	link.Path = "/api/auth_redirect"
 	q := link.Query()
 	q.Set("verification_code", code)
@@ -116,7 +116,7 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 		return fmt.Errorf("could not execute magic link mail template: %w", err)
 	}
 
-	if err = s.sender.Send(email, "Magic Link", b.String()); err != nil {
+	if err = s.Sender.Send(email, "Magic Link", b.String()); err != nil {
 		return fmt.Errorf("could not send magic link: %w", err)
 	}
 
@@ -138,7 +138,7 @@ func (s *Service) AuthURI(ctx context.Context, verificationCode, redirectURI str
 
 	var uid string
 	var createdAt time.Time
-	err = s.db.QueryRowContext(ctx, `
+	err = s.DB.QueryRowContext(ctx, `
 		DELETE FROM verification_codes WHERE id = $1
 		RETURNING user_id, created_at`, verificationCode).Scan(&uid, &createdAt)
 	if err == sql.ErrNoRows {
@@ -180,7 +180,7 @@ func (s *Service) DevLogin(ctx context.Context, email string) (DevLoginOutput, e
 
 	var avatar sql.NullString
 	query := "SELECT id, username, avatar FROM users WHERE email = $1"
-	err := s.db.QueryRowContext(ctx, query, email).Scan(&out.User.ID, &out.User.Username, &avatar)
+	err := s.DB.QueryRowContext(ctx, query, email).Scan(&out.User.ID, &out.User.Username, &avatar)
 
 	if err == sql.ErrNoRows {
 		return out, ErrUserNotFound
@@ -254,10 +254,11 @@ func (s *Service) Token(ctx context.Context) (TokenOutput, error) {
 	return out, nil
 }
 
-func (s *Service) deleteExpiredVerificationCodesJob() {
+func (s *Service) deleteExpiredVerificationCodesJob(ctx context.Context) {
 	ticker := time.NewTicker(time.Hour * 24)
-	ctx := context.Background()
 	done := ctx.Done()
+
+loop:
 	for {
 		select {
 		case <-ticker.C:
@@ -266,21 +267,21 @@ func (s *Service) deleteExpiredVerificationCodesJob() {
 			}
 		case <-done:
 			ticker.Stop()
-			return
+			break loop
 		}
 	}
 }
 
 func (s *Service) deleteExpiredVerificationCodes(ctx context.Context) error {
 	query := fmt.Sprintf("DELETE FROM verification_codes WHERE (created_at - INTERVAL '%dm') <= now()", int64(verificationCodeLifespan.Minutes()))
-	if _, err := s.db.ExecContext(ctx, query); err != nil {
+	if _, err := s.DB.ExecContext(ctx, query); err != nil {
 		return fmt.Errorf("could not delete expired verification code: %w", err)
 	}
 	return nil
 }
 
 func (s *Service) codec() *branca.Branca {
-	cdc := branca.NewBranca(s.tokenKey)
+	cdc := branca.NewBranca(s.TokenKey)
 	cdc.SetTTL(uint32(tokenLifespan.Seconds()))
 	return cdc
 }

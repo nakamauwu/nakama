@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"errors"
@@ -9,14 +10,14 @@ import (
 	"image/jpeg"
 	"image/png"
 	"io"
-	"os"
-	"path"
+	"log"
 	"regexp"
 	"strings"
 
 	"github.com/cockroachdb/cockroach-go/crdb"
 	"github.com/disintegration/imaging"
 	gonanoid "github.com/matoous/go-nanoid"
+	"github.com/nicolasparada/nakama/internal/storage"
 )
 
 // MaxAvatarBytes to read.
@@ -25,7 +26,6 @@ const MaxAvatarBytes = 5 << 20 // 5MB
 var (
 	reEmail    = regexp.MustCompile(`^[^\s@]+@[^\s@]+\.[^\s@]+$`)
 	reUsername = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_-]{0,17}$`)
-	avatarsDir = path.Join("web", "static", "img", "avatars")
 )
 
 var (
@@ -84,7 +84,7 @@ func (s *Service) CreateUser(ctx context.Context, email, username string) error 
 	}
 
 	query := "INSERT INTO users (email, username) VALUES ($1, $2)"
-	_, err := s.db.ExecContext(ctx, query, email, username)
+	_, err := s.DB.ExecContext(ctx, query, email, username)
 	unique := isUniqueViolation(err)
 
 	if unique && strings.Contains(err.Error(), "email") {
@@ -137,7 +137,7 @@ func (s *Service) Users(ctx context.Context, search string, first int, after str
 		return nil, fmt.Errorf("could not build users sql query: %w", err)
 	}
 
-	rows, err := s.db.QueryContext(ctx, query, args...)
+	rows, err := s.DB.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("could not query select users: %w", err)
 	}
@@ -203,7 +203,7 @@ func (s *Service) Usernames(ctx context.Context, startingWith string, first int,
 		return nil, fmt.Errorf("could not build usernames sql query: %w", err)
 	}
 
-	rows, err := s.db.QueryContext(ctx, query, args...)
+	rows, err := s.DB.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("could not query select usernames: %w", err)
 	}
@@ -231,7 +231,7 @@ func (s *Service) userByID(ctx context.Context, id string) (User, error) {
 	var u User
 	var avatar sql.NullString
 	query := "SELECT username, avatar FROM users WHERE id = $1"
-	err := s.db.QueryRowContext(ctx, query, id).Scan(&u.Username, &avatar)
+	err := s.DB.QueryRowContext(ctx, query, id).Scan(&u.Username, &avatar)
 	if err == sql.ErrNoRows {
 		return u, ErrUserNotFound
 	}
@@ -283,7 +283,7 @@ func (s *Service) User(ctx context.Context, username string) (UserProfile, error
 	if auth {
 		dest = append(dest, &u.Following, &u.Followeed)
 	}
-	err = s.db.QueryRowContext(ctx, query, args...).Scan(dest...)
+	err = s.DB.QueryRowContext(ctx, query, args...).Scan(dest...)
 	if err == sql.ErrNoRows {
 		return u, ErrUserNotFound
 	}
@@ -351,9 +351,9 @@ func (s *Service) UpdateAvatar(ctx context.Context, r io.Reader) (string, error)
 	}
 
 	var oldAvatar sql.NullString
-	if err = s.db.QueryRowContext(ctx, `
+	if err = s.DB.QueryRowContext(ctx, `
 		UPDATE users SET avatar = $1 WHERE id = $2
-		RETURNING (SELECT avatar FROM users WHERE id = $2) AS old_avatar`, avatar, uid).
+		RETURNING (SELECT avatar FROM users WHERE id = $2) AS old_avatar`, avatarFileName, uid).
 		Scan(&oldAvatar); err != nil {
 
 		defer func() {
@@ -375,6 +375,7 @@ func (s *Service) UpdateAvatar(ctx context.Context, r io.Reader) (string, error)
 		}()
 	}
 
+	avatarURL := cloneURL(s.Origin)
 	avatarURL.Path = "/img/avatars/" + avatarFileName
 
 	return avatarURL.String(), nil
@@ -394,7 +395,7 @@ func (s *Service) ToggleFollow(ctx context.Context, username string) (ToggleFoll
 	}
 
 	var followeeID string
-	err := crdb.ExecuteTx(ctx, s.db, nil, func(tx *sql.Tx) error {
+	err := crdb.ExecuteTx(ctx, s.DB, nil, func(tx *sql.Tx) error {
 		query := "SELECT id FROM users WHERE username = $1"
 		err := tx.QueryRowContext(ctx, query, username).Scan(&followeeID)
 		if err == sql.ErrNoRows {
@@ -513,7 +514,7 @@ func (s *Service) Followers(ctx context.Context, username string, first int, aft
 		return nil, fmt.Errorf("could not build followers sql query: %w", err)
 	}
 
-	rows, err := s.db.QueryContext(ctx, query, args...)
+	rows, err := s.DB.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("could not query select followers: %w", err)
 	}
@@ -592,7 +593,7 @@ func (s *Service) Followees(ctx context.Context, username string, first int, aft
 		return nil, fmt.Errorf("could not build followees sql query: %w", err)
 	}
 
-	rows, err := s.db.QueryContext(ctx, query, args...)
+	rows, err := s.DB.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("could not query select followees: %w", err)
 	}
@@ -638,7 +639,7 @@ func (s *Service) avatarURL(avatar sql.NullString) *string {
 		return nil
 	}
 
-	avatarURL := cloneURL(s.origin)
+	avatarURL := cloneURL(s.Origin)
 	avatarURL.Path = "/img/avatars/" + avatar.String
 	str := avatarURL.String()
 	return &str
