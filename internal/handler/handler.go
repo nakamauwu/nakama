@@ -13,11 +13,13 @@ import (
 
 	"github.com/matryer/way"
 	"github.com/nicolasparada/nakama/internal/service"
+	"github.com/nicolasparada/nakama/internal/storage"
 	"github.com/nicolasparada/nakama/web/static"
 )
 
 type handler struct {
 	Service
+	store storage.Store
 }
 
 // Service interface.
@@ -61,8 +63,8 @@ type Service interface {
 }
 
 // New makes use of the service to provide an http.Handler with predefined routing.
-func New(s Service, enableStaticCache, embedStaticFiles bool) http.Handler {
-	h := &handler{s}
+func New(svc Service, store storage.Store, enableStaticCache, embedStaticFiles, serveAvatars bool) http.Handler {
+	h := &handler{Service: svc, store: store}
 
 	api := way.NewRouter()
 	api.HandleFunc("POST", "/send_magic_link", h.sendMagicLink)
@@ -111,7 +113,10 @@ func New(s Service, enableStaticCache, embedStaticFiles bool) http.Handler {
 	}
 
 	r := way.NewRouter()
-	r.Handle("*", "/api...", http.StripPrefix("/api", h.withAuth(api)))
+	r.Handle("*", "/api/...", http.StripPrefix("/api", h.withAuth(api)))
+	if serveAvatars {
+		r.HandleFunc("GET", "/img/avatars/:name", h.avatar)
+	}
 	r.Handle("GET", "/...", fsrv)
 
 	return r

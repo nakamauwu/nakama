@@ -17,7 +17,7 @@ POST {{host}}/api/dev_login
 Content-Type: application/json
 
 {
-    "email": "rei@example.org"
+    "email": "shinji@example.org"
 }
 
 ###

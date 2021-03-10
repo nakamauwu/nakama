@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 	"syscall"
 	"time"
@@ -23,6 +24,9 @@ import (
 	"github.com/nicolasparada/nakama/internal/mailing"
 	"github.com/nicolasparada/nakama/internal/pubsub/nats"
 	"github.com/nicolasparada/nakama/internal/service"
+	"github.com/nicolasparada/nakama/internal/storage"
+	"github.com/nicolasparada/nakama/internal/storage/fs"
+	"github.com/nicolasparada/nakama/internal/storage/s3"
 )
 
 //go:embed schema.sql
@@ -49,6 +53,11 @@ func run() error {
 		smtpPassword              = os.Getenv("SMTP_PASSWORD")
 		enableStaticFilesCache, _ = strconv.ParseBool(env("STATIC_CACHE", "false"))
 		embedStaticFiles, _       = strconv.ParseBool(env("EMBED_STATIC", "false"))
+		s3Endpoint                = os.Getenv("S3_ENDPOINT")
+		s3Region                  = os.Getenv("S3_REGION")
+		s3Bucket                  = env("S3_BUCKET", "avatars")
+		s3AccessKey               = os.Getenv("S3_ACCESS_KEY")
+		s3SecretKey               = os.Getenv("S3_SECRET_KEY")
 	)
 	flag.Usage = func() {
 		flag.PrintDefaults()
@@ -81,7 +90,7 @@ func run() error {
 
 	defer db.Close()
 
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
 	if err = db.PingContext(ctx); err != nil {
@@ -89,7 +98,6 @@ func run() error {
 	}
 
 	if execSchema {
-		log.Printf("\nrunning schema:\n%s\n\n", schema)
 		_, err := db.ExecContext(ctx, schema)
 		if err != nil {
 			return fmt.Errorf("could not run schema: %w", err)
@@ -106,6 +114,7 @@ func run() error {
 	var sender mailing.Sender
 	if smtpUsername == "" || smtpPassword == "" {
 		log.Println("could not setup smtp mailing: username and/or password not provided; using log implementation")
+
 		sender = mailing.NewLogSender(
 			"noreply@"+origin.Hostname(),
 			&logWrapper{Logger: log.New(os.Stdout, "mailing ", log.LstdFlags)},
@@ -118,51 +127,72 @@ func run() error {
 			smtpUsername,
 			smtpPassword,
 		)
-
 	}
-	service := service.New(service.Conf{
+
+	var store storage.Store
+	s3Enabled := s3Endpoint == "" || s3AccessKey == "" || s3SecretKey == ""
+	if s3Enabled {
+		log.Println("could not setup s3: endpoint, access key and/or secret key not provided; using os file system implementation")
+
+		wd, err := os.Getwd()
+		if err != nil {
+			return fmt.Errorf("could not get current working directory: %w", err)
+		}
+
+		store = &fs.Store{Root: filepath.Join(wd, "web", "static", "img", "avatars")}
+	} else {
+		store = &s3.Store{
+			Endpoint:  s3Endpoint,
+			Region:    s3Region,
+			Bucket:    s3Bucket,
+			AccessKey: s3AccessKey,
+			SecretKey: s3SecretKey,
+		}
+	}
+
+	svc := &service.Service{
 		DB:       db,
 		Sender:   sender,
 		Origin:   origin,
 		TokenKey: tokenKey,
 		PubSub:   pubsub,
-	})
-	h := handler.New(service, enableStaticFilesCache, embedStaticFiles)
-	server := http.Server{
+		Store:    store,
+	}
+
+	go svc.RunBackgroundJobs(ctx)
+
+	serveAvatars := !s3Enabled
+	h := handler.New(svc, store, enableStaticFilesCache, embedStaticFiles, serveAvatars)
+	server := &http.Server{
 		Addr:              fmt.Sprintf(":%d", port),
 		Handler:           h,
 		ReadHeaderTimeout: time.Second * 5,
 		ReadTimeout:       time.Second * 15,
 	}
 
-	errs := make(chan error, 2)
-
+	errs := make(chan error, 1)
 	go func() {
-		quit := make(chan os.Signal, 1)
-		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+		<-ctx.Done()
 
-		<-quit
-
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-		defer cancel()
-		if err := server.Shutdown(ctx); err != nil {
+		fmt.Println()
+		log.Println("gracefully shutting down...")
+		ctxShutdown, cancelShutdown := context.WithTimeout(context.Background(), time.Second*5)
+		defer cancelShutdown()
+		if err := server.Shutdown(ctxShutdown); err != nil {
 			errs <- fmt.Errorf("could not shutdown server: %w", err)
-			return
 		}
 
-		errs <- ctx.Err()
-	}()
-
-	go func() {
-		log.Printf("accepting connections on port %d\n", port)
-		log.Printf("starting server at %s\n", origin)
-		if err = server.ListenAndServe(); err != http.ErrServerClosed {
-			errs <- fmt.Errorf("could not listen and serve: %w", err)
-			return
-		}
+		log.Println("ok")
 
 		errs <- nil
 	}()
+
+	log.Printf("accepting connections on port %d\n", port)
+	log.Printf("starting server at %s\n", origin)
+	if err := server.ListenAndServe(); err != http.ErrServerClosed {
+		close(errs)
+		return fmt.Errorf("could not listen and serve: %w", err)
+	}
 
 	return <-errs
 }

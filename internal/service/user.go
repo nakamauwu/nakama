@@ -323,32 +323,31 @@ func (s *Service) UpdateAvatar(ctx context.Context, r io.Reader) (string, error)
 		return "", ErrUnsupportedAvatarFormat
 	}
 
-	avatar, err := gonanoid.Nanoid()
+	buf := &bytes.Buffer{}
+	img = imaging.Fill(img, 400, 400, imaging.Center, imaging.CatmullRom)
+	if format == "png" {
+		err = png.Encode(buf, img)
+	} else {
+		err = jpeg.Encode(buf, img, nil)
+	}
+	if err != nil {
+		return "", fmt.Errorf("could not write avatar to disk: %w", err)
+	}
+
+	avatarFileName, err := gonanoid.Nanoid()
 	if err != nil {
 		return "", fmt.Errorf("could not generate avatar filename: %w", err)
 	}
 
 	if format == "png" {
-		avatar += ".png"
+		avatarFileName += ".png"
 	} else {
-		avatar += ".jpg"
+		avatarFileName += ".jpg"
 	}
 
-	avatarPath := path.Join(avatarsDir, avatar)
-	f, err := os.Create(avatarPath)
+	err = s.Store.Store(ctx, avatarFileName, buf.Bytes(), storage.StoreWithContentType("image/"+format))
 	if err != nil {
-		return "", fmt.Errorf("could not create avatar file: %w", err)
-	}
-
-	defer f.Close()
-	img = imaging.Fill(img, 400, 400, imaging.Center, imaging.CatmullRom)
-	if format == "png" {
-		err = png.Encode(f, img)
-	} else {
-		err = jpeg.Encode(f, img, nil)
-	}
-	if err != nil {
-		return "", fmt.Errorf("could not write avatar to disk: %w", err)
+		return "", fmt.Errorf("could not store avatar file: %w", err)
 	}
 
 	var oldAvatar sql.NullString
@@ -356,16 +355,27 @@ func (s *Service) UpdateAvatar(ctx context.Context, r io.Reader) (string, error)
 		UPDATE users SET avatar = $1 WHERE id = $2
 		RETURNING (SELECT avatar FROM users WHERE id = $2) AS old_avatar`, avatar, uid).
 		Scan(&oldAvatar); err != nil {
-		defer os.Remove(avatarPath)
+
+		defer func() {
+			err := s.Store.Delete(context.Background(), avatarFileName)
+			if err != nil {
+				log.Printf("could not delete avatar file after user update fail: %v\n", err)
+			}
+		}()
+
 		return "", fmt.Errorf("could not update avatar: %w", err)
 	}
 
 	if oldAvatar.Valid {
-		defer os.Remove(path.Join(avatarsDir, oldAvatar.String))
+		defer func() {
+			err := s.Store.Delete(context.Background(), oldAvatar.String)
+			if err != nil {
+				log.Printf("could not delete old avatar: %v\n", err)
+			}
+		}()
 	}
 
-	avatarURL := cloneURL(s.origin)
-	avatarURL.Path = "/img/avatars/" + avatar
+	avatarURL.Path = "/img/avatars/" + avatarFileName
 
 	return avatarURL.String(), nil
 }

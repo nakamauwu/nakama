@@ -6,6 +6,7 @@ import (
 
 	"github.com/nicolasparada/nakama/internal/mailing"
 	"github.com/nicolasparada/nakama/internal/pubsub"
+	"github.com/nicolasparada/nakama/internal/storage"
 )
 
 // Service contains the core business logic separated from the transport layer.
@@ -25,6 +26,7 @@ type Conf struct {
 	Origin   *url.URL
 	TokenKey string
 	PubSub   pubsub.PubSub
+	Store    storage.Store
 }
 
 // New service implementation.

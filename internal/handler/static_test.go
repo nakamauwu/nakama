@@ -30,18 +30,18 @@ func Test_spaFileSystem(t *testing.T) {
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			h := New(nil, false, tc.embed)
+			h := New(nil, nil, false, tc.embed, false)
 			srv := httptest.NewServer(h)
 			defer srv.Close()
 
 			req, err := http.NewRequest(http.MethodGet, srv.URL+tc.path, nil)
 			if err != nil {
-				t.Fatalf("failed to create request to send magic link: %v", err)
+				t.Fatalf("failed to create request to check spa: %v", err)
 			}
 
 			resp, err := http.DefaultClient.Do(req)
 			if err != nil {
-				t.Fatalf("failed to do request to send magic link: %v", err)
+				t.Fatalf("failed to do request to check spa: %v", err)
 			}
 
 			defer resp.Body.Close()
