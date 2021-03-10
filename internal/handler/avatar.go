@@ -1,7 +1,10 @@
 package handler
 
 import (
+	"context"
+	"errors"
 	"io"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -30,4 +33,7 @@ func (h *handler) avatar(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Last-Modified", f.LastModified.Format(http.TimeFormat))
 	w.WriteHeader(http.StatusOK)
 	_, err = io.Copy(w, f)
+	if err != nil && !errors.Is(err, context.Canceled) {
+		log.Printf("could not write down avatar: %v\n", err)
+	}
 }
