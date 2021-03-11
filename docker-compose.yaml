@@ -1,7 +1,7 @@
 version: "3"
 services:
   traefik:
-    image: "traefik"
+    image: "traefik:latest"
     command:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
@@ -23,7 +23,7 @@ services:
       - "./letsencrypt:/letsencrypt"
       - "/var/run/docker.sock:/var/run/docker.sock"
   nakama:
-    image: "nicolasparada/nakama"
+    image: "nicolasparada/nakama:latest"
     environment:
       ORIGIN: "https://nakama.social"
       DATABASE_URL: "postgresql://root@cockroach:26257/nakama?sslmode=disable"
@@ -45,7 +45,7 @@ services:
       - "traefik.http.routers.nakama.entrypoints=websecure"
       - "traefik.http.routers.nakama.tls.certresolver=tls-resolver"
   cockroach:
-    image: "cockroachdb/cockroach"
+    image: "cockroachdb/cockroach:latest"
     command: "start-single-node --insecure --listen-addr=0.0.0.0"
     volumes:
       - "./cockroach-data:/cockroach/cockroach-data"
@@ -56,7 +56,7 @@ services:
       replicas: 1
     restart: "always"
   nats:
-    image: "nats"
+    image: "nats:latest"
     expose:
       - 4222
     deploy:
