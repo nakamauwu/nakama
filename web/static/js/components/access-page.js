@@ -1,4 +1,5 @@
 import { doPost } from "../http.js"
+import { isLocalhost } from "../utils.js"
 
 const reUsername = /^[a-zA-Z][a-zA-Z0-9_-]{0,17}$/
 
@@ -39,8 +40,14 @@ async function onLoginFormSubmit(ev) {
     button.disabled = true
 
     try {
-        saveLogin(await login(email))
-        location.reload()
+        if (isLocalhost()) {
+            saveLogin(await devLogin(email))
+            location.reload()
+            return
+        }
+
+        await sendMagicLink(email, location.origin + "/login-callback")
+        alert("Magic link sent. Go check your inbox to login")
     } catch (err) {
         console.error(err)
         if (err.name === "UserNotFoundError") {
@@ -87,7 +94,7 @@ async function runRegistrationProgram(email, username) {
 
     try {
         await createUser(email, username)
-        saveLogin(await login(email))
+        saveLogin(await devLogin(email))
         location.reload()
     } catch (err) {
         console.error(err)
@@ -99,10 +106,19 @@ async function runRegistrationProgram(email, username) {
 }
 
 /**
+ * @param {string} email
  * @returns {Promise<import("../types.js").DevLoginOutput>}
  */
-function login(email) {
+function devLogin(email) {
     return doPost("/api/dev_login", { email })
+}
+
+/**
+ * @param {string} email
+ * @param {string} redirectURI
+ */
+async function sendMagicLink(email, redirectURI) {
+    await doPost("/api/send_magic_link", { email, redirectURI })
 }
 
 /**

@@ -3,6 +3,10 @@ const urlsRegExp = /\b(https?:\/\/[\-A-Za-z0-9+&@#\/%?=~_|!:,\.;]*[\-A-Za-z0-9+&
 const imageExtRegExp = /(\.gif|\.jpg|\.png)$/
 const videoExtRegExp = /(\.mp4|\.webm)$/
 
+export function isLocalhost() {
+    return ["localhost", "127.0.0.1"].includes(window.location.hostname)
+}
+
 export function isObject(x) {
     return typeof x === "object" && x !== null
 }
