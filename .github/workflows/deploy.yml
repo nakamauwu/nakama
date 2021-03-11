@@ -32,7 +32,7 @@ jobs:
           username: ${{ secrets.REMOTE_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "docker-compose.yaml"
-          target: "docker-compose.yaml"
+          target: "."
           
       - name: docker-compose up
         uses: appleboy/ssh-action@master
