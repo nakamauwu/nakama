@@ -116,12 +116,12 @@ func run() error {
 		log.Println("could not setup smtp mailing: username and/or password not provided; using log implementation")
 
 		sender = mailing.NewLogSender(
-			"noreply@"+origin.Hostname(),
+			"no-reply@"+origin.Hostname(),
 			&logWrapper{Logger: log.New(os.Stdout, "mailing ", log.LstdFlags)},
 		)
 	} else {
 		sender = mailing.NewSMTPSender(
-			"noreply@"+origin.Hostname(),
+			"no-reply@"+origin.Hostname(),
 			smtpHost,
 			strconv.Itoa(smtpPort),
 			smtpUsername,
