@@ -40,14 +40,7 @@ async function onLoginFormSubmit(ev) {
     button.disabled = true
 
     try {
-        if (isLocalhost()) {
-            saveLogin(await devLogin(email))
-            location.reload()
-            return
-        }
-
-        await sendMagicLink(email, location.origin + "/login-callback")
-        alert("Magic link sent. Go check your inbox to login")
+        await runLoginProgram(email)
     } catch (err) {
         console.error(err)
         if (err.name === "UserNotFoundError") {
@@ -77,6 +70,20 @@ function saveLogin(payload) {
 
 /**
  * @param {string} email
+ */
+async function runLoginProgram(email) {
+    if (isLocalhost()) {
+        saveLogin(await devLogin(email))
+        location.reload()
+        return
+    }
+
+    await sendMagicLink(email, location.origin + "/login-callback")
+    alert("Magic link sent. Go check your inbox to login")
+}
+
+/**
+ * @param {string} email
  * @param {string=} username
  */
 async function runRegistrationProgram(email, username) {
@@ -94,8 +101,7 @@ async function runRegistrationProgram(email, username) {
 
     try {
         await createUser(email, username)
-        saveLogin(await devLogin(email))
-        location.reload()
+        await runLoginProgram(email)
     } catch (err) {
         console.error(err)
         alert(err.message)
