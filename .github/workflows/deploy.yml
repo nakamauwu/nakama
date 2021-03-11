@@ -12,7 +12,7 @@ on:
     types: [ published ]
 
 jobs:
-  docker-push:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -32,12 +32,6 @@ jobs:
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
-
-  deploy:
-    needs: docker-push
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
 
       - name: Secure copy docker-compose.yaml
         uses: appleboy/scp-action@master
