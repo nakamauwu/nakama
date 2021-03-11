@@ -23,9 +23,9 @@ services:
       - "./letsencrypt:/letsencrypt"
       - "/var/run/docker.sock:/var/run/docker.sock"
   nakama:
-    build: "."
+    image: "nicolasparada/nakama"
     environment:
-      ORIGIN: https://nakama.social
+      ORIGIN: "https://nakama.social"
       DATABASE_URL: "postgresql://root@cockroach:26257/nakama?sslmode=disable"
       NATS_URL: "nats://nats:4222"
     deploy:
