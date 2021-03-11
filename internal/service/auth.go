@@ -207,11 +207,10 @@ func (s *Service) AuthUserIDFromToken(token string) (string, error) {
 	uid, err := s.codec().DecodeToString(token)
 	if err != nil {
 		// We check error string because branca doesn't export errors.
-		msg := err.Error()
-		if msg == "invalid base62 token" || msg == "invalid token version" {
+		if errors.Is(err, branca.ErrInvalidToken) || errors.Is(err, branca.ErrInvalidTokenVersion) {
 			return "", ErrInvalidToken
 		}
-		if msg == "token is expired" {
+		if _, ok := err.(*branca.ErrExpiredToken); ok {
 			return "", ErrExpiredToken
 		}
 		return "", fmt.Errorf("could not decode token: %w", err)
