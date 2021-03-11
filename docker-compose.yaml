@@ -28,10 +28,8 @@ services:
       ORIGIN: "https://nakama.social"
       DATABASE_URL: "postgresql://root@cockroach:26257/nakama?sslmode=disable"
       NATS_URL: "nats://nats:4222"
-      TOKEN_KEY: "${TOKEN_KEY}"
-      SMTP_HOST: "${SMTP_HOST}"
-      SMTP_USERNAME: "${SMTP_USERNAME}"
-      SMTP_PASSWORD: "${SMTP_PASSWORD}"
+    env_file:
+      - ./.env
     deploy:
       replicas: 1
     expose:
