@@ -62,7 +62,7 @@ func run() error {
 	)
 	flag.Usage = func() {
 		flag.PrintDefaults()
-		fmt.Println("\nDon't forget to set TOKEN_KEY, SMTP_USERNAME and SMTP_PASSWORD for real usage.")
+		fmt.Println("\nDon't forget to set TOKEN_KEY, and SENDGRID_API_KEY or SMTP_USERNAME and SMTP_PASSWORD for real usage.")
 	}
 	flag.IntVar(&port, "port", port, "Port in which this server will run")
 	flag.StringVar(&originStr, "origin", originStr, "URL origin for this service")
