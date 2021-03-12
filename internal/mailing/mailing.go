@@ -20,8 +20,8 @@ func buildBody(from, to mail.Address, subject, html, text string) ([]byte, error
 	m.SetHeader("From", from.String())
 	m.SetHeader("To", to.String())
 	m.SetHeader("Subject", subject)
-	m.SetBody("text/html; charset=utf-8", html)
-	m.AddAlternative("text/plain; charset=utf-8", text)
+	m.SetBody("text/html", html)
+	m.AddAlternative("text/plain", text)
 
 	buff := &bytes.Buffer{}
 	_, err := m.WriteTo(buff)
