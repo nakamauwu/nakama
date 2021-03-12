@@ -3,9 +3,7 @@ name: Deploy
 on:
   workflow_run:
     workflows: ["Go Code Check"]
-    branches: [ main ]
-    types:
-      - completed
+    types: [ completed ]
   workflow_dispatch:
   deployment:
   release:
