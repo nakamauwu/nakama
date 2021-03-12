@@ -29,6 +29,8 @@ require (
 	github.com/onsi/gomega v1.7.0 // indirect
 	github.com/opencontainers/runc v1.0.0-rc93 // indirect
 	github.com/ory/dockertest/v3 v3.6.3 // indirect
+	github.com/sendgrid/rest v2.6.2+incompatible // indirect
+	github.com/sendgrid/sendgrid-go v3.8.0+incompatible // indirect
 	github.com/sirupsen/logrus v1.8.0 // indirect
 	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83 // indirect
 	golang.org/x/image v0.0.0-20210220032944-ac19c3e999fb // indirect

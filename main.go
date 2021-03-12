@@ -47,6 +47,7 @@ func run() error {
 		execSchema, _             = strconv.ParseBool(env("EXEC_SCHEMA", "false"))
 		tokenKey                  = env("TOKEN_KEY", "supersecretkeyyoushouldnotcommit")
 		natsURL                   = env("NATS_URL", natslib.DefaultURL)
+		sendgridAPIKey            = os.Getenv("SENDGRID_API_KEY")
 		smtpHost                  = env("SMTP_HOST", "smtp.mailtrap.io")
 		smtpPort, _               = strconv.Atoi(env("SMTP_PORT", "25"))
 		smtpUsername              = os.Getenv("SMTP_USERNAME")
@@ -112,35 +113,28 @@ func run() error {
 	pubsub := &nats.PubSub{Conn: natsConn}
 
 	var sender mailing.Sender
-	if smtpUsername == "" || smtpPassword == "" {
-		log.Println("could not setup smtp mailing: username and/or password not provided; using log implementation")
-
-		sender = mailing.NewLogSender(
-			"no-reply@"+origin.Hostname(),
-			&logWrapper{Logger: log.New(os.Stdout, "mailing ", log.LstdFlags)},
-		)
-	} else {
+	sendFrom := "no-reply@" + origin.Hostname()
+	if sendgridAPIKey != "" {
+		sender = mailing.NewSendgridSender(sendFrom, sendgridAPIKey)
+	} else if smtpUsername != "" && smtpPassword != "" {
 		sender = mailing.NewSMTPSender(
-			"no-reply@"+origin.Hostname(),
+			sendFrom,
 			smtpHost,
 			smtpPort,
 			smtpUsername,
 			smtpPassword,
 		)
+	} else {
+		log.Println("could not setup sendgrid nor smtp mailing; using log implementation")
+		sender = mailing.NewLogSender(
+			sendFrom,
+			&logWrapper{Logger: log.New(os.Stdout, "mailing ", log.LstdFlags)},
+		)
 	}
 
 	var store storage.Store
-	s3Enabled := s3Endpoint == "" || s3AccessKey == "" || s3SecretKey == ""
+	s3Enabled := s3Endpoint != "" && s3AccessKey != "" && s3SecretKey != ""
 	if s3Enabled {
-		log.Println("could not setup s3: endpoint, access key and/or secret key not provided; using os file system implementation")
-
-		wd, err := os.Getwd()
-		if err != nil {
-			return fmt.Errorf("could not get current working directory: %w", err)
-		}
-
-		store = &fs.Store{Root: filepath.Join(wd, "web", "static", "img", "avatars")}
-	} else {
 		store = &s3.Store{
 			Endpoint:  s3Endpoint,
 			Region:    s3Region,
@@ -148,6 +142,14 @@ func run() error {
 			AccessKey: s3AccessKey,
 			SecretKey: s3SecretKey,
 		}
+	} else {
+		log.Println("could not setup s3: endpoint, access key and/or secret key not provided; using os file system implementation")
+		wd, err := os.Getwd()
+		if err != nil {
+			return fmt.Errorf("could not get current working directory: %w", err)
+		}
+
+		store = &fs.Store{Root: filepath.Join(wd, "web", "static", "img", "avatars")}
 	}
 
 	svc := &service.Service{

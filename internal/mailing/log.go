@@ -19,7 +19,7 @@ type LogSender struct {
 // NewLogSender implementation using the provided logger.
 func NewLogSender(from string, l Logger) *LogSender {
 	return &LogSender{
-		From:   mail.Address{Address: from},
+		From:   mail.Address{Name: "nakama", Address: from},
 		Logger: l,
 	}
 }
