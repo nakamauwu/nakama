@@ -115,8 +115,10 @@ func run() error {
 	var sender mailing.Sender
 	sendFrom := "no-reply@" + origin.Hostname()
 	if sendgridAPIKey != "" {
+		log.Println("using sendgrid mailing implementation")
 		sender = mailing.NewSendgridSender(sendFrom, sendgridAPIKey)
 	} else if smtpUsername != "" && smtpPassword != "" {
+		log.Println("using smtp mailing implementation")
 		sender = mailing.NewSMTPSender(
 			sendFrom,
 			smtpHost,
@@ -125,7 +127,7 @@ func run() error {
 			smtpPassword,
 		)
 	} else {
-		log.Println("could not setup sendgrid nor smtp mailing; using log implementation")
+		log.Println("using log mailing implementation")
 		sender = mailing.NewLogSender(
 			sendFrom,
 			&logWrapper{Logger: log.New(os.Stdout, "mailing ", log.LstdFlags)},
@@ -135,6 +137,7 @@ func run() error {
 	var store storage.Store
 	s3Enabled := s3Endpoint != "" && s3AccessKey != "" && s3SecretKey != ""
 	if s3Enabled {
+		log.Println("using s3 store implementation")
 		store = &s3.Store{
 			Endpoint:  s3Endpoint,
 			Region:    s3Region,
@@ -143,7 +146,7 @@ func run() error {
 			SecretKey: s3SecretKey,
 		}
 	} else {
-		log.Println("could not setup s3: endpoint, access key and/or secret key not provided; using os file system implementation")
+		log.Println("using os file system store implementation")
 		wd, err := os.Getwd()
 		if err != nil {
 			return fmt.Errorf("could not get current working directory: %w", err)
