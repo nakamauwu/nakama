@@ -65,7 +65,7 @@ func TestService_SendMagicLink(t *testing.T) {
 			DB:     testDB,
 			Origin: origin,
 			Sender: &mailing.SenderMock{
-				SendFunc: func(to, subject, body string) error {
+				SendFunc: func(to, subject, html, text string) error {
 					return errInternal
 				},
 			},
@@ -83,7 +83,7 @@ func TestService_SendMagicLink(t *testing.T) {
 
 	t.Run("ok", func(t *testing.T) {
 		senderMock := &mailing.SenderMock{
-			SendFunc: func(to, subject, body string) error {
+			SendFunc: func(to, subject, html, text string) error {
 				return nil
 			},
 		}
@@ -108,7 +108,7 @@ func TestService_SendMagicLink(t *testing.T) {
 		call := calls[0]
 		testutil.AssertEqual(t, email, call.To, "sender send-to")
 		testutil.AssertEqual(t, "Magic Link", call.Subject, "sender send-subject")
-		testutil.AssertEqual(t, "text/html; charset=utf-8", http.DetectContentType([]byte(call.Body)), "sender send-subject content type")
-		t.Logf("\nmagic link body:\n%s\n\n", call.Body)
+		testutil.AssertEqual(t, "text/html; charset=utf-8", http.DetectContentType([]byte(call.HTML)), "sender send-subject content type")
+		t.Logf("\nmagic link text:\n%s\n\n", call.Text)
 	})
 }

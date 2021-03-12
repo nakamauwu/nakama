@@ -9,6 +9,7 @@ require (
 	github.com/cockroachdb/cockroach-go v2.0.1+incompatible
 	github.com/containerd/continuity v0.0.0-20210208174643-50096c924a4e // indirect
 	github.com/disintegration/imaging v1.6.2
+	github.com/go-mail/mail v2.3.1+incompatible // indirect
 	github.com/google/uuid v1.2.0 // indirect
 	github.com/gotestyourself/gotestyourself v1.3.0 // indirect
 	github.com/hako/branca v0.0.0-20200807062402-6052ac720505
@@ -35,6 +36,7 @@ require (
 	golang.org/x/sys v0.0.0-20210305210545-d6cf4ab88724 // indirect
 	golang.org/x/text v0.3.5 // indirect
 	gopkg.in/airbrake/gobrake.v2 v2.0.9 // indirect
+	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 	gopkg.in/gemnasium/logrus-airbrake-hook.v2 v2.1.2 // indirect
 	gopkg.in/ini.v1 v1.62.0 // indirect
 )

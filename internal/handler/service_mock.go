@@ -16,109 +16,109 @@ var _ Service = &ServiceMock{}
 
 // ServiceMock is a mock implementation of Service.
 //
-//     func TestSomethingThatUsesService(t *testing.T) {
+// 	func TestSomethingThatUsesService(t *testing.T) {
 //
-//         // make and configure a mocked Service
-//         mockedService := &ServiceMock{
-//             AuthURIFunc: func(ctx context.Context, verificationCode string, redirectURI string) (string, error) {
-// 	               panic("mock out the AuthURI method")
-//             },
-//             AuthUserFunc: func(ctx context.Context) (service.User, error) {
-// 	               panic("mock out the AuthUser method")
-//             },
-//             AuthUserIDFromTokenFunc: func(token string) (string, error) {
-// 	               panic("mock out the AuthUserIDFromToken method")
-//             },
-//             CommentStreamFunc: func(ctx context.Context, postID string) (<-chan service.Comment, error) {
-// 	               panic("mock out the CommentStream method")
-//             },
-//             CommentsFunc: func(ctx context.Context, postID string, last int, before string) ([]service.Comment, error) {
-// 	               panic("mock out the Comments method")
-//             },
-//             CreateCommentFunc: func(ctx context.Context, postID string, content string) (service.Comment, error) {
-// 	               panic("mock out the CreateComment method")
-//             },
-//             CreatePostFunc: func(ctx context.Context, content string, spoilerOf *string, nsfw bool) (service.TimelineItem, error) {
-// 	               panic("mock out the CreatePost method")
-//             },
-//             CreateUserFunc: func(ctx context.Context, email string, username string) error {
-// 	               panic("mock out the CreateUser method")
-//             },
-//             DeleteTimelineItemFunc: func(ctx context.Context, timelineItemID string) error {
-// 	               panic("mock out the DeleteTimelineItem method")
-//             },
-//             DevLoginFunc: func(ctx context.Context, email string) (service.DevLoginOutput, error) {
-// 	               panic("mock out the DevLogin method")
-//             },
-//             FolloweesFunc: func(ctx context.Context, username string, first int, after string) ([]service.UserProfile, error) {
-// 	               panic("mock out the Followees method")
-//             },
-//             FollowersFunc: func(ctx context.Context, username string, first int, after string) ([]service.UserProfile, error) {
-// 	               panic("mock out the Followers method")
-//             },
-//             HasUnreadNotificationsFunc: func(ctx context.Context) (bool, error) {
-// 	               panic("mock out the HasUnreadNotifications method")
-//             },
-//             MarkNotificationAsReadFunc: func(ctx context.Context, notificationID string) error {
-// 	               panic("mock out the MarkNotificationAsRead method")
-//             },
-//             MarkNotificationsAsReadFunc: func(ctx context.Context) error {
-// 	               panic("mock out the MarkNotificationsAsRead method")
-//             },
-//             NotificationStreamFunc: func(ctx context.Context) (<-chan service.Notification, error) {
-// 	               panic("mock out the NotificationStream method")
-//             },
-//             NotificationsFunc: func(ctx context.Context, last int, before string) ([]service.Notification, error) {
-// 	               panic("mock out the Notifications method")
-//             },
-//             PostFunc: func(ctx context.Context, postID string) (service.Post, error) {
-// 	               panic("mock out the Post method")
-//             },
-//             PostsFunc: func(ctx context.Context, username string, last int, before string) ([]service.Post, error) {
-// 	               panic("mock out the Posts method")
-//             },
-//             SendMagicLinkFunc: func(ctx context.Context, email string, redirectURI string) error {
-// 	               panic("mock out the SendMagicLink method")
-//             },
-//             TimelineFunc: func(ctx context.Context, last int, before string) ([]service.TimelineItem, error) {
-// 	               panic("mock out the Timeline method")
-//             },
-//             TimelineItemStreamFunc: func(ctx context.Context) (<-chan service.TimelineItem, error) {
-// 	               panic("mock out the TimelineItemStream method")
-//             },
-//             ToggleCommentLikeFunc: func(ctx context.Context, commentID string) (service.ToggleLikeOutput, error) {
-// 	               panic("mock out the ToggleCommentLike method")
-//             },
-//             ToggleFollowFunc: func(ctx context.Context, username string) (service.ToggleFollowOutput, error) {
-// 	               panic("mock out the ToggleFollow method")
-//             },
-//             TogglePostLikeFunc: func(ctx context.Context, postID string) (service.ToggleLikeOutput, error) {
-// 	               panic("mock out the TogglePostLike method")
-//             },
-//             TogglePostSubscriptionFunc: func(ctx context.Context, postID string) (service.ToggleSubscriptionOutput, error) {
-// 	               panic("mock out the TogglePostSubscription method")
-//             },
-//             TokenFunc: func(ctx context.Context) (service.TokenOutput, error) {
-// 	               panic("mock out the Token method")
-//             },
-//             UpdateAvatarFunc: func(ctx context.Context, r io.Reader) (string, error) {
-// 	               panic("mock out the UpdateAvatar method")
-//             },
-//             UserFunc: func(ctx context.Context, username string) (service.UserProfile, error) {
-// 	               panic("mock out the User method")
-//             },
-//             UsernamesFunc: func(ctx context.Context, startingWith string, first int, after string) ([]string, error) {
-// 	               panic("mock out the Usernames method")
-//             },
-//             UsersFunc: func(ctx context.Context, search string, first int, after string) ([]service.UserProfile, error) {
-// 	               panic("mock out the Users method")
-//             },
-//         }
+// 		// make and configure a mocked Service
+// 		mockedService := &ServiceMock{
+// 			AuthURIFunc: func(ctx context.Context, verificationCode string, redirectURI string) (string, error) {
+// 				panic("mock out the AuthURI method")
+// 			},
+// 			AuthUserFunc: func(ctx context.Context) (service.User, error) {
+// 				panic("mock out the AuthUser method")
+// 			},
+// 			AuthUserIDFromTokenFunc: func(token string) (string, error) {
+// 				panic("mock out the AuthUserIDFromToken method")
+// 			},
+// 			CommentStreamFunc: func(ctx context.Context, postID string) (<-chan service.Comment, error) {
+// 				panic("mock out the CommentStream method")
+// 			},
+// 			CommentsFunc: func(ctx context.Context, postID string, last int, before string) ([]service.Comment, error) {
+// 				panic("mock out the Comments method")
+// 			},
+// 			CreateCommentFunc: func(ctx context.Context, postID string, content string) (service.Comment, error) {
+// 				panic("mock out the CreateComment method")
+// 			},
+// 			CreatePostFunc: func(ctx context.Context, content string, spoilerOf *string, nsfw bool) (service.TimelineItem, error) {
+// 				panic("mock out the CreatePost method")
+// 			},
+// 			CreateUserFunc: func(ctx context.Context, email string, username string) error {
+// 				panic("mock out the CreateUser method")
+// 			},
+// 			DeleteTimelineItemFunc: func(ctx context.Context, timelineItemID string) error {
+// 				panic("mock out the DeleteTimelineItem method")
+// 			},
+// 			DevLoginFunc: func(ctx context.Context, email string) (service.DevLoginOutput, error) {
+// 				panic("mock out the DevLogin method")
+// 			},
+// 			FolloweesFunc: func(ctx context.Context, username string, first int, after string) ([]service.UserProfile, error) {
+// 				panic("mock out the Followees method")
+// 			},
+// 			FollowersFunc: func(ctx context.Context, username string, first int, after string) ([]service.UserProfile, error) {
+// 				panic("mock out the Followers method")
+// 			},
+// 			HasUnreadNotificationsFunc: func(ctx context.Context) (bool, error) {
+// 				panic("mock out the HasUnreadNotifications method")
+// 			},
+// 			MarkNotificationAsReadFunc: func(ctx context.Context, notificationID string) error {
+// 				panic("mock out the MarkNotificationAsRead method")
+// 			},
+// 			MarkNotificationsAsReadFunc: func(ctx context.Context) error {
+// 				panic("mock out the MarkNotificationsAsRead method")
+// 			},
+// 			NotificationStreamFunc: func(ctx context.Context) (<-chan service.Notification, error) {
+// 				panic("mock out the NotificationStream method")
+// 			},
+// 			NotificationsFunc: func(ctx context.Context, last int, before string) ([]service.Notification, error) {
+// 				panic("mock out the Notifications method")
+// 			},
+// 			PostFunc: func(ctx context.Context, postID string) (service.Post, error) {
+// 				panic("mock out the Post method")
+// 			},
+// 			PostsFunc: func(ctx context.Context, username string, last int, before string) ([]service.Post, error) {
+// 				panic("mock out the Posts method")
+// 			},
+// 			SendMagicLinkFunc: func(ctx context.Context, email string, redirectURI string) error {
+// 				panic("mock out the SendMagicLink method")
+// 			},
+// 			TimelineFunc: func(ctx context.Context, last int, before string) ([]service.TimelineItem, error) {
+// 				panic("mock out the Timeline method")
+// 			},
+// 			TimelineItemStreamFunc: func(ctx context.Context) (<-chan service.TimelineItem, error) {
+// 				panic("mock out the TimelineItemStream method")
+// 			},
+// 			ToggleCommentLikeFunc: func(ctx context.Context, commentID string) (service.ToggleLikeOutput, error) {
+// 				panic("mock out the ToggleCommentLike method")
+// 			},
+// 			ToggleFollowFunc: func(ctx context.Context, username string) (service.ToggleFollowOutput, error) {
+// 				panic("mock out the ToggleFollow method")
+// 			},
+// 			TogglePostLikeFunc: func(ctx context.Context, postID string) (service.ToggleLikeOutput, error) {
+// 				panic("mock out the TogglePostLike method")
+// 			},
+// 			TogglePostSubscriptionFunc: func(ctx context.Context, postID string) (service.ToggleSubscriptionOutput, error) {
+// 				panic("mock out the TogglePostSubscription method")
+// 			},
+// 			TokenFunc: func(ctx context.Context) (service.TokenOutput, error) {
+// 				panic("mock out the Token method")
+// 			},
+// 			UpdateAvatarFunc: func(ctx context.Context, r io.Reader) (string, error) {
+// 				panic("mock out the UpdateAvatar method")
+// 			},
+// 			UserFunc: func(ctx context.Context, username string) (service.UserProfile, error) {
+// 				panic("mock out the User method")
+// 			},
+// 			UsernamesFunc: func(ctx context.Context, startingWith string, first int, after string) ([]string, error) {
+// 				panic("mock out the Usernames method")
+// 			},
+// 			UsersFunc: func(ctx context.Context, search string, first int, after string) ([]service.UserProfile, error) {
+// 				panic("mock out the Users method")
+// 			},
+// 		}
 //
-//         // use mockedService in code that requires Service
-//         // and then make assertions.
+// 		// use mockedService in code that requires Service
+// 		// and then make assertions.
 //
-//     }
+// 	}
 type ServiceMock struct {
 	// AuthURIFunc mocks the AuthURI method.
 	AuthURIFunc func(ctx context.Context, verificationCode string, redirectURI string) (string, error)

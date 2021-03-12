@@ -94,12 +94,13 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 		}
 	}()
 
-	link := cloneURL(s.Origin)
-	link.Path = "/api/auth_redirect"
-	q := link.Query()
+	u := cloneURL(s.Origin)
+	u.Path = "/api/auth_redirect"
+	q := u.Query()
 	q.Set("verification_code", code)
 	q.Set("redirect_uri", uri.String())
-	link.RawQuery = q.Encode()
+	u.RawQuery = q.Encode()
+	magicLink := u.String()
 
 	if magicLinkMailTmpl == nil {
 		magicLinkMailTmpl, err = template.ParseFS(webtemplate.Files, "mail/magic-link.html")
@@ -110,13 +111,13 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 
 	var b bytes.Buffer
 	if err = magicLinkMailTmpl.Execute(&b, map[string]interface{}{
-		"MagicLink": link.String(),
+		"MagicLink": magicLink,
 		"Minutes":   int(verificationCodeLifespan.Minutes()),
 	}); err != nil {
 		return fmt.Errorf("could not execute magic link mail template: %w", err)
 	}
 
-	if err = s.Sender.Send(email, "Magic Link", b.String()); err != nil {
+	if err = s.Sender.Send(email, "Magic Link", b.String(), magicLink); err != nil {
 		return fmt.Errorf("could not send magic link: %w", err)
 	}
 

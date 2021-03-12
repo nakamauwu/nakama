@@ -25,10 +25,13 @@ func NewLogSender(from string, l Logger) *LogSender {
 }
 
 // Send will just log the email.
-func (s *LogSender) Send(to, subject, body string) error {
+func (s *LogSender) Send(to, subject, html, text string) error {
 	toAddr := mail.Address{Address: to}
-	msg := message(s.From, toAddr, subject, body)
-	s.Logger.Logf("\n\n%s\n\n", msg)
+	b, err := buildBody(s.From, toAddr, subject, html, text)
+	if err != nil {
+		return err
+	}
 
+	s.Logger.Logf("\n\n%s\n\n", string(b))
 	return nil
 }

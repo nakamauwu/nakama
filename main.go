@@ -123,7 +123,7 @@ func run() error {
 		sender = mailing.NewSMTPSender(
 			"no-reply@"+origin.Hostname(),
 			smtpHost,
-			strconv.Itoa(smtpPort),
+			smtpPort,
 			smtpUsername,
 			smtpPassword,
 		)
