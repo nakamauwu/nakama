@@ -19,6 +19,8 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_branch }}
 
+      - run: git branch
+
       - name: Login to DockerHub
         uses: docker/login-action@v1
         with:
