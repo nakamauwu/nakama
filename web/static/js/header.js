@@ -45,7 +45,7 @@ void async function updateHeaderView() {
         /**
          * @param {import("./types.js").Notification} notification
          */
-        const onNotificationArrive = async notification => {
+        const onNotificationArrive = notification => {
             notificationsLink.classList.add("has-unread-notifications")
             dispatchEvent(new CustomEvent("notificationarrive", { detail: notification }))
 
@@ -57,12 +57,11 @@ void async function updateHeaderView() {
                 }
             }
 
-            const permission = await Notification.requestPermission()
-            if (permission !== "granted") {
+            if (Notification.permission !== "granted" && localStorage.getItem("notifications_enabled") !== "true") {
                 return
             }
 
-            const sysNotification = new Notification("New notification", {
+            const sysnotif = new Notification("New notification", {
                 tag: notification.id,
                 body: getNotificationBody(notification),
             })
@@ -72,13 +71,13 @@ void async function updateHeaderView() {
              */
             const onSysNotificationClick = async ev => {
                 ev.preventDefault()
-                sysNotification.close()
+                sysnotif.close()
                 navigate(getNotificationHref(notification))
                 await markNotificationAsRead(notification.id)
                 notification.read = true
             }
 
-            sysNotification.onclick = onSysNotificationClick
+            sysnotif.onclick = onSysNotificationClick
         }
 
         subscribeToNotifications(onNotificationArrive)

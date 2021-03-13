@@ -4,11 +4,12 @@ package handler
 
 import (
 	"context"
-	"fmt"
 	"io"
+	"log"
 	"net/http"
-	"os"
+	"path"
 	"path/filepath"
+	"runtime"
 	"time"
 
 	"github.com/matryer/way"
@@ -99,13 +100,15 @@ func New(svc Service, store storage.Store, enableStaticCache, embedStaticFiles, 
 
 	var fsys http.FileSystem
 	if embedStaticFiles {
+		log.Println("serving static content from embeded files")
 		fsys = http.FS(static.Files)
 	} else {
-		wd, err := os.Getwd()
-		if err != nil {
-			panic(fmt.Sprintf("could not get current working directory: %v\n", err))
+		log.Println("serving static content directly from disk")
+		_, file, _, ok := runtime.Caller(0)
+		if !ok {
+			log.Fatalln("could not get runtime caller")
 		}
-		fsys = http.Dir(filepath.Join(wd, "..", "..", "web", "static"))
+		fsys = http.Dir(filepath.Join(path.Dir(file), "..", "..", "web", "static"))
 	}
 	fsrv := http.FileServer(&spaFileSystem{root: fsys})
 	if !enableStaticCache {

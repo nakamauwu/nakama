@@ -629,3 +629,44 @@ header .profile-link {
     top: 0;
     left: 0;
 }
+
+button[role=switch] {
+    transition: background-color 200ms linear;
+    height: 1.25rem;
+    padding: 0 0.75em;
+}
+
+button[role=switch] span {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    transition: transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    background-color: var(--on-background);
+}
+
+button[role=switch][aria-checked=false] {
+    background-color: var(--surface-3);
+}
+
+button[role=switch][aria-checked=false] span {
+    transform: translateX(-50%);
+}
+
+button[role=switch][aria-checked=true] {
+    background-color: var(--primary);
+}
+
+button[role=switch][aria-checked=true] span {
+    transform: translateX(50%);
+}
+
+.notifications-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.notifications-enabler {
+    display: flex;
+    gap: 1rem;
+}

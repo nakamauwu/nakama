@@ -2,12 +2,18 @@ import { joinActors, markNotificationAsRead } from "../header.js"
 import { doGet } from "../http.js"
 import { ago } from "../utils.js"
 import renderList from "./list.js"
+import { renderSwitch } from "./switch.js"
 
 const PAGE_SIZE = 10
 const template = document.createElement("template")
 template.innerHTML = `
     <div class="container">
-        <h1>Notifications</h1>
+        <div class="notifications-header">
+            <h1>Notifications</h1>
+            <div class="notifications-enabler">
+                <label for="notification-switch">Notify?</label>
+            </div>
+        </div>
         <div id="notifications-outlet" class="notifications-wrapper"></div>
     </div>
 `
@@ -22,16 +28,50 @@ export default async function renderNotificationsPage() {
     })
 
     const page = /** @type {DocumentFragment} */ (template.content.cloneNode(true))
+    const notificationsEnabler = page.querySelector(".notifications-enabler")
     const notificationsOutlet = page.getElementById("notifications-outlet")
 
+    /**
+     * @param {boolean} checked
+     */
+    const onNotificationSwitchChange = async checked => {
+        if (!checked) {
+            localStorage.removeItem("notifications_enabled")
+            return { checked, label: "notify" }
+        }
+
+        const existingPerm = Notification.permission
+        if (existingPerm === "granted") {
+            localStorage.setItem("notifications_enabled", "true")
+            return { checked: true, label: "notify" }
+        }
+
+        const perm = await Notification.requestPermission()
+        if (perm === "granted") {
+            localStorage.setItem("notifications_enabled", "true")
+            return { checked: true, label: "notify" }
+        }
+
+        localStorage.removeItem("notifications_enabled")
+        if (perm === "denied" && existingPerm === "denied") {
+            alert("Your browser configuration has notifications disabled")
+        }
+
+        return { checked: false, label: "notify" }
+    }
+
+    const notificationsEnabled = localStorage.getItem("notifications_enabled") === "true" && Notification.permission === "granted"
     const onNotificationArrive = list.enqueue
     const unsubscribeFromNotifications = subscribeToNotifications(onNotificationArrive)
+    const notificationSwitch = renderSwitch(notificationsEnabled, "notify", onNotificationSwitchChange)
+    notificationSwitch.el.id = "notification-switch"
 
     const onPageDisconnect = () => {
         unsubscribeFromNotifications()
         list.teardown()
     }
 
+    notificationsEnabler.appendChild(notificationSwitch.el)
     notificationsOutlet.appendChild(list.el)
     page.addEventListener("disconnect", onPageDisconnect)
 
