@@ -167,7 +167,7 @@ func run() error {
 	go svc.RunBackgroundJobs(ctx)
 
 	serveAvatars := !s3Enabled
-	h := handler.New(svc, store, enableStaticFilesCache, embedStaticFiles, serveAvatars)
+	h := handler.New(ctx, svc, store, enableStaticFilesCache, embedStaticFiles, serveAvatars)
 	server := &http.Server{
 		Addr:              fmt.Sprintf(":%d", port),
 		Handler:           h,

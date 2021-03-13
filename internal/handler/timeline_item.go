@@ -40,7 +40,8 @@ func (h *handler) timelineItemStream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tt, err := h.TimelineItemStream(r.Context())
+	ctx := r.Context()
+	tt, err := h.TimelineItemStream(ctx)
 	if err == service.ErrUnauthenticated {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
@@ -56,9 +57,14 @@ func (h *handler) timelineItemStream(w http.ResponseWriter, r *http.Request) {
 	header.Set("Connection", "keep-alive")
 	header.Set("Content-Type", "text/event-stream; charset=utf-8")
 
-	for ti := range tt {
+	select {
+	case ti := <-tt:
 		writeSSE(w, ti)
 		f.Flush()
+	case <-ctx.Done():
+		return
+	case <-h.ctx.Done():
+		return
 	}
 }
 

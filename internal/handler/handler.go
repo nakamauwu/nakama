@@ -20,6 +20,7 @@ import (
 
 type handler struct {
 	Service
+	ctx   context.Context
 	store storage.Store
 }
 
@@ -64,8 +65,9 @@ type Service interface {
 }
 
 // New makes use of the service to provide an http.Handler with predefined routing.
-func New(svc Service, store storage.Store, enableStaticCache, embedStaticFiles, serveAvatars bool) http.Handler {
-	h := &handler{Service: svc, store: store}
+// The provided context is used to stop the running server-sent events.
+func New(ctx context.Context, svc Service, store storage.Store, enableStaticCache, embedStaticFiles, serveAvatars bool) http.Handler {
+	h := &handler{ctx: ctx, Service: svc, store: store}
 
 	api := way.NewRouter()
 	api.HandleFunc("POST", "/send_magic_link", h.sendMagicLink)

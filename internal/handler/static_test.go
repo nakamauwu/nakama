@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -30,7 +31,7 @@ func Test_spaFileSystem(t *testing.T) {
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			h := New(nil, nil, false, tc.embed, false)
+			h := New(context.Background(), nil, nil, false, tc.embed, false)
 			srv := httptest.NewServer(h)
 			defer srv.Close()
 

@@ -44,7 +44,8 @@ func (h *handler) notificationStream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	nn, err := h.NotificationStream(r.Context())
+	ctx := r.Context()
+	nn, err := h.NotificationStream(ctx)
 	if err == service.ErrUnauthenticated {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
@@ -60,9 +61,14 @@ func (h *handler) notificationStream(w http.ResponseWriter, r *http.Request) {
 	header.Set("Connection", "keep-alive")
 	header.Set("Content-Type", "text/event-stream; charset=utf-8")
 
-	for n := range nn {
+	select {
+	case n := <-nn:
 		writeSSE(w, n)
 		f.Flush()
+	case <-ctx.Done():
+		return
+	case <-h.ctx.Done():
+		return
 	}
 }
 

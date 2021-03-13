@@ -98,9 +98,14 @@ func (h *handler) commentStream(w http.ResponseWriter, r *http.Request) {
 	header.Set("Connection", "keep-alive")
 	header.Set("Content-Type", "text/event-stream; charset=utf-8")
 
-	for c := range cc {
+	select {
+	case c := <-cc:
 		writeSSE(w, c)
 		f.Flush()
+	case <-ctx.Done():
+		return
+	case <-h.ctx.Done():
+		return
 	}
 }
 
