@@ -7,6 +7,44 @@ import renderPost from "./post.js"
 const PAGE_SIZE = 10
 let timeline = /** @type {import("../types.js").TimelineItem[]} */ (null)
 
+addEventListener("postcommentcountinc", timelineUpdater("comment"))
+addEventListener("postlikecountchange", timelineUpdater("like"))
+
+/**
+ *
+ * @param {"comment"|"like"} type
+ * @returns
+ */
+function timelineUpdater(type) {
+    /**
+     * @param {CustomEvent} ev
+     */
+    const handler = ev => {
+        if (timeline === null) {
+            return
+        }
+
+        const postID = ev.detail.postID
+        for (const ti of timeline) {
+            if (ti.post.id !== postID) {
+                continue
+            }
+
+            switch (type) {
+                case "comment":
+                    ti.post.commentsCount++
+                    break
+                case "like":
+                    ti.post.liked = ev.detail.liked
+                    ti.post.likesCount = ev.detail.likesCount
+                    break
+            }
+            return
+        }
+    }
+    return handler
+}
+
 const template = document.createElement("template")
 template.innerHTML = `
     <div class="container">

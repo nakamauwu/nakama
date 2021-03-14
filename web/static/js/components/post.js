@@ -62,7 +62,7 @@ export default function renderPost(post, timelineItemID) {
     `
 
     const contentEl = article.querySelector(".micro-post-content")
-    void async function(target) {
+    void async function (target) {
         const els = await collectMedia(target)
         for (const el of els) {
             contentEl.appendChild(el)
@@ -89,6 +89,10 @@ export default function renderPost(post, timelineItemID) {
                     el(out.liked ? heartIconSVG : heartOulineIconSVG),
                 )
                 likesCountEl.textContent = String(out.likesCount)
+
+                dispatchEvent(new CustomEvent("postlikecountchange", {
+                    detail: { postID: post.id, ...out },
+                }))
             } catch (err) {
                 console.error(err)
                 alert(err.message)

@@ -65,6 +65,10 @@ export default async function renderPostPage(params) {
         post.commentsCount++
         commentsLink.setAttribute("aria-title", post.commentsCount + " comments")
         commentsCountEl.textContent = String(post.commentsCount)
+
+        dispatchEvent(new CustomEvent("postcommentcountinc", {
+            detail: { postID: post.id }
+        }))
     }
 
     /**
@@ -186,7 +190,7 @@ function renderComment(comment) {
     `
 
     const contentEl = article.querySelector(".micro-post-content")
-    void async function(target) {
+    void async function (target) {
         const els = await collectMedia(target)
         for (const el of els) {
             contentEl.appendChild(el)
