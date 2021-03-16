@@ -115,6 +115,11 @@ export default async function renderHomePage() {
         } catch (err) {
             console.error(err)
             alert(err.message)
+            if (err.name === "UserGoneError") {
+                localStorage.clear()
+                location.reload()
+                return
+            }
             setTimeout(() => {
                 postFormTextArea.focus()
             })
