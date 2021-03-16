@@ -78,6 +78,10 @@ func (s *Service) CreatePost(ctx context.Context, content string, spoilerOf *str
 			RETURNING id, created_at`
 		row := tx.QueryRowContext(ctx, query, uid, content, spoilerOf, nsfw)
 		err := row.Scan(&p.ID, &p.CreatedAt)
+		if isForeignKeyViolation(err) {
+			return ErrUserGone
+		}
+
 		if err != nil {
 			return fmt.Errorf("could not insert post: %w", err)
 		}

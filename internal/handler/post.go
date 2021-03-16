@@ -34,6 +34,11 @@ func (h *handler) createPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err == service.ErrUserGone {
+		http.Error(w, err.Error(), http.StatusGone)
+		return
+	}
+
 	if err != nil {
 		respondErr(w, err)
 		return

@@ -45,6 +45,8 @@ var (
 	ErrForbiddenFollow = errors.New("forbidden follow")
 	// ErrUnsupportedAvatarFormat denotes an unsupported avatar image format.
 	ErrUnsupportedAvatarFormat = errors.New("unsupported avatar format")
+	// ErrUserGone denotes that the user has already been deleted.
+	ErrUserGone = errors.New("user gone")
 )
 
 // User model.
