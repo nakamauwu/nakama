@@ -16,6 +16,9 @@ template.innerHTML = `
                 <span>Login</span>
             </button>
         </form>
+        <div class="login-info">
+            <em>This is a pre-release version of nakama. All data will be deleted on code changes</em>
+        </div>
     </div>
 `
 

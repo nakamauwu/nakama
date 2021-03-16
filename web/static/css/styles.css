@@ -31,6 +31,9 @@ body {
     font-family: sans-serif;
     margin: 0;
     padding-bottom: 4rem;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    min-height: 100vh;
 }
 
 :focus:not(:focus-visible) {
@@ -75,6 +78,15 @@ header {
     body {
         padding-bottom: 8rem;
     }
+}
+
+main {
+    margin-bottom: 4rem;
+}
+
+footer {
+    padding-top: 4rem;
+    border-top: 1px solid var(--surface-0);
 }
 
 header nav {
@@ -669,4 +681,24 @@ button[role=switch][aria-checked=true] span {
 .notifications-enabler {
     display: flex;
     gap: 1rem;
+}
+
+.login-info {
+    padding: 3rem 0;
+}
+
+.login-info em {
+    color: var(--error);
+}
+
+.error-help {
+    margin-top: 4rem;
+    border: 1px solid var(--surface-0);
+    padding: 1.5rem;
+    border-radius: 1rem;
+}
+
+.error-help em {
+    display: block;
+    margin-bottom: 1rem;
 }
