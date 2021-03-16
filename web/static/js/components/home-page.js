@@ -1,3 +1,5 @@
+import { Textcomplete } from "https://cdn.skypack.dev/pin/@textcomplete/core@v0.1.9-T16zL4lGRqc2cz6ITcW1/mode=imports,min/optimized/@textcomplete/core.js"
+import { TextareaEditor } from "https://cdn.skypack.dev/pin/@textcomplete/textarea@v0.1.9-Qukalkviy1RfFEqhHqaD/mode=imports,min/optimized/@textcomplete/textarea.js"
 import { getAuthUser } from "../auth.js"
 import { doGet, doPost, subscribe } from "../http.js"
 import { smartTrim } from "../utils.js"
@@ -78,6 +80,15 @@ export default async function renderHomePage() {
     const timelineOutlet = page.getElementById("timeline-outlet")
     let initialPostFormTextAreaHeight = /** @type {string=} */ (undefined)
 
+    const editor = new TextareaEditor(postFormTextArea)
+    const textcomplete = new Textcomplete(editor, [{
+        match: /\B@([\-+\w]*)$/,
+        search: async (term, cb) => {
+            cb(await fetchUsernames(term, 5))
+        },
+        replace: username => `@${username} `,
+    }], {})
+
     /**
      * @param {Event} ev
      */
@@ -129,6 +140,7 @@ export default async function renderHomePage() {
 
     const onPageDisconnect = () => {
         unsubscribeFromTimeline()
+        textcomplete.destroy()
         list.teardown()
     }
 
@@ -171,4 +183,16 @@ function fetchTimeline(before = "") {
  */
 function subscribeToTimeline(cb) {
     return subscribe("/api/timeline", cb)
+}
+
+/**
+ * @param {string} startingWith
+ * @param {number} first
+ * @returns {Promise<string[]>}
+ */
+function fetchUsernames(startingWith, first = 25) {
+    if (startingWith === "") {
+        return Promise.resolve([])
+    }
+    return doGet(`/api/usernames?starting_with=${encodeURIComponent(startingWith)}&first=${encodeURIComponent(first)}`)
 }

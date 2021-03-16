@@ -702,3 +702,33 @@ button[role=switch][aria-checked=true] span {
     display: block;
     margin-bottom: 1rem;
 }
+
+.dropdown-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    background-color: var(--surface-3);
+    border-radius: .5rem;
+    overflow: hidden;
+    box-shadow: var(--box-shadow);
+    margin-top: -1.5rem;
+}
+
+.textcomplete-item {
+    padding: 0 1rem;
+    line-height: 2rem;
+}
+
+.textcomplete-item + .textcomplete-item {
+    border-top: 1px solid var(--background);
+}
+
+.textcomplete-item.active {
+    background-color: var(--primary);
+    color: var(--on-primary);
+}
+
+.textcomplete-header,
+.textcomplete-footer {
+    display: none;
+}
