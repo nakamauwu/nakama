@@ -641,8 +641,9 @@ func (s *Service) avatarURL(avatar sql.NullString) *string {
 		return nil
 	}
 
-	avatarURL := cloneURL(s.Origin)
-	avatarURL.Path = "/img/avatars/" + avatar.String
-	str := avatarURL.String()
+	// avatarURL := cloneURL(s.Origin)
+	// avatarURL.Path = "/img/avatars/" + avatar.String
+	// str := avatarURL.String()
+	str := s.AvatarURLPrefix + avatar.String
 	return &str
 }

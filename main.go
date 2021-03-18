@@ -59,6 +59,7 @@ func run() error {
 		s3Bucket                  = env("S3_BUCKET", "avatars")
 		s3AccessKey               = os.Getenv("S3_ACCESS_KEY")
 		s3SecretKey               = os.Getenv("S3_SECRET_KEY")
+		avatarURLPrefix           = env("AVATAR_URL_PREFIX", originStr+"/img/avatars/")
 	)
 	flag.Usage = func() {
 		flag.PrintDefaults()
@@ -73,6 +74,7 @@ func run() error {
 	flag.IntVar(&smtpPort, "smtp-port", smtpPort, "SMTP server port")
 	flag.BoolVar(&enableStaticFilesCache, "static-cache", enableStaticFilesCache, "Enable static files cache")
 	flag.BoolVar(&embedStaticFiles, "embed-static", embedStaticFiles, "Embed static files")
+	flag.StringVar(&avatarURLPrefix, "avatar-url-prefix", avatarURLPrefix, "Avatar URL prefix")
 	flag.Parse()
 
 	origin, err := url.Parse(originStr)
@@ -156,12 +158,13 @@ func run() error {
 	}
 
 	svc := &service.Service{
-		DB:       db,
-		Sender:   sender,
-		Origin:   origin,
-		TokenKey: tokenKey,
-		PubSub:   pubsub,
-		Store:    store,
+		DB:              db,
+		Sender:          sender,
+		Origin:          origin,
+		TokenKey:        tokenKey,
+		PubSub:          pubsub,
+		Store:           store,
+		AvatarURLPrefix: avatarURLPrefix,
 	}
 
 	go svc.RunBackgroundJobs(ctx)
