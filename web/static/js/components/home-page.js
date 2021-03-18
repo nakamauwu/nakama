@@ -48,7 +48,7 @@ function timelineUpdater(type) {
 }
 
 const template = document.createElement("template")
-template.innerHTML = `
+template.innerHTML = /*html*/`
     <div class="container">
         <h1>Timeline</h1>
         <form id="post-form" class="post-form">

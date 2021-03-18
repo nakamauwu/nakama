@@ -6,7 +6,7 @@ import renderUserProfile from "./user-profile.js"
 const PAGE_SIZE = 10
 
 const template = document.createElement("template")
-template.innerHTML = `
+template.innerHTML = /*html*/`
     <div class="user-wrapper">
         <div class="container">
             <div id="user-outlet"></div>

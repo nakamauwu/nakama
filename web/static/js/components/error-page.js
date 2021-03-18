@@ -1,5 +1,5 @@
 const template = document.createElement("template")
-template.innerHTML = `
+template.innerHTML = /*html*/`
     <div class="container">
         <h1>Error 😕</h1>
         <p class="error">Something went wrong: <span id="error-span"></span></p>

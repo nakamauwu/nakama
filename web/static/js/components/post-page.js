@@ -11,7 +11,7 @@ import renderPost from "./post.js"
 const PAGE_SIZE = 3
 
 const template = document.createElement("template")
-template.innerHTML = `
+template.innerHTML = /*html*/`
     <div class="post-wrapper">
         <div class="container">
             <div id="post-outlet"></div>
@@ -167,7 +167,7 @@ function renderComment(comment) {
     const article = document.createElement("article")
     article.className = "micro-post"
     article.setAttribute("aria-label", `${user.username}'s comment`)
-    article.innerHTML = `
+    article.innerHTML = /*html*/`
         <div class="micro-post-header">
             <a class="micro-post-user" href="/users/${user.username}">
                 ${renderAvatarHTML(user)}

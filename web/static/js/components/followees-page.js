@@ -4,7 +4,7 @@ import renderUserProfile from "./user-profile.js"
 
 const PAGE_SIZE = 3
 const template = document.createElement("template")
-template.innerHTML = `
+template.innerHTML = /*html*/`
     <div class="container">
         <h1><span id="username-outlet"></span>'s followees</h1>
         <div id="followees-outlet" class="followees-wrapper users-wrapper"></div>

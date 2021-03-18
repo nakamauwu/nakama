@@ -5,7 +5,7 @@ import renderUserProfile from "./user-profile.js"
 
 const PAGE_SIZE = 3
 const template = document.createElement("template")
-template.innerHTML = `
+template.innerHTML = /*html*/`
     <div class="container">
         <h1>Search</h1>
         <form id="search-form" class="search-form">

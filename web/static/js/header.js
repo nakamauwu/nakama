@@ -13,7 +13,7 @@ void async function updateHeaderView() {
     if (authenticated) {
         hasUnreadNotifications = await fetchHasUnreadNotifications()
     }
-    header.innerHTML = `
+    header.innerHTML = /*html*/`
         <div class="container">
             <nav>
                 <a href="/" title="Home">

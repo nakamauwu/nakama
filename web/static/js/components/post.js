@@ -18,7 +18,7 @@ export default function renderPost(post, timelineItemID) {
     const article = document.createElement("article")
     article.className = "micro-post"
     article.setAttribute("aria-label", `${user.username}'s post`)
-    article.innerHTML = `
+    article.innerHTML = /*html*/`
         <div class="micro-post-header">
             <a class="micro-post-user" href="/users/${user.username}">
                 ${renderAvatarHTML(user)}

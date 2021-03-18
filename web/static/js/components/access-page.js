@@ -4,7 +4,7 @@ import { isLocalhost } from "../utils.js"
 const reUsername = /^[a-zA-Z][a-zA-Z0-9_-]{0,17}$/
 
 const template = document.createElement("template")
-template.innerHTML = `
+template.innerHTML = /*html*/`
     <div class="container">
         <h1>Nakama</h1>
         <p>Welcome to Nakama, the next social network for anime fans 🤗</p>

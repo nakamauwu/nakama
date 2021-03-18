@@ -11,7 +11,7 @@ export default function renderUserProfile(user, full = false) {
     const authenticated = isAuthenticated()
     const article = document.createElement("article")
     article.className = "user-profile"
-    article.innerHTML = `
+    article.innerHTML = /*html*/`
         ${full ? `
             ${renderAvatarHTML(user, "Double click to update avatar")}
             <h1 class="user-username" title="Double click to update username">${user.username}</h1>

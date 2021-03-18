@@ -6,7 +6,7 @@ import { renderSwitch } from "./switch.js"
 
 const PAGE_SIZE = 10
 const template = document.createElement("template")
-template.innerHTML = `
+template.innerHTML = /*html*/`
     <div class="container">
         <div class="notifications-header">
             <h1>Notifications</h1>
@@ -129,7 +129,7 @@ function renderNotification(notification) {
             content += " did something"
             break
     }
-    article.innerHTML = `
+    article.innerHTML = /*html*/`
         <p>${content}</p>
         <time datetime="${notification.issuedAt}">${ago(notification.issuedAt)}</time>
     `
