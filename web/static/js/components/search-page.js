@@ -3,7 +3,7 @@ import { navigate } from "../lib/router.js"
 import renderList from "./list.js"
 import renderUserProfile from "./user-profile.js"
 
-const PAGE_SIZE = 3
+const PAGE_SIZE = 10
 const template = document.createElement("template")
 template.innerHTML = /*html*/`
     <div class="container">

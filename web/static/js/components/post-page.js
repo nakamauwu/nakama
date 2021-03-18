@@ -8,7 +8,7 @@ import { heartIconSVG, heartOulineIconSVG } from "./icons.js"
 import renderList from "./list.js"
 import renderPost from "./post.js"
 
-const PAGE_SIZE = 3
+const PAGE_SIZE = 10
 
 const template = document.createElement("template")
 template.innerHTML = /*html*/`
