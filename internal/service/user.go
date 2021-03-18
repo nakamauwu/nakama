@@ -377,10 +377,7 @@ func (s *Service) UpdateAvatar(ctx context.Context, r io.Reader) (string, error)
 		}()
 	}
 
-	avatarURL := cloneURL(s.Origin)
-	avatarURL.Path = "/img/avatars/" + avatarFileName
-
-	return avatarURL.String(), nil
+	return s.AvatarURLPrefix + avatarFileName, nil
 }
 
 // ToggleFollow between two users.
