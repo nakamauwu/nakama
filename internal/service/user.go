@@ -305,13 +305,14 @@ func (s *Service) User(ctx context.Context, username string) (UserProfile, error
 }
 
 // UpdateAvatar of the authenticated user returning the new avatar URL.
+// Please limit the reader before hand using MaxAvatarBytes.
 func (s *Service) UpdateAvatar(ctx context.Context, r io.Reader) (string, error) {
 	uid, ok := ctx.Value(KeyAuthUserID).(string)
 	if !ok {
 		return "", ErrUnauthenticated
 	}
 
-	r = io.LimitReader(r, MaxAvatarBytes)
+	// r = io.LimitReader(r, MaxAvatarBytes)
 	img, format, err := image.Decode(r)
 	if err == image.ErrFormat {
 		return "", ErrUnsupportedAvatarFormat
