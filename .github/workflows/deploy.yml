@@ -52,7 +52,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             echo >| .env \
-            && echo "${{ secrets.SENDGRID_API_KEY }}" > .env \
-            && echo "${{ secrets.TRAEFIK_PILOT_TOKEN }}" > .env \
+            && echo "SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY }}" >> .env \
+            && echo "TRAEFIK_PILOT_TOKEN=${{ secrets.TRAEFIK_PILOT_TOKEN }}" >> .env \
             && docker-compose pull \
             && docker-compose up -d --force-recreate
