@@ -93,9 +93,12 @@ func (h *handler) user(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) updateAvatar(w http.ResponseWriter, r *http.Request) {
-	r.Body = http.MaxBytesReader(w, r.Body, service.MaxAvatarBytes)
 	defer r.Body.Close()
-	avatarURL, err := h.UpdateAvatar(r.Context(), r.Body)
+
+	reader := http.MaxBytesReader(w, r.Body, service.MaxAvatarBytes)
+	defer reader.Close()
+
+	avatarURL, err := h.UpdateAvatar(r.Context(), reader)
 	if err == service.ErrUnauthenticated {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return

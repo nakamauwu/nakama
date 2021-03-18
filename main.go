@@ -174,8 +174,8 @@ func run() error {
 	server := &http.Server{
 		Addr:              fmt.Sprintf(":%d", port),
 		Handler:           h,
-		ReadHeaderTimeout: time.Second * 5,
-		ReadTimeout:       time.Second * 15,
+		ReadHeaderTimeout: time.Second * 10,
+		ReadTimeout:       time.Second * 20,
 	}
 
 	errs := make(chan error, 1)
