@@ -175,7 +175,7 @@ func run() error {
 		Addr:              fmt.Sprintf(":%d", port),
 		Handler:           h,
 		ReadHeaderTimeout: time.Second * 10,
-		ReadTimeout:       time.Second * 20,
+		ReadTimeout:       time.Second * 30,
 	}
 
 	errs := make(chan error, 1)
