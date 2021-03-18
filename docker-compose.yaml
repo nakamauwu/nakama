@@ -12,6 +12,7 @@ services:
       - "--certificatesresolvers.tls-resolver.acme.tlschallenge=true"
       - "--certificatesresolvers.tls-resolver.acme.email=contact@nakama.social"
       - "--certificatesresolvers.tls-resolver.acme.storage=/letsencrypt/acme.json"
+      - "--pilot.token=${TRAEFIK_PILOT_TOKEN}"
       # - "--api.insecure=true"
       # - "--log.level=DEBUG"
       # - "--certificatesresolvers.tls-resolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
