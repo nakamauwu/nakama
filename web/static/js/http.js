@@ -8,7 +8,7 @@ import { isPlainObject } from "./utils.js"
 export function doGet(url, headers) {
     return fetch(url, {
         headers: Object.assign(defaultHeaders(), headers),
-    }).then(parseResponse)
+    }).then(parseResponse, handleErr)
 }
 
 /**
@@ -26,7 +26,7 @@ export function doPost(url, body, headers) {
         init.headers["content-type"] = "application/json; charset=utf-8"
     }
     Object.assign(init.headers, headers)
-    return fetch(url, init).then(parseResponse)
+    return fetch(url, init).then(parseResponse, handleErr)
 }
 
 /**
@@ -48,7 +48,7 @@ export function doPut(url, body, headers) {
         init.headers["content-type"] = "application/json; charset=utf-8"
     }
     Object.assign(init.headers, headers)
-    return fetch(url, init).then(parseResponse)
+    return fetch(url, init).then(parseResponse, handleErr)
 }
 
 /**
@@ -98,6 +98,13 @@ async function parseResponse(res) {
         throw err
     }
     return body
+}
+
+function handleErr(err) {
+    if (!navigator.onLine) {
+        return Promise.reject(new Error("offline"))
+    }
+    return Promise.reject(err)
 }
 
 export default {

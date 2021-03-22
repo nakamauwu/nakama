@@ -8,17 +8,13 @@ function registerSW() {
 
     return new Promise(resolve => {
         navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" }).then(reg => {
-            console.log("reg", reg)
             const onUpdateFound = () => {
                 const worker = reg.installing
-                console.log("worker", worker)
                 if (worker === null) {
                     return
                 }
 
                 const onStateChange = () => {
-                    console.log("worker state", worker.state)
-                    console.log("old controller", navigator.serviceWorker.controller)
                     if (worker.state !== "installed" || navigator.serviceWorker.controller === null) {
                         return
                     }

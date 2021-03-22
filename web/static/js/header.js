@@ -9,10 +9,6 @@ const authenticated = authUser !== null
 const header = document.querySelector("header")
 
 void async function updateHeaderView() {
-    let hasUnreadNotifications = false
-    if (authenticated) {
-        hasUnreadNotifications = await fetchHasUnreadNotifications()
-    }
     header.innerHTML = /*html*/`
         <div class="container">
             <nav>
@@ -38,9 +34,12 @@ void async function updateHeaderView() {
 
     if (authenticated) {
         const notificationsLink = /** @type {HTMLAnchorElement} */ (header.querySelector("#notifications-link"))
-        if (hasUnreadNotifications) {
-            notificationsLink.classList.add("has-unread-notifications")
-        }
+        void async function () {
+            const hasUnreadNotifications = await fetchHasUnreadNotifications()
+            if (hasUnreadNotifications) {
+                notificationsLink.classList.add("has-unread-notifications")
+            }
+        }()
 
         /**
          * @param {import("./types.js").Notification} notification

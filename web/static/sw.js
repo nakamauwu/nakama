@@ -1,4 +1,4 @@
-const version = 11
+const version = 0
 const staticCacheName = "static-" + version
 const expectedCacheKeys = [
     staticCacheName,
@@ -7,14 +7,10 @@ const staticPaths = [
     "/css/styles.css",
 
     "/img/youtube-2017.svg",
-    "/img/icons/icon-72x72.png",
-    "/img/icons/icon-96x96.png",
-    "/img/icons/icon-128x128.png",
-    "/img/icons/icon-144x144.png",
-    "/img/icons/icon-152x152.png",
-    "/img/icons/icon-192x192.png",
-    "/img/icons/icon-384x384.png",
-    "/img/icons/icon-512x512.png",
+    "/img/icons/logo-circle-192.png",
+    "/img/icons/logo-circle-512.png",
+    "/img/icons/logo-circle.svg",
+    "/img/icons/logo-square-1024.png",
 
     "/js/components/access-page.js",
     "/js/components/avatar.js",
@@ -87,15 +83,16 @@ function onInstall(ev) {
  * @param {Event} ev
  */
 function onFetch(ev) {
-    const reqURL = new URL(ev.request.url)
+    const req = /** @type {Request} */ (ev["request"])
+    const reqURL = new URL(req.url)
     // Never cache API requests.
     if (reqURL.origin === location.origin && reqURL.pathname.startsWith("/api/")) {
         return false
     }
 
-    ev.respondWith(cachedFirst(ev.request).catch(err => {
-        if (ev.request.mode === "navigate") {
-            return caches.match("/index.html")
+    ev.respondWith(cachedFirst(req).catch(err => {
+        if (req.mode === "navigate") {
+            return caches.match("/")
         }
         return Promise.reject(err)
     }))
