@@ -732,3 +732,7 @@ button[role=switch][aria-checked=true] span {
 .textcomplete-footer {
     display: none;
 }
+
+.monospace {
+    font-family: monospace;
+}
