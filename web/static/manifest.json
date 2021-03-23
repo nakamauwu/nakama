@@ -4,7 +4,7 @@
   "description": "The next social network for anime fans.",
   "theme_color": "#000",
   "background_color": "#000",
-  "display": "minimal-ui",
+  "display": "standalone",
   "scope": "/",
   "start_url": "/",
   "categories": [
