@@ -69,19 +69,6 @@ func Test_handler_sendMagicLink(t *testing.T) {
 			},
 		},
 		{
-			name: "user_not_found",
-			body: []byte(`{}`),
-			svc: &ServiceMock{
-				SendMagicLinkFunc: func(context.Context, string, string) error {
-					return service.ErrUserNotFound
-				},
-			},
-			testResp: func(t *testing.T, resp *http.Response) {
-				testutil.AssertEqual(t, http.StatusNotFound, resp.StatusCode, "status code")
-				testutil.AssertEqual(t, "user not found", string(readAllAndTrim(t, resp.Body)), "body")
-			},
-		},
-		{
 			name: "internal_error",
 			body: []byte(`{}`),
 			svc: &ServiceMock{
