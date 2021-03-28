@@ -36,11 +36,6 @@ func isForeignKeyViolation(err error) bool {
 	return ok && pqerr.Code == "23503"
 }
 
-func isNotNullViolation(err error) bool {
-	pqerr, ok := err.(*pq.Error)
-	return ok && pqerr.Code == "23502"
-}
-
 func buildQuery(text string, data map[string]interface{}) (string, []interface{}, error) {
 	var t *template.Template
 	v, ok := queriesCache.Load(text)
