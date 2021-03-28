@@ -46,19 +46,28 @@ async function importWithCache(identifier) {
  * @param {Element} target
  */
 function renderInto(target) {
+    let pages = /** @type {Node[]} */ ([])
     let currentPage = /** @type {Node=} */ (null)
     return async result => {
-        if (currentPage instanceof Node) {
-            currentPage.dispatchEvent(disconnectEvent)
+        while (pages.length !== 0) {
+            const page = pages.pop()
+            page.dispatchEvent(disconnectEvent)
             target.innerHTML = ""
         }
+
+        let page
         try {
-            currentPage = await result
+            page = await result
         } catch (err) {
             console.error(err)
-            currentPage = renderErrorPage(err)
+            page = renderErrorPage(err)
         }
-        target.appendChild(currentPage)
+        if (page instanceof Node) {
+            pages.push(page)
+            target.innerHTML = ""
+            target.appendChild(page)
+        }
+
         setTimeout(activateLinks)
     }
 }

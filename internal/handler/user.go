@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -9,38 +8,6 @@ import (
 	"github.com/matryer/way"
 	"github.com/nicolasparada/nakama/internal/service"
 )
-
-type createUserInput struct {
-	Email    string
-	Username string
-}
-
-func (h *handler) createUser(w http.ResponseWriter, r *http.Request) {
-	var in createUserInput
-	defer r.Body.Close()
-	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	err := h.CreateUser(r.Context(), in.Email, in.Username)
-	if err == service.ErrInvalidEmail || err == service.ErrInvalidUsername {
-		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
-		return
-	}
-
-	if err == service.ErrEmailTaken || err == service.ErrUsernameTaken {
-		http.Error(w, err.Error(), http.StatusConflict)
-		return
-	}
-
-	if err != nil {
-		respondErr(w, err)
-		return
-	}
-
-	w.WriteHeader(http.StatusNoContent)
-}
 
 func (h *handler) users(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()

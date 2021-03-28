@@ -73,37 +73,6 @@ type ToggleFollowOutput struct {
 	FollowersCount int  `json:"followersCount"`
 }
 
-// CreateUser with the given email and name.
-func (s *Service) CreateUser(ctx context.Context, email, username string) error {
-	email = strings.TrimSpace(email)
-	if !reEmail.MatchString(email) {
-		return ErrInvalidEmail
-	}
-
-	username = strings.TrimSpace(username)
-	if !reUsername.MatchString(username) {
-		return ErrInvalidUsername
-	}
-
-	query := "INSERT INTO users (email, username) VALUES ($1, $2)"
-	_, err := s.DB.ExecContext(ctx, query, email, username)
-	unique := isUniqueViolation(err)
-
-	if unique && strings.Contains(err.Error(), "email") {
-		return ErrEmailTaken
-	}
-
-	if unique && strings.Contains(err.Error(), "username") {
-		return ErrUsernameTaken
-	}
-
-	if err != nil {
-		return fmt.Errorf("could not insert user: %w", err)
-	}
-
-	return nil
-}
-
 // Users in ascending order with forward pagination and filtered by username.
 func (s *Service) Users(ctx context.Context, search string, first int, after string) ([]UserProfile, error) {
 	search = strings.TrimSpace(search)

@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS verification_codes (
     id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES users,
+    email VARCHAR NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

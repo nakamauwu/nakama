@@ -13,47 +13,34 @@ import (
 )
 
 func TestService_SendMagicLink(t *testing.T) {
+	ctx := context.Background()
 	t.Run("empty_email", func(t *testing.T) {
 		svc := &Service{}
-		ctx := context.Background()
 		err := svc.SendMagicLink(ctx, "", "")
 		testutil.AssertEqual(t, ErrInvalidEmail, err, "error")
 	})
 
 	t.Run("invalid_email", func(t *testing.T) {
 		svc := &Service{}
-		ctx := context.Background()
 		err := svc.SendMagicLink(ctx, "nope", "")
 		testutil.AssertEqual(t, ErrInvalidEmail, err, "error")
 	})
 
+	email := testutil.RandStr(t, 10) + "@example.org"
+
 	t.Run("empty_redirect_uri", func(t *testing.T) {
 		svc := &Service{}
-		ctx := context.Background()
-		email := testutil.RandStr(t, 10) + "@example.org"
 		err := svc.SendMagicLink(ctx, email, "")
 		testutil.AssertEqual(t, ErrInvalidRedirectURI, err, "error")
 	})
 
 	t.Run("non_absolute_redirect_uri", func(t *testing.T) {
 		svc := &Service{}
-		ctx := context.Background()
-		email := testutil.RandStr(t, 10) + "@example.org"
 		err := svc.SendMagicLink(ctx, email, "/nope")
 		testutil.AssertEqual(t, ErrInvalidRedirectURI, err, "error")
 	})
 
 	redirectURI := "https://example.org/login-callback"
-	t.Run("user_not_found", func(t *testing.T) {
-		svc := &Service{
-			DB: testDB,
-		}
-		ctx := context.Background()
-		email := testutil.RandStr(t, 10) + "@example.org"
-		err := svc.SendMagicLink(ctx, email, redirectURI)
-		testutil.AssertEqual(t, ErrUserNotFound, err, "error")
-	})
-
 	origin := &url.URL{
 		Scheme: "http",
 		Host:   "localhost:3000",
@@ -71,13 +58,7 @@ func TestService_SendMagicLink(t *testing.T) {
 			},
 		}
 
-		username := testutil.RandStr(t, 8)
-		email := username + "@example.org"
-		_, err := testDB.Exec(`INSERT INTO users (email, username) VALUES ($1, $2)`, email, username)
-		testutil.AssertEqual(t, nil, err, "sql insert")
-
-		ctx := context.Background()
-		err = svc.SendMagicLink(ctx, email, redirectURI)
+		err := svc.SendMagicLink(ctx, email, redirectURI)
 		testutil.AssertEqual(t, fmt.Errorf("could not send magic link: %w", errInternal), err, "error")
 	})
 
@@ -93,13 +74,7 @@ func TestService_SendMagicLink(t *testing.T) {
 			Sender: senderMock,
 		}
 
-		username := testutil.RandStr(t, 8)
-		email := username + "@example.org"
-		_, err := testDB.Exec(`INSERT INTO users (email, username) VALUES ($1, $2)`, email, username)
-		testutil.AssertEqual(t, nil, err, "sql insert")
-
-		ctx := context.Background()
-		err = svc.SendMagicLink(ctx, email, redirectURI)
+		err := svc.SendMagicLink(ctx, email, redirectURI)
 		testutil.AssertEqual(t, nil, err, "error")
 
 		calls := senderMock.SendCalls()

@@ -1,3 +1,5 @@
+// TODO: reimplement service worker.
+
 const version = 0
 const staticCacheName = "static-" + version
 const expectedCacheKeys = [

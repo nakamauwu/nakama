@@ -7,6 +7,7 @@ import (
 	"context"
 	"github.com/nicolasparada/nakama/internal/service"
 	"io"
+	"net/url"
 	"sync"
 )
 
@@ -20,7 +21,7 @@ var _ Service = &ServiceMock{}
 //
 // 		// make and configure a mocked Service
 // 		mockedService := &ServiceMock{
-// 			AuthURIFunc: func(ctx context.Context, verificationCode string, redirectURI string) (string, error) {
+// 			AuthURIFunc: func(ctx context.Context, reqURI string) (*url.URL, error) {
 // 				panic("mock out the AuthURI method")
 // 			},
 // 			AuthUserFunc: func(ctx context.Context) (service.User, error) {
@@ -121,7 +122,7 @@ var _ Service = &ServiceMock{}
 // 	}
 type ServiceMock struct {
 	// AuthURIFunc mocks the AuthURI method.
-	AuthURIFunc func(ctx context.Context, verificationCode string, redirectURI string) (string, error)
+	AuthURIFunc func(ctx context.Context, reqURI string) (*url.URL, error)
 
 	// AuthUserFunc mocks the AuthUser method.
 	AuthUserFunc func(ctx context.Context) (service.User, error)
@@ -219,10 +220,8 @@ type ServiceMock struct {
 		AuthURI []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
-			// VerificationCode is the verificationCode argument value.
-			VerificationCode string
-			// RedirectURI is the redirectURI argument value.
-			RedirectURI string
+			// ReqURI is the reqURI argument value.
+			ReqURI string
 		}
 		// AuthUser holds details about calls to the AuthUser method.
 		AuthUser []struct {
@@ -493,37 +492,33 @@ type ServiceMock struct {
 }
 
 // AuthURI calls AuthURIFunc.
-func (mock *ServiceMock) AuthURI(ctx context.Context, verificationCode string, redirectURI string) (string, error) {
+func (mock *ServiceMock) AuthURI(ctx context.Context, reqURI string) (*url.URL, error) {
 	if mock.AuthURIFunc == nil {
 		panic("ServiceMock.AuthURIFunc: method is nil but Service.AuthURI was just called")
 	}
 	callInfo := struct {
-		Ctx              context.Context
-		VerificationCode string
-		RedirectURI      string
+		Ctx    context.Context
+		ReqURI string
 	}{
-		Ctx:              ctx,
-		VerificationCode: verificationCode,
-		RedirectURI:      redirectURI,
+		Ctx:    ctx,
+		ReqURI: reqURI,
 	}
 	mock.lockAuthURI.Lock()
 	mock.calls.AuthURI = append(mock.calls.AuthURI, callInfo)
 	mock.lockAuthURI.Unlock()
-	return mock.AuthURIFunc(ctx, verificationCode, redirectURI)
+	return mock.AuthURIFunc(ctx, reqURI)
 }
 
 // AuthURICalls gets all the calls that were made to AuthURI.
 // Check the length with:
 //     len(mockedService.AuthURICalls())
 func (mock *ServiceMock) AuthURICalls() []struct {
-	Ctx              context.Context
-	VerificationCode string
-	RedirectURI      string
+	Ctx    context.Context
+	ReqURI string
 } {
 	var calls []struct {
-		Ctx              context.Context
-		VerificationCode string
-		RedirectURI      string
+		Ctx    context.Context
+		ReqURI string
 	}
 	mock.lockAuthURI.RLock()
 	calls = mock.calls.AuthURI

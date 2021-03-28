@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"path"
 	"path/filepath"
 	"runtime"
@@ -27,7 +28,7 @@ type handler struct {
 // Service interface.
 type Service interface {
 	SendMagicLink(ctx context.Context, email, redirectURI string) error
-	AuthURI(ctx context.Context, verificationCode, redirectURI string) (string, error)
+	AuthURI(ctx context.Context, reqURI string) (*url.URL, error)
 	DevLogin(ctx context.Context, email string) (service.DevLoginOutput, error)
 	AuthUserIDFromToken(token string) (string, error)
 	AuthUser(ctx context.Context) (service.User, error)
@@ -54,7 +55,6 @@ type Service interface {
 	TimelineItemStream(ctx context.Context) (<-chan service.TimelineItem, error)
 	DeleteTimelineItem(ctx context.Context, timelineItemID string) error
 
-	CreateUser(ctx context.Context, email, username string) error
 	Users(ctx context.Context, search string, first int, after string) ([]service.UserProfile, error)
 	Usernames(ctx context.Context, startingWith string, first int, after string) ([]string, error)
 	User(ctx context.Context, username string) (service.UserProfile, error)
@@ -75,7 +75,6 @@ func New(ctx context.Context, svc Service, store storage.Store, enableStaticCach
 	api.HandleFunc("POST", "/dev_login", h.devLogin)
 	api.HandleFunc("GET", "/auth_user", h.authUser)
 	api.HandleFunc("GET", "/token", h.token)
-	api.HandleFunc("POST", "/users", h.createUser)
 	api.HandleFunc("GET", "/users", h.users)
 	api.HandleFunc("GET", "/usernames", h.usernames)
 	api.HandleFunc("GET", "/users/:username", h.user)

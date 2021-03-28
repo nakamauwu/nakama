@@ -27,7 +27,7 @@ export default function renderAccessPage() {
     const loginForm = /** @type {HTMLFormElement} */ (page.getElementById("login-form"))
     const emailInput = loginForm.querySelector("input")
     loginForm.addEventListener("submit", onLoginFormSubmit)
-    if (isLocalhost()) {
+    if (isLocalhost() && !(new URLSearchParams(location.search.substr(1)).has("disable_dev_login"))) {
         emailInput.value = "shinji@example.org"
     }
     return page
@@ -50,12 +50,6 @@ async function onLoginFormSubmit(ev) {
         await runLoginProgram(email)
     } catch (err) {
         console.error(err)
-        if (err.name === "UserNotFoundError") {
-            if (confirm("User not found. Do you want to create an account?")) {
-                runRegistrationProgram(email)
-            }
-            return
-        }
         alert(err.message)
         setTimeout(() => {
             input.focus()
@@ -79,7 +73,7 @@ function saveLogin(payload) {
  * @param {string} email
  */
 async function runLoginProgram(email) {
-    if (isLocalhost()) {
+    if (isLocalhost() && !(new URLSearchParams(location.search.substr(1)).has("disable_dev_login"))) {
         saveLogin(await devLogin(email))
         location.reload()
         return
@@ -87,35 +81,6 @@ async function runLoginProgram(email) {
 
     await sendMagicLink(email, location.origin + "/login-callback")
     alert("Magic link sent. Go check your inbox to login")
-}
-
-/**
- * @param {string} email
- * @param {string=} username
- */
-async function runRegistrationProgram(email, username) {
-    username = prompt("Username:", username)
-    if (username === null) {
-        return
-    }
-
-    username = username.trim()
-    if (!reUsername.test(username)) {
-        alert("invalid username")
-        runRegistrationProgram(email, username)
-        return
-    }
-
-    try {
-        await createUser(email, username)
-        await runLoginProgram(email)
-    } catch (err) {
-        console.error(err)
-        alert(err.message)
-        if (err.name === "UsernameTakenError") {
-            runRegistrationProgram(email)
-        }
-    }
 }
 
 /**
@@ -132,13 +97,4 @@ function devLogin(email) {
  */
 async function sendMagicLink(email, redirectURI) {
     await doPost("/api/send_magic_link", { email, redirectURI })
-}
-
-/**
- * @param {string} email
- * @param {string} username
- * @returns {Promise<void>}
- */
-function createUser(email, username) {
-    return doPost("/api/users", { email, username })
 }

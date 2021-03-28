@@ -124,3 +124,13 @@ func cloneURL(u *url.URL) *url.URL {
 	}
 	return u2
 }
+
+func uriWithQuery(uri *url.URL, data map[string]string) (*url.URL, error) {
+	q := uri.Query()
+	for k, v := range data {
+		q.Set(k, v)
+	}
+
+	uri.RawQuery = q.Encode()
+	return uri, nil
+}

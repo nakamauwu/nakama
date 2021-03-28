@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/cockroach-go/crdb"
 	"github.com/hako/branca"
 	webtemplate "github.com/nicolasparada/nakama/web/template"
 )
@@ -72,13 +73,8 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 
 	var code string
 	err = s.DB.QueryRowContext(ctx, `
-		INSERT INTO verification_codes (user_id) VALUES (
-			(SELECT id FROM users WHERE email = $1)
-		) RETURNING id`, email).Scan(&code)
-	if isNotNullViolation(err) {
-		return ErrUserNotFound
-	}
-
+		INSERT INTO verification_codes (email) VALUES ($1) RETURNING id
+	`, email).Scan(&code)
 	if err != nil {
 		return fmt.Errorf("could not insert verification code: %w", err)
 	}
@@ -94,13 +90,12 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 		}
 	}()
 
-	u := cloneURL(s.Origin)
-	u.Path = "/api/auth_redirect"
-	q := u.Query()
+	magicLink := cloneURL(s.Origin)
+	magicLink.Path = "/api/auth_redirect"
+	q := magicLink.Query()
 	q.Set("verification_code", code)
 	q.Set("redirect_uri", uri.String())
-	u.RawQuery = q.Encode()
-	magicLink := u.String()
+	magicLink.RawQuery = q.Encode()
 
 	if magicLinkMailTmpl == nil {
 		magicLinkMailTmpl, err = template.ParseFS(webtemplate.Files, "mail/magic-link.html")
@@ -110,14 +105,16 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 	}
 
 	var b bytes.Buffer
-	if err = magicLinkMailTmpl.Execute(&b, map[string]interface{}{
+	err = magicLinkMailTmpl.Execute(&b, map[string]interface{}{
 		"MagicLink": magicLink,
 		"Minutes":   int(verificationCodeLifespan.Minutes()),
-	}); err != nil {
+	})
+	if err != nil {
 		return fmt.Errorf("could not execute magic link mail template: %w", err)
 	}
 
-	if err = s.Sender.Send(email, "Magic Link", b.String(), magicLink); err != nil {
+	err = s.Sender.Send(email, "Magic Link", b.String(), magicLink.String())
+	if err != nil {
 		return fmt.Errorf("could not send magic link: %w", err)
 	}
 
@@ -125,48 +122,132 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 }
 
 // AuthURI to be redirected to and complete the login flow.
-// It contains the token in the hash fragment.
-func (s *Service) AuthURI(ctx context.Context, verificationCode, redirectURI string) (string, error) {
-	verificationCode = strings.TrimSpace(verificationCode)
-	if !reUUID.MatchString(verificationCode) {
-		return "", ErrInvalidVerificationCode
+// It contains the token and expires_at in the hash fragment.
+func (s *Service) AuthURI(ctx context.Context, reqURIStr string) (*url.URL, error) {
+	reqURI, err := url.Parse(reqURIStr)
+	if err != nil {
+		return nil, fmt.Errorf("could not url parse request URI: %w", err)
 	}
 
-	uri, err := url.ParseRequestURI(redirectURI)
-	if err != nil {
-		return "", ErrInvalidRedirectURI
+	reqQuery := reqURI.Query()
+	redirectURI, err := url.Parse(strings.TrimSpace(reqQuery.Get("redirect_uri")))
+	if err != nil || !redirectURI.IsAbs() {
+		return nil, ErrInvalidRedirectURI
+	}
+
+	verificationCode := strings.TrimSpace(reqQuery.Get("verification_code"))
+	if !reUUID.MatchString(verificationCode) {
+		return uriWithQuery(redirectURI, map[string]string{
+			"error": ErrInvalidVerificationCode.Error(),
+		})
+	}
+
+	username := strings.TrimSpace(reqQuery.Get("username"))
+	if username != "" {
+		if !reUsername.MatchString(username) {
+			return uriWithQuery(redirectURI, map[string]string{
+				"error": ErrInvalidUsername.Error(),
+			})
+		}
 	}
 
 	var uid string
-	var createdAt time.Time
-	err = s.DB.QueryRowContext(ctx, `
-		DELETE FROM verification_codes WHERE id = $1
-		RETURNING user_id, created_at`, verificationCode).Scan(&uid, &createdAt)
-	if err == sql.ErrNoRows {
-		return "", ErrVerificationCodeNotFound
+	err = crdb.ExecuteTx(ctx, s.DB, nil, func(tx *sql.Tx) error {
+		var email string
+		var createdAt time.Time
+		err := tx.QueryRowContext(ctx, `SELECT email, created_at FROM verification_codes WHERE id = $1`, verificationCode).
+			Scan(&email, &createdAt)
+		if err == sql.ErrNoRows {
+			return ErrVerificationCodeNotFound
+		}
+
+		if err != nil {
+			return fmt.Errorf("could not sql query select verification code: %w", err)
+		}
+
+		if isVerificationCodeExpired(createdAt) {
+			return ErrExpiredToken
+		}
+
+		err = tx.QueryRowContext(ctx, `SELECT id AS user_id FROM users WHERE email = $1`, email).
+			Scan(&uid)
+		if err == sql.ErrNoRows {
+			if username == "" {
+				return ErrUserNotFound
+			}
+
+			err := tx.QueryRowContext(ctx, `INSERT INTO users (email, username) VALUES ($1, $2) RETURNING id`, email, username).
+				Scan(&uid)
+			if isUniqueViolation(err) {
+				return ErrUsernameTaken
+			}
+
+			if err != nil {
+				return fmt.Errorf("could not sql insert user at magic link: %w", err)
+			}
+
+			return nil
+		}
+
+		if err != nil {
+			return fmt.Errorf("could not sql query select user from verification code email: %w", err)
+		}
+
+		return nil
+	})
+	if err == ErrUserNotFound || err == ErrUsernameTaken {
+		return uriWithQuery(redirectURI, map[string]string{
+			"error":          err.Error(),
+			"retry_endpoint": reqURIStr,
+		})
+	}
+
+	if err == ErrVerificationCodeNotFound {
+		return uriWithQuery(redirectURI, map[string]string{
+			"error": ErrVerificationCodeNotFound.Error(),
+		})
+	}
+
+	go func() {
+		_, err := s.DB.Exec("DELETE FROM verification_codes WHERE id = $1", verificationCode)
+		if err != nil {
+			log.Printf("could not delete verification code: %v\n", err)
+			return
+		}
+	}()
+
+	if err == ErrExpiredToken {
+		return uriWithQuery(redirectURI, map[string]string{
+			"error": ErrExpiredToken.Error(),
+		})
 	}
 
 	if err != nil {
-		return "", fmt.Errorf("could not delete verification code: %w", err)
+		log.Println(err)
+		return uriWithQuery(redirectURI, map[string]string{
+			"error": "something went wrong",
+		})
 	}
 
 	now := time.Now()
-	exp := createdAt.Add(verificationCodeLifespan)
-	if exp.Equal(now) || exp.Before(now) {
-		return "", ErrExpiredToken
-	}
-
 	token, err := s.codec().EncodeToString(uid)
 	if err != nil {
-		return "", fmt.Errorf("could not create token: %w", err)
+		log.Printf("could not create token: %v\n", err)
+		return uriWithQuery(redirectURI, map[string]string{
+			"error": "something went wrong",
+		})
 	}
 
-	f := url.Values{}
-	f.Set("token", token)
-	f.Set("expires_at", now.Add(tokenLifespan).Format(time.RFC3339Nano))
-	uri.Fragment = f.Encode()
+	return uriWithQuery(redirectURI, map[string]string{
+		"token":      token,
+		"expires_at": now.Add(tokenLifespan).Format(time.RFC3339Nano),
+	})
+}
 
-	return uri.String(), nil
+func isVerificationCodeExpired(t time.Time) bool {
+	now := time.Now()
+	exp := t.Add(verificationCodeLifespan)
+	return exp.Equal(now) || exp.Before(now)
 }
 
 // DevLogin is a login for development purposes only.

@@ -46,20 +46,9 @@ func (h *handler) sendMagicLink(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) authRedirect(w http.ResponseWriter, r *http.Request) {
-	q := r.URL.Query()
-	uri, err := h.AuthURI(r.Context(), q.Get("verification_code"), q.Get("redirect_uri"))
-	if err == service.ErrInvalidVerificationCode || err == service.ErrInvalidRedirectURI {
+	uri, err := h.AuthURI(r.Context(), r.RequestURI)
+	if err == service.ErrInvalidRedirectURI {
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
-		return
-	}
-
-	if err == service.ErrVerificationCodeNotFound {
-		http.Error(w, err.Error(), http.StatusGone)
-		return
-	}
-
-	if err == service.ErrExpiredToken {
-		http.Error(w, err.Error(), http.StatusGone)
 		return
 	}
 
@@ -68,7 +57,7 @@ func (h *handler) authRedirect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, uri, http.StatusFound)
+	http.Redirect(w, r, uri.String(), http.StatusFound)
 }
 
 func (h *handler) devLogin(w http.ResponseWriter, r *http.Request) {

@@ -3,14 +3,6 @@
 
 @host = http://localhost:3000
 
-POST {{host}}/api/users
-Content-Type: application/json
-
-{
-    "email": "test@example.org",
-    "username": "test"
-}
-
 ###
 # @name login
 POST {{host}}/api/dev_login
@@ -26,7 +18,7 @@ Content-Type: application/json
 
 {
     "email": "shinji@example.org",
-    "redirectURI": "http://localhost:3000/auth_redirect"
+    "redirectURI": "http://localhost:3000/login-callback"
 }
 
 ###
