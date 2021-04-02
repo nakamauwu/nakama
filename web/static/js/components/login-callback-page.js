@@ -111,7 +111,7 @@ async function loginCallback() {
     localStorage.setItem("auth_token", token)
     localStorage.setItem("auth_expires_at", expiresAt.toJSON())
 
-    return { url: "/", hard: false }
+    return { url: "/", hard: true }
 }
 
 /**
