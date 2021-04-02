@@ -159,7 +159,7 @@ async function mediaType(url) {
         return "video"
     }
 
-    const endpoint = "/api/proxy?target="+encodeURIComponent(url)
+    const endpoint = "/api/proxy?target=" + encodeURIComponent(url)
     return fetch(endpoint, { method: "HEAD", redirect: "follow" }).then(res => {
         const ct = res.headers.get("Content-Type")
         if (ct.startsWith("image/")) {
@@ -193,4 +193,26 @@ function findYouTubeVideoID(href) {
         }
     } catch (_) { }
     return null
+}
+
+/**
+ * @param {ArrayBuffer} buff
+ * @returns {string}
+ */
+export function arrayBufferToBase64(buff) {
+    return btoa(
+        new Uint8Array(buff)
+            .reduce((data, byte) => data + String.fromCharCode(byte), "")
+    )
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=/g, "")
+}
+
+/**
+ * @param {string} s
+ * @returns {ArrayBuffer}
+ */
+export function base64ToArrayBuffer(s) {
+    return Uint8Array.from(atob(s), c => c.charCodeAt(0))
 }

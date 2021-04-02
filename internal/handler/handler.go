@@ -13,6 +13,7 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/duo-labs/webauthn/webauthn"
 	"github.com/matryer/way"
 	"github.com/nicolasparada/nakama/internal/service"
 	"github.com/nicolasparada/nakama/internal/storage"
@@ -21,14 +22,18 @@ import (
 
 type handler struct {
 	Service
-	ctx   context.Context
-	store storage.Store
+	ctx      context.Context
+	store    storage.Store
+	webauthn *webauthn.WebAuthn
 }
 
 // Service interface.
 type Service interface {
 	SendMagicLink(ctx context.Context, email, redirectURI string) error
 	AuthURI(ctx context.Context, reqURI string) (*url.URL, error)
+	CreateCredential(ctx context.Context, cred *webauthn.Credential) error
+	WebAuthnUser(ctx context.Context, opts ...service.WebAuthnUserOpt) (service.WebAuthnUser, error)
+	UpdateWebAuthnAuthenticatorSignCount(ctx context.Context, credentialID []byte, signCount uint32) error
 	DevLogin(ctx context.Context, email string) (service.DevLoginOutput, error)
 	AuthUserIDFromToken(token string) (string, error)
 	AuthUser(ctx context.Context) (service.User, error)
@@ -66,12 +71,21 @@ type Service interface {
 
 // New makes use of the service to provide an http.Handler with predefined routing.
 // The provided context is used to stop the running server-sent events.
-func New(ctx context.Context, svc Service, store storage.Store, enableStaticCache, embedStaticFiles, serveAvatars bool) http.Handler {
-	h := &handler{ctx: ctx, Service: svc, store: store}
+func New(ctx context.Context, svc Service, store storage.Store, webauthn *webauthn.WebAuthn, enableStaticCache, embedStaticFiles, serveAvatars bool) http.Handler {
+	h := &handler{
+		ctx:      ctx,
+		Service:  svc,
+		store:    store,
+		webauthn: webauthn,
+	}
 
 	api := way.NewRouter()
 	api.HandleFunc("POST", "/send_magic_link", h.sendMagicLink)
 	api.HandleFunc("GET", "/auth_redirect", h.authRedirect)
+	api.HandleFunc("GET", "/credential_creation_options", h.createCredentialCreationOptions)
+	api.HandleFunc("POST", "/credentials", h.registerCredential)
+	api.HandleFunc("GET", "/credential_request_options", h.createCredentialRequestOptions)
+	api.HandleFunc("POST", "/webauthn_login", h.webAuthnLogin)
 	api.HandleFunc("POST", "/dev_login", h.devLogin)
 	api.HandleFunc("GET", "/auth_user", h.authUser)
 	api.HandleFunc("GET", "/token", h.token)

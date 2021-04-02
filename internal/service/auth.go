@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"html/template"
@@ -13,12 +14,14 @@ import (
 	"time"
 
 	"github.com/cockroachdb/cockroach-go/crdb"
+	"github.com/duo-labs/webauthn/webauthn"
 	"github.com/hako/branca"
 	webtemplate "github.com/nicolasparada/nakama/web/template"
 )
 
 // KeyAuthUserID to use in context.
 const KeyAuthUserID = ctxkey("auth_user_id")
+const WebAuthnTimeout = time.Minute * 2
 
 const (
 	verificationCodeLifespan = time.Minute * 15
@@ -40,6 +43,8 @@ var (
 	ErrInvalidVerificationCode = errors.New("invalid verification code")
 	// ErrVerificationCodeNotFound denotes a not found verification code.
 	ErrVerificationCodeNotFound = errors.New("verification code not found")
+	// ErrWebAuthnCredentialExists denotes that the webauthn credential ID already exists for the given user.
+	ErrWebAuthnCredentialExists = errors.New("webAuthn credential exists")
 )
 
 var magicLinkMailTmpl *template.Template
@@ -57,6 +62,34 @@ type DevLoginOutput struct {
 	User      User      `json:"user"`
 	Token     string    `json:"token"`
 	ExpiresAt time.Time `json:"expiresAt"`
+}
+
+type WebAuthnUser struct {
+	User        User
+	Credentials []webauthn.Credential
+}
+
+func (u WebAuthnUser) WebAuthnID() []byte {
+	return []byte(base64.URLEncoding.EncodeToString([]byte(u.User.ID)))
+}
+
+func (u WebAuthnUser) WebAuthnName() string {
+	return u.User.Username
+}
+
+func (u WebAuthnUser) WebAuthnDisplayName() string {
+	return u.User.Username
+}
+
+func (u WebAuthnUser) WebAuthnIcon() string {
+	if u.User.AvatarURL == nil {
+		return ""
+	}
+	return *u.User.AvatarURL
+}
+
+func (u WebAuthnUser) WebAuthnCredentials() []webauthn.Credential {
+	return u.Credentials
 }
 
 // SendMagicLink to login without passwords.
@@ -248,6 +281,191 @@ func isVerificationCodeExpired(t time.Time) bool {
 	now := time.Now()
 	exp := t.Add(verificationCodeLifespan)
 	return exp.Equal(now) || exp.Before(now)
+}
+
+func (s *Service) CreateCredential(ctx context.Context, cred *webauthn.Credential) error {
+	if cred == nil {
+		log.Println("warning: create nil credential")
+		return nil
+	}
+
+	uid, ok := ctx.Value(KeyAuthUserID).(string)
+	if !ok {
+		return ErrUnauthenticated
+	}
+
+	return crdb.ExecuteTx(ctx, s.DB, nil, func(tx *sql.Tx) error {
+		query := `
+			INSERT INTO webauthn_authenticators (
+				aaguid,
+				sign_count,
+				clone_warning
+			) VALUES ($1, $2, $3)
+			RETURNING id
+		`
+		row := tx.QueryRowContext(ctx, query,
+			cred.Authenticator.AAGUID,
+			cred.Authenticator.SignCount,
+			cred.Authenticator.CloneWarning,
+		)
+		var authenticatorID string
+		err := row.Scan(&authenticatorID)
+		if err != nil {
+			return fmt.Errorf("could not sql insert and scan webauthn authenticator id: %w", err)
+		}
+
+		query = `
+			INSERT INTO webauthn_credentials (
+				webauthn_authenticator_id,
+				user_id,
+				credential_id,
+				public_key,
+				attestation_type
+			) VALUES ($1, $2, $3, $4, $5)
+		`
+		_, err = tx.ExecContext(ctx, query,
+			authenticatorID,
+			uid,
+			base64.URLEncoding.EncodeToString(cred.ID),
+			cred.PublicKey,
+			cred.AttestationType,
+		)
+		if isUniqueViolation(err) {
+			return ErrWebAuthnCredentialExists
+		}
+
+		if err != nil {
+			return fmt.Errorf("could not sql insert webauthn credential: %w", err)
+		}
+
+		return nil
+	})
+}
+
+type WebAuthnUserOpts struct {
+	Email *string
+}
+
+type WebAuthnUserOpt func(*WebAuthnUserOpts)
+
+func WebAuthnUserByEmail(email string) WebAuthnUserOpt {
+	return func(opts *WebAuthnUserOpts) {
+		opts.Email = &email
+	}
+}
+
+func (s *Service) WebAuthnUser(ctx context.Context, opts ...WebAuthnUserOpt) (WebAuthnUser, error) {
+	var u WebAuthnUser
+	var options WebAuthnUserOpts
+	for _, o := range opts {
+		o(&options)
+	}
+
+	data := map[string]interface{}{}
+	if options.Email != nil {
+		if !reEmail.MatchString(*options.Email) {
+			return u, ErrInvalidEmail
+		}
+
+		data["field"] = "users.email"
+		data["value"] = *options.Email
+	} else {
+		uid, ok := ctx.Value(KeyAuthUserID).(string)
+		if !ok {
+			return u, ErrUnauthenticated
+		}
+
+		data["field"] = "users.id"
+		data["value"] = uid
+	}
+
+	userQuery, userArgs, err := buildQuery(`
+		SELECT id, username, avatar FROM users WHERE {{ .field }} = @value
+	`, data)
+	if err != nil {
+		return u, fmt.Errorf("could not build webauthn user sql query: %w", err)
+	}
+
+	err = crdb.ExecuteTx(ctx, s.DB, nil, func(tx *sql.Tx) error {
+		var avatar sql.NullString
+		row := tx.QueryRowContext(ctx, userQuery, userArgs...)
+		err := row.Scan(&u.User.ID, &u.User.Username, &avatar)
+		if err == sql.ErrNoRows {
+			return ErrUserNotFound
+		}
+
+		if err != nil {
+			return fmt.Errorf("could not sql select webauthn user: %w", err)
+		}
+
+		u.User.AvatarURL = s.avatarURL(avatar)
+
+		query := `
+			SELECT
+				webauthn_credentials.credential_id,
+				webauthn_credentials.public_key,
+				webauthn_credentials.attestation_type,
+				webauthn_authenticators.aaguid,
+				webauthn_authenticators.sign_count,
+				webauthn_authenticators.clone_warning
+			FROM webauthn_credentials
+			INNER JOIN webauthn_authenticators
+			ON webauthn_credentials.webauthn_authenticator_id = webauthn_authenticators.id
+			WHERE webauthn_credentials.user_id = $1
+		`
+		rows, err := tx.QueryContext(ctx, query, u.User.ID)
+		if err != nil {
+			return fmt.Errorf("could not sql query select webauthn credentials: %w", err)
+		}
+
+		defer rows.Close()
+
+		u.Credentials = nil
+		for rows.Next() {
+			var cred webauthn.Credential
+			var credentialID string
+			err := rows.Scan(
+				&credentialID,
+				&cred.PublicKey,
+				&cred.AttestationType,
+				&cred.Authenticator.AAGUID,
+				&cred.Authenticator.SignCount,
+				&cred.Authenticator.CloneWarning,
+			)
+			if err != nil {
+				return fmt.Errorf("could not sql scan webauthn credential: %w", err)
+			}
+
+			cred.ID, err = base64.URLEncoding.DecodeString(credentialID)
+			if err != nil {
+				return fmt.Errorf("could not base64 decode webauthn credential id: %w", err)
+			}
+
+			u.Credentials = append(u.Credentials, cred)
+		}
+
+		if err := rows.Err(); err != nil {
+			return fmt.Errorf("could not not iterate over webauthn credentials: %w", err)
+		}
+
+		return nil
+	})
+	return u, err
+}
+
+func (s *Service) UpdateWebAuthnAuthenticatorSignCount(ctx context.Context, credID []byte, signCount uint32) error {
+	query := `
+		UPDATE webauthn_authenticators SET sign_count = $1
+		WHERE id = (
+			SELECT webauthn_authenticator_id FROM webauthn_credentials WHERE credential_id = $2
+		)
+	`
+	_, err := s.DB.ExecContext(ctx, query, signCount, base64.URLEncoding.EncodeToString(credID))
+	if err != nil {
+		return fmt.Errorf("could not sql update wenauthn authenticator sign count: %w", err)
+	}
+
+	return nil
 }
 
 // DevLogin is a login for development purposes only.

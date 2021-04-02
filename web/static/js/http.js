@@ -87,7 +87,7 @@ async function parseResponse(res) {
     if (!res.ok) {
         const msg = String(body).trim().toLowerCase()
         const err = new Error(msg)
-        err.name = msg
+        err.name = String(body).trim()
             .split(" ")
             .map(word => word.charAt(0).toUpperCase() + word.slice(1))
             .join("")

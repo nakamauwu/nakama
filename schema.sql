@@ -13,6 +13,25 @@ CREATE TABLE IF NOT EXISTS users (
     followees_count INT NOT NULL DEFAULT 0 CHECK (followees_count >= 0)
 );
 
+CREATE TABLE IF NOT EXISTS webauthn_authenticators (
+    id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
+    aaguid BYTES NOT NULL,
+    sign_count INT NOT NULL,
+    clone_warning BOOLEAN NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS webauthn_credentials (
+    id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
+    webauthn_authenticator_id UUID NOT NULL REFERENCES webauthn_authenticators,
+    user_id UUID NOT NULL REFERENCES users,
+    credential_id VARCHAR NOT NULL,
+    public_key BYTES NOT NULL,
+    attestation_type VARCHAR NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE INDEX unique_webauthn_credentials (user_id, credential_id)
+);
+
 CREATE TABLE IF NOT EXISTS verification_codes (
     id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
     email VARCHAR NOT NULL,

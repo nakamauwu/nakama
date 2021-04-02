@@ -17,6 +17,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/duo-labs/webauthn/protocol"
+	"github.com/duo-labs/webauthn/webauthn"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	natslib "github.com/nats-io/nats.go"
@@ -169,8 +171,26 @@ func run() error {
 
 	go svc.RunBackgroundJobs(ctx)
 
+	webauthn, err := webauthn.New(&webauthn.Config{
+		RPDisplayName:         "nakama",
+		RPID:                  origin.Hostname(),
+		RPOrigin:              origin.String(),
+		RPIcon:                "",
+		AttestationPreference: protocol.PreferNoAttestation,
+		AuthenticatorSelection: protocol.AuthenticatorSelection{
+			AuthenticatorAttachment: protocol.Platform,
+			RequireResidentKey:      nil,
+			UserVerification:        protocol.VerificationRequired,
+		},
+		Timeout: int(handler.WebAuthnTimeout.Milliseconds()),
+		Debug:   false,
+	})
+	if err != nil {
+		return fmt.Errorf("could not create webauth config: %w", err)
+	}
+
 	serveAvatars := !s3Enabled
-	h := handler.New(ctx, svc, store, enableStaticFilesCache, embedStaticFiles, serveAvatars)
+	h := handler.New(ctx, svc, store, webauthn, enableStaticFilesCache, embedStaticFiles, serveAvatars)
 	server := &http.Server{
 		Addr:              fmt.Sprintf(":%d", port),
 		Handler:           h,

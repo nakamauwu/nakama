@@ -5,6 +5,7 @@ package handler
 
 import (
 	"context"
+	"github.com/duo-labs/webauthn/webauthn"
 	"github.com/nicolasparada/nakama/internal/service"
 	"io"
 	"net/url"
@@ -39,11 +40,11 @@ var _ Service = &ServiceMock{}
 // 			CreateCommentFunc: func(ctx context.Context, postID string, content string) (service.Comment, error) {
 // 				panic("mock out the CreateComment method")
 // 			},
+// 			CreateCredentialFunc: func(ctx context.Context, cred *webauthn.Credential) error {
+// 				panic("mock out the CreateCredential method")
+// 			},
 // 			CreatePostFunc: func(ctx context.Context, content string, spoilerOf *string, nsfw bool) (service.TimelineItem, error) {
 // 				panic("mock out the CreatePost method")
-// 			},
-// 			CreateUserFunc: func(ctx context.Context, email string, username string) error {
-// 				panic("mock out the CreateUser method")
 // 			},
 // 			DeleteTimelineItemFunc: func(ctx context.Context, timelineItemID string) error {
 // 				panic("mock out the DeleteTimelineItem method")
@@ -105,6 +106,9 @@ var _ Service = &ServiceMock{}
 // 			UpdateAvatarFunc: func(ctx context.Context, r io.Reader) (string, error) {
 // 				panic("mock out the UpdateAvatar method")
 // 			},
+// 			UpdateWebAuthnAuthenticatorSignCountFunc: func(ctx context.Context, credentialID []byte, signCount uint32) error {
+// 				panic("mock out the UpdateWebAuthnAuthenticatorSignCount method")
+// 			},
 // 			UserFunc: func(ctx context.Context, username string) (service.UserProfile, error) {
 // 				panic("mock out the User method")
 // 			},
@@ -113,6 +117,9 @@ var _ Service = &ServiceMock{}
 // 			},
 // 			UsersFunc: func(ctx context.Context, search string, first int, after string) ([]service.UserProfile, error) {
 // 				panic("mock out the Users method")
+// 			},
+// 			WebAuthnUserFunc: func(ctx context.Context, opts ...service.WebAuthnUserOpt) (service.WebAuthnUser, error) {
+// 				panic("mock out the WebAuthnUser method")
 // 			},
 // 		}
 //
@@ -139,11 +146,11 @@ type ServiceMock struct {
 	// CreateCommentFunc mocks the CreateComment method.
 	CreateCommentFunc func(ctx context.Context, postID string, content string) (service.Comment, error)
 
+	// CreateCredentialFunc mocks the CreateCredential method.
+	CreateCredentialFunc func(ctx context.Context, cred *webauthn.Credential) error
+
 	// CreatePostFunc mocks the CreatePost method.
 	CreatePostFunc func(ctx context.Context, content string, spoilerOf *string, nsfw bool) (service.TimelineItem, error)
-
-	// CreateUserFunc mocks the CreateUser method.
-	CreateUserFunc func(ctx context.Context, email string, username string) error
 
 	// DeleteTimelineItemFunc mocks the DeleteTimelineItem method.
 	DeleteTimelineItemFunc func(ctx context.Context, timelineItemID string) error
@@ -205,6 +212,9 @@ type ServiceMock struct {
 	// UpdateAvatarFunc mocks the UpdateAvatar method.
 	UpdateAvatarFunc func(ctx context.Context, r io.Reader) (string, error)
 
+	// UpdateWebAuthnAuthenticatorSignCountFunc mocks the UpdateWebAuthnAuthenticatorSignCount method.
+	UpdateWebAuthnAuthenticatorSignCountFunc func(ctx context.Context, credentialID []byte, signCount uint32) error
+
 	// UserFunc mocks the User method.
 	UserFunc func(ctx context.Context, username string) (service.UserProfile, error)
 
@@ -213,6 +223,9 @@ type ServiceMock struct {
 
 	// UsersFunc mocks the Users method.
 	UsersFunc func(ctx context.Context, search string, first int, after string) ([]service.UserProfile, error)
+
+	// WebAuthnUserFunc mocks the WebAuthnUser method.
+	WebAuthnUserFunc func(ctx context.Context, opts ...service.WebAuthnUserOpt) (service.WebAuthnUser, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -260,6 +273,13 @@ type ServiceMock struct {
 			// Content is the content argument value.
 			Content string
 		}
+		// CreateCredential holds details about calls to the CreateCredential method.
+		CreateCredential []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Cred is the cred argument value.
+			Cred *webauthn.Credential
+		}
 		// CreatePost holds details about calls to the CreatePost method.
 		CreatePost []struct {
 			// Ctx is the ctx argument value.
@@ -270,15 +290,6 @@ type ServiceMock struct {
 			SpoilerOf *string
 			// Nsfw is the nsfw argument value.
 			Nsfw bool
-		}
-		// CreateUser holds details about calls to the CreateUser method.
-		CreateUser []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-			// Email is the email argument value.
-			Email string
-			// Username is the username argument value.
-			Username string
 		}
 		// DeleteTimelineItem holds details about calls to the DeleteTimelineItem method.
 		DeleteTimelineItem []struct {
@@ -428,6 +439,15 @@ type ServiceMock struct {
 			// R is the r argument value.
 			R io.Reader
 		}
+		// UpdateWebAuthnAuthenticatorSignCount holds details about calls to the UpdateWebAuthnAuthenticatorSignCount method.
+		UpdateWebAuthnAuthenticatorSignCount []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// CredentialID is the credentialID argument value.
+			CredentialID []byte
+			// SignCount is the signCount argument value.
+			SignCount uint32
+		}
 		// User holds details about calls to the User method.
 		User []struct {
 			// Ctx is the ctx argument value.
@@ -457,38 +477,47 @@ type ServiceMock struct {
 			// After is the after argument value.
 			After string
 		}
+		// WebAuthnUser holds details about calls to the WebAuthnUser method.
+		WebAuthnUser []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Opts is the opts argument value.
+			Opts []service.WebAuthnUserOpt
+		}
 	}
-	lockAuthURI                 sync.RWMutex
-	lockAuthUser                sync.RWMutex
-	lockAuthUserIDFromToken     sync.RWMutex
-	lockCommentStream           sync.RWMutex
-	lockComments                sync.RWMutex
-	lockCreateComment           sync.RWMutex
-	lockCreatePost              sync.RWMutex
-	lockCreateUser              sync.RWMutex
-	lockDeleteTimelineItem      sync.RWMutex
-	lockDevLogin                sync.RWMutex
-	lockFollowees               sync.RWMutex
-	lockFollowers               sync.RWMutex
-	lockHasUnreadNotifications  sync.RWMutex
-	lockMarkNotificationAsRead  sync.RWMutex
-	lockMarkNotificationsAsRead sync.RWMutex
-	lockNotificationStream      sync.RWMutex
-	lockNotifications           sync.RWMutex
-	lockPost                    sync.RWMutex
-	lockPosts                   sync.RWMutex
-	lockSendMagicLink           sync.RWMutex
-	lockTimeline                sync.RWMutex
-	lockTimelineItemStream      sync.RWMutex
-	lockToggleCommentLike       sync.RWMutex
-	lockToggleFollow            sync.RWMutex
-	lockTogglePostLike          sync.RWMutex
-	lockTogglePostSubscription  sync.RWMutex
-	lockToken                   sync.RWMutex
-	lockUpdateAvatar            sync.RWMutex
-	lockUser                    sync.RWMutex
-	lockUsernames               sync.RWMutex
-	lockUsers                   sync.RWMutex
+	lockAuthURI                              sync.RWMutex
+	lockAuthUser                             sync.RWMutex
+	lockAuthUserIDFromToken                  sync.RWMutex
+	lockCommentStream                        sync.RWMutex
+	lockComments                             sync.RWMutex
+	lockCreateComment                        sync.RWMutex
+	lockCreateCredential                     sync.RWMutex
+	lockCreatePost                           sync.RWMutex
+	lockDeleteTimelineItem                   sync.RWMutex
+	lockDevLogin                             sync.RWMutex
+	lockFollowees                            sync.RWMutex
+	lockFollowers                            sync.RWMutex
+	lockHasUnreadNotifications               sync.RWMutex
+	lockMarkNotificationAsRead               sync.RWMutex
+	lockMarkNotificationsAsRead              sync.RWMutex
+	lockNotificationStream                   sync.RWMutex
+	lockNotifications                        sync.RWMutex
+	lockPost                                 sync.RWMutex
+	lockPosts                                sync.RWMutex
+	lockSendMagicLink                        sync.RWMutex
+	lockTimeline                             sync.RWMutex
+	lockTimelineItemStream                   sync.RWMutex
+	lockToggleCommentLike                    sync.RWMutex
+	lockToggleFollow                         sync.RWMutex
+	lockTogglePostLike                       sync.RWMutex
+	lockTogglePostSubscription               sync.RWMutex
+	lockToken                                sync.RWMutex
+	lockUpdateAvatar                         sync.RWMutex
+	lockUpdateWebAuthnAuthenticatorSignCount sync.RWMutex
+	lockUser                                 sync.RWMutex
+	lockUsernames                            sync.RWMutex
+	lockUsers                                sync.RWMutex
+	lockWebAuthnUser                         sync.RWMutex
 }
 
 // AuthURI calls AuthURIFunc.
@@ -705,6 +734,41 @@ func (mock *ServiceMock) CreateCommentCalls() []struct {
 	return calls
 }
 
+// CreateCredential calls CreateCredentialFunc.
+func (mock *ServiceMock) CreateCredential(ctx context.Context, cred *webauthn.Credential) error {
+	if mock.CreateCredentialFunc == nil {
+		panic("ServiceMock.CreateCredentialFunc: method is nil but Service.CreateCredential was just called")
+	}
+	callInfo := struct {
+		Ctx  context.Context
+		Cred *webauthn.Credential
+	}{
+		Ctx:  ctx,
+		Cred: cred,
+	}
+	mock.lockCreateCredential.Lock()
+	mock.calls.CreateCredential = append(mock.calls.CreateCredential, callInfo)
+	mock.lockCreateCredential.Unlock()
+	return mock.CreateCredentialFunc(ctx, cred)
+}
+
+// CreateCredentialCalls gets all the calls that were made to CreateCredential.
+// Check the length with:
+//     len(mockedService.CreateCredentialCalls())
+func (mock *ServiceMock) CreateCredentialCalls() []struct {
+	Ctx  context.Context
+	Cred *webauthn.Credential
+} {
+	var calls []struct {
+		Ctx  context.Context
+		Cred *webauthn.Credential
+	}
+	mock.lockCreateCredential.RLock()
+	calls = mock.calls.CreateCredential
+	mock.lockCreateCredential.RUnlock()
+	return calls
+}
+
 // CreatePost calls CreatePostFunc.
 func (mock *ServiceMock) CreatePost(ctx context.Context, content string, spoilerOf *string, nsfw bool) (service.TimelineItem, error) {
 	if mock.CreatePostFunc == nil {
@@ -745,45 +809,6 @@ func (mock *ServiceMock) CreatePostCalls() []struct {
 	mock.lockCreatePost.RLock()
 	calls = mock.calls.CreatePost
 	mock.lockCreatePost.RUnlock()
-	return calls
-}
-
-// CreateUser calls CreateUserFunc.
-func (mock *ServiceMock) CreateUser(ctx context.Context, email string, username string) error {
-	if mock.CreateUserFunc == nil {
-		panic("ServiceMock.CreateUserFunc: method is nil but Service.CreateUser was just called")
-	}
-	callInfo := struct {
-		Ctx      context.Context
-		Email    string
-		Username string
-	}{
-		Ctx:      ctx,
-		Email:    email,
-		Username: username,
-	}
-	mock.lockCreateUser.Lock()
-	mock.calls.CreateUser = append(mock.calls.CreateUser, callInfo)
-	mock.lockCreateUser.Unlock()
-	return mock.CreateUserFunc(ctx, email, username)
-}
-
-// CreateUserCalls gets all the calls that were made to CreateUser.
-// Check the length with:
-//     len(mockedService.CreateUserCalls())
-func (mock *ServiceMock) CreateUserCalls() []struct {
-	Ctx      context.Context
-	Email    string
-	Username string
-} {
-	var calls []struct {
-		Ctx      context.Context
-		Email    string
-		Username string
-	}
-	mock.lockCreateUser.RLock()
-	calls = mock.calls.CreateUser
-	mock.lockCreateUser.RUnlock()
 	return calls
 }
 
@@ -1503,6 +1528,45 @@ func (mock *ServiceMock) UpdateAvatarCalls() []struct {
 	return calls
 }
 
+// UpdateWebAuthnAuthenticatorSignCount calls UpdateWebAuthnAuthenticatorSignCountFunc.
+func (mock *ServiceMock) UpdateWebAuthnAuthenticatorSignCount(ctx context.Context, credentialID []byte, signCount uint32) error {
+	if mock.UpdateWebAuthnAuthenticatorSignCountFunc == nil {
+		panic("ServiceMock.UpdateWebAuthnAuthenticatorSignCountFunc: method is nil but Service.UpdateWebAuthnAuthenticatorSignCount was just called")
+	}
+	callInfo := struct {
+		Ctx          context.Context
+		CredentialID []byte
+		SignCount    uint32
+	}{
+		Ctx:          ctx,
+		CredentialID: credentialID,
+		SignCount:    signCount,
+	}
+	mock.lockUpdateWebAuthnAuthenticatorSignCount.Lock()
+	mock.calls.UpdateWebAuthnAuthenticatorSignCount = append(mock.calls.UpdateWebAuthnAuthenticatorSignCount, callInfo)
+	mock.lockUpdateWebAuthnAuthenticatorSignCount.Unlock()
+	return mock.UpdateWebAuthnAuthenticatorSignCountFunc(ctx, credentialID, signCount)
+}
+
+// UpdateWebAuthnAuthenticatorSignCountCalls gets all the calls that were made to UpdateWebAuthnAuthenticatorSignCount.
+// Check the length with:
+//     len(mockedService.UpdateWebAuthnAuthenticatorSignCountCalls())
+func (mock *ServiceMock) UpdateWebAuthnAuthenticatorSignCountCalls() []struct {
+	Ctx          context.Context
+	CredentialID []byte
+	SignCount    uint32
+} {
+	var calls []struct {
+		Ctx          context.Context
+		CredentialID []byte
+		SignCount    uint32
+	}
+	mock.lockUpdateWebAuthnAuthenticatorSignCount.RLock()
+	calls = mock.calls.UpdateWebAuthnAuthenticatorSignCount
+	mock.lockUpdateWebAuthnAuthenticatorSignCount.RUnlock()
+	return calls
+}
+
 // User calls UserFunc.
 func (mock *ServiceMock) User(ctx context.Context, username string) (service.UserProfile, error) {
 	if mock.UserFunc == nil {
@@ -1621,5 +1685,40 @@ func (mock *ServiceMock) UsersCalls() []struct {
 	mock.lockUsers.RLock()
 	calls = mock.calls.Users
 	mock.lockUsers.RUnlock()
+	return calls
+}
+
+// WebAuthnUser calls WebAuthnUserFunc.
+func (mock *ServiceMock) WebAuthnUser(ctx context.Context, opts ...service.WebAuthnUserOpt) (service.WebAuthnUser, error) {
+	if mock.WebAuthnUserFunc == nil {
+		panic("ServiceMock.WebAuthnUserFunc: method is nil but Service.WebAuthnUser was just called")
+	}
+	callInfo := struct {
+		Ctx  context.Context
+		Opts []service.WebAuthnUserOpt
+	}{
+		Ctx:  ctx,
+		Opts: opts,
+	}
+	mock.lockWebAuthnUser.Lock()
+	mock.calls.WebAuthnUser = append(mock.calls.WebAuthnUser, callInfo)
+	mock.lockWebAuthnUser.Unlock()
+	return mock.WebAuthnUserFunc(ctx, opts...)
+}
+
+// WebAuthnUserCalls gets all the calls that were made to WebAuthnUser.
+// Check the length with:
+//     len(mockedService.WebAuthnUserCalls())
+func (mock *ServiceMock) WebAuthnUserCalls() []struct {
+	Ctx  context.Context
+	Opts []service.WebAuthnUserOpt
+} {
+	var calls []struct {
+		Ctx  context.Context
+		Opts []service.WebAuthnUserOpt
+	}
+	mock.lockWebAuthnUser.RLock()
+	calls = mock.calls.WebAuthnUser
+	mock.lockWebAuthnUser.RUnlock()
 	return calls
 }

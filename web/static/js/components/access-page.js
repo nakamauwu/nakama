@@ -1,5 +1,5 @@
-import { doPost } from "../http.js"
-import { isLocalhost } from "../utils.js"
+import { doGet, doPost } from "../http.js"
+import { arrayBufferToBase64, base64ToArrayBuffer, isLocalhost } from "../utils.js"
 
 const reUsername = /^[a-zA-Z][a-zA-Z0-9_-]{0,17}$/
 
@@ -9,12 +9,12 @@ template.innerHTML = /*html*/`
         <h1>Nakama</h1>
         <p>Welcome to Nakama, the next social network for anime fans 🤗</p>
         <h2>Access</h2>
-        <form id="login-form" class="login-form">
+        <form id="login-form" name="loginform" action="webauthn" class="login-form">
             <input type="email" name="email" placeholder="Email" autocomplete="email" required>
-            <button>
-                <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g data-name="Layer 2"><g data-name="log-in"><rect width="24" height="24" transform="rotate(-90 12 12)" opacity="0"/><path d="M19 4h-2a1 1 0 0 0 0 2h1v12h-1a1 1 0 0 0 0 2h2a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1z"/><path d="M11.8 7.4a1 1 0 0 0-1.6 1.2L12 11H4a1 1 0 0 0 0 2h8.09l-1.72 2.44a1 1 0 0 0 .24 1.4 1 1 0 0 0 .58.18 1 1 0 0 0 .81-.42l2.82-4a1 1 0 0 0 0-1.18z"/></g></g></svg>
-                <span>Login</span>
-            </button>
+            <div class="login-form__btns">
+                <button type="button" formaction="webauthn" onclick="loginform.action = this.formAction" id="webauthn-btn" class="webauthn-login-btn" hidden>Login with device credentials</button>
+                <button type="submit" formaction="email" onclick="loginform.action = this.formAction" id="email-btn">Login with email</button>
+            </div>
         </form>
         <div class="login-info">
             <em>This is a pre-release version of nakama. All data will be deleted on code changes</em>
@@ -25,10 +25,26 @@ template.innerHTML = /*html*/`
 export default function renderAccessPage() {
     const page = /** @type {DocumentFragment} */ (template.content.cloneNode(true))
     const loginForm = /** @type {HTMLFormElement} */ (page.getElementById("login-form"))
+    const webAuthnBtn = /** @type {HTMLButtonElement} */ page.getElementById("webauthn-btn")
+    const emailBtn = /** @type {HTMLButtonElement} */ (page.getElementById("email-btn"))
     const emailInput = loginForm.querySelector("input")
+
     loginForm.addEventListener("submit", onLoginFormSubmit)
     if (isLocalhost() && !(new URLSearchParams(location.search.substr(1)).has("disable_dev_login"))) {
         emailInput.value = "shinji@example.org"
+    }
+
+    if ("PublicKeyCredential" in window) {
+        PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(ok => {
+            if (!ok) {
+                return
+            }
+
+            webAuthnBtn.hidden = false
+            webAuthnBtn.setAttribute("type", "submit")
+
+            emailBtn.classList.add("secondary")
+        })
     }
     return page
 }
@@ -40,23 +56,45 @@ async function onLoginFormSubmit(ev) {
     ev.preventDefault()
     const form = /** @type {HTMLFormElement} */ (ev.currentTarget)
     const input = form.querySelector("input")
-    const button = form.querySelector("button")
+    const webAuthnBtn = /** @type {HTMLButtonElement} */ (form.querySelector("#webauthn-btn"))
+    const emailBtn = /** @type {HTMLButtonElement} */ (form.querySelector("#email-btn"))
     const email = input.value
 
     input.disabled = true
-    button.disabled = true
+    webAuthnBtn.disabled = true
+    emailBtn.disabled = true
 
     try {
+        if (form.action.endsWith("webauthn")) {
+            const opts = await createCredentialRequestOptions(email, localStorage.getItem("webauthn_credential_id"))
+            const cred = await navigator.credentials.get(opts)
+            saveLogin(await webAuthnLogin(cred))
+            location.reload()
+            return
+        }
+
         await runLoginProgram(email)
+        return
     } catch (err) {
         console.error(err)
+        if (err.name === "NoCredentialsError") {
+            webAuthnBtn.setAttribute("type", "button")
+            webAuthnBtn.hidden = true
+
+            emailBtn.classList.remove("secondary")
+
+            alert(err.message)
+            return
+        }
+
         alert(err.message)
         setTimeout(() => {
             input.focus()
         })
     } finally {
         input.disabled = false
-        button.disabled = false
+        webAuthnBtn.disabled = false
+        emailBtn.disabled = false
     }
 }
 
@@ -97,4 +135,61 @@ function devLogin(email) {
  */
 async function sendMagicLink(email, redirectURI) {
     await doPost("/api/send_magic_link", { email, redirectURI })
+}
+
+/**
+ * @param {string} email
+ * @param {string=} credentialID
+ * @returns {Promise<CredentialRequestOptions>}
+ */
+async function createCredentialRequestOptions(email, credentialID) {
+    let endpoint = "/api/credential_request_options?email=" + encodeURIComponent(email)
+    if (typeof credentialID === "string" && credentialID != "") {
+        endpoint += "&credential_id=" + encodeURIComponent(credentialID)
+    }
+    const opts = await doGet(endpoint)
+    if (!Array.isArray(opts.publicKey.allowCredentials) || opts.publicKey.allowCredentials.length === 0) {
+        const err = new Error("no credentials")
+        err.name = "NoCredentialsError"
+        throw err
+    }
+
+    opts.publicKey.challenge = base64ToArrayBuffer(opts.publicKey.challenge)
+    opts.publicKey.allowCredentials.forEach((cred, i) => {
+        opts.publicKey.allowCredentials[i].id = base64ToArrayBuffer(cred.id)
+    })
+
+    return opts
+}
+
+/**
+ * @param {Credential} cred
+ */
+async function webAuthnLogin(cred) {
+    const b = {
+        id: cred.id,
+        type: cred.type,
+    }
+    if (cred["rawId"] instanceof ArrayBuffer) {
+        b["rawId"] = arrayBufferToBase64(cred["rawId"])
+    }
+
+    if (cred["response"] instanceof AuthenticatorAssertionResponse) {
+        const resp = cred["response"]
+        b["response"] = {}
+        if (resp["authenticatorData"] instanceof ArrayBuffer) {
+            b["response"]["authenticatorData"] = arrayBufferToBase64(resp.authenticatorData)
+        }
+        if (resp["clientDataJSON"] instanceof ArrayBuffer) {
+            b["response"]["clientDataJSON"] = arrayBufferToBase64(resp.clientDataJSON)
+        }
+        if (resp["signature"] instanceof ArrayBuffer) {
+            b["response"]["signature"] = arrayBufferToBase64(resp.signature)
+        }
+        if (resp["userHandle"] instanceof ArrayBuffer) {
+            b["response"]["userHandle"] = arrayBufferToBase64(resp.userHandle)
+        }
+    }
+
+    return doPost("/api/webauthn_login", b)
 }

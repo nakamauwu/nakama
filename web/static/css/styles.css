@@ -180,6 +180,10 @@ button.small {
     border-radius: 1rem;
 }
 
+button.secondary {
+    background-color: var(--background);
+}
+
 input {
     background-color: var(--surface-0);
     color: var(--on-surface);
@@ -261,17 +265,21 @@ header .profile-link {
 
 .login-form {
     display: grid;
-    grid-template-columns: 1fr max-content;
-    grid-gap: .5rem;
+    grid-auto-flow: rows;
+    gap: .5rem;
 }
 
-.login-form button {
-    justify-self: start;
+.login-form__btns {
+    display: grid;
+    grid-auto-flow: column;
+    justify-self: end;
+    gap: .5rem;
 }
 
-@media screen and (max-width: 414px) {
-    .login-form {
-        grid-template-columns: auto;
+@media screen and (max-width: 540px) {
+    .login-form__btns {
+        grid-auto-flow: row;
+        justify-items: end;
     }
 }
 
@@ -477,6 +485,16 @@ header .profile-link {
 .user-controls {
     float: right;
     margin-bottom: 1.5rem;
+    display: grid;
+    grid-auto-flow: column;
+    gap: .5rem;
+}
+
+@media screen and (max-width: 540px) {
+    .user-controls {
+        grid-auto-flow: row;
+        justify-items: end;
+    }
 }
 
 .load-more-button {
