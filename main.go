@@ -19,6 +19,7 @@ import (
 
 	"github.com/duo-labs/webauthn/protocol"
 	"github.com/duo-labs/webauthn/webauthn"
+	"github.com/gorilla/securecookie"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	natslib "github.com/nats-io/nats.go"
@@ -62,6 +63,8 @@ func run() error {
 		s3AccessKey               = os.Getenv("S3_ACCESS_KEY")
 		s3SecretKey               = os.Getenv("S3_SECRET_KEY")
 		avatarURLPrefix           = env("AVATAR_URL_PREFIX", originStr+"/img/avatars/")
+		cookieHashKey             = env("COOKIE_HASH_KEY", "supersecretkeyyoushouldnotcommit")
+		cookieBlockKey            = env("COOKIE_BLOCK_KEY", "supersecretkeyyoushouldnotcommit")
 	)
 	flag.Usage = func() {
 		flag.PrintDefaults()
@@ -77,6 +80,8 @@ func run() error {
 	flag.BoolVar(&enableStaticFilesCache, "static-cache", enableStaticFilesCache, "Enable static files cache")
 	flag.BoolVar(&embedStaticFiles, "embed-static", embedStaticFiles, "Embed static files")
 	flag.StringVar(&avatarURLPrefix, "avatar-url-prefix", avatarURLPrefix, "Avatar URL prefix")
+	flag.StringVar(&cookieHashKey, "cookie-hash-key", cookieHashKey, "Cookie hash key. 32 or 64 bytes")
+	flag.StringVar(&cookieBlockKey, "cookie-block-key", cookieBlockKey, "Cookie block key. 16, 24, or 32 bytes")
 	flag.Parse()
 
 	origin, err := url.Parse(originStr)
@@ -159,18 +164,6 @@ func run() error {
 		store = &fs.Store{Root: filepath.Join(wd, "web", "static", "img", "avatars")}
 	}
 
-	svc := &service.Service{
-		DB:              db,
-		Sender:          sender,
-		Origin:          origin,
-		TokenKey:        tokenKey,
-		PubSub:          pubsub,
-		Store:           store,
-		AvatarURLPrefix: avatarURLPrefix,
-	}
-
-	go svc.RunBackgroundJobs(ctx)
-
 	webauthn, err := webauthn.New(&webauthn.Config{
 		RPDisplayName:         "nakama",
 		RPID:                  origin.Hostname(),
@@ -189,8 +182,25 @@ func run() error {
 		return fmt.Errorf("could not create webauth config: %w", err)
 	}
 
+	svc := &service.Service{
+		DB:              db,
+		Sender:          sender,
+		Origin:          origin,
+		TokenKey:        tokenKey,
+		PubSub:          pubsub,
+		Store:           store,
+		AvatarURLPrefix: avatarURLPrefix,
+		WebAuthn:        webauthn,
+	}
+
+	go svc.RunBackgroundJobs(ctx)
+
 	serveAvatars := !s3Enabled
-	h := handler.New(ctx, svc, store, webauthn, enableStaticFilesCache, embedStaticFiles, serveAvatars)
+	cookieCodec := securecookie.New(
+		[]byte(cookieHashKey),
+		[]byte(cookieBlockKey),
+	)
+	h := handler.New(ctx, svc, store, cookieCodec, enableStaticFilesCache, embedStaticFiles, serveAvatars)
 	server := &http.Server{
 		Addr:              fmt.Sprintf(":%d", port),
 		Handler:           h,

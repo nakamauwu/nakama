@@ -8,6 +8,7 @@ require (
 	github.com/duo-labs/webauthn v0.0.0-20200714211715-1daaee874e43
 	github.com/go-mail/mail v2.3.1+incompatible
 	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/gorilla/securecookie v1.1.1 // indirect
 	github.com/hako/branca v0.0.0-20200807062402-6052ac720505
 	github.com/joho/godotenv v1.3.0
 	github.com/lib/pq v1.10.0

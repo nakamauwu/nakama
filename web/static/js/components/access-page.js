@@ -77,7 +77,7 @@ async function onLoginFormSubmit(ev) {
         return
     } catch (err) {
         console.error(err)
-        if (err.name === "NoCredentialsError") {
+        if (err.name === "NoWebAuthnCredentialsError") {
             webAuthnBtn.setAttribute("type", "button")
             webAuthnBtn.hidden = true
 
@@ -149,8 +149,8 @@ async function createCredentialRequestOptions(email, credentialID) {
     }
     const opts = await doGet(endpoint)
     if (!Array.isArray(opts.publicKey.allowCredentials) || opts.publicKey.allowCredentials.length === 0) {
-        const err = new Error("no credentials")
-        err.name = "NoCredentialsError"
+        const err = new Error("no webauthn credentials")
+        err.name = "NoWebAuthnCredentialsError"
         throw err
     }
 

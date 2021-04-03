@@ -100,12 +100,25 @@ export default function renderUserProfile(user, full = false) {
         }
 
         const onWebAuthnClick = async () => {
-            const opts = await createCredentialCreationOptions()
-            const cred = await navigator.credentials.create(opts)
+            webAuthnBtn.disabled = true
+            try {
+                const opts = await createCredentialCreationOptions()
+                const cred = await navigator.credentials.create(opts)
 
-            localStorage.setItem("webauthn_credential_id", cred.id)
+                localStorage.setItem("webauthn_credential_id", cred.id)
 
-            await createCredential(cred)
+                await createCredential(cred)
+                alert("Device registered successfully. Now you can login with device credentials")
+            } catch (err) {
+                if (err instanceof Error && err.name === "InvalidStateError") {
+                    alert("Device already registered")
+                    return
+                }
+                console.error(err)
+                alert(err.message)
+            } finally {
+                webAuthnBtn.disabled = false
+            }
         }
 
         usernameText.addEventListener("dblclick", onUsernameDoubleClick)

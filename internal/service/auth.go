@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/cockroachdb/cockroach-go/crdb"
+	"github.com/duo-labs/webauthn/protocol"
 	"github.com/duo-labs/webauthn/webauthn"
 	"github.com/hako/branca"
 	webtemplate "github.com/nicolasparada/nakama/web/template"
@@ -45,6 +46,14 @@ var (
 	ErrVerificationCodeNotFound = errors.New("verification code not found")
 	// ErrWebAuthnCredentialExists denotes that the webauthn credential ID already exists for the given user.
 	ErrWebAuthnCredentialExists = errors.New("webAuthn credential exists")
+	// ErrNoWebAuthnCredentials denotes that the user has no registered webauthn credentials yet.
+	ErrNoWebAuthnCredentials = errors.New("no webAuthn credentials")
+	// ErrInvalidWebAuthnCredentialID denotes an invalid webauthn credential ID.
+	ErrInvalidWebAuthnCredentialID = errors.New("invalid webAuthn credential ID")
+	// ErrInvalidWebAuthnCredentials denotes invalid webauthn credentials.
+	ErrInvalidWebAuthnCredentials = errors.New("invalid webAuthn credentials")
+	// ErrWebAuthnCredentialCloned denotes that the webauthn credential may be cloned.
+	ErrWebAuthnCredentialCloned = errors.New("webAuthn credential cloned")
 )
 
 var magicLinkMailTmpl *template.Template
@@ -57,38 +66,38 @@ type TokenOutput struct {
 	ExpiresAt time.Time `json:"expiresAt"`
 }
 
-// DevLoginOutput response.
-type DevLoginOutput struct {
+// AuthOutput response.
+type AuthOutput struct {
 	User      User      `json:"user"`
 	Token     string    `json:"token"`
 	ExpiresAt time.Time `json:"expiresAt"`
 }
 
-type WebAuthnUser struct {
+type webAuthnUser struct {
 	User        User
 	Credentials []webauthn.Credential
 }
 
-func (u WebAuthnUser) WebAuthnID() []byte {
+func (u webAuthnUser) WebAuthnID() []byte {
 	return []byte(base64.URLEncoding.EncodeToString([]byte(u.User.ID)))
 }
 
-func (u WebAuthnUser) WebAuthnName() string {
+func (u webAuthnUser) WebAuthnName() string {
 	return u.User.Username
 }
 
-func (u WebAuthnUser) WebAuthnDisplayName() string {
+func (u webAuthnUser) WebAuthnDisplayName() string {
 	return u.User.Username
 }
 
-func (u WebAuthnUser) WebAuthnIcon() string {
+func (u webAuthnUser) WebAuthnIcon() string {
 	if u.User.AvatarURL == nil {
 		return ""
 	}
 	return *u.User.AvatarURL
 }
 
-func (u WebAuthnUser) WebAuthnCredentials() []webauthn.Credential {
+func (u webAuthnUser) WebAuthnCredentials() []webauthn.Credential {
 	return u.Credentials
 }
 
@@ -283,15 +292,36 @@ func isVerificationCodeExpired(t time.Time) bool {
 	return exp.Equal(now) || exp.Before(now)
 }
 
-func (s *Service) CreateCredential(ctx context.Context, cred *webauthn.Credential) error {
-	if cred == nil {
-		log.Println("warning: create nil credential")
-		return nil
+func (s *Service) CredentialCreationOptions(ctx context.Context) (*protocol.CredentialCreation, *webauthn.SessionData, error) {
+	u, err := s.webAuthnUser(ctx)
+	if err != nil {
+		return nil, nil, err
 	}
 
-	uid, ok := ctx.Value(KeyAuthUserID).(string)
-	if !ok {
-		return ErrUnauthenticated
+	excludedCredentials := make([]protocol.CredentialDescriptor, len(u.Credentials))
+	for i, cred := range u.Credentials {
+		excludedCredentials[i].CredentialID = cred.ID
+		excludedCredentials[i].Type = protocol.CredentialType("public-key")
+	}
+	return s.WebAuthn.BeginRegistration(u,
+		webauthn.WithAuthenticatorSelection(webauthn.SelectAuthenticator(
+			string(protocol.Platform),
+			nil,
+			string(protocol.VerificationRequired),
+		)),
+		webauthn.WithExclusions(excludedCredentials),
+	)
+}
+
+func (s *Service) RegisterCredential(ctx context.Context, data webauthn.SessionData, reply *protocol.ParsedCredentialCreationData) error {
+	u, err := s.webAuthnUser(ctx)
+	if err != nil {
+		return err
+	}
+
+	cred, err := s.WebAuthn.CreateCredential(u, data, reply)
+	if err != nil {
+		return fmt.Errorf("could not create webauthn credential: %w", err)
 	}
 
 	return crdb.ExecuteTx(ctx, s.DB, nil, func(tx *sql.Tx) error {
@@ -325,7 +355,7 @@ func (s *Service) CreateCredential(ctx context.Context, cred *webauthn.Credentia
 		`
 		_, err = tx.ExecContext(ctx, query,
 			authenticatorID,
-			uid,
+			u.User.ID,
 			base64.URLEncoding.EncodeToString(cred.ID),
 			cred.PublicKey,
 			cred.AttestationType,
@@ -342,21 +372,70 @@ func (s *Service) CreateCredential(ctx context.Context, cred *webauthn.Credentia
 	})
 }
 
-type WebAuthnUserOpts struct {
+type CredentialRequestOptionsOpts struct {
+	CredentialID *string
+}
+
+type CredentialRequestOptionsOpt func(*CredentialRequestOptionsOpts)
+
+func CredentialRequestOptionsWithCredentialID(credentialID string) CredentialRequestOptionsOpt {
+	return func(opts *CredentialRequestOptionsOpts) {
+		opts.CredentialID = &credentialID
+	}
+}
+
+func (s *Service) CredentialRequestOptions(ctx context.Context, email string, opts ...CredentialRequestOptionsOpt) (*protocol.CredentialAssertion, *webauthn.SessionData, error) {
+	var options CredentialRequestOptionsOpts
+	for _, o := range opts {
+		o(&options)
+	}
+
+	u, err := s.webAuthnUser(ctx, webAuthnUserByEmail(email))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if len(u.Credentials) == 0 {
+		return nil, nil, ErrNoWebAuthnCredentials
+	}
+
+	var loginOpts []webauthn.LoginOption
+	if options.CredentialID != nil {
+		credentialID, err := base64.RawURLEncoding.DecodeString(*options.CredentialID)
+		if err != nil {
+			return nil, nil, ErrInvalidWebAuthnCredentialID
+		}
+
+		loginOpts = append(loginOpts, webauthn.WithAllowedCredentials(
+			[]protocol.CredentialDescriptor{{
+				CredentialID: credentialID,
+				Type:         protocol.CredentialType("public-key"),
+			}},
+		))
+	}
+	out, data, err := s.WebAuthn.BeginLogin(u, loginOpts...)
+	if err != nil {
+		return nil, nil, fmt.Errorf("could not begin webauthn login: %w", err)
+	}
+
+	return out, data, nil
+}
+
+type webAuthnUserOpts struct {
 	Email *string
 }
 
-type WebAuthnUserOpt func(*WebAuthnUserOpts)
+type webAuthnUserOpt func(*webAuthnUserOpts)
 
-func WebAuthnUserByEmail(email string) WebAuthnUserOpt {
-	return func(opts *WebAuthnUserOpts) {
+func webAuthnUserByEmail(email string) webAuthnUserOpt {
+	return func(opts *webAuthnUserOpts) {
 		opts.Email = &email
 	}
 }
 
-func (s *Service) WebAuthnUser(ctx context.Context, opts ...WebAuthnUserOpt) (WebAuthnUser, error) {
-	var u WebAuthnUser
-	var options WebAuthnUserOpts
+func (s *Service) webAuthnUser(ctx context.Context, opts ...webAuthnUserOpt) (webAuthnUser, error) {
+	var u webAuthnUser
+	var options webAuthnUserOpts
 	for _, o := range opts {
 		o(&options)
 	}
@@ -391,7 +470,11 @@ func (s *Service) WebAuthnUser(ctx context.Context, opts ...WebAuthnUserOpt) (We
 		row := tx.QueryRowContext(ctx, userQuery, userArgs...)
 		err := row.Scan(&u.User.ID, &u.User.Username, &avatar)
 		if err == sql.ErrNoRows {
-			return ErrUserNotFound
+			if options.Email != nil {
+				return ErrUserNotFound
+			}
+
+			return ErrUserGone
 		}
 
 		if err != nil {
@@ -453,25 +536,51 @@ func (s *Service) WebAuthnUser(ctx context.Context, opts ...WebAuthnUserOpt) (We
 	return u, err
 }
 
-func (s *Service) UpdateWebAuthnAuthenticatorSignCount(ctx context.Context, credID []byte, signCount uint32) error {
+func (s *Service) WebAuthnLogin(ctx context.Context, data webauthn.SessionData, reply *protocol.ParsedCredentialAssertionData) (AuthOutput, error) {
+	var out AuthOutput
+	u, err := s.webAuthnUser(ctx)
+	if err != nil {
+		return out, err
+	}
+
+	cred, err := s.WebAuthn.ValidateLogin(u, data, reply)
+	if err != nil {
+		return out, ErrInvalidWebAuthnCredentials
+	}
+
+	if cred.Authenticator.CloneWarning {
+		return out, ErrWebAuthnCredentialCloned
+	}
+
 	query := `
 		UPDATE webauthn_authenticators SET sign_count = $1
 		WHERE id = (
 			SELECT webauthn_authenticator_id FROM webauthn_credentials WHERE credential_id = $2
 		)
 	`
-	_, err := s.DB.ExecContext(ctx, query, signCount, base64.URLEncoding.EncodeToString(credID))
+	_, err = s.DB.ExecContext(ctx, query,
+		cred.Authenticator.SignCount,
+		base64.URLEncoding.EncodeToString(cred.ID),
+	)
 	if err != nil {
-		return fmt.Errorf("could not sql update wenauthn authenticator sign count: %w", err)
+		return out, fmt.Errorf("could not sql update webauthn authenticator sign count: %w", err)
 	}
 
-	return nil
+	tokenOutput, err := s.Token(ctx)
+	if err != nil {
+		return out, err
+	}
+
+	out.User = u.User
+	out.Token = tokenOutput.Token
+	out.ExpiresAt = tokenOutput.ExpiresAt
+	return out, nil
 }
 
 // DevLogin is a login for development purposes only.
 // TODO: disable dev login on production.
-func (s *Service) DevLogin(ctx context.Context, email string) (DevLoginOutput, error) {
-	var out DevLoginOutput
+func (s *Service) DevLogin(ctx context.Context, email string) (AuthOutput, error) {
+	var out AuthOutput
 
 	email = strings.TrimSpace(email)
 	if !reEmail.MatchString(email) {

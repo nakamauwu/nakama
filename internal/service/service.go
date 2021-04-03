@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"net/url"
 
+	"github.com/duo-labs/webauthn/webauthn"
 	"github.com/nicolasparada/nakama/internal/mailing"
 	"github.com/nicolasparada/nakama/internal/pubsub"
 	"github.com/nicolasparada/nakama/internal/storage"
@@ -21,6 +22,7 @@ type Service struct {
 	PubSub          pubsub.PubSub
 	Store           storage.Store
 	AvatarURLPrefix string
+	WebAuthn        *webauthn.WebAuthn
 }
 
 // RunBackgroundJobs -

@@ -13,7 +13,9 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/duo-labs/webauthn/protocol"
 	"github.com/duo-labs/webauthn/webauthn"
+	"github.com/gorilla/securecookie"
 	"github.com/matryer/way"
 	"github.com/nicolasparada/nakama/internal/service"
 	"github.com/nicolasparada/nakama/internal/storage"
@@ -22,19 +24,20 @@ import (
 
 type handler struct {
 	Service
-	ctx      context.Context
-	store    storage.Store
-	webauthn *webauthn.WebAuthn
+	ctx         context.Context
+	store       storage.Store
+	cookieCodec *securecookie.SecureCookie
 }
 
 // Service interface.
 type Service interface {
 	SendMagicLink(ctx context.Context, email, redirectURI string) error
 	AuthURI(ctx context.Context, reqURI string) (*url.URL, error)
-	CreateCredential(ctx context.Context, cred *webauthn.Credential) error
-	WebAuthnUser(ctx context.Context, opts ...service.WebAuthnUserOpt) (service.WebAuthnUser, error)
-	UpdateWebAuthnAuthenticatorSignCount(ctx context.Context, credentialID []byte, signCount uint32) error
-	DevLogin(ctx context.Context, email string) (service.DevLoginOutput, error)
+	CredentialCreationOptions(ctx context.Context) (*protocol.CredentialCreation, *webauthn.SessionData, error)
+	RegisterCredential(ctx context.Context, data webauthn.SessionData, parsedReply *protocol.ParsedCredentialCreationData) error
+	CredentialRequestOptions(ctx context.Context, email string, opts ...service.CredentialRequestOptionsOpt) (*protocol.CredentialAssertion, *webauthn.SessionData, error)
+	WebAuthnLogin(ctx context.Context, data webauthn.SessionData, reply *protocol.ParsedCredentialAssertionData) (service.AuthOutput, error)
+	DevLogin(ctx context.Context, email string) (service.AuthOutput, error)
 	AuthUserIDFromToken(token string) (string, error)
 	AuthUser(ctx context.Context) (service.User, error)
 	Token(ctx context.Context) (service.TokenOutput, error)
@@ -71,20 +74,20 @@ type Service interface {
 
 // New makes use of the service to provide an http.Handler with predefined routing.
 // The provided context is used to stop the running server-sent events.
-func New(ctx context.Context, svc Service, store storage.Store, webauthn *webauthn.WebAuthn, enableStaticCache, embedStaticFiles, serveAvatars bool) http.Handler {
+func New(ctx context.Context, svc Service, store storage.Store, cdc *securecookie.SecureCookie, enableStaticCache, embedStaticFiles, serveAvatars bool) http.Handler {
 	h := &handler{
-		ctx:      ctx,
-		Service:  svc,
-		store:    store,
-		webauthn: webauthn,
+		ctx:         ctx,
+		Service:     svc,
+		store:       store,
+		cookieCodec: cdc,
 	}
 
 	api := way.NewRouter()
 	api.HandleFunc("POST", "/send_magic_link", h.sendMagicLink)
 	api.HandleFunc("GET", "/auth_redirect", h.authRedirect)
-	api.HandleFunc("GET", "/credential_creation_options", h.createCredentialCreationOptions)
+	api.HandleFunc("GET", "/credential_creation_options", h.credentialCreationOptions)
 	api.HandleFunc("POST", "/credentials", h.registerCredential)
-	api.HandleFunc("GET", "/credential_request_options", h.createCredentialRequestOptions)
+	api.HandleFunc("GET", "/credential_request_options", h.credentialRequestOptions)
 	api.HandleFunc("POST", "/webauthn_login", h.webAuthnLogin)
 	api.HandleFunc("POST", "/dev_login", h.devLogin)
 	api.HandleFunc("GET", "/auth_user", h.authUser)
