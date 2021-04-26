@@ -11,10 +11,7 @@ template.innerHTML = /*html*/`
         <h2>Access</h2>
         <form id="login-form" name="loginform" action="webauthn" class="login-form">
             <input type="email" name="email" placeholder="Email" autocomplete="email" required>
-            <div class="login-form__btns">
-                <button type="button" formaction="webauthn" onclick="loginform.action = this.formAction" id="webauthn-btn" class="webauthn-login-btn" hidden>Login with device credentials</button>
-                <button type="submit" formaction="email" onclick="loginform.action = this.formAction" id="email-btn">Login with email</button>
-            </div>
+            <button type="submit">Login</button>
         </form>
         <div class="login-info">
             <em>This is a pre-release version of nakama. All data will be deleted on code changes</em>
@@ -25,8 +22,6 @@ template.innerHTML = /*html*/`
 export default function renderAccessPage() {
     const page = /** @type {DocumentFragment} */ (template.content.cloneNode(true))
     const loginForm = /** @type {HTMLFormElement} */ (page.getElementById("login-form"))
-    const webAuthnBtn = /** @type {HTMLButtonElement} */ page.getElementById("webauthn-btn")
-    const emailBtn = /** @type {HTMLButtonElement} */ (page.getElementById("email-btn"))
     const emailInput = loginForm.querySelector("input")
 
     loginForm.addEventListener("submit", onLoginFormSubmit)
@@ -39,11 +34,6 @@ export default function renderAccessPage() {
             if (!ok) {
                 return
             }
-
-            webAuthnBtn.hidden = false
-            webAuthnBtn.setAttribute("type", "submit")
-
-            emailBtn.classList.add("secondary")
         })
     }
     return page
@@ -56,33 +46,19 @@ async function onLoginFormSubmit(ev) {
     ev.preventDefault()
     const form = /** @type {HTMLFormElement} */ (ev.currentTarget)
     const input = form.querySelector("input")
-    const webAuthnBtn = /** @type {HTMLButtonElement} */ (form.querySelector("#webauthn-btn"))
-    const emailBtn = /** @type {HTMLButtonElement} */ (form.querySelector("#email-btn"))
+    const button = form.querySelector("button")
+
     const email = input.value
 
     input.disabled = true
-    webAuthnBtn.disabled = true
-    emailBtn.disabled = true
+    button.disabled = true
 
     try {
-        if (form.action.endsWith("webauthn")) {
-            const opts = await createCredentialRequestOptions(email, localStorage.getItem("webauthn_credential_id"))
-            const cred = await navigator.credentials.get(opts)
-            saveLogin(await webAuthnLogin(cred))
-            location.reload()
-            return
-        }
-
         await runLoginProgram(email)
         return
     } catch (err) {
         console.error(err)
         if (err.name === "NoWebAuthnCredentialsError") {
-            webAuthnBtn.setAttribute("type", "button")
-            webAuthnBtn.hidden = true
-
-            emailBtn.classList.remove("secondary")
-
             alert(err.message)
             return
         }
@@ -93,8 +69,7 @@ async function onLoginFormSubmit(ev) {
         })
     } finally {
         input.disabled = false
-        webAuthnBtn.disabled = false
-        emailBtn.disabled = false
+        button.disabled = false
     }
 }
 
@@ -115,6 +90,20 @@ async function runLoginProgram(email) {
         saveLogin(await devLogin(email))
         location.reload()
         return
+    }
+
+    const credentialID = localStorage.getItem("webauthn_credential_id")
+    if (credentialID !== null) {
+        try {
+            const opts = await createCredentialRequestOptions(email, credentialID)
+            const cred = await navigator.credentials.get(opts)
+            saveLogin(await webAuthnLogin(cred))
+            location.reload()
+            return
+        } catch (err) {
+            console.error(err)
+            alert("Could not login with device credentials. Login with magic link instead")
+        }
     }
 
     await sendMagicLink(email, location.origin + "/login-callback")

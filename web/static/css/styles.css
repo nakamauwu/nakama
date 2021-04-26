@@ -264,23 +264,14 @@ header .profile-link {
 }
 
 .login-form {
+    max-width: 40ch;
     display: grid;
     grid-auto-flow: rows;
     gap: .5rem;
 }
 
-.login-form__btns {
-    display: grid;
-    grid-auto-flow: column;
-    justify-self: end;
-    gap: .5rem;
-}
-
-@media screen and (max-width: 540px) {
-    .login-form__btns {
-        grid-auto-flow: row;
-        justify-items: end;
-    }
+.login-form button {
+    justify-self: left;
 }
 
 .avatar {
