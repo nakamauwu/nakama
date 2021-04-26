@@ -5,7 +5,9 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -43,6 +45,11 @@ func (h *handler) sendMagicLink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err == service.ErrUntrustedRedirectURI {
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
+
 	if err == service.ErrUserNotFound {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -56,10 +63,24 @@ func (h *handler) sendMagicLink(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (h *handler) authRedirect(w http.ResponseWriter, r *http.Request) {
-	uri, err := h.AuthURI(r.Context(), r.RequestURI)
+func emptyStringPtr(s string) *string {
+	if s != "" {
+		return &s
+	}
+
+	return nil
+}
+
+func (h *handler) verifyMagicLink(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	redirectURI, err := h.ParseRedirectURI(q.Get("redirect_uri"))
 	if err == service.ErrInvalidRedirectURI {
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		return
+	}
+
+	if err == service.ErrUntrustedRedirectURI {
+		http.Error(w, err.Error(), http.StatusForbidden)
 		return
 	}
 
@@ -68,7 +89,54 @@ func (h *handler) authRedirect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, uri.String(), http.StatusFound)
+	auth, err := h.VerifyMagicLink(r.Context(), q.Get("email"), q.Get("verification_code"), emptyStringPtr(q.Get("username")))
+	if err == service.ErrUserNotFound || err == service.ErrUsernameTaken {
+		redirectWithHashFragment(w, r, redirectURI, url.Values{
+			"error":          []string{err.Error()},
+			"retry_endpoint": []string{r.RequestURI},
+		}, http.StatusFound)
+		return
+	}
+
+	if err == service.ErrInvalidEmail ||
+		err == service.ErrInvalidVerificationCode ||
+		err == service.ErrInvalidUsername ||
+		err == service.ErrVerificationCodeNotFound ||
+		err == service.ErrExpiredToken ||
+		err == service.ErrEmailTaken {
+		redirectWithHashFragment(w, r, redirectURI, url.Values{
+			"error": []string{err.Error()},
+		}, http.StatusFound)
+		return
+	}
+
+	if err != nil {
+		log.Println(err)
+		redirectWithHashFragment(w, r, redirectURI, url.Values{
+			"error": []string{"internal server error"},
+		}, http.StatusFound)
+		return
+	}
+
+	values := url.Values{
+		"token":         []string{auth.Token},
+		"expires_at":    []string{auth.ExpiresAt.Format(time.RFC3339Nano)},
+		"user.id":       []string{auth.User.ID},
+		"user.username": []string{auth.User.Username},
+	}
+	if auth.User.AvatarURL != nil {
+		values.Set("user.avatar_url", *auth.User.AvatarURL)
+	}
+	redirectWithHashFragment(w, r, redirectURI, values, http.StatusFound)
+}
+
+func redirectWithHashFragment(w http.ResponseWriter, r *http.Request, uri *url.URL, data url.Values, statusCode int) {
+	// Using query string instead of hash fragment because golang's url.URL#RawFragment is a no-op.
+	// We set the RawQuery instead, and then string replace the "?" symbol by "#".
+	uri.RawQuery = data.Encode()
+	location := uri.String()
+	location = strings.Replace(location, "?", "#", 1)
+	http.Redirect(w, r, location, statusCode)
 }
 
 func (h *handler) credentialCreationOptions(w http.ResponseWriter, r *http.Request) {

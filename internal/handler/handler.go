@@ -32,7 +32,8 @@ type handler struct {
 // Service interface.
 type Service interface {
 	SendMagicLink(ctx context.Context, email, redirectURI string) error
-	AuthURI(ctx context.Context, reqURI string) (*url.URL, error)
+	ParseRedirectURI(rawurl string) (*url.URL, error)
+	VerifyMagicLink(ctx context.Context, email, verificationCode string, username *string) (service.AuthOutput, error)
 	CredentialCreationOptions(ctx context.Context) (*protocol.CredentialCreation, *webauthn.SessionData, error)
 	RegisterCredential(ctx context.Context, data webauthn.SessionData, parsedReply *protocol.ParsedCredentialCreationData) error
 	CredentialRequestOptions(ctx context.Context, email string, opts ...service.CredentialRequestOptionsOpt) (*protocol.CredentialAssertion, *webauthn.SessionData, error)
@@ -84,7 +85,7 @@ func New(ctx context.Context, svc Service, store storage.Store, cdc *securecooki
 
 	api := way.NewRouter()
 	api.HandleFunc("POST", "/send_magic_link", h.sendMagicLink)
-	api.HandleFunc("GET", "/auth_redirect", h.authRedirect)
+	api.HandleFunc("GET", "/verify_magic_link", h.verifyMagicLink)
 	api.HandleFunc("GET", "/credential_creation_options", h.credentialCreationOptions)
 	api.HandleFunc("POST", "/credentials", h.registerCredential)
 	api.HandleFunc("GET", "/credential_request_options", h.credentialRequestOptions)

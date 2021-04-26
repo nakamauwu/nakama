@@ -36,6 +36,9 @@ var (
 	ErrUnauthenticated = errors.New("unauthenticated")
 	// ErrInvalidRedirectURI denotes an invalid redirect URI.
 	ErrInvalidRedirectURI = errors.New("invalid redirect URI")
+	// ErrUntrustedRedirectURI denotes an untrusted redirect URI.
+	// That is an URI that is not in the same host as the service.
+	ErrUntrustedRedirectURI = errors.New("untrusted redirect URI")
 	// ErrInvalidToken denotes an invalid token.
 	ErrInvalidToken = errors.New("invalid token")
 	// ErrExpiredToken denotes that the token already expired.
@@ -102,15 +105,16 @@ func (u webAuthnUser) WebAuthnCredentials() []webauthn.Credential {
 }
 
 // SendMagicLink to login without passwords.
+// A second endpoint GET /api/verify_magic_link?email&verification_code&redirect_uri must exist.
 func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) error {
 	email = strings.TrimSpace(email)
 	if !reEmail.MatchString(email) {
 		return ErrInvalidEmail
 	}
 
-	uri, err := url.Parse(redirectURI)
-	if err != nil || !uri.IsAbs() {
-		return ErrInvalidRedirectURI
+	_, err := s.ParseRedirectURI(redirectURI)
+	if err != nil {
+		return err
 	}
 
 	var code string
@@ -133,10 +137,11 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 	}()
 
 	magicLink := cloneURL(s.Origin)
-	magicLink.Path = "/api/auth_redirect"
+	magicLink.Path = "/api/verify_magic_link"
 	q := magicLink.Query()
+	q.Set("email", email)
 	q.Set("verification_code", code)
-	q.Set("redirect_uri", uri.String())
+	q.Set("redirect_uri", redirectURI)
 	magicLink.RawQuery = q.Encode()
 
 	if magicLinkMailTmpl == nil {
@@ -163,42 +168,42 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 	return nil
 }
 
-// AuthURI to be redirected to and complete the login flow.
-// It contains the token and expires_at in the hash fragment.
-func (s *Service) AuthURI(ctx context.Context, reqURIStr string) (*url.URL, error) {
-	reqURI, err := url.Parse(reqURIStr)
-	if err != nil {
-		return nil, fmt.Errorf("could not url parse request URI: %w", err)
-	}
-
-	reqQuery := reqURI.Query()
-	redirectURI, err := url.Parse(strings.TrimSpace(reqQuery.Get("redirect_uri")))
-	if err != nil || !redirectURI.IsAbs() {
+// ParseRedirectURI the given redirect URI and validates it.
+func (s *Service) ParseRedirectURI(rawurl string) (*url.URL, error) {
+	uri, err := url.Parse(rawurl)
+	if err != nil || !uri.IsAbs() {
 		return nil, ErrInvalidRedirectURI
 	}
 
-	verificationCode := strings.TrimSpace(reqQuery.Get("verification_code"))
+	if uri.Host != s.Origin.Host {
+		return nil, ErrUntrustedRedirectURI
+	}
+
+	return uri, nil
+}
+
+// VerifyMagicLink checks whether the given email and verification code exists and issues a new auth token.
+// If the user does not exists, it can create a new one with the given username.
+func (s *Service) VerifyMagicLink(ctx context.Context, email, verificationCode string, username *string) (AuthOutput, error) {
+	var auth AuthOutput
+
+	if !reEmail.MatchString(email) {
+		return auth, ErrInvalidEmail
+	}
+
 	if !reUUID.MatchString(verificationCode) {
-		return uriWithQuery(redirectURI, map[string]string{
-			"error": ErrInvalidVerificationCode.Error(),
-		})
+		return auth, ErrInvalidVerificationCode
 	}
 
-	username := strings.TrimSpace(reqQuery.Get("username"))
-	if username != "" {
-		if !reUsername.MatchString(username) {
-			return uriWithQuery(redirectURI, map[string]string{
-				"error": ErrInvalidUsername.Error(),
-			})
-		}
+	if username != nil && !reUsername.MatchString(*username) {
+		return auth, ErrInvalidUsername
 	}
 
-	var uid string
-	err = crdb.ExecuteTx(ctx, s.DB, nil, func(tx *sql.Tx) error {
-		var email string
+	err := crdb.ExecuteTx(ctx, s.DB, nil, func(tx *sql.Tx) error {
 		var createdAt time.Time
-		err := tx.QueryRowContext(ctx, `SELECT email, created_at FROM verification_codes WHERE id = $1`, verificationCode).
-			Scan(&email, &createdAt)
+		query := "SELECT created_at FROM verification_codes WHERE email = $1 AND id = $2"
+		row := tx.QueryRowContext(ctx, query, email, verificationCode)
+		err := row.Scan(&createdAt)
 		if err == sql.ErrNoRows {
 			return ErrVerificationCodeNotFound
 		}
@@ -211,22 +216,33 @@ func (s *Service) AuthURI(ctx context.Context, reqURIStr string) (*url.URL, erro
 			return ErrExpiredToken
 		}
 
-		err = tx.QueryRowContext(ctx, `SELECT id AS user_id FROM users WHERE email = $1`, email).
-			Scan(&uid)
+		var avatar sql.NullString
+		query = "SELECT id, username, avatar FROM users WHERE email = $1"
+		row = tx.QueryRowContext(ctx, query, email)
+		err = row.Scan(&auth.User.ID, &auth.User.Username, &avatar)
 		if err == sql.ErrNoRows {
-			if username == "" {
+			if username == nil {
 				return ErrUserNotFound
 			}
 
-			err := tx.QueryRowContext(ctx, `INSERT INTO users (email, username) VALUES ($1, $2) RETURNING id`, email, username).
-				Scan(&uid)
+			query := "INSERT INTO users (email, username) VALUES ($1, $2) RETURNING id"
+			row := tx.QueryRowContext(ctx, query, email, username)
+			err := row.Scan(&auth.User.ID)
 			if isUniqueViolation(err) {
-				return ErrUsernameTaken
+				if strings.Contains(err.Error(), "email") {
+					return ErrEmailTaken
+				}
+
+				if strings.Contains(err.Error(), "username") {
+					return ErrUsernameTaken
+				}
 			}
 
 			if err != nil {
 				return fmt.Errorf("could not sql insert user at magic link: %w", err)
 			}
+
+			auth.User.Username = *username
 
 			return nil
 		}
@@ -235,19 +251,18 @@ func (s *Service) AuthURI(ctx context.Context, reqURIStr string) (*url.URL, erro
 			return fmt.Errorf("could not sql query select user from verification code email: %w", err)
 		}
 
+		auth.User.AvatarURL = s.avatarURL(avatar)
+
 		return nil
 	})
-	if err == ErrUserNotFound || err == ErrUsernameTaken {
-		return uriWithQuery(redirectURI, map[string]string{
-			"error":          err.Error(),
-			"retry_endpoint": reqURIStr,
-		})
+	if err != nil {
+		return auth, err
 	}
 
-	if err == ErrVerificationCodeNotFound {
-		return uriWithQuery(redirectURI, map[string]string{
-			"error": ErrVerificationCodeNotFound.Error(),
-		})
+	auth.ExpiresAt = time.Now().Add(tokenLifespan)
+	auth.Token, err = s.codec().EncodeToString(auth.User.ID)
+	if err != nil {
+		return auth, fmt.Errorf("could not create auth token: %w", err)
 	}
 
 	go func() {
@@ -258,32 +273,7 @@ func (s *Service) AuthURI(ctx context.Context, reqURIStr string) (*url.URL, erro
 		}
 	}()
 
-	if err == ErrExpiredToken {
-		return uriWithQuery(redirectURI, map[string]string{
-			"error": ErrExpiredToken.Error(),
-		})
-	}
-
-	if err != nil {
-		log.Println(err)
-		return uriWithQuery(redirectURI, map[string]string{
-			"error": "something went wrong",
-		})
-	}
-
-	now := time.Now()
-	token, err := s.codec().EncodeToString(uid)
-	if err != nil {
-		log.Printf("could not create token: %v\n", err)
-		return uriWithQuery(redirectURI, map[string]string{
-			"error": "something went wrong",
-		})
-	}
-
-	return uriWithQuery(redirectURI, map[string]string{
-		"token":      token,
-		"expires_at": now.Add(tokenLifespan).Format(time.RFC3339Nano),
-	})
+	return auth, nil
 }
 
 func isVerificationCodeExpired(t time.Time) bool {

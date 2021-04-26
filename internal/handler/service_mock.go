@@ -23,9 +23,6 @@ var _ Service = &ServiceMock{}
 //
 // 		// make and configure a mocked Service
 // 		mockedService := &ServiceMock{
-// 			AuthURIFunc: func(ctx context.Context, reqURI string) (*url.URL, error) {
-// 				panic("mock out the AuthURI method")
-// 			},
 // 			AuthUserFunc: func(ctx context.Context) (service.User, error) {
 // 				panic("mock out the AuthUser method")
 // 			},
@@ -77,6 +74,9 @@ var _ Service = &ServiceMock{}
 // 			NotificationsFunc: func(ctx context.Context, last int, before string) ([]service.Notification, error) {
 // 				panic("mock out the Notifications method")
 // 			},
+// 			ParseRedirectURIFunc: func(rawurl string) (*url.URL, error) {
+// 				panic("mock out the ParseRedirectURI method")
+// 			},
 // 			PostFunc: func(ctx context.Context, postID string) (service.Post, error) {
 // 				panic("mock out the Post method")
 // 			},
@@ -122,6 +122,9 @@ var _ Service = &ServiceMock{}
 // 			UsersFunc: func(ctx context.Context, search string, first int, after string) ([]service.UserProfile, error) {
 // 				panic("mock out the Users method")
 // 			},
+// 			VerifyMagicLinkFunc: func(ctx context.Context, email string, verificationCode string, username *string) (service.AuthOutput, error) {
+// 				panic("mock out the VerifyMagicLink method")
+// 			},
 // 			WebAuthnLoginFunc: func(ctx context.Context, data webauthn.SessionData, reply *protocol.ParsedCredentialAssertionData) (service.AuthOutput, error) {
 // 				panic("mock out the WebAuthnLogin method")
 // 			},
@@ -132,9 +135,6 @@ var _ Service = &ServiceMock{}
 //
 // 	}
 type ServiceMock struct {
-	// AuthURIFunc mocks the AuthURI method.
-	AuthURIFunc func(ctx context.Context, reqURI string) (*url.URL, error)
-
 	// AuthUserFunc mocks the AuthUser method.
 	AuthUserFunc func(ctx context.Context) (service.User, error)
 
@@ -186,6 +186,9 @@ type ServiceMock struct {
 	// NotificationsFunc mocks the Notifications method.
 	NotificationsFunc func(ctx context.Context, last int, before string) ([]service.Notification, error)
 
+	// ParseRedirectURIFunc mocks the ParseRedirectURI method.
+	ParseRedirectURIFunc func(rawurl string) (*url.URL, error)
+
 	// PostFunc mocks the Post method.
 	PostFunc func(ctx context.Context, postID string) (service.Post, error)
 
@@ -231,18 +234,14 @@ type ServiceMock struct {
 	// UsersFunc mocks the Users method.
 	UsersFunc func(ctx context.Context, search string, first int, after string) ([]service.UserProfile, error)
 
+	// VerifyMagicLinkFunc mocks the VerifyMagicLink method.
+	VerifyMagicLinkFunc func(ctx context.Context, email string, verificationCode string, username *string) (service.AuthOutput, error)
+
 	// WebAuthnLoginFunc mocks the WebAuthnLogin method.
 	WebAuthnLoginFunc func(ctx context.Context, data webauthn.SessionData, reply *protocol.ParsedCredentialAssertionData) (service.AuthOutput, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// AuthURI holds details about calls to the AuthURI method.
-		AuthURI []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-			// ReqURI is the reqURI argument value.
-			ReqURI string
-		}
 		// AuthUser holds details about calls to the AuthUser method.
 		AuthUser []struct {
 			// Ctx is the ctx argument value.
@@ -372,6 +371,11 @@ type ServiceMock struct {
 			// Before is the before argument value.
 			Before string
 		}
+		// ParseRedirectURI holds details about calls to the ParseRedirectURI method.
+		ParseRedirectURI []struct {
+			// Rawurl is the rawurl argument value.
+			Rawurl string
+		}
 		// Post holds details about calls to the Post method.
 		Post []struct {
 			// Ctx is the ctx argument value.
@@ -491,6 +495,17 @@ type ServiceMock struct {
 			// After is the after argument value.
 			After string
 		}
+		// VerifyMagicLink holds details about calls to the VerifyMagicLink method.
+		VerifyMagicLink []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Email is the email argument value.
+			Email string
+			// VerificationCode is the verificationCode argument value.
+			VerificationCode string
+			// Username is the username argument value.
+			Username *string
+		}
 		// WebAuthnLogin holds details about calls to the WebAuthnLogin method.
 		WebAuthnLogin []struct {
 			// Ctx is the ctx argument value.
@@ -501,7 +516,6 @@ type ServiceMock struct {
 			Reply *protocol.ParsedCredentialAssertionData
 		}
 	}
-	lockAuthURI                   sync.RWMutex
 	lockAuthUser                  sync.RWMutex
 	lockAuthUserIDFromToken       sync.RWMutex
 	lockCommentStream             sync.RWMutex
@@ -519,6 +533,7 @@ type ServiceMock struct {
 	lockMarkNotificationsAsRead   sync.RWMutex
 	lockNotificationStream        sync.RWMutex
 	lockNotifications             sync.RWMutex
+	lockParseRedirectURI          sync.RWMutex
 	lockPost                      sync.RWMutex
 	lockPosts                     sync.RWMutex
 	lockRegisterCredential        sync.RWMutex
@@ -534,42 +549,8 @@ type ServiceMock struct {
 	lockUser                      sync.RWMutex
 	lockUsernames                 sync.RWMutex
 	lockUsers                     sync.RWMutex
+	lockVerifyMagicLink           sync.RWMutex
 	lockWebAuthnLogin             sync.RWMutex
-}
-
-// AuthURI calls AuthURIFunc.
-func (mock *ServiceMock) AuthURI(ctx context.Context, reqURI string) (*url.URL, error) {
-	if mock.AuthURIFunc == nil {
-		panic("ServiceMock.AuthURIFunc: method is nil but Service.AuthURI was just called")
-	}
-	callInfo := struct {
-		Ctx    context.Context
-		ReqURI string
-	}{
-		Ctx:    ctx,
-		ReqURI: reqURI,
-	}
-	mock.lockAuthURI.Lock()
-	mock.calls.AuthURI = append(mock.calls.AuthURI, callInfo)
-	mock.lockAuthURI.Unlock()
-	return mock.AuthURIFunc(ctx, reqURI)
-}
-
-// AuthURICalls gets all the calls that were made to AuthURI.
-// Check the length with:
-//     len(mockedService.AuthURICalls())
-func (mock *ServiceMock) AuthURICalls() []struct {
-	Ctx    context.Context
-	ReqURI string
-} {
-	var calls []struct {
-		Ctx    context.Context
-		ReqURI string
-	}
-	mock.lockAuthURI.RLock()
-	calls = mock.calls.AuthURI
-	mock.lockAuthURI.RUnlock()
-	return calls
 }
 
 // AuthUser calls AuthUserFunc.
@@ -1187,6 +1168,37 @@ func (mock *ServiceMock) NotificationsCalls() []struct {
 	return calls
 }
 
+// ParseRedirectURI calls ParseRedirectURIFunc.
+func (mock *ServiceMock) ParseRedirectURI(rawurl string) (*url.URL, error) {
+	if mock.ParseRedirectURIFunc == nil {
+		panic("ServiceMock.ParseRedirectURIFunc: method is nil but Service.ParseRedirectURI was just called")
+	}
+	callInfo := struct {
+		Rawurl string
+	}{
+		Rawurl: rawurl,
+	}
+	mock.lockParseRedirectURI.Lock()
+	mock.calls.ParseRedirectURI = append(mock.calls.ParseRedirectURI, callInfo)
+	mock.lockParseRedirectURI.Unlock()
+	return mock.ParseRedirectURIFunc(rawurl)
+}
+
+// ParseRedirectURICalls gets all the calls that were made to ParseRedirectURI.
+// Check the length with:
+//     len(mockedService.ParseRedirectURICalls())
+func (mock *ServiceMock) ParseRedirectURICalls() []struct {
+	Rawurl string
+} {
+	var calls []struct {
+		Rawurl string
+	}
+	mock.lockParseRedirectURI.RLock()
+	calls = mock.calls.ParseRedirectURI
+	mock.lockParseRedirectURI.RUnlock()
+	return calls
+}
+
 // Post calls PostFunc.
 func (mock *ServiceMock) Post(ctx context.Context, postID string) (service.Post, error) {
 	if mock.PostFunc == nil {
@@ -1737,6 +1749,49 @@ func (mock *ServiceMock) UsersCalls() []struct {
 	mock.lockUsers.RLock()
 	calls = mock.calls.Users
 	mock.lockUsers.RUnlock()
+	return calls
+}
+
+// VerifyMagicLink calls VerifyMagicLinkFunc.
+func (mock *ServiceMock) VerifyMagicLink(ctx context.Context, email string, verificationCode string, username *string) (service.AuthOutput, error) {
+	if mock.VerifyMagicLinkFunc == nil {
+		panic("ServiceMock.VerifyMagicLinkFunc: method is nil but Service.VerifyMagicLink was just called")
+	}
+	callInfo := struct {
+		Ctx              context.Context
+		Email            string
+		VerificationCode string
+		Username         *string
+	}{
+		Ctx:              ctx,
+		Email:            email,
+		VerificationCode: verificationCode,
+		Username:         username,
+	}
+	mock.lockVerifyMagicLink.Lock()
+	mock.calls.VerifyMagicLink = append(mock.calls.VerifyMagicLink, callInfo)
+	mock.lockVerifyMagicLink.Unlock()
+	return mock.VerifyMagicLinkFunc(ctx, email, verificationCode, username)
+}
+
+// VerifyMagicLinkCalls gets all the calls that were made to VerifyMagicLink.
+// Check the length with:
+//     len(mockedService.VerifyMagicLinkCalls())
+func (mock *ServiceMock) VerifyMagicLinkCalls() []struct {
+	Ctx              context.Context
+	Email            string
+	VerificationCode string
+	Username         *string
+} {
+	var calls []struct {
+		Ctx              context.Context
+		Email            string
+		VerificationCode string
+		Username         *string
+	}
+	mock.lockVerifyMagicLink.RLock()
+	calls = mock.calls.VerifyMagicLink
+	mock.lockVerifyMagicLink.RUnlock()
 	return calls
 }
 

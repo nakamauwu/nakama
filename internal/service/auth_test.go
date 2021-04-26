@@ -40,7 +40,18 @@ func TestService_SendMagicLink(t *testing.T) {
 		testutil.AssertEqual(t, ErrInvalidRedirectURI, err, "error")
 	})
 
-	redirectURI := "https://example.org/login-callback"
+	t.Run("untrusted_redirect_uri", func(t *testing.T) {
+		svc := &Service{
+			Origin: &url.URL{
+				Scheme: "http",
+				Host:   "localhost:3000",
+			},
+		}
+		err := svc.SendMagicLink(ctx, email, "https://example.org/login-callback")
+		testutil.AssertEqual(t, ErrUntrustedRedirectURI, err, "error")
+	})
+
+	redirectURI := "http://localhost:3000/login-callback"
 	origin := &url.URL{
 		Scheme: "http",
 		Host:   "localhost:3000",

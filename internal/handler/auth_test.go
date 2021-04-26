@@ -69,6 +69,19 @@ func Test_handler_sendMagicLink(t *testing.T) {
 			},
 		},
 		{
+			name: "untrusted_redirect_uri",
+			body: []byte(`{}`),
+			svc: &ServiceMock{
+				SendMagicLinkFunc: func(context.Context, string, string) error {
+					return service.ErrUntrustedRedirectURI
+				},
+			},
+			testResp: func(t *testing.T, resp *http.Response) {
+				testutil.AssertEqual(t, http.StatusForbidden, resp.StatusCode, "status code")
+				testutil.AssertEqual(t, "untrusted redirect URI", string(readAllAndTrim(t, resp.Body)), "body")
+			},
+		},
+		{
 			name: "internal_error",
 			body: []byte(`{}`),
 			svc: &ServiceMock{

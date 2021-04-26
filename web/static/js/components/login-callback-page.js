@@ -1,4 +1,3 @@
-import { doGet } from "../http.js"
 import { navigate } from "../lib/router.js"
 
 const reUsername = /^[a-zA-Z][a-zA-Z0-9_-]{0,17}$/
@@ -14,17 +13,21 @@ export default function renderLoginCallbackPage() {
     const page = /** @type {DocumentFragment} */ (template.content.cloneNode(true))
     const errorWrapper = page.querySelector(".error-wrapper")
     setTimeout(() => {
-        loginCallback().then(({ url, hard }) => {
+        loginCallback().then(({ url, hard = false, replace = false }) => {
             if (hard) {
-                location.assign(url)
+                if (replace) {
+                    location.replace(url)
+                } else {
+                    location.assign(url)
+                }
             } else {
-                navigate(url)
+                navigate(url, replace)
             }
         }).catch(err => {
+            console.error(err)
             if (!(err instanceof Error)) {
                 err = new Error(String(err))
             }
-            console.error(err)
             errorWrapper.innerHTML = /*html*/`
                 <div class="error-message">
                     <span>Something went wrong:</span>
@@ -43,39 +46,40 @@ export default function renderLoginCallbackPage() {
 
 /**
  *
- * @returns {Promise<{url:string,hard:boolean}>}
+ * @returns {Promise<{url:string,hard?:boolean,replace?:boolean}>}
  */
 async function loginCallback() {
-    const data = new URLSearchParams(location.search.substr(1))
+    const data = new URLSearchParams(location.hash.substr(1))
     for (const [k, v] of data) {
         data.set(decodeURIComponent(k), decodeURIComponent(v))
     }
 
     const retryEndpoint = data.get("retry_endpoint")
     const errMsg = data.get("error")
-    if (retryEndpoint !== null && (errMsg === "user not found" || errMsg === "username taken")) {
+    if (retryEndpoint !== null && (errMsg === "user not found" || errMsg === "invalid username" || errMsg === "username taken")) {
         const endpoint = new URL(retryEndpoint, location.origin)
 
         switch (errMsg) {
             case "user not found": {
                 if (!confirm("User not found. Do you want to create an account?")) {
-                    return { url: "/", hard: false }
+                    return { url: "/" }
                 }
                 break
             }
-            case "username taken": {
-                alert("Username taken")
+            case "username taken":
+            case "invalid username": {
+                alert(errMsg)
                 break
             }
         }
         /**
          * @param {string=} username
-         * @returns {Promise<{url:string,hard:boolean}>}
+         * @returns {Promise<{url:string,hard?:boolean,replace?:boolean}>}
          */
-        const run = async (username) => {
+        const run = async username => {
             username = prompt("Username:", username)
             if (username === null) {
-                return { url: "/", hard: false }
+                return { url: "/" }
             }
 
             username = username.trim()
@@ -105,19 +109,19 @@ async function loginCallback() {
         throw new Error("token expired")
     }
 
-    const user = await authUser(token)
+    const user = {
+        id: data.get("user.id"),
+        username: data.get("user.username"),
+        avatarURL: data.get("avatar_url"),
+    }
+
+    if (user.id === null || user.username === null) {
+        throw new Error("no user data given")
+    }
 
     localStorage.setItem("auth_user", JSON.stringify(user))
     localStorage.setItem("auth_token", token)
     localStorage.setItem("auth_expires_at", expiresAt.toJSON())
 
-    return { url: "/", hard: true }
-}
-
-/**
- * @param {string} token
- * @returns {Promise<import("../types.js").User>}
- */
-function authUser(token) {
-    return doGet("/api/auth_user", { authorization: "Bearer " + token })
+    return { url: "/", hard: true, replace: true }
 }
