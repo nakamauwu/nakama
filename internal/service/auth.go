@@ -292,6 +292,12 @@ func (s *Service) CredentialCreationOptions(ctx context.Context) (*protocol.Cred
 	for i, cred := range u.Credentials {
 		excludedCredentials[i].CredentialID = cred.ID
 		excludedCredentials[i].Type = protocol.CredentialType("public-key")
+		excludedCredentials[i].Transport = []protocol.AuthenticatorTransport{
+			protocol.USB,
+			protocol.NFC,
+			protocol.BLE,
+			protocol.Internal,
+		}
 	}
 	return s.WebAuthn.BeginRegistration(u,
 		webauthn.WithAuthenticatorSelection(webauthn.SelectAuthenticator(
@@ -400,6 +406,12 @@ func (s *Service) CredentialRequestOptions(ctx context.Context, email string, op
 			[]protocol.CredentialDescriptor{{
 				CredentialID: credentialID,
 				Type:         protocol.CredentialType("public-key"),
+				Transport: []protocol.AuthenticatorTransport{
+					protocol.USB,
+					protocol.NFC,
+					protocol.BLE,
+					protocol.Internal,
+				},
 			}},
 		))
 	}
