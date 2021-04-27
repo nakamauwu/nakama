@@ -46,29 +46,39 @@ async function importWithCache(identifier) {
  * @param {Element} target
  */
 function renderInto(target) {
-    let pages = /** @type {Node[]} */ ([])
-    let currentPage = /** @type {Node=} */ (null)
+    let pages = /** @type {{node: Node, resolved: Boolean, ctrl: AbortController}[]} */ ([])
     return async result => {
         while (pages.length !== 0) {
             const page = pages.pop()
-            page.dispatchEvent(disconnectEvent)
+            page.ctrl.abort()
+            if (page.resolved) {
+                page.node.dispatchEvent(disconnectEvent)
+            }
             target.innerHTML = ""
         }
 
-        let page
+        const page = {
+            node: null,
+            resolved: false,
+            ctrl: new AbortController()
+        }
+
+        pages.push(page)
+
         try {
-            page = await result
+            page.node = await result
         } catch (err) {
             console.error(err)
-            page = renderErrorPage(err)
-        }
-        if (page instanceof Node) {
-            pages.push(page)
-            target.innerHTML = ""
-            target.appendChild(page)
+            page.node = renderErrorPage(err)
         }
 
-        setTimeout(activateLinks)
+        page.resolved = true
+
+        if (page.node instanceof Node && !page.ctrl.signal.aborted) {
+            target.innerHTML = ""
+            target.appendChild(page.node)
+            setTimeout(activateLinks)
+        }
     }
 }
 
