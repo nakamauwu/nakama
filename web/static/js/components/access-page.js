@@ -58,11 +58,6 @@ async function onLoginFormSubmit(ev) {
         return
     } catch (err) {
         console.error(err)
-        if (err.name === "NoWebAuthnCredentialsError") {
-            alert(err.message)
-            return
-        }
-
         alert(err.message)
         setTimeout(() => {
             input.focus()
@@ -102,7 +97,9 @@ async function runLoginProgram(email) {
             return
         } catch (err) {
             console.error(err)
-            alert("Could not login with device credentials. Login with magic link instead")
+            if (err.name !== "NoWebAuthnCredentialsError") {
+                alert("Could not login with device credentials. Login with magic link instead")
+            }
         }
     }
 
@@ -138,7 +135,7 @@ async function createCredentialRequestOptions(email, credentialID) {
     }
     const opts = await doGet(endpoint)
     if (!Array.isArray(opts.publicKey.allowCredentials) || opts.publicKey.allowCredentials.length === 0) {
-        const err = new Error("no webauthn credentials")
+        const err = new Error("no webAuthn credentials")
         err.name = "NoWebAuthnCredentialsError"
         throw err
     }

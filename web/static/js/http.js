@@ -85,7 +85,7 @@ function defaultHeaders() {
 async function parseResponse(res) {
     let body = await res.clone().json().catch(() => res.text())
     if (!res.ok) {
-        const msg = String(body).trim().toLowerCase()
+        const msg = String(body).trim()
         const err = new Error(msg)
         err.name = String(body).trim()
             .split(" ")

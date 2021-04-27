@@ -105,9 +105,9 @@ export default function renderUserProfile(user, full = false) {
                 const opts = await createCredentialCreationOptions()
                 const cred = await navigator.credentials.create(opts)
 
-                localStorage.setItem("webauthn_credential_id", cred.id)
-
                 await createCredential(cred)
+
+                localStorage.setItem("webauthn_credential_id", cred.id)
                 alert("Device registered successfully. Now you can login with device credentials")
             } catch (err) {
                 if (err instanceof Error && err.name === "InvalidStateError") {
