@@ -21,11 +21,19 @@ export default function renderErrorPage(err) {
     const hardReloadButton = /** @type {HTMLButtonElement} */ (page.getElementById("hard-reload-button"))
 
     const onReloadButtonClick = () => {
+        if (typeof navigator.vibrate === "function") {
+            navigator.vibrate([50])
+        }
+
         reloadButton.disabled = true
         location.reload()
     }
 
     const onHardReloadButtonClick = () => {
+        if (typeof navigator.vibrate === "function") {
+            navigator.vibrate([50])
+        }
+
         hardReloadButton.disabled = true
         localStorage.clear()
         location.assign("/")

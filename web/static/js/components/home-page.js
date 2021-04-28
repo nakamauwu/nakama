@@ -94,6 +94,11 @@ export default async function renderHomePage() {
      */
     const onPostFormSubmit = async ev => {
         ev.preventDefault()
+
+        if (typeof navigator.vibrate === "function") {
+            navigator.vibrate([50])
+        }
+
         const content = smartTrim(postFormTextArea.value)
         if (content === "") {
             postFormTextArea.setCustomValidity("Empty")

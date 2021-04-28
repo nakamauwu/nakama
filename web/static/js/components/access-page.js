@@ -29,13 +29,6 @@ export default function renderAccessPage() {
         emailInput.value = "shinji@example.org"
     }
 
-    if ("PublicKeyCredential" in window) {
-        PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(ok => {
-            if (!ok) {
-                return
-            }
-        })
-    }
     return page
 }
 
@@ -44,6 +37,11 @@ export default function renderAccessPage() {
  */
 async function onLoginFormSubmit(ev) {
     ev.preventDefault()
+
+    if (typeof navigator.vibrate === "function") {
+        navigator.vibrate([50])
+    }
+
     const form = /** @type {HTMLFormElement} */ (ev.currentTarget)
     const input = form.querySelector("input")
     const button = form.querySelector("button")
@@ -88,17 +86,20 @@ async function runLoginProgram(email) {
     }
 
     const credentialID = localStorage.getItem("webauthn_credential_id")
-    if (credentialID !== null) {
-        try {
-            const opts = await createCredentialRequestOptions(email, credentialID)
-            const cred = await navigator.credentials.get(opts)
-            saveLogin(await webAuthnLogin(cred))
-            location.reload()
-            return
-        } catch (err) {
-            console.error(err)
-            if (err.name !== "NoWebAuthnCredentialsError") {
-                alert("Could not login with device credentials. Login with magic link instead")
+    if (credentialID !== null && "PublicKeyCredential" in window) {
+        const ok = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().catch(() => false)
+        if (ok) {
+            try {
+                const opts = await createCredentialRequestOptions(email, credentialID)
+                const cred = await navigator.credentials.get(opts)
+                saveLogin(await webAuthnLogin(cred))
+                location.reload()
+                return
+            } catch (err) {
+                console.error(err)
+                if (err.name !== "NoWebAuthnCredentialsError") {
+                    alert("Could not login with device credentials. Login with magic link instead")
+                }
             }
         }
     }

@@ -92,6 +92,10 @@ export default function renderUserProfile(user, full = false) {
         }
 
         const onLogoutButtonClick = () => {
+            if (typeof navigator.vibrate === "function") {
+                navigator.vibrate([50])
+            }
+
             logoutButton.disabled = true
             localStorage.removeItem("auth_user")
             localStorage.removeItem("auth_token")
@@ -100,6 +104,10 @@ export default function renderUserProfile(user, full = false) {
         }
 
         const onWebAuthnClick = async () => {
+            if (typeof navigator.vibrate === "function") {
+                navigator.vibrate([50])
+            }
+
             webAuthnBtn.disabled = true
             try {
                 const opts = await createCredentialCreationOptions()
@@ -143,6 +151,10 @@ export default function renderUserProfile(user, full = false) {
     if (followButton !== null) {
         const followText = followButton.querySelector("span")
         const onFollowButtonClick = async () => {
+            if (typeof navigator.vibrate === "function") {
+                navigator.vibrate([50])
+            }
+
             followButton.disabled = true
 
             try {

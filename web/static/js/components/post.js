@@ -74,6 +74,10 @@ export default function renderPost(post, timelineItemID) {
         const likesCountEl = likeButton.querySelector(".likes-count")
 
         const onLikeButtonClick = async () => {
+            if (typeof navigator.vibrate === "function") {
+                navigator.vibrate([50])
+            }
+
             likeButton.disabled = true
             try {
                 const out = await togglePostLike(post.id)

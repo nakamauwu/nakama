@@ -87,6 +87,11 @@ export default async function renderPostPage(params) {
      */
     const onCommentFormSubmit = async ev => {
         ev.preventDefault()
+
+        if (typeof navigator.vibrate === "function") {
+            navigator.vibrate([50])
+        }
+
         const content = smartTrim(commentFormTextArea.value)
         if (content === "") {
             commentFormTextArea.setCustomValidity("Empty")
@@ -214,6 +219,10 @@ function renderComment(comment) {
         const likesCountEl = likeButton.querySelector(".likes-count")
 
         const onLikeButtonClick = async () => {
+            if (typeof navigator.vibrate === "function") {
+                navigator.vibrate([50])
+            }
+
             likeButton.disabled = true
             try {
                 const out = await toggleCommentLike(comment.id)
