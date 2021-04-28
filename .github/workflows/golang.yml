@@ -1,15 +1,34 @@
-name: Deploy
+name: Golang
 
 on:
-  workflow_run:
-    workflows: ["Go Code Check"]
-    types: [ completed ]
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
   deployment:
   release:
     types: [ published ]
 
 jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.16
+
+    - name: Lint
+      uses: golangci/golangci-lint-action@v2
+      with:
+        version: v1.39.0
+        # skip-go-installation: true
+
+    - name: Test
+      run: go test ./... -race -count 1
   deploy:
     runs-on: ubuntu-latest
     steps:
