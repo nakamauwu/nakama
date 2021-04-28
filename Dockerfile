@@ -2,14 +2,14 @@ FROM golang:alpine AS build
 
 RUN apk update && apk add --no-cache ca-certificates && update-ca-certificates
 
-WORKDIR /go/src/nicolasparada/nakama
+WORKDIR /go/src/github.com/nicolasparada/nakama
 
 COPY go.mod .
 COPY go.sum .
 RUN go mod download
 
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o /usr/bin/nakama
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build ./cmd/nakama -ldflags="-s -w" -o /usr/bin/nakama
 
 FROM scratch
 
