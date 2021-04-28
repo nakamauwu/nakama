@@ -56,7 +56,7 @@ func setupTestMinio(pool *dockertest.Pool) (func() error, error) {
 		Cmd: []string{"server", "/data"},
 	})
 	if err != nil {
-		return nil, fmt.Errorf("could not create cockroach resource: %w", err)
+		return nil, fmt.Errorf("could not create minio resource: %w", err)
 	}
 
 	err = pool.Retry(func() (err error) {
