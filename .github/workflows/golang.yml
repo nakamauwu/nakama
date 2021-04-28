@@ -2,41 +2,33 @@ name: Golang
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
   deployment:
   release:
-    types: [ published ]
+    types: [published]
 
 jobs:
-  check:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-
-    - name: Set up Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: 1.16
-
-    - name: Lint
-      uses: golangci/golangci-lint-action@v2
-      with:
-        version: v1.39.0
-        # skip-go-installation: true
-
-    - name: Test
-      run: go test ./... -race -count 1
-  deploy:
+  golang:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-        with:
-          ref: ${{ github.event.workflow_run.head_branch }}
 
-      - run: git branch
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16
+
+      - name: Lint
+        uses: golangci/golangci-lint-action@v2
+        with:
+          version: v1.39.0
+          # skip-go-installation: true
+
+      - name: Test
+        run: go test ./... -race -count 1
 
       - name: Login to DockerHub
         uses: docker/login-action@v1
