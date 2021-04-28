@@ -11,6 +11,7 @@ import (
 
 	"github.com/nicolasparada/nakama"
 	"github.com/nicolasparada/nakama/testutil"
+	"github.com/nicolasparada/nakama/transport"
 )
 
 func Test_handler_sendMagicLink(t *testing.T) {
@@ -23,7 +24,7 @@ func Test_handler_sendMagicLink(t *testing.T) {
 	tt := []struct {
 		name     string
 		body     []byte
-		svc      *ServiceMock
+		svc      *transport.ServiceMock
 		testResp func(*testing.T, *http.Response)
 		testCall func(*testing.T, call)
 	}{
@@ -45,7 +46,7 @@ func Test_handler_sendMagicLink(t *testing.T) {
 		{
 			name: "invalid_email",
 			body: []byte(`{}`),
-			svc: &ServiceMock{
+			svc: &transport.ServiceMock{
 				SendMagicLinkFunc: func(context.Context, string, string) error {
 					return nakama.ErrInvalidEmail
 				},
@@ -58,7 +59,7 @@ func Test_handler_sendMagicLink(t *testing.T) {
 		{
 			name: "invalid_redirect_uri",
 			body: []byte(`{}`),
-			svc: &ServiceMock{
+			svc: &transport.ServiceMock{
 				SendMagicLinkFunc: func(context.Context, string, string) error {
 					return nakama.ErrInvalidRedirectURI
 				},
@@ -71,7 +72,7 @@ func Test_handler_sendMagicLink(t *testing.T) {
 		{
 			name: "untrusted_redirect_uri",
 			body: []byte(`{}`),
-			svc: &ServiceMock{
+			svc: &transport.ServiceMock{
 				SendMagicLinkFunc: func(context.Context, string, string) error {
 					return nakama.ErrUntrustedRedirectURI
 				},
@@ -84,7 +85,7 @@ func Test_handler_sendMagicLink(t *testing.T) {
 		{
 			name: "internal_error",
 			body: []byte(`{}`),
-			svc: &ServiceMock{
+			svc: &transport.ServiceMock{
 				SendMagicLinkFunc: func(context.Context, string, string) error {
 					return errors.New("internal error")
 				},
@@ -97,7 +98,7 @@ func Test_handler_sendMagicLink(t *testing.T) {
 		{
 			name: "ok",
 			body: []byte(`{"email":"user@example.org","redirectURI":"https://example.org"}`),
-			svc: &ServiceMock{
+			svc: &transport.ServiceMock{
 				SendMagicLinkFunc: func(context.Context, string, string) error {
 					return nil
 				},

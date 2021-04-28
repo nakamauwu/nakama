@@ -1,5 +1,3 @@
-//go:generate moq -out service_mock.go . Service
-
 package handler
 
 import (
@@ -13,13 +11,13 @@ import (
 
 	"github.com/gorilla/securecookie"
 	"github.com/matryer/way"
-	"github.com/nicolasparada/nakama"
 	"github.com/nicolasparada/nakama/storage"
+	"github.com/nicolasparada/nakama/transport"
 	"github.com/nicolasparada/nakama/web/static"
 )
 
 type handler struct {
-	svc         *nakama.Service
+	svc         transport.Service
 	ctx         context.Context
 	store       storage.Store
 	cookieCodec *securecookie.SecureCookie
@@ -27,7 +25,7 @@ type handler struct {
 
 // New makes use of the service to provide an http.Handler with predefined routing.
 // The provided context is used to stop the running server-sent events.
-func New(ctx context.Context, svc *nakama.Service, store storage.Store, cdc *securecookie.SecureCookie, enableStaticCache, embedStaticFiles, serveAvatars bool) http.Handler {
+func New(ctx context.Context, svc transport.Service, store storage.Store, cdc *securecookie.SecureCookie, enableStaticCache, embedStaticFiles, serveAvatars bool) http.Handler {
 	h := &handler{
 		ctx:         ctx,
 		svc:         svc,
