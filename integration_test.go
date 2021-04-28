@@ -3,9 +3,7 @@ package nakama
 import (
 	"database/sql"
 	"fmt"
-	"io"
 	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/ory/dockertest/v3"
@@ -64,25 +62,7 @@ func setupTestDB(pool *dockertest.Pool) (*sql.DB, func() error, error) {
 			return fmt.Errorf("could not ping db: %w", err)
 		}
 
-		wd, err := os.Getwd()
-		if err != nil {
-			return fmt.Errorf("could not get wd: %w", err)
-		}
-
-		schemaPath := filepath.Join(wd, "..", "..", "schema.sql")
-		schemaFile, err := os.Open(schemaPath)
-		if err != nil {
-			return fmt.Errorf("could not open %q file: %w", schemaPath, err)
-		}
-
-		defer schemaFile.Close()
-
-		schema, err := io.ReadAll(schemaFile)
-		if err != nil {
-			return fmt.Errorf("could not read schema.sql contents: %w", err)
-		}
-
-		_, err = db.Exec(string(schema))
+		_, err = db.Exec(Schema)
 		if err != nil {
 			return fmt.Errorf("could not exec schema: %w", err)
 		}
