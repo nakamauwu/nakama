@@ -70,6 +70,7 @@ func run(ctx context.Context, logger log.Logger, args []string) error {
 		avatarURLPrefix           = env("AVATAR_URL_PREFIX", originStr+"/img/avatars/")
 		cookieHashKey             = env("COOKIE_HASH_KEY", "supersecretkeyyoushouldnotcommit")
 		cookieBlockKey            = env("COOKIE_BLOCK_KEY", "supersecretkeyyoushouldnotcommit")
+		disabledDevLogin, _       = strconv.ParseBool(os.Getenv("DISABLE_DEV_LOGIN"))
 	)
 	flag.Usage = func() {
 		flag.PrintDefaults()
@@ -87,6 +88,7 @@ func run(ctx context.Context, logger log.Logger, args []string) error {
 	flag.StringVar(&avatarURLPrefix, "avatar-url-prefix", avatarURLPrefix, "Avatar URL prefix")
 	flag.StringVar(&cookieHashKey, "cookie-hash-key", cookieHashKey, "Cookie hash key. 32 or 64 bytes")
 	flag.StringVar(&cookieBlockKey, "cookie-block-key", cookieBlockKey, "Cookie block key. 16, 24, or 32 bytes")
+	flag.BoolVar(&disabledDevLogin, "disable-dev-login", disabledDevLogin, "Disable development login endpoint")
 	flag.Parse()
 
 	origin, err := url.Parse(originStr)
@@ -185,15 +187,16 @@ func run(ctx context.Context, logger log.Logger, args []string) error {
 	}
 
 	svc := &nakama.Service{
-		Logger:          logger,
-		DB:              db,
-		Sender:          sender,
-		Origin:          origin,
-		TokenKey:        tokenKey,
-		PubSub:          pubsub,
-		Store:           store,
-		AvatarURLPrefix: avatarURLPrefix,
-		WebAuthn:        webauthn,
+		Logger:           logger,
+		DB:               db,
+		Sender:           sender,
+		Origin:           origin,
+		TokenKey:         tokenKey,
+		PubSub:           pubsub,
+		Store:            store,
+		AvatarURLPrefix:  avatarURLPrefix,
+		WebAuthn:         webauthn,
+		DisabledDevLogin: disabledDevLogin,
 	}
 
 	go svc.RunBackgroundJobs(ctx)
