@@ -1,13 +1,14 @@
 package handler
 
 import (
-	"log"
 	"net/http"
+	"os"
 	"path"
 	"path/filepath"
 	"runtime"
 	"time"
 
+	"github.com/go-kit/kit/log"
 	"github.com/gorilla/securecookie"
 	"github.com/matryer/way"
 	"github.com/nicolasparada/nakama/storage"
@@ -17,14 +18,16 @@ import (
 
 type handler struct {
 	svc         transport.Service
+	logger      log.Logger
 	store       storage.Store
 	cookieCodec *securecookie.SecureCookie
 }
 
 // New makes use of the service to provide an http.Handler with predefined routing.
-func New(svc transport.Service, store storage.Store, cdc *securecookie.SecureCookie, enableStaticCache, embedStaticFiles, serveAvatars bool) http.Handler {
+func New(svc transport.Service, logger log.Logger, store storage.Store, cdc *securecookie.SecureCookie, enableStaticCache, embedStaticFiles, serveAvatars bool) http.Handler {
 	h := &handler{
 		svc:         svc,
+		logger:      logger,
 		store:       store,
 		cookieCodec: cdc,
 	}
@@ -61,17 +64,16 @@ func New(svc transport.Service, store storage.Store, cdc *securecookie.SecureCoo
 	api.HandleFunc("POST", "/notifications/:notification_id/mark_as_read", h.markNotificationAsRead)
 	api.HandleFunc("POST", "/mark_notifications_as_read", h.markNotificationsAsRead)
 
-	api.HandleFunc("HEAD", "/proxy", withCacheControl(time.Hour*24*14)(proxy))
+	api.HandleFunc("HEAD", "/proxy", withCacheControl(time.Hour*24*14)(h.proxy))
 
 	var fsys http.FileSystem
 	if embedStaticFiles {
-		log.Println("serving static content from embeded files")
 		fsys = http.FS(static.Files)
 	} else {
-		log.Println("serving static content directly from disk")
 		_, file, _, ok := runtime.Caller(0)
 		if !ok {
-			log.Fatalln("could not get runtime caller")
+			_ = logger.Log("error", "could not get runtime caller")
+			os.Exit(1)
 		}
 		fsys = http.Dir(filepath.Join(path.Dir(file), "..", "..", "web", "static"))
 	}

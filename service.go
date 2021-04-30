@@ -7,6 +7,7 @@ import (
 	"net/url"
 
 	"github.com/duo-labs/webauthn/webauthn"
+	"github.com/go-kit/kit/log"
 	"github.com/nicolasparada/nakama/mailing"
 	"github.com/nicolasparada/nakama/pubsub"
 	"github.com/nicolasparada/nakama/storage"
@@ -19,6 +20,7 @@ var Schema string
 // You can use it to back a REST, gRPC or GraphQL API.
 // You must call RunBackgroundJobs afterward.
 type Service struct {
+	Logger           log.Logger
 	DB               *sql.DB
 	Sender           mailing.Sender
 	Origin           *url.URL

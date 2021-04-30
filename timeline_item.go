@@ -7,7 +7,6 @@ import (
 	"encoding/gob"
 	"fmt"
 	"io"
-	"log"
 )
 
 // ErrInvalidTimelineItemID denotes an invalid timeline item id; that is not uuid.
@@ -111,7 +110,7 @@ func (s *Service) TimelineItemStream(ctx context.Context) (<-chan TimelineItem, 
 			var ti TimelineItem
 			err := gob.NewDecoder(r).Decode(&ti)
 			if err != nil {
-				log.Printf("could not gob decode timeline item: %v\n", err)
+				_ = s.Logger.Log("error", fmt.Errorf("could not gob decode timeline item: %w", err))
 				return
 			}
 
@@ -125,7 +124,7 @@ func (s *Service) TimelineItemStream(ctx context.Context) (<-chan TimelineItem, 
 	go func() {
 		<-ctx.Done()
 		if err := unsub(); err != nil {
-			log.Printf("could not unsubcribe from timeline: %v\n", err)
+			_ = s.Logger.Log("error", fmt.Errorf("could not unsubcribe from timeline: %w", err))
 			// don't return
 		}
 
@@ -162,7 +161,7 @@ func (s *Service) fanoutPost(p Post) {
 		RETURNING id, user_id`
 	rows, err := s.DB.Query(query, p.ID, p.UserID)
 	if err != nil {
-		log.Printf("could not insert timeline: %v\n", err)
+		_ = s.Logger.Log("error", fmt.Errorf("could not insert timeline: %w", err))
 		return
 	}
 
@@ -171,7 +170,7 @@ func (s *Service) fanoutPost(p Post) {
 	for rows.Next() {
 		var ti TimelineItem
 		if err = rows.Scan(&ti.ID, &ti.UserID); err != nil {
-			log.Printf("could not scan timeline item: %v\n", err)
+			_ = s.Logger.Log("error", fmt.Errorf("could not scan timeline item: %w", err))
 			return
 		}
 
@@ -182,7 +181,7 @@ func (s *Service) fanoutPost(p Post) {
 	}
 
 	if err = rows.Err(); err != nil {
-		log.Printf("could not iterate timeline rows: %v\n", err)
+		_ = s.Logger.Log("error", fmt.Errorf("could not iterate timeline rows: %w", err))
 		return
 	}
 }
@@ -191,13 +190,13 @@ func (s *Service) broadcastTimelineItem(ti TimelineItem) {
 	var b bytes.Buffer
 	err := gob.NewEncoder(&b).Encode(ti)
 	if err != nil {
-		log.Printf("could not gob encode timeline item: %v\n", err)
+		_ = s.Logger.Log("error", fmt.Errorf("could not gob encode timeline item: %w", err))
 		return
 	}
 
 	err = s.PubSub.Pub(timelineTopic(ti.UserID), b.Bytes())
 	if err != nil {
-		log.Printf("could not publish timeline item: %v\n", err)
+		_ = s.Logger.Log("error", fmt.Errorf("could not publish timeline item: %w", err))
 		return
 	}
 }

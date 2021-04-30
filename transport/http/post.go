@@ -19,17 +19,17 @@ func (h *handler) createPost(w http.ResponseWriter, r *http.Request) {
 
 	var in createPostInput
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-		respondErr(w, errBadRequest)
+		h.respondErr(w, errBadRequest)
 		return
 	}
 
 	ti, err := h.svc.CreatePost(r.Context(), in.Content, in.SpoilerOf, in.NSFW)
 	if err != nil {
-		respondErr(w, err)
+		h.respondErr(w, err)
 		return
 	}
 
-	respond(w, ti, http.StatusCreated)
+	h.respond(w, ti, http.StatusCreated)
 }
 
 func (h *handler) posts(w http.ResponseWriter, r *http.Request) {
@@ -39,11 +39,11 @@ func (h *handler) posts(w http.ResponseWriter, r *http.Request) {
 	before := q.Get("before")
 	pp, err := h.svc.Posts(ctx, way.Param(ctx, "username"), last, before)
 	if err != nil {
-		respondErr(w, err)
+		h.respondErr(w, err)
 		return
 	}
 
-	respond(w, pp, http.StatusOK)
+	h.respond(w, pp, http.StatusOK)
 }
 
 func (h *handler) post(w http.ResponseWriter, r *http.Request) {
@@ -51,11 +51,11 @@ func (h *handler) post(w http.ResponseWriter, r *http.Request) {
 	postID := way.Param(ctx, "post_id")
 	p, err := h.svc.Post(ctx, postID)
 	if err != nil {
-		respondErr(w, err)
+		h.respondErr(w, err)
 		return
 	}
 
-	respond(w, p, http.StatusOK)
+	h.respond(w, p, http.StatusOK)
 }
 
 func (h *handler) togglePostLike(w http.ResponseWriter, r *http.Request) {
@@ -63,11 +63,11 @@ func (h *handler) togglePostLike(w http.ResponseWriter, r *http.Request) {
 	postID := way.Param(ctx, "post_id")
 	out, err := h.svc.TogglePostLike(ctx, postID)
 	if err != nil {
-		respondErr(w, err)
+		h.respondErr(w, err)
 		return
 	}
 
-	respond(w, out, http.StatusOK)
+	h.respond(w, out, http.StatusOK)
 }
 
 func (h *handler) togglePostSubscription(w http.ResponseWriter, r *http.Request) {
@@ -75,9 +75,9 @@ func (h *handler) togglePostSubscription(w http.ResponseWriter, r *http.Request)
 	postID := way.Param(ctx, "post_id")
 	out, err := h.svc.TogglePostSubscription(ctx, postID)
 	if err != nil {
-		respondErr(w, err)
+		h.respondErr(w, err)
 		return
 	}
 
-	respond(w, out, http.StatusOK)
+	h.respond(w, out, http.StatusOK)
 }

@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
-	"log"
 	"net/url"
 	"strings"
 	"time"
@@ -126,7 +125,7 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 			go func() {
 				_, err := s.DB.Exec("DELETE FROM verification_codes WHERE id = $1", code)
 				if err != nil {
-					log.Printf("could not delete verification code: %v\n", err)
+					_ = s.Logger.Log("error", fmt.Errorf("could not delete verification code: %w", err))
 				}
 			}()
 		}
@@ -264,7 +263,7 @@ func (s *Service) VerifyMagicLink(ctx context.Context, email, verificationCode s
 	go func() {
 		_, err := s.DB.Exec("DELETE FROM verification_codes WHERE id = $1", verificationCode)
 		if err != nil {
-			log.Printf("could not delete verification code: %v\n", err)
+			_ = s.Logger.Log("error", fmt.Errorf("could not delete verification code: %w", err))
 			return
 		}
 	}()
@@ -673,7 +672,7 @@ loop:
 		select {
 		case <-ticker.C:
 			if err := s.deleteExpiredVerificationCodes(ctx); err != nil {
-				log.Println(err)
+				_ = s.Logger.Log("error", err)
 			}
 		case <-done:
 			ticker.Stop()

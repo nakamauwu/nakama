@@ -3,8 +3,8 @@ package handler
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -64,7 +64,7 @@ func (h *handler) avatar(w http.ResponseWriter, r *http.Request) {
 
 	f, err := h.store.Open(ctx, name)
 	if err != nil {
-		respondErr(w, err)
+		h.respondErr(w, err)
 		return
 	}
 
@@ -75,6 +75,6 @@ func (h *handler) avatar(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	_, err = io.Copy(w, f)
 	if err != nil && !errors.Is(err, context.Canceled) {
-		log.Printf("could not write down avatar: %v\n", err)
+		_ = h.logger.Log("error", fmt.Errorf("could not write down avatar: %w", err))
 	}
 }

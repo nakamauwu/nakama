@@ -7,7 +7,6 @@ import (
 	"encoding/gob"
 	"fmt"
 	"io"
-	"log"
 	"time"
 	"unicode/utf8"
 
@@ -95,7 +94,7 @@ func (s *Service) CreateComment(ctx context.Context, postID string, content stri
 func (s *Service) commentCreated(c Comment) {
 	u, err := s.userByID(context.Background(), c.UserID)
 	if err != nil {
-		log.Printf("could not fetch comment user: %v\n", err)
+		_ = s.Logger.Log("error", fmt.Errorf("could not fetch comment user: %w", err))
 		return
 	}
 
@@ -190,7 +189,7 @@ func (s *Service) CommentStream(ctx context.Context, postID string) (<-chan Comm
 			var c Comment
 			err := gob.NewDecoder(r).Decode(&c)
 			if err != nil {
-				log.Printf("could not gob decode comment: %v\n", err)
+				_ = s.Logger.Log("error", fmt.Errorf("could not gob decode comment: %w", err))
 				return
 			}
 
@@ -208,7 +207,7 @@ func (s *Service) CommentStream(ctx context.Context, postID string) (<-chan Comm
 	go func() {
 		<-ctx.Done()
 		if err := unsub(); err != nil {
-			log.Printf("could not unsubcribe from comments: %v\n", err)
+			_ = s.Logger.Log("error", fmt.Errorf("could not unsubcribe from comments: %w", err))
 			// don't return
 		}
 		close(cc)
@@ -283,13 +282,13 @@ func (s *Service) broadcastComment(c Comment) {
 	var b bytes.Buffer
 	err := gob.NewEncoder(&b).Encode(c)
 	if err != nil {
-		log.Printf("could not gob encode comment: %v\n", err)
+		_ = s.Logger.Log("error", fmt.Errorf("could not gob encode comment: %w", err))
 		return
 	}
 
 	err = s.PubSub.Pub(commentTopic(c.PostID), b.Bytes())
 	if err != nil {
-		log.Printf("could not publish comment: %v\n", err)
+		_ = s.Logger.Log("error", fmt.Errorf("could not publish comment: %w", err))
 		return
 	}
 }

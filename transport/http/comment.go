@@ -18,7 +18,7 @@ func (h *handler) createComment(w http.ResponseWriter, r *http.Request) {
 
 	var in createCommentInput
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-		respondErr(w, errBadRequest)
+		h.respondErr(w, errBadRequest)
 		return
 	}
 
@@ -26,11 +26,11 @@ func (h *handler) createComment(w http.ResponseWriter, r *http.Request) {
 	postID := way.Param(ctx, "post_id")
 	c, err := h.svc.CreateComment(ctx, postID, in.Content)
 	if err != nil {
-		respondErr(w, err)
+		h.respondErr(w, err)
 		return
 	}
 
-	respond(w, c, http.StatusCreated)
+	h.respond(w, c, http.StatusCreated)
 }
 
 func (h *handler) comments(w http.ResponseWriter, r *http.Request) {
@@ -46,17 +46,17 @@ func (h *handler) comments(w http.ResponseWriter, r *http.Request) {
 	before := q.Get("before")
 	cc, err := h.svc.Comments(ctx, postID, last, before)
 	if err != nil {
-		respondErr(w, err)
+		h.respondErr(w, err)
 		return
 	}
 
-	respond(w, cc, http.StatusOK)
+	h.respond(w, cc, http.StatusOK)
 }
 
 func (h *handler) commentStream(w http.ResponseWriter, r *http.Request) {
 	f, ok := w.(http.Flusher)
 	if !ok {
-		respondErr(w, errStreamingUnsupported)
+		h.respondErr(w, errStreamingUnsupported)
 		return
 	}
 
@@ -64,7 +64,7 @@ func (h *handler) commentStream(w http.ResponseWriter, r *http.Request) {
 	postID := way.Param(ctx, "post_id")
 	cc, err := h.svc.CommentStream(ctx, postID)
 	if err != nil {
-		respondErr(w, err)
+		h.respondErr(w, err)
 		return
 	}
 
@@ -75,7 +75,7 @@ func (h *handler) commentStream(w http.ResponseWriter, r *http.Request) {
 
 	select {
 	case c := <-cc:
-		writeSSE(w, c)
+		h.writeSSE(w, c)
 		f.Flush()
 	case <-ctx.Done():
 		return
@@ -87,9 +87,9 @@ func (h *handler) toggleCommentLike(w http.ResponseWriter, r *http.Request) {
 	commentID := way.Param(ctx, "comment_id")
 	out, err := h.svc.ToggleCommentLike(ctx, commentID)
 	if err != nil {
-		respondErr(w, err)
+		h.respondErr(w, err)
 		return
 	}
 
-	respond(w, out, http.StatusOK)
+	h.respond(w, out, http.StatusOK)
 }

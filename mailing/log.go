@@ -2,22 +2,18 @@ package mailing
 
 import (
 	"net/mail"
-)
 
-// Logger interface.
-type Logger interface {
-	Log(args ...interface{})
-	Logf(format string, args ...interface{})
-}
+	"github.com/go-kit/kit/log"
+)
 
 // LogSender log emails.
 type LogSender struct {
 	From   mail.Address
-	Logger Logger
+	Logger log.Logger
 }
 
 // NewLogSender implementation using the provided logger.
-func NewLogSender(from string, l Logger) *LogSender {
+func NewLogSender(from string, l log.Logger) *LogSender {
 	return &LogSender{
 		From:   mail.Address{Name: "nakama", Address: from},
 		Logger: l,
@@ -32,6 +28,6 @@ func (s *LogSender) Send(to, subject, html, text string) error {
 		return err
 	}
 
-	s.Logger.Logf("\n\n%s\n\n", string(b))
+	_ = s.Logger.Log("mail", string(b))
 	return nil
 }

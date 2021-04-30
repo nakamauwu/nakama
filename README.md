@@ -48,6 +48,7 @@ These are the Go libraries used in the source code. Thank you very much.
  - [github.com/cockroachdb/cockroach-go/crdb](https://github.com/cockroachdb/cockroach-go)
  - [github.com/disintegration/imaging](https://github.com/disintegration/imaging)
  - [github.com/duo-labs/webauthn](https://github.com/duo-labs/webauthn)
+ - [github.com/go-kit/kit/log](https://github.com/go-kit/kit)
  - [github.com/go-mail/mail](https://github.com/go-mail/mail)
  - [github.com/gorilla/securecookie](https://github.com/gorilla/securecookie)
  - [github.com/hako/branca](https://github.com/hako/branca)

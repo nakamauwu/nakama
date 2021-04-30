@@ -16,11 +16,11 @@ func (h *handler) users(w http.ResponseWriter, r *http.Request) {
 	after := q.Get("after")
 	uu, err := h.svc.Users(r.Context(), search, first, after)
 	if err != nil {
-		respondErr(w, err)
+		h.respondErr(w, err)
 		return
 	}
 
-	respond(w, uu, http.StatusOK)
+	h.respond(w, uu, http.StatusOK)
 }
 
 func (h *handler) usernames(w http.ResponseWriter, r *http.Request) {
@@ -30,11 +30,11 @@ func (h *handler) usernames(w http.ResponseWriter, r *http.Request) {
 	after := q.Get("after")
 	uu, err := h.svc.Usernames(r.Context(), startingWith, first, after)
 	if err != nil {
-		respondErr(w, err)
+		h.respondErr(w, err)
 		return
 	}
 
-	respond(w, uu, http.StatusOK)
+	h.respond(w, uu, http.StatusOK)
 }
 
 func (h *handler) user(w http.ResponseWriter, r *http.Request) {
@@ -42,11 +42,11 @@ func (h *handler) user(w http.ResponseWriter, r *http.Request) {
 	username := way.Param(ctx, "username")
 	u, err := h.svc.User(ctx, username)
 	if err != nil {
-		respondErr(w, err)
+		h.respondErr(w, err)
 		return
 	}
 
-	respond(w, u, http.StatusOK)
+	h.respond(w, u, http.StatusOK)
 }
 
 func (h *handler) updateAvatar(w http.ResponseWriter, r *http.Request) {
@@ -57,7 +57,7 @@ func (h *handler) updateAvatar(w http.ResponseWriter, r *http.Request) {
 
 	avatarURL, err := h.svc.UpdateAvatar(r.Context(), reader)
 	if err != nil {
-		respondErr(w, err)
+		h.respondErr(w, err)
 		return
 	}
 
@@ -70,11 +70,11 @@ func (h *handler) toggleFollow(w http.ResponseWriter, r *http.Request) {
 
 	out, err := h.svc.ToggleFollow(ctx, username)
 	if err != nil {
-		respondErr(w, err)
+		h.respondErr(w, err)
 		return
 	}
 
-	respond(w, out, http.StatusOK)
+	h.respond(w, out, http.StatusOK)
 }
 
 func (h *handler) followers(w http.ResponseWriter, r *http.Request) {
@@ -85,11 +85,11 @@ func (h *handler) followers(w http.ResponseWriter, r *http.Request) {
 	after := q.Get("after")
 	uu, err := h.svc.Followers(ctx, username, first, after)
 	if err != nil {
-		respondErr(w, err)
+		h.respondErr(w, err)
 		return
 	}
 
-	respond(w, uu, http.StatusOK)
+	h.respond(w, uu, http.StatusOK)
 }
 
 func (h *handler) followees(w http.ResponseWriter, r *http.Request) {
@@ -100,9 +100,9 @@ func (h *handler) followees(w http.ResponseWriter, r *http.Request) {
 	after := q.Get("after")
 	uu, err := h.svc.Followees(ctx, username, first, after)
 	if err != nil {
-		respondErr(w, err)
+		h.respondErr(w, err)
 		return
 	}
 
-	respond(w, uu, http.StatusOK)
+	h.respond(w, uu, http.StatusOK)
 }

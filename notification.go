@@ -7,7 +7,6 @@ import (
 	"encoding/gob"
 	"fmt"
 	"io"
-	"log"
 	"time"
 
 	"github.com/cockroachdb/cockroach-go/crdb"
@@ -94,7 +93,7 @@ func (s *Service) NotificationStream(ctx context.Context) (<-chan Notification, 
 			var n Notification
 			err := gob.NewDecoder(r).Decode(&n)
 			if err != nil {
-				log.Printf("could not gob decode notification: %v\n", err)
+				_ = s.Logger.Log("error", fmt.Errorf("could not gob decode notification: %w", err))
 				return
 			}
 
@@ -108,7 +107,7 @@ func (s *Service) NotificationStream(ctx context.Context) (<-chan Notification, 
 	go func() {
 		<-ctx.Done()
 		if err := unsub(); err != nil {
-			log.Printf("could not unsubcribe from notifications: %v\n", err)
+			_ = s.Logger.Log("error", fmt.Errorf("could not unsubcribe from notifications: %w", err))
 			// don't return
 		}
 		close(nn)
@@ -238,7 +237,7 @@ func (s *Service) notifyFollow(followerID, followeeID string) {
 		return nil
 	})
 	if err != nil {
-		log.Printf("could not notify follow: %v\n", err)
+		_ = s.Logger.Log("error", fmt.Errorf("could not notify follow: %w", err))
 		return
 	}
 
@@ -262,7 +261,7 @@ func (s *Service) notifyComment(c Comment) {
 		actor,
 	)
 	if err != nil {
-		log.Printf("could not insert comment notifications: %v\n", err)
+		_ = s.Logger.Log("error", fmt.Errorf("could not insert comment notifications: %w", err))
 		return
 	}
 
@@ -271,7 +270,7 @@ func (s *Service) notifyComment(c Comment) {
 	for rows.Next() {
 		var n Notification
 		if err = rows.Scan(&n.ID, &n.UserID, pq.Array(&n.Actors), &n.IssuedAt); err != nil {
-			log.Printf("could not scan comment notification: %v\n", err)
+			_ = s.Logger.Log("error", fmt.Errorf("could not scan comment notification: %w", err))
 			return
 		}
 
@@ -282,7 +281,7 @@ func (s *Service) notifyComment(c Comment) {
 	}
 
 	if err = rows.Err(); err != nil {
-		log.Printf("could not iterate over comment notification rows: %v\n", err)
+		_ = s.Logger.Log("error", fmt.Errorf("could not iterate over comment notification rows: %w", err))
 		return
 	}
 }
@@ -306,7 +305,7 @@ func (s *Service) notifyPostMention(p Post) {
 		pq.Array(mentions),
 	)
 	if err != nil {
-		log.Printf("could not insert post mention notifications: %v\n", err)
+		_ = s.Logger.Log("error", fmt.Errorf("could not insert post mention notifications: %w", err))
 		return
 	}
 
@@ -315,7 +314,7 @@ func (s *Service) notifyPostMention(p Post) {
 	for rows.Next() {
 		var n Notification
 		if err = rows.Scan(&n.ID, &n.UserID, &n.IssuedAt); err != nil {
-			log.Printf("could not scan post mention notification: %v\n", err)
+			_ = s.Logger.Log("error", fmt.Errorf("could not scan post mention notification: %w", err))
 			return
 		}
 
@@ -327,7 +326,7 @@ func (s *Service) notifyPostMention(p Post) {
 	}
 
 	if err = rows.Err(); err != nil {
-		log.Printf("could not iterate post mention notification rows: %v\n", err)
+		_ = s.Logger.Log("error", fmt.Errorf("could not iterate post mention notification rows: %w", err))
 		return
 	}
 }
@@ -355,7 +354,7 @@ func (s *Service) notifyCommentMention(c Comment) {
 		actor,
 	)
 	if err != nil {
-		log.Printf("could not insert comment mention notifications: %v\n", err)
+		_ = s.Logger.Log("error", fmt.Errorf("could not insert comment mention notifications: %w", err))
 		return
 	}
 
@@ -364,7 +363,7 @@ func (s *Service) notifyCommentMention(c Comment) {
 	for rows.Next() {
 		var n Notification
 		if err = rows.Scan(&n.ID, &n.UserID, pq.Array(&n.Actors), &n.IssuedAt); err != nil {
-			log.Printf("could not scan comment mention notification: %v\n", err)
+			_ = s.Logger.Log("error", fmt.Errorf("could not scan comment mention notification: %w", err))
 			return
 		}
 
@@ -375,7 +374,7 @@ func (s *Service) notifyCommentMention(c Comment) {
 	}
 
 	if err = rows.Err(); err != nil {
-		log.Printf("could not iterate comment mention notification rows: %v\n", err)
+		_ = s.Logger.Log("error", fmt.Errorf("could not iterate comment mention notification rows: %w", err))
 		return
 	}
 }
@@ -384,13 +383,13 @@ func (s *Service) broadcastNotification(n Notification) {
 	var b bytes.Buffer
 	err := gob.NewEncoder(&b).Encode(n)
 	if err != nil {
-		log.Printf("could not gob encode notification: %v\n", err)
+		_ = s.Logger.Log("error", fmt.Errorf("could not gob encode notification: %w", err))
 		return
 	}
 
 	err = s.PubSub.Pub(notificationTopic(n.UserID), b.Bytes())
 	if err != nil {
-		log.Printf("could not publish notification: %v\n", err)
+		_ = s.Logger.Log("error", fmt.Errorf("could not publish notification: %w", err))
 		return
 	}
 }

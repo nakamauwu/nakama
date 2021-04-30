@@ -23,10 +23,10 @@ var (
 	errInvalidTargetURL     = nakama.InvalidArgumentError("invalid target URL")
 )
 
-func respond(w http.ResponseWriter, v interface{}, statusCode int) {
+func (h *handler) respond(w http.ResponseWriter, v interface{}, statusCode int) {
 	b, err := json.Marshal(v)
 	if err != nil {
-		respondErr(w, fmt.Errorf("could not json marshal http response body: %w", err))
+		h.respondErr(w, fmt.Errorf("could not json marshal http response body: %w", err))
 		return
 	}
 
@@ -34,11 +34,11 @@ func respond(w http.ResponseWriter, v interface{}, statusCode int) {
 	w.WriteHeader(statusCode)
 	_, err = w.Write(b)
 	if err != nil && !errors.Is(err, context.Canceled) {
-		log.Printf("could not write down http response: %v\n", err)
+		_ = h.logger.Log("error", fmt.Errorf("could not write down http response: %w", err))
 	}
 }
 
-func respondErr(w http.ResponseWriter, err error) {
+func (h *handler) respondErr(w http.ResponseWriter, err error) {
 	statusCode := err2code(err)
 	if statusCode == http.StatusInternalServerError {
 		log.Println(err)
@@ -82,10 +82,10 @@ func err2code(err error) int {
 	return http.StatusInternalServerError
 }
 
-func writeSSE(w io.Writer, v interface{}) {
+func (h *handler) writeSSE(w io.Writer, v interface{}) {
 	b, err := json.Marshal(v)
 	if err != nil {
-		log.Printf("could not marshal response: %v\n", err)
+		_ = h.logger.Log("error", fmt.Errorf("could not json marshal sse data: %w", err))
 		fmt.Fprintf(w, "event: error\ndata: %v\n\n", err)
 		return
 	}
@@ -93,16 +93,16 @@ func writeSSE(w io.Writer, v interface{}) {
 	fmt.Fprintf(w, "data: %s\n\n", b)
 }
 
-func proxy(w http.ResponseWriter, r *http.Request) {
+func (h *handler) proxy(w http.ResponseWriter, r *http.Request) {
 	targetStr := r.URL.Query().Get("target")
 	if targetStr == "" {
-		respondErr(w, errInvalidTargetURL)
+		h.respondErr(w, errInvalidTargetURL)
 		return
 	}
 
 	target, err := url.Parse(targetStr)
 	if err != nil || !target.IsAbs() {
-		respondErr(w, errInvalidTargetURL)
+		h.respondErr(w, errInvalidTargetURL)
 		return
 	}
 

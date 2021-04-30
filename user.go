@@ -9,7 +9,6 @@ import (
 	"image/jpeg"
 	"image/png"
 	"io"
-	"log"
 	"regexp"
 	"strings"
 
@@ -330,7 +329,7 @@ func (s *Service) UpdateAvatar(ctx context.Context, r io.Reader) (string, error)
 		defer func() {
 			err := s.Store.Delete(context.Background(), avatarFileName)
 			if err != nil {
-				log.Printf("could not delete avatar file after user update fail: %v\n", err)
+				_ = s.Logger.Log("error", fmt.Errorf("could not delete avatar file after user update fail: %w", err))
 			}
 		}()
 
@@ -341,7 +340,7 @@ func (s *Service) UpdateAvatar(ctx context.Context, r io.Reader) (string, error)
 		defer func() {
 			err := s.Store.Delete(context.Background(), oldAvatar.String)
 			if err != nil {
-				log.Printf("could not delete old avatar: %v\n", err)
+				_ = s.Logger.Log("error", fmt.Errorf("could not delete old avatar: %w", err))
 			}
 		}()
 	}

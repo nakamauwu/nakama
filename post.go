@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -122,7 +121,7 @@ func (s *Service) CreatePost(ctx context.Context, content string, spoilerOf *str
 func (s *Service) postCreated(p Post) {
 	u, err := s.userByID(context.Background(), p.UserID)
 	if err != nil {
-		log.Printf("could not fetch post user: %v\n", err)
+		_ = s.Logger.Log("error", fmt.Errorf("could not fetch post user: %w", err))
 		return
 	}
 

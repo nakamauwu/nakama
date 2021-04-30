@@ -20,24 +20,24 @@ func (h *handler) timeline(w http.ResponseWriter, r *http.Request) {
 	before := q.Get("before")
 	tt, err := h.svc.Timeline(ctx, last, before)
 	if err != nil {
-		respondErr(w, err)
+		h.respondErr(w, err)
 		return
 	}
 
-	respond(w, tt, http.StatusOK)
+	h.respond(w, tt, http.StatusOK)
 }
 
 func (h *handler) timelineItemStream(w http.ResponseWriter, r *http.Request) {
 	f, ok := w.(http.Flusher)
 	if !ok {
-		respondErr(w, errStreamingUnsupported)
+		h.respondErr(w, errStreamingUnsupported)
 		return
 	}
 
 	ctx := r.Context()
 	tt, err := h.svc.TimelineItemStream(ctx)
 	if err != nil {
-		respondErr(w, err)
+		h.respondErr(w, err)
 		return
 	}
 
@@ -48,7 +48,7 @@ func (h *handler) timelineItemStream(w http.ResponseWriter, r *http.Request) {
 
 	select {
 	case ti := <-tt:
-		writeSSE(w, ti)
+		h.writeSSE(w, ti)
 		f.Flush()
 	case <-ctx.Done():
 		return
@@ -60,7 +60,7 @@ func (h *handler) deleteTimelineItem(w http.ResponseWriter, r *http.Request) {
 	timelineItemID := way.Param(ctx, "timeline_item_id")
 	err := h.svc.DeleteTimelineItem(ctx, timelineItemID)
 	if err != nil {
-		respondErr(w, err)
+		h.respondErr(w, err)
 		return
 	}
 

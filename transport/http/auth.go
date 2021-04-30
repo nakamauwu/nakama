@@ -39,13 +39,13 @@ func (h *handler) sendMagicLink(w http.ResponseWriter, r *http.Request) {
 
 	var in sendMagicLinkInput
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-		respondErr(w, errBadRequest)
+		h.respondErr(w, errBadRequest)
 		return
 	}
 
 	err := h.svc.SendMagicLink(r.Context(), in.Email, in.RedirectURI)
 	if err != nil {
-		respondErr(w, err)
+		h.respondErr(w, err)
 		return
 	}
 
@@ -64,7 +64,7 @@ func (h *handler) verifyMagicLink(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	redirectURI, err := h.svc.ParseRedirectURI(q.Get("redirect_uri"))
 	if err != nil {
-		respondErr(w, err)
+		h.respondErr(w, err)
 		return
 	}
 
@@ -122,13 +122,13 @@ func (h *handler) credentialCreationOptions(w http.ResponseWriter, r *http.Reque
 	ctx := r.Context()
 	out, data, err := h.svc.CredentialCreationOptions(ctx)
 	if err != nil {
-		respondErr(w, err)
+		h.respondErr(w, err)
 		return
 	}
 
 	cookieValue, err := h.cookieCodec.Encode(webAuthnCredentialCreationDataCookieName, data)
 	if err != nil {
-		respondErr(w, fmt.Errorf("could not cookie encode webauthn credential creation data: %w", err))
+		h.respondErr(w, fmt.Errorf("could not cookie encode webauthn credential creation data: %w", err))
 		return
 	}
 
@@ -141,18 +141,18 @@ func (h *handler) credentialCreationOptions(w http.ResponseWriter, r *http.Reque
 		SameSite: http.SameSiteLaxMode,
 	})
 
-	respond(w, out, http.StatusOK)
+	h.respond(w, out, http.StatusOK)
 }
 
 func (h *handler) registerCredential(w http.ResponseWriter, r *http.Request) {
 	c, err := r.Cookie(webAuthnCredentialCreationDataCookieName)
 	if err == http.ErrNoCookie {
-		respondErr(w, errWebAuthnTimeout)
+		h.respondErr(w, errWebAuthnTimeout)
 		return
 	}
 
 	if err != nil {
-		respondErr(w, fmt.Errorf("could not get webauth credential creation data cookie: %w", err))
+		h.respondErr(w, fmt.Errorf("could not get webauth credential creation data cookie: %w", err))
 		return
 	}
 
@@ -169,20 +169,20 @@ func (h *handler) registerCredential(w http.ResponseWriter, r *http.Request) {
 	var data webauthn.SessionData
 	err = h.cookieCodec.Decode(webAuthnCredentialCreationDataCookieName, cookieValue, &data)
 	if err != nil {
-		respondErr(w, errTeaPot)
+		h.respondErr(w, errTeaPot)
 		return
 	}
 
 	reply, err := protocol.ParseCredentialCreationResponse(r)
 	if err != nil {
-		respondErr(w, errBadRequest)
+		h.respondErr(w, errBadRequest)
 		return
 	}
 
 	ctx := r.Context()
 	err = h.svc.RegisterCredential(ctx, data, reply)
 	if err != nil {
-		respondErr(w, err)
+		h.respondErr(w, err)
 		return
 	}
 
@@ -200,13 +200,13 @@ func (h *handler) credentialRequestOptions(w http.ResponseWriter, r *http.Reques
 	ctx := r.Context()
 	out, data, err := h.svc.CredentialRequestOptions(ctx, email, opts...)
 	if err != nil {
-		respondErr(w, err)
+		h.respondErr(w, err)
 		return
 	}
 
 	cookieValue, err := h.cookieCodec.Encode(webAuthnCredentialRequestDataCookieName, data)
 	if err != nil {
-		respondErr(w, fmt.Errorf("could not cookie encode webauthn credential request data: %w", err))
+		h.respondErr(w, fmt.Errorf("could not cookie encode webauthn credential request data: %w", err))
 		return
 	}
 
@@ -219,18 +219,18 @@ func (h *handler) credentialRequestOptions(w http.ResponseWriter, r *http.Reques
 		SameSite: http.SameSiteLaxMode,
 	})
 
-	respond(w, out, http.StatusOK)
+	h.respond(w, out, http.StatusOK)
 }
 
 func (h *handler) webAuthnLogin(w http.ResponseWriter, r *http.Request) {
 	c, err := r.Cookie(webAuthnCredentialRequestDataCookieName)
 	if err == http.ErrNoCookie {
-		respondErr(w, errWebAuthnTimeout)
+		h.respondErr(w, errWebAuthnTimeout)
 		return
 	}
 
 	if err != nil {
-		respondErr(w, fmt.Errorf("could not get webauth credential creation data cookie: %w", err))
+		h.respondErr(w, fmt.Errorf("could not get webauth credential creation data cookie: %w", err))
 		return
 	}
 
@@ -248,19 +248,19 @@ func (h *handler) webAuthnLogin(w http.ResponseWriter, r *http.Request) {
 	var data webauthn.SessionData
 	err = h.cookieCodec.Decode(webAuthnCredentialRequestDataCookieName, cookieValue, &data)
 	if err != nil {
-		respondErr(w, errTeaPot)
+		h.respondErr(w, errTeaPot)
 		return
 	}
 
 	decodedUserID, err := base64.URLEncoding.DecodeString(string(data.UserID))
 	if err != nil {
-		respondErr(w, fmt.Errorf("could not base64 decode session user id: %w", err))
+		h.respondErr(w, fmt.Errorf("could not base64 decode session user id: %w", err))
 		return
 	}
 
 	reply, err := protocol.ParseCredentialRequestResponse(r)
 	if err != nil {
-		respondErr(w, errBadRequest)
+		h.respondErr(w, errBadRequest)
 		return
 	}
 
@@ -269,11 +269,11 @@ func (h *handler) webAuthnLogin(w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, nakama.KeyAuthUserID, uid)
 	out, err := h.svc.WebAuthnLogin(ctx, data, reply)
 	if err != nil {
-		respondErr(w, err)
+		h.respondErr(w, err)
 		return
 	}
 
-	respond(w, out, http.StatusOK)
+	h.respond(w, out, http.StatusOK)
 }
 
 func (h *handler) devLogin(w http.ResponseWriter, r *http.Request) {
@@ -281,37 +281,37 @@ func (h *handler) devLogin(w http.ResponseWriter, r *http.Request) {
 
 	var in loginInput
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-		respondErr(w, errBadRequest)
+		h.respondErr(w, errBadRequest)
 		return
 	}
 
 	out, err := h.svc.DevLogin(r.Context(), in.Email)
 	if err != nil {
-		respondErr(w, err)
+		h.respondErr(w, err)
 		return
 	}
 
-	respond(w, out, http.StatusOK)
+	h.respond(w, out, http.StatusOK)
 }
 
 func (h *handler) authUser(w http.ResponseWriter, r *http.Request) {
 	u, err := h.svc.AuthUser(r.Context())
 	if err != nil {
-		respondErr(w, err)
+		h.respondErr(w, err)
 		return
 	}
 
-	respond(w, u, http.StatusOK)
+	h.respond(w, u, http.StatusOK)
 }
 
 func (h *handler) token(w http.ResponseWriter, r *http.Request) {
 	out, err := h.svc.Token(r.Context())
 	if err != nil {
-		respondErr(w, err)
+		h.respondErr(w, err)
 		return
 	}
 
-	respond(w, out, http.StatusOK)
+	h.respond(w, out, http.StatusOK)
 }
 
 func (h *handler) withAuth(next http.Handler) http.Handler {
@@ -331,7 +331,7 @@ func (h *handler) withAuth(next http.Handler) http.Handler {
 
 		uid, err := h.svc.AuthUserIDFromToken(token)
 		if err != nil {
-			respondErr(w, err)
+			h.respondErr(w, err)
 			return
 		}
 

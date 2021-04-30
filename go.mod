@@ -3,10 +3,11 @@ module github.com/nicolasparada/nakama
 go 1.16
 
 require (
-	github.com/cenkalti/backoff v2.0.0+incompatible // indirect
+	github.com/cenkalti/backoff/v3 v3.0.0 // indirect
 	github.com/cockroachdb/cockroach-go v2.0.1+incompatible
 	github.com/disintegration/imaging v1.6.2
 	github.com/duo-labs/webauthn v0.0.0-20200714211715-1daaee874e43
+	github.com/go-kit/kit v0.10.0 // indirect
 	github.com/go-mail/mail v2.3.1+incompatible
 	github.com/gorilla/securecookie v1.1.1
 	github.com/gotestyourself/gotestyourself v1.3.0 // indirect
@@ -20,7 +21,7 @@ require (
 	github.com/nats-io/nats.go v1.10.0
 	github.com/onsi/ginkgo v1.10.1 // indirect
 	github.com/onsi/gomega v1.7.0 // indirect
-	github.com/ory/dockertest/v3 v3.6.4 // indirect
+	github.com/ory/dockertest/v3 v3.6.5 // indirect
 	github.com/sendgrid/rest v2.6.3+incompatible // indirect
 	github.com/sendgrid/sendgrid-go v3.9.0+incompatible
 	gopkg.in/airbrake/gobrake.v2 v2.0.9 // indirect

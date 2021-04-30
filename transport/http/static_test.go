@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/go-kit/kit/log"
 	"github.com/nicolasparada/nakama/testutil"
 )
 
@@ -30,7 +31,7 @@ func Test_spaFileSystem(t *testing.T) {
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			h := New(nil, nil, nil, false, tc.embed, false)
+			h := New(nil, log.NewNopLogger(), nil, nil, false, tc.embed, false)
 			srv := httptest.NewServer(h)
 			defer srv.Close()
 

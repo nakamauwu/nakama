@@ -19,24 +19,24 @@ func (h *handler) notifications(w http.ResponseWriter, r *http.Request) {
 	before := q.Get("before")
 	nn, err := h.svc.Notifications(r.Context(), last, before)
 	if err != nil {
-		respondErr(w, err)
+		h.respondErr(w, err)
 		return
 	}
 
-	respond(w, nn, http.StatusOK)
+	h.respond(w, nn, http.StatusOK)
 }
 
 func (h *handler) notificationStream(w http.ResponseWriter, r *http.Request) {
 	f, ok := w.(http.Flusher)
 	if !ok {
-		respondErr(w, errStreamingUnsupported)
+		h.respondErr(w, errStreamingUnsupported)
 		return
 	}
 
 	ctx := r.Context()
 	nn, err := h.svc.NotificationStream(ctx)
 	if err != nil {
-		respondErr(w, err)
+		h.respondErr(w, err)
 		return
 	}
 
@@ -47,7 +47,7 @@ func (h *handler) notificationStream(w http.ResponseWriter, r *http.Request) {
 
 	select {
 	case n := <-nn:
-		writeSSE(w, n)
+		h.writeSSE(w, n)
 		f.Flush()
 	case <-ctx.Done():
 		return
@@ -57,11 +57,11 @@ func (h *handler) notificationStream(w http.ResponseWriter, r *http.Request) {
 func (h *handler) hasUnreadNotifications(w http.ResponseWriter, r *http.Request) {
 	unread, err := h.svc.HasUnreadNotifications(r.Context())
 	if err != nil {
-		respondErr(w, err)
+		h.respondErr(w, err)
 		return
 	}
 
-	respond(w, unread, http.StatusOK)
+	h.respond(w, unread, http.StatusOK)
 }
 
 func (h *handler) markNotificationAsRead(w http.ResponseWriter, r *http.Request) {
@@ -69,7 +69,7 @@ func (h *handler) markNotificationAsRead(w http.ResponseWriter, r *http.Request)
 	notificationID := way.Param(ctx, "notification_id")
 	err := h.svc.MarkNotificationAsRead(ctx, notificationID)
 	if err != nil {
-		respondErr(w, err)
+		h.respondErr(w, err)
 		return
 	}
 
@@ -79,7 +79,7 @@ func (h *handler) markNotificationAsRead(w http.ResponseWriter, r *http.Request)
 func (h *handler) markNotificationsAsRead(w http.ResponseWriter, r *http.Request) {
 	err := h.svc.MarkNotificationsAsRead(r.Context())
 	if err != nil {
-		respondErr(w, err)
+		h.respondErr(w, err)
 		return
 	}
 

@@ -6,7 +6,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -19,34 +18,43 @@ import (
 
 	"github.com/duo-labs/webauthn/protocol"
 	"github.com/duo-labs/webauthn/webauthn"
+	"github.com/go-kit/kit/log"
 	"github.com/gorilla/securecookie"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
-	natslib "github.com/nats-io/nats.go"
+	"github.com/nats-io/nats.go"
 	"github.com/nicolasparada/nakama"
 	"github.com/nicolasparada/nakama/mailing"
-	"github.com/nicolasparada/nakama/pubsub/nats"
+	natspubsub "github.com/nicolasparada/nakama/pubsub/nats"
 	"github.com/nicolasparada/nakama/storage"
-	"github.com/nicolasparada/nakama/storage/fs"
-	"github.com/nicolasparada/nakama/storage/s3"
+	fsstorage "github.com/nicolasparada/nakama/storage/fs"
+	s3storage "github.com/nicolasparada/nakama/storage/s3"
 	httptransport "github.com/nicolasparada/nakama/transport/http"
 )
 
 func main() {
 	_ = godotenv.Load()
-	if err := run(); err != nil {
-		log.Fatalln(err)
+
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
+
+	logger := log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr))
+	logger = log.With(logger, "ts", log.DefaultTimestampUTC)
+
+	if err := run(ctx, logger, os.Args[1:]); err != nil {
+		_ = logger.Log("error", err)
+		os.Exit(1)
 	}
 }
 
-func run() error {
+func run(ctx context.Context, logger log.Logger, args []string) error {
 	var (
 		port, _                   = strconv.Atoi(env("PORT", "3000"))
 		originStr                 = env("ORIGIN", fmt.Sprintf("http://localhost:%d", port))
 		dbURL                     = env("DATABASE_URL", "postgresql://root@127.0.0.1:26257/nakama?sslmode=disable")
 		execSchema, _             = strconv.ParseBool(env("EXEC_SCHEMA", "false"))
 		tokenKey                  = env("TOKEN_KEY", "supersecretkeyyoushouldnotcommit")
-		natsURL                   = env("NATS_URL", natslib.DefaultURL)
+		natsURL                   = env("NATS_URL", nats.DefaultURL)
 		sendgridAPIKey            = os.Getenv("SENDGRID_API_KEY")
 		smtpHost                  = env("SMTP_HOST", "smtp.mailtrap.io")
 		smtpPort, _               = strconv.Atoi(env("SMTP_PORT", "25"))
@@ -97,9 +105,6 @@ func run() error {
 
 	defer db.Close()
 
-	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer cancel()
-
 	if err = db.PingContext(ctx); err != nil {
 		return fmt.Errorf("could not ping to db: %w", err)
 	}
@@ -111,20 +116,20 @@ func run() error {
 		}
 	}
 
-	natsConn, err := natslib.Connect(natsURL)
+	natsConn, err := nats.Connect(natsURL)
 	if err != nil {
 		return fmt.Errorf("could not connect to NATS server: %w", err)
 	}
 
-	pubsub := &nats.PubSub{Conn: natsConn}
+	pubsub := &natspubsub.PubSub{Conn: natsConn}
 
 	var sender mailing.Sender
 	sendFrom := "no-reply@" + origin.Hostname()
 	if sendgridAPIKey != "" {
-		log.Println("using sendgrid mailing implementation")
+		_ = logger.Log("mailing_implementation", "sendgrid")
 		sender = mailing.NewSendgridSender(sendFrom, sendgridAPIKey)
 	} else if smtpUsername != "" && smtpPassword != "" {
-		log.Println("using smtp mailing implementation")
+		_ = logger.Log("mailing_implementation", "smtp")
 		sender = mailing.NewSMTPSender(
 			sendFrom,
 			smtpHost,
@@ -133,18 +138,18 @@ func run() error {
 			smtpPassword,
 		)
 	} else {
-		log.Println("using log mailing implementation")
+		_ = logger.Log("mailing_implementation", "log")
 		sender = mailing.NewLogSender(
 			sendFrom,
-			&logWrapper{Logger: log.New(os.Stdout, "mailing ", log.LstdFlags)},
+			log.With(logger, "component", "mailing"),
 		)
 	}
 
 	var store storage.Store
 	s3Enabled := s3Endpoint != "" && s3AccessKey != "" && s3SecretKey != ""
 	if s3Enabled {
-		log.Println("using s3 store implementation")
-		store = &s3.Store{
+		_ = logger.Log("storage_implementation", "s3")
+		store = &s3storage.Store{
 			Endpoint:  s3Endpoint,
 			Region:    s3Region,
 			Bucket:    s3Bucket,
@@ -152,13 +157,13 @@ func run() error {
 			SecretKey: s3SecretKey,
 		}
 	} else {
-		log.Println("using os file system store implementation")
+		_ = logger.Log("storage_implementation", "os file system")
 		wd, err := os.Getwd()
 		if err != nil {
 			return fmt.Errorf("could not get current working directory: %w", err)
 		}
 
-		store = &fs.Store{Root: filepath.Join(wd, "web", "static", "img", "avatars")}
+		store = &fsstorage.Store{Root: filepath.Join(wd, "web", "static", "img", "avatars")}
 	}
 
 	webauthn, err := webauthn.New(&webauthn.Config{
@@ -180,6 +185,7 @@ func run() error {
 	}
 
 	svc := &nakama.Service{
+		Logger:          logger,
 		DB:              db,
 		Sender:          sender,
 		Origin:          origin,
@@ -197,7 +203,7 @@ func run() error {
 		[]byte(cookieHashKey),
 		[]byte(cookieBlockKey),
 	)
-	h := httptransport.New(svc, store, cookieCodec, enableStaticFilesCache, embedStaticFiles, serveAvatars)
+	h := httptransport.New(svc, log.With(logger, "component", "http"), store, cookieCodec, enableStaticFilesCache, embedStaticFiles, serveAvatars)
 	server := &http.Server{
 		Addr:              fmt.Sprintf(":%d", port),
 		Handler:           h,
@@ -211,22 +217,20 @@ func run() error {
 	errs := make(chan error, 1)
 	go func() {
 		<-ctx.Done()
-
 		fmt.Println()
-		log.Println("gracefully shutting down...")
+
+		_ = logger.Log("message", "gracefully shutting down")
 		ctxShutdown, cancelShutdown := context.WithTimeout(context.Background(), time.Second*5)
 		defer cancelShutdown()
 		if err := server.Shutdown(ctxShutdown); err != nil {
 			errs <- fmt.Errorf("could not shutdown server: %w", err)
 		}
 
-		log.Println("ok")
-
 		errs <- nil
 	}()
 
-	log.Printf("accepting connections on port %d\n", port)
-	log.Printf("starting server at %s\n", origin)
+	_ = logger.Log("message", "accepting connections", "port", port)
+	_ = logger.Log("message", "starting server", "origin", origin)
 	if err := server.ListenAndServe(); err != http.ErrServerClosed {
 		close(errs)
 		return fmt.Errorf("could not listen and serve: %w", err)
@@ -242,11 +246,3 @@ func env(key, fallbackValue string) string {
 	}
 	return s
 }
-
-type logWrapper struct {
-	Logger *log.Logger
-}
-
-func (l *logWrapper) Log(args ...interface{}) { l.Logger.Println(args...) }
-
-func (l *logWrapper) Logf(format string, args ...interface{}) { l.Logger.Printf(format, args...) }
