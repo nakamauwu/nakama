@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"github.com/matryer/way"
-	"github.com/nicolasparada/nakama"
 )
 
 type createCommentInput struct {
@@ -16,30 +15,16 @@ type createCommentInput struct {
 
 func (h *handler) createComment(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
+
 	var in createCommentInput
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		respondErr(w, errBadRequest)
 		return
 	}
 
 	ctx := r.Context()
 	postID := way.Param(ctx, "post_id")
 	c, err := h.svc.CreateComment(ctx, postID, in.Content)
-	if err == nakama.ErrUnauthenticated {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
-		return
-	}
-
-	if err == nakama.ErrInvalidPostID || err == nakama.ErrInvalidContent {
-		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
-		return
-	}
-
-	if err == nakama.ErrPostNotFound {
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return
-	}
-
 	if err != nil {
 		respondErr(w, err)
 		return
@@ -60,11 +45,6 @@ func (h *handler) comments(w http.ResponseWriter, r *http.Request) {
 	last, _ := strconv.Atoi(q.Get("last"))
 	before := q.Get("before")
 	cc, err := h.svc.Comments(ctx, postID, last, before)
-	if err == nakama.ErrInvalidPostID || err == nakama.ErrInvalidCommentID {
-		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
-		return
-	}
-
 	if err != nil {
 		respondErr(w, err)
 		return
@@ -83,11 +63,6 @@ func (h *handler) commentStream(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	postID := way.Param(ctx, "post_id")
 	cc, err := h.svc.CommentStream(ctx, postID)
-	if err == nakama.ErrInvalidPostID {
-		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
-		return
-	}
-
 	if err != nil {
 		respondErr(w, err)
 		return
@@ -104,8 +79,6 @@ func (h *handler) commentStream(w http.ResponseWriter, r *http.Request) {
 		f.Flush()
 	case <-ctx.Done():
 		return
-	case <-h.ctx.Done():
-		return
 	}
 }
 
@@ -113,21 +86,6 @@ func (h *handler) toggleCommentLike(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	commentID := way.Param(ctx, "comment_id")
 	out, err := h.svc.ToggleCommentLike(ctx, commentID)
-	if err == nakama.ErrUnauthenticated {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
-		return
-	}
-
-	if err == nakama.ErrInvalidCommentID {
-		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
-		return
-	}
-
-	if err == nakama.ErrCommentNotFound {
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return
-	}
-
 	if err != nil {
 		respondErr(w, err)
 		return

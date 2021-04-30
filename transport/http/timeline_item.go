@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	"github.com/matryer/way"
-	"github.com/nicolasparada/nakama"
 )
 
 func (h *handler) timeline(w http.ResponseWriter, r *http.Request) {
@@ -20,11 +19,6 @@ func (h *handler) timeline(w http.ResponseWriter, r *http.Request) {
 	last, _ := strconv.Atoi(q.Get("last"))
 	before := q.Get("before")
 	tt, err := h.svc.Timeline(ctx, last, before)
-	if err == nakama.ErrUnauthenticated {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
-		return
-	}
-
 	if err != nil {
 		respondErr(w, err)
 		return
@@ -42,11 +36,6 @@ func (h *handler) timelineItemStream(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	tt, err := h.svc.TimelineItemStream(ctx)
-	if err == nakama.ErrUnauthenticated {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
-		return
-	}
-
 	if err != nil {
 		respondErr(w, err)
 		return
@@ -63,8 +52,6 @@ func (h *handler) timelineItemStream(w http.ResponseWriter, r *http.Request) {
 		f.Flush()
 	case <-ctx.Done():
 		return
-	case <-h.ctx.Done():
-		return
 	}
 }
 
@@ -72,16 +59,6 @@ func (h *handler) deleteTimelineItem(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	timelineItemID := way.Param(ctx, "timeline_item_id")
 	err := h.svc.DeleteTimelineItem(ctx, timelineItemID)
-	if err == nakama.ErrUnauthenticated {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
-		return
-	}
-
-	if err == nakama.ErrInvalidTimelineItemID {
-		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
-		return
-	}
-
 	if err != nil {
 		respondErr(w, err)
 		return

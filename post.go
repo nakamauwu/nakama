@@ -3,7 +3,6 @@ package nakama
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -15,13 +14,13 @@ import (
 
 var (
 	// ErrInvalidPostID denotes an invalid post id; that is not uuid.
-	ErrInvalidPostID = errors.New("invalid post id")
+	ErrInvalidPostID = InvalidArgumentError("invalid post id")
 	// ErrInvalidContent denotes an invalid content.
-	ErrInvalidContent = errors.New("invalid content")
+	ErrInvalidContent = InvalidArgumentError("invalid content")
 	// ErrInvalidSpoiler denotes an invalid spoiler title.
-	ErrInvalidSpoiler = errors.New("invalid spoiler")
+	ErrInvalidSpoiler = InvalidArgumentError("invalid spoiler")
 	// ErrPostNotFound denotes a not found post.
-	ErrPostNotFound = errors.New("post not found")
+	ErrPostNotFound = NotFoundError("post not found")
 )
 
 // Post model.

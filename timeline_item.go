@@ -5,14 +5,13 @@ import (
 	"context"
 	"database/sql"
 	"encoding/gob"
-	"errors"
 	"fmt"
 	"io"
 	"log"
 )
 
 // ErrInvalidTimelineItemID denotes an invalid timeline item id; that is not uuid.
-var ErrInvalidTimelineItemID = errors.New("invalid timeline item id")
+var ErrInvalidTimelineItemID = InvalidArgumentError("invalid timeline item ID")
 
 // TimelineItem model.
 type TimelineItem struct {

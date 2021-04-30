@@ -5,7 +5,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/gob"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -17,9 +16,9 @@ import (
 
 var (
 	// ErrInvalidCommentID denotes an invalid comment id; that is not uuid.
-	ErrInvalidCommentID = errors.New("invalid comment id")
+	ErrInvalidCommentID = InvalidArgumentError("invalid comment id")
 	// ErrCommentNotFound denotes a not found comment.
-	ErrCommentNotFound = errors.New("comment not found")
+	ErrCommentNotFound = NotFoundError("comment not found")
 )
 
 // Comment model.

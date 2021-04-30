@@ -113,8 +113,9 @@ func Test_handler_sendMagicLink(t *testing.T) {
 		},
 	}
 	for _, tc := range tt {
+		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			h := New(context.Background(), tc.svc, nil, nil, false, true, false)
+			h := New(tc.svc, nil, nil, false, true, false)
 			srv := httptest.NewServer(h)
 			defer srv.Close()
 

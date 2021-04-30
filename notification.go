@@ -5,7 +5,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/gob"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -16,7 +15,7 @@ import (
 )
 
 // ErrInvalidNotificationID denotes an invalid notification id; that is not uuid.
-var ErrInvalidNotificationID = errors.New("invalid notification id")
+var ErrInvalidNotificationID = InvalidArgumentError("invalid notification id")
 
 // Notification model.
 type Notification struct {

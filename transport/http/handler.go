@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"context"
 	"log"
 	"net/http"
 	"path"
@@ -18,16 +17,13 @@ import (
 
 type handler struct {
 	svc         transport.Service
-	ctx         context.Context
 	store       storage.Store
 	cookieCodec *securecookie.SecureCookie
 }
 
 // New makes use of the service to provide an http.Handler with predefined routing.
-// The provided context is used to stop the running server-sent events.
-func New(ctx context.Context, svc transport.Service, store storage.Store, cdc *securecookie.SecureCookie, enableStaticCache, embedStaticFiles, serveAvatars bool) http.Handler {
+func New(svc transport.Service, store storage.Store, cdc *securecookie.SecureCookie, enableStaticCache, embedStaticFiles, serveAvatars bool) http.Handler {
 	h := &handler{
-		ctx:         ctx,
 		svc:         svc,
 		store:       store,
 		cookieCodec: cdc,

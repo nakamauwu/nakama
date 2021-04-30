@@ -11,14 +11,22 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"time"
+
+	"github.com/nicolasparada/nakama"
+	"github.com/nicolasparada/nakama/storage"
 )
 
-var errStreamingUnsupported = errors.New("streaming unsupported")
+var (
+	errBadRequest           = errors.New("bad request")
+	errStreamingUnsupported = errors.New("streaming unsupported")
+	errTeaPot               = errors.New("i am a teapot")
+	errInvalidTargetURL     = nakama.InvalidArgumentError("invalid target URL")
+)
 
 func respond(w http.ResponseWriter, v interface{}, statusCode int) {
 	b, err := json.Marshal(v)
 	if err != nil {
-		respondErr(w, fmt.Errorf("could not marshal response: %w", err))
+		respondErr(w, fmt.Errorf("could not json marshal http response body: %w", err))
 		return
 	}
 
@@ -26,13 +34,52 @@ func respond(w http.ResponseWriter, v interface{}, statusCode int) {
 	w.WriteHeader(statusCode)
 	_, err = w.Write(b)
 	if err != nil && !errors.Is(err, context.Canceled) {
-		log.Printf("could not write http response: %v\n", err)
+		log.Printf("could not write down http response: %v\n", err)
 	}
 }
 
 func respondErr(w http.ResponseWriter, err error) {
-	log.Println(err)
-	http.Error(w, "internal server error", http.StatusInternalServerError)
+	statusCode := err2code(err)
+	if statusCode == http.StatusInternalServerError {
+		log.Println(err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	http.Error(w, err.Error(), statusCode)
+}
+
+func err2code(err error) int {
+	if err == nil {
+		return http.StatusOK
+	}
+
+	switch {
+	case err == errBadRequest ||
+		err == errWebAuthnTimeout:
+		return http.StatusBadRequest
+	case err == errStreamingUnsupported:
+		return http.StatusExpectationFailed
+	case err == errTeaPot:
+		return http.StatusTeapot
+	case errors.Is(err, nakama.ErrInvalidArgument):
+		return http.StatusUnprocessableEntity
+	case errors.Is(err, nakama.ErrNotFound) ||
+		errors.Is(err, storage.ErrNotFound):
+		return http.StatusNotFound
+	case errors.Is(err, nakama.ErrAlreadyExists):
+		return http.StatusConflict
+	case errors.Is(err, nakama.ErrPermissionDenied):
+		return http.StatusForbidden
+	case err == nakama.ErrUnauthenticated || errors.Is(err, nakama.ErrUnauthenticated):
+		return http.StatusUnauthorized
+	case errors.Is(err, nakama.ErrUnimplemented):
+		return http.StatusNotImplemented
+	case errors.Is(err, nakama.ErrGone):
+		return http.StatusGone
+	}
+
+	return http.StatusInternalServerError
 }
 
 func writeSSE(w io.Writer, v interface{}) {
@@ -49,13 +96,13 @@ func writeSSE(w io.Writer, v interface{}) {
 func proxy(w http.ResponseWriter, r *http.Request) {
 	targetStr := r.URL.Query().Get("target")
 	if targetStr == "" {
-		respondErr(w, errors.New("invalid target URL"))
+		respondErr(w, errInvalidTargetURL)
 		return
 	}
 
 	target, err := url.Parse(targetStr)
 	if err != nil || !target.IsAbs() {
-		respondErr(w, errors.New("invalid target URL"))
+		respondErr(w, errInvalidTargetURL)
 		return
 	}
 

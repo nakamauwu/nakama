@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/matryer/way"
-	"github.com/nicolasparada/nakama/storage"
 )
 
 var epoch = time.Unix(0, 0).Format(time.RFC1123)
@@ -64,11 +63,6 @@ func (h *handler) avatar(w http.ResponseWriter, r *http.Request) {
 	name := way.Param(ctx, "name")
 
 	f, err := h.store.Open(ctx, name)
-	if err == storage.ErrNotFound {
-		respond(w, err.Error(), http.StatusNotFound)
-		return
-	}
-
 	if err != nil {
 		respondErr(w, err)
 		return

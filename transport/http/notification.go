@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	"github.com/matryer/way"
-	"github.com/nicolasparada/nakama"
 )
 
 func (h *handler) notifications(w http.ResponseWriter, r *http.Request) {
@@ -19,16 +18,6 @@ func (h *handler) notifications(w http.ResponseWriter, r *http.Request) {
 	last, _ := strconv.Atoi(q.Get("last"))
 	before := q.Get("before")
 	nn, err := h.svc.Notifications(r.Context(), last, before)
-	if err == nakama.ErrUnauthenticated {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
-		return
-	}
-
-	if err == nakama.ErrInvalidNotificationID {
-		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
-		return
-	}
-
 	if err != nil {
 		respondErr(w, err)
 		return
@@ -46,11 +35,6 @@ func (h *handler) notificationStream(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	nn, err := h.svc.NotificationStream(ctx)
-	if err == nakama.ErrUnauthenticated {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
-		return
-	}
-
 	if err != nil {
 		respondErr(w, err)
 		return
@@ -67,18 +51,11 @@ func (h *handler) notificationStream(w http.ResponseWriter, r *http.Request) {
 		f.Flush()
 	case <-ctx.Done():
 		return
-	case <-h.ctx.Done():
-		return
 	}
 }
 
 func (h *handler) hasUnreadNotifications(w http.ResponseWriter, r *http.Request) {
 	unread, err := h.svc.HasUnreadNotifications(r.Context())
-	if err == nakama.ErrUnauthenticated {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
-		return
-	}
-
 	if err != nil {
 		respondErr(w, err)
 		return
@@ -91,16 +68,6 @@ func (h *handler) markNotificationAsRead(w http.ResponseWriter, r *http.Request)
 	ctx := r.Context()
 	notificationID := way.Param(ctx, "notification_id")
 	err := h.svc.MarkNotificationAsRead(ctx, notificationID)
-	if err == nakama.ErrUnauthenticated {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
-		return
-	}
-
-	if err == nakama.ErrInvalidNotificationID {
-		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
-		return
-	}
-
 	if err != nil {
 		respondErr(w, err)
 		return
@@ -111,11 +78,6 @@ func (h *handler) markNotificationAsRead(w http.ResponseWriter, r *http.Request)
 
 func (h *handler) markNotificationsAsRead(w http.ResponseWriter, r *http.Request) {
 	err := h.svc.MarkNotificationsAsRead(r.Context())
-	if err == nakama.ErrUnauthenticated {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
-		return
-	}
-
 	if err != nil {
 		respondErr(w, err)
 		return

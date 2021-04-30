@@ -19,14 +19,15 @@ var Schema string
 // You can use it to back a REST, gRPC or GraphQL API.
 // You must call RunBackgroundJobs afterward.
 type Service struct {
-	DB              *sql.DB
-	Sender          mailing.Sender
-	Origin          *url.URL
-	TokenKey        string
-	PubSub          pubsub.PubSub
-	Store           storage.Store
-	AvatarURLPrefix string
-	WebAuthn        *webauthn.WebAuthn
+	DB               *sql.DB
+	Sender           mailing.Sender
+	Origin           *url.URL
+	TokenKey         string
+	PubSub           pubsub.PubSub
+	Store            storage.Store
+	AvatarURLPrefix  string
+	WebAuthn         *webauthn.WebAuthn
+	DisabledDevLogin bool
 }
 
 // RunBackgroundJobs -

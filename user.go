@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"image"
 	"image/jpeg"
@@ -30,23 +29,23 @@ var (
 
 var (
 	// ErrInvalidUserID denotes an invalid user id; that is not uuid.
-	ErrInvalidUserID = errors.New("invalid user id")
+	ErrInvalidUserID = InvalidArgumentError("invalid user id")
 	// ErrInvalidEmail denotes an invalid email address.
-	ErrInvalidEmail = errors.New("invalid email")
+	ErrInvalidEmail = InvalidArgumentError("invalid email")
 	// ErrInvalidUsername denotes an invalid username.
-	ErrInvalidUsername = errors.New("invalid username")
+	ErrInvalidUsername = InvalidArgumentError("invalid username")
 	// ErrEmailTaken denotes an email already taken.
-	ErrEmailTaken = errors.New("email taken")
+	ErrEmailTaken = AlreadyExistsError("email taken")
 	// ErrUsernameTaken denotes a username already taken.
-	ErrUsernameTaken = errors.New("username taken")
+	ErrUsernameTaken = AlreadyExistsError("username taken")
 	// ErrUserNotFound denotes a not found user.
-	ErrUserNotFound = errors.New("user not found")
+	ErrUserNotFound = NotFoundError("user not found")
 	// ErrForbiddenFollow denotes a forbiden follow. Like following yourself.
-	ErrForbiddenFollow = errors.New("forbidden follow")
+	ErrForbiddenFollow = PermissionDeniedError("forbidden follow")
 	// ErrUnsupportedAvatarFormat denotes an unsupported avatar image format.
-	ErrUnsupportedAvatarFormat = errors.New("unsupported avatar format")
+	ErrUnsupportedAvatarFormat = InvalidArgumentError("unsupported avatar format")
 	// ErrUserGone denotes that the user has already been deleted.
-	ErrUserGone = errors.New("user gone")
+	ErrUserGone = GoneError("user gone")
 )
 
 // User model.

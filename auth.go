@@ -30,33 +30,29 @@ const (
 )
 
 var (
-	// ErrUnimplemented denotes a not implemented functionality.
-	ErrUnimplemented = errors.New("unimplemented")
-	// ErrUnauthenticated denotes no authenticated user in context.
-	ErrUnauthenticated = errors.New("unauthenticated")
 	// ErrInvalidRedirectURI denotes an invalid redirect URI.
-	ErrInvalidRedirectURI = errors.New("invalid redirect URI")
+	ErrInvalidRedirectURI = InvalidArgumentError("invalid redirect URI")
 	// ErrUntrustedRedirectURI denotes an untrusted redirect URI.
 	// That is an URI that is not in the same host as the nakama.
-	ErrUntrustedRedirectURI = errors.New("untrusted redirect URI")
+	ErrUntrustedRedirectURI = PermissionDeniedError("untrusted redirect URI")
 	// ErrInvalidToken denotes an invalid token.
-	ErrInvalidToken = errors.New("invalid token")
+	ErrInvalidToken = InvalidArgumentError("invalid token")
 	// ErrExpiredToken denotes that the token already expired.
-	ErrExpiredToken = errors.New("expired token")
+	ErrExpiredToken = UnauthenticatedError("expired token")
 	// ErrInvalidVerificationCode denotes an invalid verification code.
-	ErrInvalidVerificationCode = errors.New("invalid verification code")
+	ErrInvalidVerificationCode = InvalidArgumentError("invalid verification code")
 	// ErrVerificationCodeNotFound denotes a not found verification code.
-	ErrVerificationCodeNotFound = errors.New("verification code not found")
+	ErrVerificationCodeNotFound = NotFoundError("verification code not found")
 	// ErrWebAuthnCredentialExists denotes that the webauthn credential ID already exists for the given user.
-	ErrWebAuthnCredentialExists = errors.New("webAuthn credential exists")
+	ErrWebAuthnCredentialExists = AlreadyExistsError("webAuthn credential exists")
 	// ErrNoWebAuthnCredentials denotes that the user has no registered webauthn credentials yet.
-	ErrNoWebAuthnCredentials = errors.New("no webAuthn credentials")
+	ErrNoWebAuthnCredentials = NotFoundError("no webAuthn credentials")
 	// ErrInvalidWebAuthnCredentialID denotes an invalid webauthn credential ID.
-	ErrInvalidWebAuthnCredentialID = errors.New("invalid webAuthn credential ID")
+	ErrInvalidWebAuthnCredentialID = InvalidArgumentError("invalid webAuthn credential ID")
 	// ErrInvalidWebAuthnCredentials denotes invalid webauthn credentials.
-	ErrInvalidWebAuthnCredentials = errors.New("invalid webAuthn credentials")
+	ErrInvalidWebAuthnCredentials = InvalidArgumentError("invalid webAuthn credentials")
 	// ErrWebAuthnCredentialCloned denotes that the webauthn credential may be cloned.
-	ErrWebAuthnCredentialCloned = errors.New("webAuthn credential cloned")
+	ErrWebAuthnCredentialCloned = AlreadyExistsError("webAuthn credential cloned")
 )
 
 var magicLinkMailTmpl *template.Template
@@ -583,6 +579,10 @@ func (s *Service) WebAuthnLogin(ctx context.Context, data webauthn.SessionData, 
 // TODO: disable dev login on production.
 func (s *Service) DevLogin(ctx context.Context, email string) (AuthOutput, error) {
 	var out AuthOutput
+
+	if s.DisabledDevLogin {
+		return out, ErrUnimplemented
+	}
 
 	email = strings.TrimSpace(email)
 	if !reEmail.MatchString(email) {
