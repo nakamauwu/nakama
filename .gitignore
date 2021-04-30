@@ -1,6 +1,6 @@
-.env
-cockroach-data
+/.env
+/cockroach-data
+/nakama
+/web/static/img/avatars
+/letsencrypt
 *.exe
-nakama
-web/static/img/avatars
-letsencrypt
