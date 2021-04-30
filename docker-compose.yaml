@@ -24,6 +24,8 @@ services:
       - "./letsencrypt:/letsencrypt"
       - "/var/run/docker.sock:/var/run/docker.sock"
     restart: "always"
+    depends_on:
+      - nakama
   nakama:
     image: "nicolasparada/nakama:latest"
     environment:
@@ -38,7 +40,6 @@ services:
       - 3000
     restart: "always"
     depends_on:
-      - traefik
       - cockroach
       - nats
     labels:
