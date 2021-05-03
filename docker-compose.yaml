@@ -30,6 +30,7 @@ services:
     image: "nicolasparada/nakama:latest"
     environment:
       ORIGIN: "https://next.nakama.social"
+      NO_REPLY_EMAIL: no-reply@nakama.social
       DATABASE_URL: "postgresql://root@cockroach:26257/nakama?sslmode=disable"
       NATS_URL: "nats://nats:4222"
     env_file:
