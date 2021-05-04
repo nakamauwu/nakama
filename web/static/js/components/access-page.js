@@ -97,7 +97,7 @@ async function runLoginProgram(email) {
                 return
             } catch (err) {
                 console.error(err)
-                if (err.name !== "NoWebAuthnCredentialsError") {
+                if (err.name !== "UserNotFoundError" && err.name !== "NoWebAuthnCredentialsError") {
                     alert("Could not login with device credentials. Login with magic link instead")
                 }
             }
