@@ -16,7 +16,7 @@ import (
 type Service interface {
 	SendMagicLink(ctx context.Context, email, redirectURI string) error
 	ParseRedirectURI(rawurl string) (*url.URL, error)
-	VerifyMagicLink(ctx context.Context, email, verificationCode string, username *string) (nakama.AuthOutput, error)
+	VerifyMagicLink(ctx context.Context, email, code string, username *string) (nakama.AuthOutput, error)
 	CredentialCreationOptions(ctx context.Context) (*protocol.CredentialCreation, *webauthn.SessionData, error)
 	RegisterCredential(ctx context.Context, data webauthn.SessionData, parsedReply *protocol.ParsedCredentialCreationData) error
 	CredentialRequestOptions(ctx context.Context, email string, opts ...nakama.CredentialRequestOptionsOpt) (*protocol.CredentialAssertion, *webauthn.SessionData, error)

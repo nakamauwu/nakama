@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -15,6 +14,8 @@ import (
 	"github.com/nicolasparada/nakama"
 	"github.com/nicolasparada/nakama/storage"
 )
+
+const proxyCacheControl = time.Hour * 24 * 14
 
 var (
 	errBadRequest           = errors.New("bad request")
@@ -41,7 +42,7 @@ func (h *handler) respond(w http.ResponseWriter, v interface{}, statusCode int) 
 func (h *handler) respondErr(w http.ResponseWriter, err error) {
 	statusCode := err2code(err)
 	if statusCode == http.StatusInternalServerError {
-		log.Println(err)
+		_ = h.logger.Log("error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}

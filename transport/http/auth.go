@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -68,7 +67,11 @@ func (h *handler) verifyMagicLink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	auth, err := h.svc.VerifyMagicLink(r.Context(), q.Get("email"), q.Get("verification_code"), emptyStringPtr(q.Get("username")))
+	ctx := r.Context()
+	email := q.Get("email")
+	code := q.Get("code")
+	username := emptyStringPtr(q.Get("username"))
+	auth, err := h.svc.VerifyMagicLink(ctx, email, code, username)
 	if err == nakama.ErrUserNotFound || err == nakama.ErrUsernameTaken {
 		redirectWithHashFragment(w, r, redirectURI, url.Values{
 			"error":          []string{err.Error()},
@@ -77,20 +80,16 @@ func (h *handler) verifyMagicLink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err == nakama.ErrInvalidEmail ||
-		err == nakama.ErrInvalidVerificationCode ||
-		err == nakama.ErrInvalidUsername ||
-		err == nakama.ErrVerificationCodeNotFound ||
-		err == nakama.ErrExpiredToken ||
-		err == nakama.ErrEmailTaken {
-		redirectWithHashFragment(w, r, redirectURI, url.Values{
-			"error": []string{err.Error()},
-		}, http.StatusFound)
-		return
-	}
-
 	if err != nil {
-		log.Println(err)
+		statusCode := err2code(err)
+		if statusCode != http.StatusInternalServerError {
+			redirectWithHashFragment(w, r, redirectURI, url.Values{
+				"error": []string{err.Error()},
+			}, http.StatusFound)
+			return
+		}
+
+		_ = h.logger.Log("error", err)
 		redirectWithHashFragment(w, r, redirectURI, url.Values{
 			"error": []string{"internal server error"},
 		}, http.StatusFound)

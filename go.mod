@@ -12,6 +12,7 @@ require (
 	github.com/gorilla/securecookie v1.1.1
 	github.com/gotestyourself/gotestyourself v1.3.0 // indirect
 	github.com/hako/branca v0.0.0-20200807062402-6052ac720505
+	github.com/hako/durafmt v0.0.0-20210316092057-3a2c319c1acd // indirect
 	github.com/joho/godotenv v1.3.0
 	github.com/lib/pq v1.10.1
 	github.com/matoous/go-nanoid v1.5.0

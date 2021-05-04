@@ -1,10 +1,11 @@
 package nakama
 
 import (
-	"context"
 	"database/sql"
 	_ "embed"
+	"html/template"
 	"net/url"
+	"sync"
 
 	"github.com/duo-labs/webauthn/webauthn"
 	"github.com/go-kit/kit/log"
@@ -30,9 +31,7 @@ type Service struct {
 	AvatarURLPrefix  string
 	WebAuthn         *webauthn.WebAuthn
 	DisabledDevLogin bool
-}
 
-// RunBackgroundJobs -
-func (s *Service) RunBackgroundJobs(ctx context.Context) {
-	go s.deleteExpiredVerificationCodesJob(ctx)
+	magicLinkTmplOncer sync.Once
+	magicLinkTmpl      *template.Template
 }

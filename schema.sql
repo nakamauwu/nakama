@@ -4,6 +4,13 @@ DROP DATABASE IF EXISTS nakama CASCADE;
 CREATE DATABASE IF NOT EXISTS nakama;
 SET DATABASE = nakama;
 
+CREATE TABLE IF NOT EXISTS email_verification_codes (
+    email VARCHAR NOT NULL,
+    code UUID NOT NULL DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (email, code)
+);
+
 CREATE TABLE IF NOT EXISTS users (
     id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
     email VARCHAR NOT NULL UNIQUE,
@@ -30,12 +37,6 @@ CREATE TABLE IF NOT EXISTS webauthn_credentials (
     attestation_type VARCHAR NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE INDEX unique_webauthn_credentials (user_id, credential_id)
-);
-
-CREATE TABLE IF NOT EXISTS verification_codes (
-    id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
-    email VARCHAR NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS follows (

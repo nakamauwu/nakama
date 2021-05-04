@@ -16,7 +16,8 @@ import (
 	"github.com/duo-labs/webauthn/protocol"
 	"github.com/duo-labs/webauthn/webauthn"
 	"github.com/hako/branca"
-	webtemplate "github.com/nicolasparada/nakama/web/template"
+	"github.com/hako/durafmt"
+	"github.com/nicolasparada/nakama/web"
 )
 
 // KeyAuthUserID to use in context.
@@ -24,8 +25,8 @@ const KeyAuthUserID = ctxkey("auth_user_id")
 const WebAuthnTimeout = time.Minute * 2
 
 const (
-	verificationCodeLifespan = time.Minute * 15
-	tokenLifespan            = time.Hour * 24 * 14
+	emailVerificationCodeTTL = time.Hour * 2
+	authTokenTTL             = time.Hour * 24 * 14
 )
 
 var (
@@ -53,8 +54,6 @@ var (
 	// ErrWebAuthnCredentialCloned denotes that the webauthn credential may be cloned.
 	ErrWebAuthnCredentialCloned = AlreadyExistsError("webAuthn credential cloned")
 )
-
-var magicLinkMailTmpl *template.Template
 
 type ctxkey string
 
@@ -100,7 +99,7 @@ func (u webAuthnUser) WebAuthnCredentials() []webauthn.Credential {
 }
 
 // SendMagicLink to login without passwords.
-// A second endpoint GET /api/verify_magic_link?email&verification_code&redirect_uri must exist.
+// A second endpoint GET /api/verify_magic_link?email&code&redirect_uri must exist.
 func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) error {
 	email = strings.TrimSpace(email)
 	if !reEmail.MatchString(email) {
@@ -113,9 +112,9 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 	}
 
 	var code string
-	err = s.DB.QueryRowContext(ctx, `
-		INSERT INTO verification_codes (email) VALUES ($1) RETURNING id
-	`, email).Scan(&code)
+	query := "INSERT INTO email_verification_codes (email) VALUES ($1) RETURNING code"
+	row := s.DB.QueryRowContext(ctx, query, email)
+	err = row.Scan(&code)
 	if err != nil {
 		return fmt.Errorf("could not insert verification code: %w", err)
 	}
@@ -123,7 +122,8 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 	defer func() {
 		if err != nil {
 			go func() {
-				_, err := s.DB.Exec("DELETE FROM verification_codes WHERE id = $1", code)
+				query := "DELETE FROM email_verification_codes WHERE email = $1 AND code = $2"
+				_, err := s.DB.Exec(query, email, code)
 				if err != nil {
 					_ = s.Logger.Log("error", fmt.Errorf("could not delete verification code: %w", err))
 				}
@@ -135,27 +135,49 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 	magicLink.Path = "/api/verify_magic_link"
 	q := magicLink.Query()
 	q.Set("email", email)
-	q.Set("verification_code", code)
+	q.Set("code", code)
 	q.Set("redirect_uri", redirectURI)
 	magicLink.RawQuery = q.Encode()
 
-	if magicLinkMailTmpl == nil {
-		magicLinkMailTmpl, err = template.ParseFS(webtemplate.Files, "mail/magic-link.html")
+	s.magicLinkTmplOncer.Do(func() {
+		var text []byte
+		text, err = web.Files.ReadFile("template/mail/magic-link.html.tmpl")
 		if err != nil {
-			return fmt.Errorf("could not parse magic link mail template: %w", err)
+			err = fmt.Errorf("could not read magic link template file: %w", err)
+			return
 		}
+
+		s.magicLinkTmpl, err = template.
+			New("mail/magic-link.html").
+			Funcs(template.FuncMap{
+				"human_duration": func(d time.Duration) string {
+					return durafmt.Parse(d).LimitFirstN(1).String()
+				},
+				"html": func(s string) template.HTML {
+					return template.HTML(s)
+				},
+			}).
+			Parse(string(text))
+		if err != nil {
+			err = fmt.Errorf("could not parse magic link mail template: %w", err)
+			return
+		}
+	})
+	if err != nil {
+		return err
 	}
 
 	var b bytes.Buffer
-	err = magicLinkMailTmpl.Execute(&b, map[string]interface{}{
+	err = s.magicLinkTmpl.Execute(&b, map[string]interface{}{
+		"Origin":    s.Origin,
 		"MagicLink": magicLink,
-		"Minutes":   int(verificationCodeLifespan.Minutes()),
+		"TTL":       emailVerificationCodeTTL,
 	})
 	if err != nil {
 		return fmt.Errorf("could not execute magic link mail template: %w", err)
 	}
 
-	err = s.Sender.Send(email, "Magic Link", b.String(), magicLink.String())
+	err = s.Sender.Send(email, "Login to Nakama", b.String(), magicLink.String())
 	if err != nil {
 		return fmt.Errorf("could not send magic link: %w", err)
 	}
@@ -179,14 +201,14 @@ func (s *Service) ParseRedirectURI(rawurl string) (*url.URL, error) {
 
 // VerifyMagicLink checks whether the given email and verification code exists and issues a new auth token.
 // If the user does not exists, it can create a new one with the given username.
-func (s *Service) VerifyMagicLink(ctx context.Context, email, verificationCode string, username *string) (AuthOutput, error) {
+func (s *Service) VerifyMagicLink(ctx context.Context, email, code string, username *string) (AuthOutput, error) {
 	var auth AuthOutput
 
 	if !reEmail.MatchString(email) {
 		return auth, ErrInvalidEmail
 	}
 
-	if !reUUID.MatchString(verificationCode) {
+	if !reUUID.MatchString(code) {
 		return auth, ErrInvalidVerificationCode
 	}
 
@@ -196,8 +218,8 @@ func (s *Service) VerifyMagicLink(ctx context.Context, email, verificationCode s
 
 	err := crdb.ExecuteTx(ctx, s.DB, nil, func(tx *sql.Tx) error {
 		var createdAt time.Time
-		query := "SELECT created_at FROM verification_codes WHERE email = $1 AND id = $2"
-		row := tx.QueryRowContext(ctx, query, email, verificationCode)
+		query := "SELECT created_at FROM email_verification_codes WHERE email = $1 AND code = $2"
+		row := tx.QueryRowContext(ctx, query, email, code)
 		err := row.Scan(&createdAt)
 		if err == sql.ErrNoRows {
 			return ErrVerificationCodeNotFound
@@ -254,14 +276,14 @@ func (s *Service) VerifyMagicLink(ctx context.Context, email, verificationCode s
 		return auth, err
 	}
 
-	auth.ExpiresAt = time.Now().Add(tokenLifespan)
+	auth.ExpiresAt = time.Now().Add(authTokenTTL)
 	auth.Token, err = s.codec().EncodeToString(auth.User.ID)
 	if err != nil {
 		return auth, fmt.Errorf("could not create auth token: %w", err)
 	}
 
 	go func() {
-		_, err := s.DB.Exec("DELETE FROM verification_codes WHERE id = $1", verificationCode)
+		_, err := s.DB.Exec("DELETE FROM email_verification_codes WHERE email = $1 AND code = $2", email, code)
 		if err != nil {
 			_ = s.Logger.Log("error", fmt.Errorf("could not delete verification code: %w", err))
 			return
@@ -273,7 +295,7 @@ func (s *Service) VerifyMagicLink(ctx context.Context, email, verificationCode s
 
 func isVerificationCodeExpired(t time.Time) bool {
 	now := time.Now()
-	exp := t.Add(verificationCodeLifespan)
+	exp := t.Add(emailVerificationCodeTTL)
 	return exp.Equal(now) || exp.Before(now)
 }
 
@@ -607,7 +629,7 @@ func (s *Service) DevLogin(ctx context.Context, email string) (AuthOutput, error
 		return out, fmt.Errorf("could not create token: %w", err)
 	}
 
-	out.ExpiresAt = time.Now().Add(tokenLifespan)
+	out.ExpiresAt = time.Now().Add(authTokenTTL)
 
 	return out, nil
 }
@@ -658,39 +680,13 @@ func (s *Service) Token(ctx context.Context) (TokenOutput, error) {
 		return out, fmt.Errorf("could not create token: %w", err)
 	}
 
-	out.ExpiresAt = time.Now().Add(tokenLifespan)
+	out.ExpiresAt = time.Now().Add(authTokenTTL)
 
 	return out, nil
 }
 
-func (s *Service) deleteExpiredVerificationCodesJob(ctx context.Context) {
-	ticker := time.NewTicker(time.Hour * 24)
-	done := ctx.Done()
-
-loop:
-	for {
-		select {
-		case <-ticker.C:
-			if err := s.deleteExpiredVerificationCodes(ctx); err != nil {
-				_ = s.Logger.Log("error", err)
-			}
-		case <-done:
-			ticker.Stop()
-			break loop
-		}
-	}
-}
-
-func (s *Service) deleteExpiredVerificationCodes(ctx context.Context) error {
-	query := fmt.Sprintf("DELETE FROM verification_codes WHERE (created_at - INTERVAL '%dm') <= now()", int64(verificationCodeLifespan.Minutes()))
-	if _, err := s.DB.ExecContext(ctx, query); err != nil {
-		return fmt.Errorf("could not delete expired verification code: %w", err)
-	}
-	return nil
-}
-
 func (s *Service) codec() *branca.Branca {
 	cdc := branca.NewBranca(s.TokenKey)
-	cdc.SetTTL(uint32(tokenLifespan.Seconds()))
+	cdc.SetTTL(uint32(authTokenTTL.Seconds()))
 	return cdc
 }

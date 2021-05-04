@@ -5,30 +5,34 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"os"
 	"strconv"
-	"time"
 
 	"github.com/matryer/way"
+	"github.com/nicolasparada/nakama/web"
 )
 
-var epoch = time.Unix(0, 0).Format(time.RFC1123)
-
-var noCacheHeaders = map[string]string{
-	"Expires":         epoch,
-	"Cache-Control":   "no-cache, no-store, no-transform, must-revalidate, private, max-age=0",
-	"Pragma":          "no-cache",
-	"X-Accel-Expires": "0",
-}
-
-var etagHeaders = []string{
-	"ETag",
-	"If-Modified-Since",
-	"If-Match",
-	"If-None-Match",
-	"If-Range",
-	"If-Unmodified-Since",
+func (h *handler) staticHandler() http.Handler {
+	var root http.FileSystem
+	if h.embedStaticFiles {
+		sub, err := fs.Sub(web.Files, "static")
+		if err != nil {
+			_ = h.logger.Log("error", fmt.Errorf("could not embed static files: %w", err))
+			os.Exit(1)
+		}
+		root = http.FS(sub)
+	} else {
+		// _, file, _, ok := runtime.Caller(0)
+		// if !ok {
+		// 	_ = h.logger.Log("error", "could not get runtime caller")
+		// 	os.Exit(1)
+		// }
+		// root = http.Dir(filepath.Join(path.Dir(file), "..", "..", "web", "static"))
+		root = http.Dir("web/static")
+	}
+	return http.FileServer(&spaFileSystem{root: root})
 }
 
 type spaFileSystem struct {
@@ -41,21 +45,6 @@ func (fs *spaFileSystem) Open(name string) (http.File, error) {
 		return fs.root.Open("index.html")
 	}
 	return f, err
-}
-
-func withoutCache(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		for _, v := range etagHeaders {
-			r.Header.Del(v)
-		}
-
-		wh := w.Header()
-		for k, v := range noCacheHeaders {
-			wh.Set(k, v)
-		}
-
-		next.ServeHTTP(w, r)
-	})
 }
 
 func (h *handler) avatar(w http.ResponseWriter, r *http.Request) {

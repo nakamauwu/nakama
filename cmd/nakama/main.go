@@ -49,28 +49,27 @@ func main() {
 
 func run(ctx context.Context, logger log.Logger, args []string) error {
 	var (
-		port, _                   = strconv.Atoi(env("PORT", "3000"))
-		originStr                 = env("ORIGIN", fmt.Sprintf("http://localhost:%d", port))
-		dbURL                     = env("DATABASE_URL", "postgresql://root@127.0.0.1:26257/nakama?sslmode=disable")
-		execSchema, _             = strconv.ParseBool(env("EXEC_SCHEMA", "false"))
-		tokenKey                  = env("TOKEN_KEY", "supersecretkeyyoushouldnotcommit")
-		natsURL                   = env("NATS_URL", nats.DefaultURL)
-		sendgridAPIKey            = os.Getenv("SENDGRID_API_KEY")
-		smtpHost                  = env("SMTP_HOST", "smtp.mailtrap.io")
-		smtpPort, _               = strconv.Atoi(env("SMTP_PORT", "25"))
-		smtpUsername              = os.Getenv("SMTP_USERNAME")
-		smtpPassword              = os.Getenv("SMTP_PASSWORD")
-		enableStaticFilesCache, _ = strconv.ParseBool(env("STATIC_CACHE", "false"))
-		embedStaticFiles, _       = strconv.ParseBool(env("EMBED_STATIC", "false"))
-		s3Endpoint                = os.Getenv("S3_ENDPOINT")
-		s3Region                  = os.Getenv("S3_REGION")
-		s3Bucket                  = env("S3_BUCKET", "avatars")
-		s3AccessKey               = os.Getenv("S3_ACCESS_KEY")
-		s3SecretKey               = os.Getenv("S3_SECRET_KEY")
-		avatarURLPrefix           = env("AVATAR_URL_PREFIX", originStr+"/img/avatars/")
-		cookieHashKey             = env("COOKIE_HASH_KEY", "supersecretkeyyoushouldnotcommit")
-		cookieBlockKey            = env("COOKIE_BLOCK_KEY", "supersecretkeyyoushouldnotcommit")
-		disabledDevLogin, _       = strconv.ParseBool(os.Getenv("DISABLE_DEV_LOGIN"))
+		port, _             = strconv.Atoi(env("PORT", "3000"))
+		originStr           = env("ORIGIN", fmt.Sprintf("http://localhost:%d", port))
+		dbURL               = env("DATABASE_URL", "postgresql://root@127.0.0.1:26257/nakama?sslmode=disable")
+		execSchema, _       = strconv.ParseBool(env("EXEC_SCHEMA", "false"))
+		tokenKey            = env("TOKEN_KEY", "supersecretkeyyoushouldnotcommit")
+		natsURL             = env("NATS_URL", nats.DefaultURL)
+		sendgridAPIKey      = os.Getenv("SENDGRID_API_KEY")
+		smtpHost            = env("SMTP_HOST", "smtp.mailtrap.io")
+		smtpPort, _         = strconv.Atoi(env("SMTP_PORT", "25"))
+		smtpUsername        = os.Getenv("SMTP_USERNAME")
+		smtpPassword        = os.Getenv("SMTP_PASSWORD")
+		embedStaticFiles, _ = strconv.ParseBool(env("EMBED_STATIC", "false"))
+		s3Endpoint          = os.Getenv("S3_ENDPOINT")
+		s3Region            = os.Getenv("S3_REGION")
+		s3Bucket            = env("S3_BUCKET", "avatars")
+		s3AccessKey         = os.Getenv("S3_ACCESS_KEY")
+		s3SecretKey         = os.Getenv("S3_SECRET_KEY")
+		avatarURLPrefix     = env("AVATAR_URL_PREFIX", originStr+"/img/avatars/")
+		cookieHashKey       = env("COOKIE_HASH_KEY", "supersecretkeyyoushouldnotcommit")
+		cookieBlockKey      = env("COOKIE_BLOCK_KEY", "supersecretkeyyoushouldnotcommit")
+		disabledDevLogin, _ = strconv.ParseBool(os.Getenv("DISABLE_DEV_LOGIN"))
 	)
 	flag.Usage = func() {
 		flag.PrintDefaults()
@@ -83,7 +82,6 @@ func run(ctx context.Context, logger log.Logger, args []string) error {
 	flag.StringVar(&natsURL, "nats", natsURL, "NATS URL")
 	flag.StringVar(&smtpHost, "smtp-host", smtpHost, "SMTP server host")
 	flag.IntVar(&smtpPort, "smtp-port", smtpPort, "SMTP server port")
-	flag.BoolVar(&enableStaticFilesCache, "static-cache", enableStaticFilesCache, "Enable static files cache")
 	flag.BoolVar(&embedStaticFiles, "embed-static", embedStaticFiles, "Embed static files")
 	flag.StringVar(&avatarURLPrefix, "avatar-url-prefix", avatarURLPrefix, "Avatar URL prefix")
 	flag.StringVar(&cookieHashKey, "cookie-hash-key", cookieHashKey, "Cookie hash key. 32 or 64 bytes")
@@ -199,14 +197,12 @@ func run(ctx context.Context, logger log.Logger, args []string) error {
 		DisabledDevLogin: disabledDevLogin,
 	}
 
-	go svc.RunBackgroundJobs(ctx)
-
 	serveAvatars := !s3Enabled
 	cookieCodec := securecookie.New(
 		[]byte(cookieHashKey),
 		[]byte(cookieBlockKey),
 	)
-	h := httptransport.New(svc, log.With(logger, "component", "http"), store, cookieCodec, enableStaticFilesCache, embedStaticFiles, serveAvatars)
+	h := httptransport.New(svc, log.With(logger, "component", "http"), store, cookieCodec, embedStaticFiles, serveAvatars)
 	server := &http.Server{
 		Addr:              fmt.Sprintf(":%d", port),
 		Handler:           h,

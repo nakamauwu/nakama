@@ -98,14 +98,14 @@ async function runLoginProgram(email) {
             } catch (err) {
                 console.error(err)
                 if (err.name !== "UserNotFoundError" && err.name !== "NoWebAuthnCredentialsError") {
-                    alert("Could not login with device credentials. Login with magic link instead")
+                    alert("Could not login with device credentials. Login you with email instead.")
                 }
             }
         }
     }
 
     await sendMagicLink(email, location.origin + "/login-callback")
-    alert("Magic link sent. Go check your inbox to login")
+    alert("Click on the link we sent to your email address to login.")
 }
 
 /**
