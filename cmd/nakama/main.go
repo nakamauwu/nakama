@@ -60,7 +60,6 @@ func run(ctx context.Context, logger log.Logger, args []string) error {
 		smtpPort, _               = strconv.Atoi(env("SMTP_PORT", "25"))
 		smtpUsername              = os.Getenv("SMTP_USERNAME")
 		smtpPassword              = os.Getenv("SMTP_PASSWORD")
-		noReplyEmail              = env("NO_REPLY_EMAIL", "no-reply@localhost")
 		enableStaticFilesCache, _ = strconv.ParseBool(env("STATIC_CACHE", "false"))
 		embedStaticFiles, _       = strconv.ParseBool(env("EMBED_STATIC", "false"))
 		s3Endpoint                = os.Getenv("S3_ENDPOINT")
@@ -84,7 +83,6 @@ func run(ctx context.Context, logger log.Logger, args []string) error {
 	flag.StringVar(&natsURL, "nats", natsURL, "NATS URL")
 	flag.StringVar(&smtpHost, "smtp-host", smtpHost, "SMTP server host")
 	flag.IntVar(&smtpPort, "smtp-port", smtpPort, "SMTP server port")
-	flag.StringVar(&noReplyEmail, "no-reply-email", noReplyEmail, "no-reply email address")
 	flag.BoolVar(&enableStaticFilesCache, "static-cache", enableStaticFilesCache, "Enable static files cache")
 	flag.BoolVar(&embedStaticFiles, "embed-static", embedStaticFiles, "Embed static files")
 	flag.StringVar(&avatarURLPrefix, "avatar-url-prefix", avatarURLPrefix, "Avatar URL prefix")
@@ -128,13 +126,14 @@ func run(ctx context.Context, logger log.Logger, args []string) error {
 	pubsub := &natspubsub.PubSub{Conn: natsConn}
 
 	var sender mailing.Sender
+	sendFrom := "no-reply@" + origin.Hostname()
 	if sendgridAPIKey != "" {
 		_ = logger.Log("mailing_implementation", "sendgrid")
-		sender = mailing.NewSendgridSender(noReplyEmail, sendgridAPIKey)
+		sender = mailing.NewSendgridSender(sendFrom, sendgridAPIKey)
 	} else if smtpUsername != "" && smtpPassword != "" {
 		_ = logger.Log("mailing_implementation", "smtp")
 		sender = mailing.NewSMTPSender(
-			noReplyEmail,
+			sendFrom,
 			smtpHost,
 			smtpPort,
 			smtpUsername,
@@ -143,7 +142,7 @@ func run(ctx context.Context, logger log.Logger, args []string) error {
 	} else {
 		_ = logger.Log("mailing_implementation", "log")
 		sender = mailing.NewLogSender(
-			noReplyEmail,
+			sendFrom,
 			log.With(logger, "component", "mailing"),
 		)
 	}
