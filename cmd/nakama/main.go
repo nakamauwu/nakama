@@ -71,27 +71,37 @@ func run(ctx context.Context, logger log.Logger, args []string) error {
 		cookieBlockKey      = env("COOKIE_BLOCK_KEY", "supersecretkeyyoushouldnotcommit")
 		disabledDevLogin, _ = strconv.ParseBool(os.Getenv("DISABLE_DEV_LOGIN"))
 	)
-	flag.Usage = func() {
-		flag.PrintDefaults()
+
+	fs := flag.NewFlagSet("nakama", flag.ExitOnError)
+	fs.Usage = func() {
+		fs.PrintDefaults()
 		fmt.Println("\nDon't forget to set TOKEN_KEY, and SENDGRID_API_KEY or SMTP_USERNAME and SMTP_PASSWORD for real usage.")
 	}
-	flag.IntVar(&port, "port", port, "Port in which this server will run")
-	flag.StringVar(&originStr, "origin", originStr, "URL origin for this service")
-	flag.StringVar(&dbURL, "db", dbURL, "Database URL")
-	flag.BoolVar(&execSchema, "exec-schema", execSchema, "Execute database schema")
-	flag.StringVar(&natsURL, "nats", natsURL, "NATS URL")
-	flag.StringVar(&smtpHost, "smtp-host", smtpHost, "SMTP server host")
-	flag.IntVar(&smtpPort, "smtp-port", smtpPort, "SMTP server port")
-	flag.BoolVar(&embedStaticFiles, "embed-static", embedStaticFiles, "Embed static files")
-	flag.StringVar(&avatarURLPrefix, "avatar-url-prefix", avatarURLPrefix, "Avatar URL prefix")
-	flag.StringVar(&cookieHashKey, "cookie-hash-key", cookieHashKey, "Cookie hash key. 32 or 64 bytes")
-	flag.StringVar(&cookieBlockKey, "cookie-block-key", cookieBlockKey, "Cookie block key. 16, 24, or 32 bytes")
-	flag.BoolVar(&disabledDevLogin, "disable-dev-login", disabledDevLogin, "Disable development login endpoint")
-	flag.Parse()
+	fs.IntVar(&port, "port", port, "Port in which this server will run")
+	fs.StringVar(&originStr, "origin", originStr, "URL origin for this service")
+	fs.StringVar(&dbURL, "db", dbURL, "Database URL")
+	fs.BoolVar(&execSchema, "exec-schema", execSchema, "Execute database schema")
+	fs.StringVar(&natsURL, "nats", natsURL, "NATS URL")
+	fs.StringVar(&smtpHost, "smtp-host", smtpHost, "SMTP server host")
+	fs.IntVar(&smtpPort, "smtp-port", smtpPort, "SMTP server port")
+	fs.BoolVar(&embedStaticFiles, "embed-static", embedStaticFiles, "Embed static files")
+	fs.StringVar(&avatarURLPrefix, "avatar-url-prefix", avatarURLPrefix, "Avatar URL prefix")
+	fs.StringVar(&cookieHashKey, "cookie-hash-key", cookieHashKey, "Cookie hash key. 32 or 64 bytes")
+	fs.StringVar(&cookieBlockKey, "cookie-block-key", cookieBlockKey, "Cookie block key. 16, 24, or 32 bytes")
+	fs.BoolVar(&disabledDevLogin, "disable-dev-login", disabledDevLogin, "Disable development login endpoint")
+	if err := fs.Parse(args); err != nil {
+		return fmt.Errorf("could not parse flags: %w", err)
+	}
 
 	origin, err := url.Parse(originStr)
 	if err != nil || !origin.IsAbs() {
 		return errors.New("invalid url origin")
+	}
+
+	if h := origin.Hostname(); h == "localhost" || h == "127.0.0.1" {
+		if p := origin.Port(); p != strconv.Itoa(port) {
+			origin.Host = fmt.Sprintf("%s:%d", h, port)
+		}
 	}
 
 	if i, err := strconv.Atoi(origin.Port()); err == nil {
