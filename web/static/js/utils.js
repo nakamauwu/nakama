@@ -273,12 +273,16 @@ function isSoundCloudURL(href) {
         if (url.hostname === "soundcloud.com") {
             return true
         }
+
+        // /{username}/{slug}
+        const parts = url.pathname.split("/")
+        return parts.length == 3
     } catch (_) { }
     return false
 }
 
 function getSoundCloudIframe(url) {
-    return fetch(`http://soundcloud.com/oembed?format=json&url=${encodeURIComponent(url)}`).then(parseResponse).then(body => {
+    return fetch(`https://soundcloud.com/oembed?format=json&url=${encodeURIComponent(url)}`).then(parseResponse).then(body => {
         const tmpl = document.createElement("template")
         tmpl.innerHTML = body.html
         return tmpl.content.querySelector("iframe")
