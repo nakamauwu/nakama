@@ -115,6 +115,19 @@ export async function collectMedia(el) {
             a.rel = "noopener"
             a.className = "media-item youtube-video-wrapper"
             a.appendChild(img)
+            a.onclick = ev => {
+                ev.preventDefault()
+                ev.stopImmediatePropagation()
+
+                const iframe = document.createElement("iframe")
+                iframe.src = "https://www.youtube.com/embed/" + encodeURIComponent(youtubeVideoID) + "?autoplay=1"
+                iframe.setAttribute("frameborder", "0")
+                iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                iframe.allowFullscreen = true
+                iframe.className = "media-item"
+                a.insertAdjacentElement("afterend", iframe)
+                a.remove()
+            }
             media.push(a)
             continue
         }

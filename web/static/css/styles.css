@@ -650,6 +650,12 @@ header .profile-link {
     object-fit: cover;
 }
 
+iframe.media-item {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+}
+
 .youtube-video-wrapper::after {
     content: "";
     background-image: url("/img/youtube-2017.svg");
