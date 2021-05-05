@@ -181,15 +181,15 @@ function findYouTubeVideoID(href) {
     try {
         const url = new URL(href)
         if ((url.hostname === "www.youtube.com" || url.hostname === "m.youtube.com") && url.pathname === "/watch" && url.searchParams.has("v")) {
-            return url.searchParams.get("v")
+            return decodeURIComponent(url.searchParams.get("v"))
         }
 
-        if (url.hostname === "youtu.be" && url.pathname !== "" && url.pathname !== "/") {
-            return url.pathname
+        if (url.hostname === "youtu.be" && url.pathname.startsWith("/") && url.pathname !== "/") {
+            return decodeURIComponent(url.pathname.substr(1))
         }
 
         if (url.hostname === "www.youtube.com" && url.pathname.startsWith("/embed/") && url.pathname !== "/embed/") {
-            return url.pathname.substr(7)
+            return decodeURIComponent(url.pathname.substr(7))
         }
     } catch (_) { }
     return null
