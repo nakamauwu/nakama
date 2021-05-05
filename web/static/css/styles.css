@@ -657,6 +657,7 @@ iframe.media-item {
 }
 
 .media-item.youtube,
+.media-item.soundcloud,
 .media-item.coub {
     border-radius: .5rem;
 }

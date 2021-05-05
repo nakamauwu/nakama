@@ -82,7 +82,7 @@ function defaultHeaders() {
  * @param {Response} res
  * @returns {Promise<any>}
  */
-async function parseResponse(res) {
+export async function parseResponse(res) {
     let body = await res.clone().json().catch(() => res.text())
     if (!res.ok) {
         const msg = String(body).trim()

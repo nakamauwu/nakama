@@ -1,3 +1,5 @@
+import { parseResponse } from "./http.js"
+
 const mentionsRegExp = /\B@([a-zA-Z][a-zA-Z0-9_-]{0,17})/g
 const urlsRegExp = /\b(https?:\/\/[\-A-Za-z0-9+&@#\/%?=~_|!:,\.;]*[\-A-Za-z0-9+&@#\/%=~_|])/gi
 const imageExtRegExp = /(\.gif|\.jpg|\.jpeg|\.png|\.avif|\.apng|\.webp|\.bmp|\.ico|\.tif|\.tiff|\.svg)$/
@@ -132,7 +134,7 @@ export async function collectMedia(el) {
             continue
         }
 
-        const coubVideoID = findCoubVideoURL(link.href)
+        const coubVideoID = findCoubVideoID(link.href)
         if (coubVideoID !== null) {
             const iframe = document.createElement("iframe")
             iframe.src = "https://coub.com/embed/" + encodeURIComponent(coubVideoID) + "?muted=false&autostart=false&originalSize=true&startWithHD=true"
@@ -140,6 +142,13 @@ export async function collectMedia(el) {
             iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             iframe.allowFullscreen = true
             iframe.className = "media-item coub"
+            media.push(iframe)
+            continue
+        }
+
+        if (isSoundCloudURL(link.href)) {
+            const iframe = await getSoundCloudIframe(link.href)
+            iframe.className = "media-item soundcloud"
             media.push(iframe)
             continue
         }
@@ -241,7 +250,7 @@ function findYouTubeVideoID(href) {
     return null
 }
 
-function findCoubVideoURL(href) {
+function findCoubVideoID(href) {
     try {
         const url = new URL(href)
         if (url.hostname !== "coub.com") {
@@ -256,6 +265,24 @@ function findCoubVideoURL(href) {
         }
     } catch (_) { }
     return null
+}
+
+function isSoundCloudURL(href) {
+    try {
+        const url = new URL(href)
+        if (url.hostname === "soundcloud.com") {
+            return true
+        }
+    } catch (_) { }
+    return false
+}
+
+function getSoundCloudIframe(url) {
+    return fetch(`http://soundcloud.com/oembed?format=json&url=${encodeURIComponent(url)}`).then(parseResponse).then(body => {
+        const tmpl = document.createElement("template")
+        tmpl.innerHTML = body.html
+        return tmpl.content.querySelector("iframe")
+    })
 }
 
 /**
