@@ -104,6 +104,21 @@ export async function collectMedia(el) {
             continue
         }
 
+        const imgurID = findImgurID(link.href)
+        if (imgurID !== null) {
+            const img = document.createElement("img")
+            // TODO: better detect imgur image extension.
+            img.src = "https://i.imgur.com/" + encodeURIComponent(imgurID) + ".png"
+            const a = document.createElement("a")
+            a.href = link.href
+            a.target = "_blank"
+            a.rel = "noopener"
+            a.className = "media-item imgur"
+            a.appendChild(img)
+            media.push(a)
+            continue
+        }
+
         const youtubeVideoID = findYouTubeVideoID(link.href)
         if (youtubeVideoID !== null) {
             const img = document.createElement("img")
@@ -226,6 +241,21 @@ async function mediaType(url) {
 
         return ""
     }).catch(_ => "")
+}
+
+function findImgurID(href) {
+    try {
+        const url = new URL(href)
+        if (url.hostname !== "imgur.com") {
+            return null
+        }
+
+        const parts = url.pathname.split("/")
+        if (parts.length === 2 && !parts[1].includes(".")) {
+            return parts[1]
+        }
+    } catch (_) { }
+    return null
 }
 
 /***
