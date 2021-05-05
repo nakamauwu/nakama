@@ -93,7 +93,7 @@ func TestService_SendMagicLink(t *testing.T) {
 
 		call := calls[0]
 		testutil.AssertEqual(t, email, call.To, "sender send-to")
-		testutil.AssertEqual(t, "Magic Link", call.Subject, "sender send-subject")
+		testutil.AssertEqual(t, "Login to Nakama", call.Subject, "sender send-subject")
 		testutil.AssertEqual(t, "text/html; charset=utf-8", http.DetectContentType([]byte(call.HTML)), "sender send-subject content type")
 		t.Logf("\nmagic link text:\n%s\n\n", call.Text)
 	})

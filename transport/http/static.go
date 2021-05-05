@@ -8,6 +8,9 @@ import (
 	"io/fs"
 	"net/http"
 	"os"
+	"path"
+	"path/filepath"
+	"runtime"
 	"strconv"
 
 	"github.com/matryer/way"
@@ -24,13 +27,12 @@ func (h *handler) staticHandler() http.Handler {
 		}
 		root = http.FS(sub)
 	} else {
-		// _, file, _, ok := runtime.Caller(0)
-		// if !ok {
-		// 	_ = h.logger.Log("error", "could not get runtime caller")
-		// 	os.Exit(1)
-		// }
-		// root = http.Dir(filepath.Join(path.Dir(file), "..", "..", "web", "static"))
-		root = http.Dir("web/static")
+		_, file, _, ok := runtime.Caller(0)
+		if !ok {
+			_ = h.logger.Log("error", "could not get runtime caller")
+			os.Exit(1)
+		}
+		root = http.Dir(filepath.Join(path.Dir(file), "..", "..", "web", "static"))
 	}
 	return http.FileServer(&spaFileSystem{root: root})
 }
