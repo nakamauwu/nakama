@@ -197,12 +197,11 @@ func run(ctx context.Context, logger log.Logger, args []string) error {
 		DisabledDevLogin: disabledDevLogin,
 	}
 
-	serveAvatars := s3Enabled
 	cookieCodec := securecookie.New(
 		[]byte(cookieHashKey),
 		[]byte(cookieBlockKey),
 	)
-	h := httptransport.New(svc, log.With(logger, "component", "http"), store, cookieCodec, embedStaticFiles, serveAvatars)
+	h := httptransport.New(svc, log.With(logger, "component", "http"), store, cookieCodec, embedStaticFiles)
 	server := &http.Server{
 		Addr:              fmt.Sprintf(":%d", port),
 		Handler:           h,

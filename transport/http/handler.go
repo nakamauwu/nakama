@@ -19,7 +19,7 @@ type handler struct {
 }
 
 // New makes use of the service to provide an http.Handler with predefined routing.
-func New(svc transport.Service, logger log.Logger, store storage.Store, cdc *securecookie.SecureCookie, embedStaticFiles, serveAvatars bool) http.Handler {
+func New(svc transport.Service, logger log.Logger, store storage.Store, cdc *securecookie.SecureCookie, embedStaticFiles bool) http.Handler {
 	h := &handler{
 		svc:              svc,
 		logger:           logger,
@@ -63,9 +63,7 @@ func New(svc transport.Service, logger log.Logger, store storage.Store, cdc *sec
 
 	r := way.NewRouter()
 	r.Handle("*", "/api/...", h.withAuth(api))
-	if serveAvatars {
-		r.HandleFunc("GET", "/img/avatars/:name", h.avatar)
-	}
+	r.HandleFunc("GET", "/img/avatars/:name", h.avatar)
 	r.Handle("GET", "/...", h.staticHandler())
 
 	return r
