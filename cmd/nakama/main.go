@@ -197,7 +197,7 @@ func run(ctx context.Context, logger log.Logger, args []string) error {
 		DisabledDevLogin: disabledDevLogin,
 	}
 
-	serveAvatars := !s3Enabled
+	serveAvatars := s3Enabled
 	cookieCodec := securecookie.New(
 		[]byte(cookieHashKey),
 		[]byte(cookieBlockKey),
