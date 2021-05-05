@@ -102,6 +102,7 @@ func (u webAuthnUser) WebAuthnCredentials() []webauthn.Credential {
 // A second endpoint GET /api/verify_magic_link?email&code&redirect_uri must exist.
 func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) error {
 	email = strings.TrimSpace(email)
+	email = strings.ToLower(email)
 	if !reEmail.MatchString(email) {
 		return ErrInvalidEmail
 	}
@@ -204,6 +205,8 @@ func (s *Service) ParseRedirectURI(rawurl string) (*url.URL, error) {
 func (s *Service) VerifyMagicLink(ctx context.Context, email, code string, username *string) (AuthOutput, error) {
 	var auth AuthOutput
 
+	email = strings.TrimSpace(email)
+	email = strings.ToLower(email)
 	if !reEmail.MatchString(email) {
 		return auth, ErrInvalidEmail
 	}
@@ -403,6 +406,12 @@ func (s *Service) CredentialRequestOptions(ctx context.Context, email string, op
 		o(&options)
 	}
 
+	email = strings.TrimSpace(email)
+	email = strings.ToLower(email)
+	if !reEmail.MatchString(email) {
+		return nil, nil, ErrInvalidEmail
+	}
+
 	u, err := s.webAuthnUser(ctx, webAuthnUserByEmail(email))
 	if err != nil {
 		return nil, nil, err
@@ -461,6 +470,7 @@ func (s *Service) webAuthnUser(ctx context.Context, opts ...webAuthnUserOpt) (we
 
 	data := map[string]interface{}{}
 	if options.Email != nil {
+		*options.Email = strings.ToLower(*options.Email)
 		if !reEmail.MatchString(*options.Email) {
 			return u, ErrInvalidEmail
 		}
@@ -606,6 +616,7 @@ func (s *Service) DevLogin(ctx context.Context, email string) (AuthOutput, error
 	}
 
 	email = strings.TrimSpace(email)
+	email = strings.ToLower(email)
 	if !reEmail.MatchString(email) {
 		return out, ErrInvalidEmail
 	}
