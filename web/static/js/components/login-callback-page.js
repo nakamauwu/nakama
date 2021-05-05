@@ -112,7 +112,7 @@ async function loginCallback() {
     const user = {
         id: data.get("user.id"),
         username: data.get("user.username"),
-        avatarURL: data.get("avatar_url"),
+        avatarURL: data.get("user.avatar_url"),
     }
 
     if (user.id === null || user.username === null) {
