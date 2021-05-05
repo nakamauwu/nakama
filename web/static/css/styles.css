@@ -127,6 +127,10 @@ a {
     color: var(--primary);
 }
 
+p a {
+    word-break: break-all;
+}
+
 header a {
     color: inherit;
     text-decoration: none;
