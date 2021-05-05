@@ -104,7 +104,7 @@ export async function collectMedia(el) {
         const youtubeVideoID = findYouTubeVideoID(link.href)
         if (youtubeVideoID !== null) {
             const img = document.createElement("img")
-            img.src = `https://img.youtube.com/vi/${youtubeVideoID}/maxresdefault.jpg`
+            img.src = `https://img.youtube.com/vi/${youtubeVideoID}/0.jpg`
             // img.crossOrigin = ""
             img.width = 540
             img.height = 304
