@@ -1,7 +1,8 @@
 const mentionsRegExp = /\B@([a-zA-Z][a-zA-Z0-9_-]{0,17})/g
 const urlsRegExp = /\b(https?:\/\/[\-A-Za-z0-9+&@#\/%?=~_|!:,\.;]*[\-A-Za-z0-9+&@#\/%=~_|])/gi
-const imageExtRegExp = /(\.gif|\.jpg|\.png)$/
-const videoExtRegExp = /(\.mp4|\.webm)$/
+const imageExtRegExp = /(\.gif|\.jpg|\.jpeg|\.png|\.avif|\.apng|\.webp|\.bmp|\.ico|\.tif|\.tiff|\.svg)$/
+const videoExtRegExp = /(\.mp4|\.webm|\.3gp|\.mov)$/
+const audioExtRegExp = /(\.wav|\.mp3|\.aac|\.ogg|\.flac)$/
 
 export function isLocalhost() {
     return ["localhost", "127.0.0.1"].includes(window.location.hostname)
@@ -132,12 +133,25 @@ export async function collectMedia(el) {
             continue
         }
 
+        if (mt === "audio") {
+            const audio = document.createElement("audio")
+            audio.src = link.href
+            audio.controls = true
+            audio.loop = true
+            audio.volume = 0.5
+            audio.autoplay = false
+            audio.className = "media-item"
+            media.push(audio)
+            continue
+        }
+
         if (mt === "video") {
             const video = document.createElement("video")
             video.src = link.href
             video.controls = true
             video.loop = true
             video.volume = 0.5
+            video.autoplay = false
             video.muted = true
             video.className = "media-item"
             media.push(video)
@@ -159,6 +173,10 @@ async function mediaType(url) {
         return "video"
     }
 
+    if (audioExtRegExp.test(url)) {
+        return "audio"
+    }
+
     const endpoint = "/api/proxy?target=" + encodeURIComponent(url)
     return fetch(endpoint, { method: "HEAD", redirect: "follow" }).then(res => {
         const ct = res.headers.get("Content-Type")
@@ -167,6 +185,9 @@ async function mediaType(url) {
         }
         if (ct.startsWith("video/")) {
             return "video"
+        }
+        if (ct.startsWith("audio/")) {
+            return "audio"
         }
 
         return ""

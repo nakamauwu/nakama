@@ -663,6 +663,10 @@ header .profile-link {
     left: 0;
 }
 
+audio {
+    width: 100%;
+}
+
 button[role=switch] {
     transition: background-color 200ms linear;
     height: 1.25rem;
