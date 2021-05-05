@@ -656,6 +656,11 @@ iframe.media-item {
     aspect-ratio: 16 / 9;
 }
 
+.media-item.youtube,
+.media-item.coub {
+    border-radius: .5rem;
+}
+
 .youtube-video-wrapper::after {
     content: "";
     background-image: url("/img/youtube-2017.svg");

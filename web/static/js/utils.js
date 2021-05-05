@@ -124,11 +124,23 @@ export async function collectMedia(el) {
                 iframe.setAttribute("frameborder", "0")
                 iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 iframe.allowFullscreen = true
-                iframe.className = "media-item"
+                iframe.className = "media-item youtube"
                 a.insertAdjacentElement("afterend", iframe)
                 a.remove()
             }
             media.push(a)
+            continue
+        }
+
+        const coubVideoID = findCoubVideoURL(link.href)
+        if (coubVideoID !== null) {
+            const iframe = document.createElement("iframe")
+            iframe.src = "https://coub.com/embed/" + encodeURIComponent(coubVideoID) + "?muted=false&autostart=false&originalSize=true&startWithHD=true"
+            iframe.setAttribute("frameborder", "0")
+            iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            iframe.allowFullscreen = true
+            iframe.className = "media-item coub"
+            media.push(iframe)
             continue
         }
 
@@ -224,6 +236,23 @@ function findYouTubeVideoID(href) {
 
         if (url.hostname === "www.youtube.com" && url.pathname.startsWith("/embed/") && url.pathname !== "/embed/") {
             return decodeURIComponent(url.pathname.substr(7))
+        }
+    } catch (_) { }
+    return null
+}
+
+function findCoubVideoURL(href) {
+    try {
+        const url = new URL(href)
+        if (url.hostname !== "coub.com") {
+            return null
+        }
+
+        const parts = url.pathname.split("/")
+        // /view/{id}
+        // /embed/{id}
+        if (parts.length === 3 && (parts[1] === "view" || parts[1] === "embed")) {
+            return decodeURIComponent(parts[2])
         }
     } catch (_) { }
     return null
