@@ -132,11 +132,13 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 		}
 	}()
 
+	// See transport/http/handler.go
+	// GET /api/verify_magic_link must exist.
 	magicLink := cloneURL(s.Origin)
 	magicLink.Path = "/api/verify_magic_link"
 	q := magicLink.Query()
 	q.Set("email", email)
-	q.Set("code", code)
+	q.Set("verification_code", code)
 	q.Set("redirect_uri", redirectURI)
 	magicLink.RawQuery = q.Encode()
 

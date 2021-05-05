@@ -69,7 +69,7 @@ func (h *handler) verifyMagicLink(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	email := q.Get("email")
-	code := q.Get("code")
+	code := q.Get("verification_code")
 	username := emptyStringPtr(q.Get("username"))
 	auth, err := h.svc.VerifyMagicLink(ctx, email, code, username)
 	if err == nakama.ErrUserNotFound || err == nakama.ErrUsernameTaken {
