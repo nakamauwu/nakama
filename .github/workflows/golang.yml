@@ -81,5 +81,9 @@ jobs:
           script: |
             echo "SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY }}" >| .env \
             && echo "TRAEFIK_PILOT_TOKEN=${{ secrets.TRAEFIK_PILOT_TOKEN }}" >> .env \
+            && echo "S3_ENDPOINT=${{ secrets.S3_ENDPOINT }}" >> .env \
+            && echo "S3_REGION=${{ secrets.S3_REGION }}" >> .env \
+            && echo "S3_ACCESS_KEY=${{ secrets.S3_ACCESS_KEY }}" >> .env \
+            && echo "S3_SECRET_KEY=${{ secrets.S3_SECRET_KEY }}" >> .env \
             && docker-compose pull \
             && docker-compose up -d --force-recreate
