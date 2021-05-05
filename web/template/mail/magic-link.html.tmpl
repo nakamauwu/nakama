@@ -8,21 +8,8 @@
 </head>
 <body>
     <h1 style="font-family: sans-serif;">Nakama</h1>
-    <p style="font-family: sans-serif;">Click the link down below to login to <a href="{{ .Origin }}" target="_blank" rel="noopener noreferrer" style="font-family: sans-serif; color: #9fb5df;">{{ .Origin.Hostname }}</a>.</p>
-    <div>
-        <!--[if mso]>
-        <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{ .MagicLink }}" style="height:40px;v-text-anchor:middle;width:120px;" arcsize="50%" stroke="f" fillcolor="#9fb5df">
-            <w:anchorlock/>
-            <center>
-        <![endif]-->
-
-        <a href="{{ .MagicLink }}" target="_blank" rel="noopener noreferrer" style="background-color:#9fb5df;border-radius:20px;color:#000;display:inline-block;font-family:sans-serif;font-size:13px;font-weight:bold;line-height:40px;text-align:center;text-decoration:none;width:120px;-webkit-text-size-adjust:none;">LOGIN</a>
-
-        <!--[if mso]>
-            </center>
-        </v:roundrect>
-        <![endif]-->
-    </div>
+    <p style="font-family: sans-serif;">Click the link down below to login to <a href="{{ .Origin }}" target="_blank" rel="noopener noreferrer" style="font-family: sans-serif;">{{ .Origin.Hostname }}</a>.</p>
+    <a href="{{ .MagicLink }}" target="_blank" rel="noopener noreferrer" style="font-family: sans-serif; display: inline-block; height: 48px; line-height: 48px; padding: 0 24px; background-color: whitesmoke; border-radius: 24px;">Login</a>
     <p>
         <em style="font-family: sans-serif;">It expires in {{ human_duration .TTL }} and can only be used once.</em>
     </p>
