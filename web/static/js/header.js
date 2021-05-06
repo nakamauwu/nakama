@@ -45,6 +45,16 @@ void async function updateHeaderView() {
          * @param {import("./types.js").Notification} notification
          */
         const onNotificationArrive = notification => {
+            const read = () => {
+                markNotificationAsRead(notification.id).then(() => {
+                    notification.read = true
+
+                    fetchHasUnreadNotifications().then(v => {
+                        dispatchEvent(new CustomEvent("hasunreadnotifications", { detail: v }))
+                    }).catch(console.error)
+                }).catch(console.error)
+            }
+
             notificationsLink.classList.add("has-unread-notifications")
             dispatchEvent(new CustomEvent("notificationarrive", { detail: notification }))
 
@@ -52,6 +62,7 @@ void async function updateHeaderView() {
             if (match !== null) {
                 const postID = decodeURIComponent(match.groups["postID"])
                 if (postID === notification.postID) {
+                    read()
                     return
                 }
             }
@@ -72,14 +83,26 @@ void async function updateHeaderView() {
                 ev.preventDefault()
                 sysnotif.close()
                 navigate(getNotificationHref(notification))
-                await markNotificationAsRead(notification.id)
-                notification.read = true
+                read()
             }
 
             sysnotif.onclick = onSysNotificationClick
         }
 
+        /**
+         * @param {CustomEvent} ev
+         */
+        const onHasUnreadNotifications = ev => {
+            const has = ev.detail
+            if (has) {
+                notificationsLink.classList.add("has-unread-notifications")
+            } else {
+                notificationsLink.classList.remove("has-unread-notifications")
+            }
+        }
+
         subscribeToNotifications(onNotificationArrive)
+        addEventListener("hasunreadnotifications", onHasUnreadNotifications)
     }
 }()
 

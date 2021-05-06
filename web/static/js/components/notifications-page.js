@@ -139,9 +139,20 @@ function renderNotification(notification) {
             notification.read = true
             article.classList.add("read")
             article.removeEventListener("click", onNotificationClick)
+
+            fetchHasUnreadNotifications().then(v => {
+                dispatchEvent(new CustomEvent("hasunreadnotifications", { detail: v }))
+            }).catch(console.error)
         }
 
         article.addEventListener("click", onNotificationClick)
     }
     return article
+}
+
+/**
+ * @returns {Promise<boolean>}
+ */
+function fetchHasUnreadNotifications() {
+    return doGet("/api/has_unread_notifications")
 }

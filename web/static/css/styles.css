@@ -504,6 +504,7 @@ header .profile-link {
     left: 50%;
     transform: translateX(-50%);
     will-change: opacity transform;
+    z-index: 1;
 }
 
 .queue-button:hover {
