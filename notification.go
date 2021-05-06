@@ -125,7 +125,7 @@ func (s *Service) HasUnreadNotifications(ctx context.Context) (bool, error) {
 
 	var unread bool
 	if err := s.DB.QueryRowContext(ctx, `SELECT EXISTS (
-		SELECT 1 FROM notifications WHERE user_id = $1 AND read_at IS NULL
+		SELECT 1 FROM notifications WHERE user_id = $1 AND (read_at IS NULL OR read_at = '0001-01-01 00:00:00')
 	)`, uid).Scan(&unread); err != nil {
 		return false, fmt.Errorf("could not query select unread notifications existence: %w", err)
 	}
@@ -146,7 +146,7 @@ func (s *Service) MarkNotificationAsRead(ctx context.Context, notificationID str
 
 	if _, err := s.DB.Exec(`
 		UPDATE notifications SET read_at = now()
-		WHERE id = $1 AND user_id = $2 AND read_at IS NULL`, notificationID, uid); err != nil {
+		WHERE id = $1 AND user_id = $2 AND (read_at IS NULL OR read_at = '0001-01-01 00:00:00')`, notificationID, uid); err != nil {
 		return fmt.Errorf("could not update and mark notification as read: %w", err)
 	}
 
@@ -162,7 +162,7 @@ func (s *Service) MarkNotificationsAsRead(ctx context.Context) error {
 
 	if _, err := s.DB.Exec(`
 		UPDATE notifications SET read_at = now()
-		WHERE user_id = $1 AND read_at IS NULL`, uid); err != nil {
+		WHERE user_id = $1 AND (read_at IS NULL OR read_at = '0001-01-01 00:00:00'`, uid); err != nil {
 		return fmt.Errorf("could not update and mark notifications as read: %w", err)
 	}
 
@@ -197,7 +197,7 @@ func (s *Service) notifyFollow(followerID, followeeID string) {
 		}
 
 		var nid string
-		query = "SELECT id FROM notifications WHERE user_id = $1 AND type = 'follow' AND read_at IS NULL"
+		query = "SELECT id FROM notifications WHERE user_id = $1 AND type = 'follow' AND (read_at IS NULL OR read_at = '0001-01-01 00:00:00')"
 		err = tx.QueryRowContext(ctx, query, followeeID).Scan(&nid)
 		if err != nil && err != sql.ErrNoRows {
 			return fmt.Errorf("could not query select unread follow notification: %w", err)
@@ -247,8 +247,8 @@ func (s *Service) notifyFollow(followerID, followeeID string) {
 func (s *Service) notifyComment(c Comment) {
 	actor := c.User.Username
 	rows, err := s.DB.Query(`
-		INSERT INTO notifications (user_id, actors, type, post_id)
-		SELECT user_id, $1, 'comment', $2 FROM post_subscriptions
+		INSERT INTO notifications (user_id, actors, type, post_id, read_at)
+		SELECT user_id, $1, 'comment', $2, '0001-01-01 00:00:00' FROM post_subscriptions
 		WHERE post_subscriptions.user_id != $3
 			AND post_subscriptions.post_id = $2
 		ON CONFLICT (user_id, type, post_id, read_at) DO UPDATE SET
@@ -339,8 +339,8 @@ func (s *Service) notifyCommentMention(c Comment) {
 
 	actor := c.User.Username
 	rows, err := s.DB.Query(`
-		INSERT INTO notifications (user_id, actors, type, post_id)
-		SELECT users.id, $1, 'comment_mention', $2 FROM users
+		INSERT INTO notifications (user_id, actors, type, post_id, read_at)
+		SELECT users.id, $1, 'comment_mention', $2, '0001-01-01 00:00:00' FROM users
 		WHERE users.id != $3
 			AND username = ANY($4)
 		ON CONFLICT (user_id, type, post_id, read_at) DO UPDATE SET
