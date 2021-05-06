@@ -61,7 +61,7 @@ void async function updateHeaderView() {
             const match = rePostRoute.exec(location.pathname)
             if (match !== null) {
                 const postID = decodeURIComponent(match.groups["postID"])
-                if (postID === notification.postID) {
+                if (postID === notification.postID && document.hasFocus()) {
                     read()
                     return
                 }
