@@ -67,12 +67,20 @@ function renderFeed() {
  * @param {boolean=} opts.reverse
  * @param {function(any):any=} opts.getID
  * @param {function(Error):any=} opts.onError
+ * @param {Node=} opts.noContent
  */
 export default function renderList(opts) {
     const queue = []
     const feed = renderFeed()
     let loadMoreButton = /** @type {HTMLButtonElement=} */ (null)
     let queueButton = /** @type {HTMLButtonElement=} */ (null)
+    let noContentRendered = false
+
+    const cleanupFeed = () => {
+        while (feed.el.firstElementChild !== null) {
+            feed.el.removeChild(feed.el.lastElementChild)
+        }
+    }
 
     const enqueue = item => {
         if (queueButton === null) {
@@ -93,10 +101,14 @@ export default function renderList(opts) {
     }
 
     const flush = () => {
-        let item = queue.pop()
+        if (noContentRendered) {
+            cleanupFeed()
+        }
 
+        let item = queue.pop()
         while (item !== undefined) {
             opts.items.unshift(item)
+
             if (opts.reverse) {
                 feed.el.appendChild(opts.renderItem(item))
             } else {
@@ -161,14 +173,21 @@ export default function renderList(opts) {
         }
     }
 
-
-    for (const item of opts.items) {
-        if (opts.reverse) {
-            feed.el.insertAdjacentElement("afterbegin", opts.renderItem(item))
-        } else {
-            feed.el.appendChild(opts.renderItem(item))
+    if (opts.items === null || opts.items.length === 0) {
+        if (opts.noContent instanceof Node) {
+            feed.el.appendChild(opts.noContent)
+            noContentRendered = true
+        }
+    } else {
+        for (const item of opts.items) {
+            if (opts.reverse) {
+                feed.el.insertAdjacentElement("afterbegin", opts.renderItem(item))
+            } else {
+                feed.el.appendChild(opts.renderItem(item))
+            }
         }
     }
+
 
     if (opts.items.length === opts.pageSize) {
         setTimeout(() => {

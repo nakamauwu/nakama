@@ -62,6 +62,13 @@ template.innerHTML = /*html*/`
     </div>
 `
 
+const emptyTimelineTmpl = document.createElement("template")
+emptyTimelineTmpl.innerHTML = `
+    <div>
+        <p>This looks quite empty. Go <a href="/search">search</a> for some users to follow and start getting some activity.</p>
+    </div>
+`
+
 export default async function renderHomePage() {
     if (timeline === null || timeline.length === 0) {
         timeline = await fetchTimeline()
@@ -71,6 +78,7 @@ export default async function renderHomePage() {
         loadMoreFunc: fetchTimeline,
         pageSize: PAGE_SIZE,
         renderItem: renderTimelineItem,
+        noContent: emptyTimelineTmpl.content.cloneNode(true),
     })
 
     const page = /** @type {DocumentFragment} */ (template.content.cloneNode(true))
