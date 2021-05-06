@@ -152,6 +152,9 @@ ALTER TABLE comment_likes ADD CONSTRAINT fk_comment_id_ref_comments FOREIGN KEY 
 ALTER TABLE notifications DROP CONSTRAINT fk_user_id_ref_users;
 ALTER TABLE notifications ADD CONSTRAINT fk_user_id_ref_users FOREIGN KEY (user_id) REFERENCES users ON DELETE CASCADE;
 
+ALTER TABLE notifications DROP CONSTRAINT fk_post_id_ref_posts;
+ALTER TABLE notifications ADD CONSTRAINT fk_post_id_ref_posts FOREIGN KEY (post_id) REFERENCES posts ON DELETE CASCADE;
+
 -- INSERT INTO users (id, email, username) VALUES
 --     ('24ca6ce6-b3e9-4276-a99a-45c77115cc9f', 'shinji@example.org', 'shinji'),
 --     ('93dfcef9-0b45-46ae-933c-ea52fbf80edb', 'rei@example.org', 'rei');
