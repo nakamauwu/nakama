@@ -162,13 +162,24 @@ export async function collectMedia(el) {
         }
 
         if (isSoundCloudURL(link.href)) {
-            const iframe = await getSoundCloudIframe(link.href)
-            iframe.className = "media-item soundcloud"
-            media.push(iframe)
+            await getSoundCloudIframe(link.href).then(iframe => {
+                iframe.className = "media-item soundcloud"
+                media.push(iframe)
+            }).catch(console.error)
             continue
         }
 
-        const mt = await mediaType(link.href)
+        if (isTweet(link.href)) {
+            await getTweetEmbed(link.href).then(node => {
+                const div = document.createElement("div")
+                div.className = "media-item tweet"
+                div.appendChild(node)
+                media.push(div)
+            }).catch(console.error)
+            continue
+        }
+
+        const mt = await mediaType(link.href).catch(() => null)
         if (mt === "image") {
             const img = document.createElement("img")
             img.src = link.href
@@ -316,6 +327,49 @@ function getSoundCloudIframe(url) {
         const tmpl = document.createElement("template")
         tmpl.innerHTML = body.html
         return tmpl.content.querySelector("iframe")
+    })
+}
+
+function isTweet(href) {
+    try {
+        const url = new URL(href)
+        if (url.hostname !== "twitter.com") {
+            return null
+        }
+
+        // /{username}/status/{id}
+        const parts = url.pathname.split("/")
+        return parts.length === 4 && parts[2] === "status"
+    } catch (_) { }
+    return false
+}
+
+function getTweetEmbed(url) {
+    return fetchJSONP(`https://publish.twitter.com/oembed?url=${encodeURIComponent(url)}&theme=dark`).then(parseResponse).then(body => {
+        const tmpl = document.createElement("template")
+        tmpl.innerHTML = body.html
+        return tmpl.content
+    })
+}
+
+let jsonPCounter = 0
+function fetchJSONP(url) {
+    return new Promise(resolve => {
+        jsonPCounter++
+        const name = "_jsonp_" + String(jsonPCounter) + String(Math.random()).substr(2)
+        url += url.match(/\?/) ? "&" : "?"
+        url += "callback=" + encodeURIComponent(name)
+
+        const script = document.createElement("script")
+        script.src = url
+
+        window[name] = json => {
+            resolve(new Response(JSON.stringify(json)))
+            script.remove()
+            delete window[name]
+        };
+
+        document.body.appendChild(script)
     })
 }
 
