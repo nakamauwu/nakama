@@ -47,6 +47,9 @@ var _ Service = &ServiceMock{}
 // 			CredentialRequestOptionsFunc: func(ctx context.Context, email string, opts ...nakama.CredentialRequestOptionsOpt) (*protocol.CredentialAssertion, *webauthn.SessionData, error) {
 // 				panic("mock out the CredentialRequestOptions method")
 // 			},
+// 			DeletePostFunc: func(ctx context.Context, postID string) error {
+// 				panic("mock out the DeletePost method")
+// 			},
 // 			DeleteTimelineItemFunc: func(ctx context.Context, timelineItemID string) error {
 // 				panic("mock out the DeleteTimelineItem method")
 // 			},
@@ -122,7 +125,7 @@ var _ Service = &ServiceMock{}
 // 			UsersFunc: func(ctx context.Context, search string, first int, after string) ([]nakama.UserProfile, error) {
 // 				panic("mock out the Users method")
 // 			},
-// 			VerifyMagicLinkFunc: func(ctx context.Context, email string, verificationCode string, username *string) (nakama.AuthOutput, error) {
+// 			VerifyMagicLinkFunc: func(ctx context.Context, email string, code string, username *string) (nakama.AuthOutput, error) {
 // 				panic("mock out the VerifyMagicLink method")
 // 			},
 // 			WebAuthnLoginFunc: func(ctx context.Context, data webauthn.SessionData, reply *protocol.ParsedCredentialAssertionData) (nakama.AuthOutput, error) {
@@ -158,6 +161,9 @@ type ServiceMock struct {
 
 	// CredentialRequestOptionsFunc mocks the CredentialRequestOptions method.
 	CredentialRequestOptionsFunc func(ctx context.Context, email string, opts ...nakama.CredentialRequestOptionsOpt) (*protocol.CredentialAssertion, *webauthn.SessionData, error)
+
+	// DeletePostFunc mocks the DeletePost method.
+	DeletePostFunc func(ctx context.Context, postID string) error
 
 	// DeleteTimelineItemFunc mocks the DeleteTimelineItem method.
 	DeleteTimelineItemFunc func(ctx context.Context, timelineItemID string) error
@@ -235,7 +241,7 @@ type ServiceMock struct {
 	UsersFunc func(ctx context.Context, search string, first int, after string) ([]nakama.UserProfile, error)
 
 	// VerifyMagicLinkFunc mocks the VerifyMagicLink method.
-	VerifyMagicLinkFunc func(ctx context.Context, email string, verificationCode string, username *string) (nakama.AuthOutput, error)
+	VerifyMagicLinkFunc func(ctx context.Context, email string, code string, username *string) (nakama.AuthOutput, error)
 
 	// WebAuthnLoginFunc mocks the WebAuthnLogin method.
 	WebAuthnLoginFunc func(ctx context.Context, data webauthn.SessionData, reply *protocol.ParsedCredentialAssertionData) (nakama.AuthOutput, error)
@@ -303,6 +309,13 @@ type ServiceMock struct {
 			Email string
 			// Opts is the opts argument value.
 			Opts []nakama.CredentialRequestOptionsOpt
+		}
+		// DeletePost holds details about calls to the DeletePost method.
+		DeletePost []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// PostID is the postID argument value.
+			PostID string
 		}
 		// DeleteTimelineItem holds details about calls to the DeleteTimelineItem method.
 		DeleteTimelineItem []struct {
@@ -501,8 +514,8 @@ type ServiceMock struct {
 			Ctx context.Context
 			// Email is the email argument value.
 			Email string
-			// VerificationCode is the verificationCode argument value.
-			VerificationCode string
+			// Code is the code argument value.
+			Code string
 			// Username is the username argument value.
 			Username *string
 		}
@@ -524,6 +537,7 @@ type ServiceMock struct {
 	lockCreatePost                sync.RWMutex
 	lockCredentialCreationOptions sync.RWMutex
 	lockCredentialRequestOptions  sync.RWMutex
+	lockDeletePost                sync.RWMutex
 	lockDeleteTimelineItem        sync.RWMutex
 	lockDevLogin                  sync.RWMutex
 	lockFollowees                 sync.RWMutex
@@ -842,6 +856,41 @@ func (mock *ServiceMock) CredentialRequestOptionsCalls() []struct {
 	mock.lockCredentialRequestOptions.RLock()
 	calls = mock.calls.CredentialRequestOptions
 	mock.lockCredentialRequestOptions.RUnlock()
+	return calls
+}
+
+// DeletePost calls DeletePostFunc.
+func (mock *ServiceMock) DeletePost(ctx context.Context, postID string) error {
+	if mock.DeletePostFunc == nil {
+		panic("ServiceMock.DeletePostFunc: method is nil but Service.DeletePost was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		PostID string
+	}{
+		Ctx:    ctx,
+		PostID: postID,
+	}
+	mock.lockDeletePost.Lock()
+	mock.calls.DeletePost = append(mock.calls.DeletePost, callInfo)
+	mock.lockDeletePost.Unlock()
+	return mock.DeletePostFunc(ctx, postID)
+}
+
+// DeletePostCalls gets all the calls that were made to DeletePost.
+// Check the length with:
+//     len(mockedService.DeletePostCalls())
+func (mock *ServiceMock) DeletePostCalls() []struct {
+	Ctx    context.Context
+	PostID string
+} {
+	var calls []struct {
+		Ctx    context.Context
+		PostID string
+	}
+	mock.lockDeletePost.RLock()
+	calls = mock.calls.DeletePost
+	mock.lockDeletePost.RUnlock()
 	return calls
 }
 
@@ -1753,41 +1802,41 @@ func (mock *ServiceMock) UsersCalls() []struct {
 }
 
 // VerifyMagicLink calls VerifyMagicLinkFunc.
-func (mock *ServiceMock) VerifyMagicLink(ctx context.Context, email string, verificationCode string, username *string) (nakama.AuthOutput, error) {
+func (mock *ServiceMock) VerifyMagicLink(ctx context.Context, email string, code string, username *string) (nakama.AuthOutput, error) {
 	if mock.VerifyMagicLinkFunc == nil {
 		panic("ServiceMock.VerifyMagicLinkFunc: method is nil but Service.VerifyMagicLink was just called")
 	}
 	callInfo := struct {
-		Ctx              context.Context
-		Email            string
-		VerificationCode string
-		Username         *string
+		Ctx      context.Context
+		Email    string
+		Code     string
+		Username *string
 	}{
-		Ctx:              ctx,
-		Email:            email,
-		VerificationCode: verificationCode,
-		Username:         username,
+		Ctx:      ctx,
+		Email:    email,
+		Code:     code,
+		Username: username,
 	}
 	mock.lockVerifyMagicLink.Lock()
 	mock.calls.VerifyMagicLink = append(mock.calls.VerifyMagicLink, callInfo)
 	mock.lockVerifyMagicLink.Unlock()
-	return mock.VerifyMagicLinkFunc(ctx, email, verificationCode, username)
+	return mock.VerifyMagicLinkFunc(ctx, email, code, username)
 }
 
 // VerifyMagicLinkCalls gets all the calls that were made to VerifyMagicLink.
 // Check the length with:
 //     len(mockedService.VerifyMagicLinkCalls())
 func (mock *ServiceMock) VerifyMagicLinkCalls() []struct {
-	Ctx              context.Context
-	Email            string
-	VerificationCode string
-	Username         *string
+	Ctx      context.Context
+	Email    string
+	Code     string
+	Username *string
 } {
 	var calls []struct {
-		Ctx              context.Context
-		Email            string
-		VerificationCode string
-		Username         *string
+		Ctx      context.Context
+		Email    string
+		Code     string
+		Username *string
 	}
 	mock.lockVerifyMagicLink.RLock()
 	calls = mock.calls.VerifyMagicLink

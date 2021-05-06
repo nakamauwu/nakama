@@ -20,6 +20,8 @@ var (
 	ErrInvalidSpoiler = InvalidArgumentError("invalid spoiler")
 	// ErrPostNotFound denotes a not found post.
 	ErrPostNotFound = NotFoundError("post not found")
+	// ErrInvalidUpdatePostParams denotes invalid params to update a post, that is no params altogether.
+	ErrInvalidUpdatePostParams = InvalidArgumentError("invalid update post params")
 )
 
 // Post model.
@@ -273,6 +275,107 @@ func (s *Service) Post(ctx context.Context, postID string) (Post, error) {
 	p.User = &u
 
 	return p, nil
+}
+
+type UpdatePostParams struct {
+	Content   *string
+	SpoilerOf *string
+	NSFW      *bool
+}
+
+func (params UpdatePostParams) Empty() bool {
+	return params.Content == nil && params.NSFW == nil && params.SpoilerOf == nil
+}
+
+type UpdatedPostFields struct {
+	Content   string
+	SpoilerOf *string
+	NSFW      bool
+}
+
+func (s *Service) UpdatePost(ctx context.Context, postID string, params UpdatePostParams) (UpdatedPostFields, error) {
+	var updated UpdatedPostFields
+	if params.Empty() {
+		return updated, ErrInvalidUpdatePostParams
+	}
+
+	uid, ok := ctx.Value(KeyAuthUserID).(string)
+	if !ok {
+		return updated, ErrUnauthenticated
+	}
+
+	if !reUUID.MatchString(postID) {
+		return updated, ErrInvalidPostID
+	}
+
+	if params.Content != nil {
+		*params.Content = smartTrim(*params.Content)
+		if *params.Content == "" || utf8.RuneCountInString(*params.Content) > 480 {
+			return updated, ErrInvalidContent
+		}
+	}
+
+	if params.SpoilerOf != nil {
+		*params.SpoilerOf = smartTrim(*params.SpoilerOf)
+		if *params.SpoilerOf == "" || utf8.RuneCountInString(*params.SpoilerOf) > 64 {
+			return updated, ErrInvalidSpoiler
+		}
+	}
+
+	var set []string
+	if params.Content != nil {
+		set = append(set, "content = @content")
+	}
+	if params.SpoilerOf != nil {
+		set = append(set, "spoiler_of = @spoiler_of")
+	}
+	if params.NSFW != nil {
+		set = append(set, "nsfw = @nsfw")
+	}
+	query, args, err := buildQuery(`
+		UPDATE posts
+		SET {{ .set }}
+		WHERE id = @post_id
+			AND user_id = @auth_user_id
+		RETURNING content, spoiler_of, nsfw
+		`, map[string]interface{}{
+		"content":      params.Content,
+		"spoiler_of":   params.SpoilerOf,
+		"nsfw":         params.NSFW,
+		"set":          strings.Join(set, ", "),
+		"post_id":      postID,
+		"auth_user_id": uid,
+	})
+	if err != nil {
+		return updated, fmt.Errorf("could not sql update post: %w", err)
+	}
+
+	row := s.DB.QueryRowContext(ctx, query, args...)
+	err = row.Scan(&updated.Content, &updated.SpoilerOf, &updated.NSFW)
+	if err != nil {
+		return updated, fmt.Errorf("could not sql update post content: %w", err)
+	}
+
+	return updated, nil
+}
+
+func (s *Service) DeletePost(ctx context.Context, postID string) error {
+	uid, ok := ctx.Value(KeyAuthUserID).(string)
+	if !ok {
+		return ErrUnauthenticated
+	}
+
+	if !reUUID.MatchString(postID) {
+		return ErrInvalidPostID
+	}
+
+	query := "DELETE FROM posts WHERE id = $1 AND user_id = $2"
+	_, err := s.DB.ExecContext(ctx, query, postID, uid)
+	if err != nil {
+		return fmt.Errorf("could not sql delete post: %w", err)
+	}
+
+	return nil
 }
 
 // TogglePostLike 🖤

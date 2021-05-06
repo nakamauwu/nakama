@@ -148,7 +148,7 @@ func (s *Service) DeleteTimelineItem(ctx context.Context, timelineItemID string)
 	if _, err := s.DB.ExecContext(ctx, `
 		DELETE FROM timeline
 		WHERE id = $1 AND user_id = $2`, timelineItemID, uid); err != nil {
-		return fmt.Errorf("could not delete timeline item: %w", err)
+		return fmt.Errorf("could not sql delete timeline item: %w", err)
 	}
 
 	return nil

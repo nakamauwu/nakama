@@ -40,6 +40,7 @@ type Service interface {
 	CreatePost(ctx context.Context, content string, spoilerOf *string, nsfw bool) (nakama.TimelineItem, error)
 	Posts(ctx context.Context, username string, last int, before string) ([]nakama.Post, error)
 	Post(ctx context.Context, postID string) (nakama.Post, error)
+	DeletePost(ctx context.Context, postID string) error
 	TogglePostLike(ctx context.Context, postID string) (nakama.ToggleLikeOutput, error)
 	TogglePostSubscription(ctx context.Context, postID string) (nakama.ToggleSubscriptionOutput, error)
 

@@ -800,3 +800,30 @@ button[role=switch][aria-checked=true] span {
     align-items: center;
     gap: .5rem;
 }
+
+.menu-wrapper {
+    position: relative;
+}
+
+.menu {
+    position: absolute;
+    top: 3rem;
+    left: 0;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    background-color: var(--surface-0);
+    border-radius: 1.5rem;
+    overflow: hidden;
+}
+
+.menu button {
+    border-radius: 0;
+    width: 100%;
+}
+
+.menu button:focus {
+    background-color: var(--primary);
+    color: var(--on-primary);
+    outline: none;
+}

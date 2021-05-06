@@ -53,6 +53,19 @@ export function doPut(url, body, headers) {
 
 /**
  * @param {string} url
+ * @param {{[key:string]:string}=} headers
+ */
+export function doDelete(url, headers) {
+    const init = {
+        method: "DELETE",
+        headers: defaultHeaders(),
+    }
+    Object.assign(init.headers, headers)
+    return fetch(url, init).then(parseResponse, handleErr)
+}
+
+/**
+ * @param {string} url
  * @param {function} cb
  */
 export function subscribe(url, cb) {

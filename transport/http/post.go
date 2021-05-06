@@ -58,6 +58,18 @@ func (h *handler) post(w http.ResponseWriter, r *http.Request) {
 	h.respond(w, p, http.StatusOK)
 }
 
+func (h *handler) deletePost(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	postID := way.Param(ctx, "post_id")
+	err := h.svc.DeletePost(ctx, postID)
+	if err != nil {
+		h.respondErr(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (h *handler) togglePostLike(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	postID := way.Param(ctx, "post_id")

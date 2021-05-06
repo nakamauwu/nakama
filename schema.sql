@@ -104,6 +104,54 @@ CREATE TABLE IF NOT EXISTS notifications (
     UNIQUE INDEX unique_notifications (user_id, type, post_id, read_at)
 );
 
+ALTER TABLE webauthn_credentials DROP CONSTRAINT fk_webauthn_authenticator_id_ref_webauthn_authenticators;
+ALTER TABLE webauthn_credentials ADD CONSTRAINT fk_webauthn_authenticator_id_ref_webauthn_authenticators FOREIGN KEY (webauthn_authenticator_id) REFERENCES webauthn_authenticators ON DELETE CASCADE;
+
+ALTER TABLE webauthn_credentials DROP CONSTRAINT fk_user_id_ref_users;
+ALTER TABLE webauthn_credentials ADD CONSTRAINT fk_user_id_ref_users FOREIGN KEY (user_id) REFERENCES users ON DELETE CASCADE;
+
+ALTER TABLE follows DROP CONSTRAINT fk_follower_id_ref_users;
+ALTER TABLE follows ADD CONSTRAINT fk_follower_id_ref_users FOREIGN KEY (follower_id) REFERENCES users ON DELETE CASCADE;
+
+ALTER TABLE follows DROP CONSTRAINT fk_followee_id_ref_users;
+ALTER TABLE follows ADD CONSTRAINT fk_followee_id_ref_users FOREIGN KEY (followee_id) REFERENCES users ON DELETE CASCADE;
+
+ALTER TABLE posts DROP CONSTRAINT fk_user_id_ref_users;
+ALTER TABLE posts ADD CONSTRAINT fk_user_id_ref_users FOREIGN KEY (user_id) REFERENCES users ON DELETE CASCADE;
+
+ALTER TABLE post_likes DROP CONSTRAINT fk_user_id_ref_users;
+ALTER TABLE post_likes ADD CONSTRAINT fk_user_id_ref_users FOREIGN KEY (user_id) REFERENCES users ON DELETE CASCADE;
+
+ALTER TABLE post_likes DROP CONSTRAINT fk_post_id_ref_posts;
+ALTER TABLE post_likes ADD CONSTRAINT fk_post_id_ref_posts FOREIGN KEY (post_id) REFERENCES posts ON DELETE CASCADE;
+
+ALTER TABLE post_subscriptions DROP CONSTRAINT fk_user_id_ref_users;
+ALTER TABLE post_subscriptions ADD CONSTRAINT fk_user_id_ref_users FOREIGN KEY (user_id) REFERENCES users ON DELETE CASCADE;
+
+ALTER TABLE post_subscriptions DROP CONSTRAINT fk_post_id_ref_posts;
+ALTER TABLE post_subscriptions ADD CONSTRAINT fk_post_id_ref_posts FOREIGN KEY (post_id) REFERENCES posts ON DELETE CASCADE;
+
+ALTER TABLE timeline DROP CONSTRAINT fk_user_id_ref_users;
+ALTER TABLE timeline ADD CONSTRAINT fk_user_id_ref_users FOREIGN KEY (user_id) REFERENCES users ON DELETE CASCADE;
+
+ALTER TABLE timeline DROP CONSTRAINT fk_post_id_ref_posts;
+ALTER TABLE timeline ADD CONSTRAINT fk_post_id_ref_posts FOREIGN KEY (post_id) REFERENCES posts ON DELETE CASCADE;
+
+ALTER TABLE comments DROP CONSTRAINT fk_user_id_ref_users;
+ALTER TABLE comments ADD CONSTRAINT fk_user_id_ref_users FOREIGN KEY (user_id) REFERENCES users ON DELETE CASCADE;
+
+ALTER TABLE comments DROP CONSTRAINT fk_post_id_ref_posts;
+ALTER TABLE comments ADD CONSTRAINT fk_post_id_ref_posts FOREIGN KEY (post_id) REFERENCES posts ON DELETE CASCADE;
+
+ALTER TABLE comment_likes DROP CONSTRAINT fk_user_id_ref_users;
+ALTER TABLE comment_likes ADD CONSTRAINT fk_user_id_ref_users FOREIGN KEY (user_id) REFERENCES users ON DELETE CASCADE;
+
+ALTER TABLE comment_likes DROP CONSTRAINT fk_comment_id_ref_comments;
+ALTER TABLE comment_likes ADD CONSTRAINT fk_comment_id_ref_comments FOREIGN KEY (comment_id) REFERENCES comments ON DELETE CASCADE;
+
+ALTER TABLE notifications DROP CONSTRAINT fk_user_id_ref_users;
+ALTER TABLE notifications ADD CONSTRAINT fk_user_id_ref_users FOREIGN KEY (user_id) REFERENCES users ON DELETE CASCADE;
+
 -- INSERT INTO users (id, email, username) VALUES
 --     ('24ca6ce6-b3e9-4276-a99a-45c77115cc9f', 'shinji@example.org', 'shinji'),
 --     ('93dfcef9-0b45-46ae-933c-ea52fbf80edb', 'rei@example.org', 'rei');

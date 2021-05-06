@@ -77,6 +77,11 @@
  */
 
 /**
+ * @typedef ToggleSubscriptionOutput
+ * @property {boolean} subscribed
+ */
+
+/**
  * @typedef Notification
  * @property {string} id
  * @property {string[]} actors
