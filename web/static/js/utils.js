@@ -311,8 +311,8 @@ function findCoubVideoID(href) {
 function isSoundCloudURL(href) {
     try {
         const url = new URL(href)
-        if (url.hostname === "soundcloud.com") {
-            return true
+        if (url.hostname !== "soundcloud.com") {
+            return false
         }
 
         // /{username}/{slug}
@@ -334,7 +334,7 @@ function isTweet(href) {
     try {
         const url = new URL(href)
         if (url.hostname !== "twitter.com") {
-            return null
+            return false
         }
 
         // /{username}/status/{id}
