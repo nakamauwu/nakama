@@ -162,7 +162,8 @@ func (s *Service) MarkNotificationsAsRead(ctx context.Context) error {
 
 	if _, err := s.DB.Exec(`
 		UPDATE notifications SET read_at = now()
-		WHERE user_id = $1 AND (read_at IS NULL OR read_at = '0001-01-01 00:00:00'`, uid); err != nil {
+		WHERE user_id = $1 AND (read_at IS NULL OR read_at = '0001-01-01 00:00:00')
+	`, uid); err != nil {
 		return fmt.Errorf("could not update and mark notifications as read: %w", err)
 	}
 
