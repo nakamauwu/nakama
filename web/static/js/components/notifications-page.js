@@ -1,5 +1,5 @@
 import { joinActors, markNotificationAsRead } from "../header.js"
-import { doGet } from "../http.js"
+import { doGet, doPost } from "../http.js"
 import { ago } from "../utils.js"
 import renderList from "./list.js"
 import { renderSwitch } from "./switch.js"
@@ -14,6 +14,7 @@ template.innerHTML = /*html*/`
                 <label for="notification-switch">Notify?</label>
             </div>
         </div>
+        <button id="read-all-btn">Mark all as read</button>
         <div id="notifications-outlet" class="notifications-wrapper"></div>
     </div>
 `
@@ -28,8 +29,24 @@ export default async function renderNotificationsPage() {
     })
 
     const page = /** @type {DocumentFragment} */ (template.content.cloneNode(true))
+    const readAllBtn = page.getElementById("read-all-btn")
     const notificationsEnabler = page.querySelector(".notifications-enabler")
     const notificationsOutlet = page.getElementById("notifications-outlet")
+
+    const onReadAllBtnClick = () => {
+        markAllNotificationsAsRead().then(() => {
+            for (const n of notifications) {
+                n.read = true
+            }
+
+            const nodes = Array.from(list.el.querySelectorAll("article"))
+            for (const node of nodes) {
+                node.classList.add("read")
+            }
+
+            dispatchEvent(new CustomEvent("hasunreadnotifications", { detail: false }))
+        }).catch(console.error)
+    }
 
     /**
      * @param {boolean} checked
@@ -71,6 +88,7 @@ export default async function renderNotificationsPage() {
         list.teardown()
     }
 
+    readAllBtn.addEventListener("click", onReadAllBtnClick)
     notificationsEnabler.appendChild(notificationSwitch.el)
     notificationsOutlet.appendChild(list.el)
     page.addEventListener("disconnect", onPageDisconnect)
@@ -155,4 +173,8 @@ function renderNotification(notification) {
  */
 function fetchHasUnreadNotifications() {
     return doGet("/api/has_unread_notifications")
+}
+
+function markAllNotificationsAsRead() {
+    return doPost("/api/mark_notifications_as_read")
 }
