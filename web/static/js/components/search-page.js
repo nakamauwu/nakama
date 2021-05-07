@@ -9,7 +9,7 @@ template.innerHTML = /*html*/`
     <div class="container">
         <h1>Search</h1>
         <form id="search-form" class="search-form">
-            <input type="search" name="q" placeholder="Search..." autocomplete="off" autofocus>
+            <input type="search" name="q" placeholder="Search..." autocomplete="off">
         </form>
         <div id="search-results-outlet" class="search-results-wrapper users-wrapper"></div>
     </div>
@@ -44,9 +44,6 @@ export default async function renderSearchPage() {
 
     searchForm.addEventListener("submit", onSearchFormSubmit)
     searchInput.value = searchQuery
-    setTimeout(() => {
-        searchInput.focus()
-    })
     searchResultsOutlet.appendChild(list.el)
 
     return page
