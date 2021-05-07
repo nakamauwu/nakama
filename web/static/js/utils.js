@@ -4,7 +4,7 @@ const mentionsRegExp = /\B@([a-zA-Z][a-zA-Z0-9_-]{0,17})/g
 const urlsRegExp = /\b(https?:\/\/[\-A-Za-z0-9+&@#\/%?=~_|!:,\.;]*[\-A-Za-z0-9+&@#\/%=~_|])/gi
 const imageExtRegExp = /(\.gif|\.jpg|\.jpeg|\.png|\.avif|\.apng|\.webp|\.bmp|\.ico|\.tif|\.tiff|\.svg)$/
 const videoExtRegExp = /(\.mp4|\.webm|\.3gp|\.mov)$/
-const audioExtRegExp = /(\.wav|\.mp3|\.aac|\.ogg|\.flac)$/
+const audioExtRegExp = /(\.wav|\.mp3|\.aac|\.ogg|\.flac|\.m4a)$/
 
 export function isLocalhost() {
     return ["localhost", "127.0.0.1"].includes(window.location.hostname)
