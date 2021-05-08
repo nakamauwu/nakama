@@ -104,6 +104,15 @@ CREATE TABLE IF NOT EXISTS notifications (
     UNIQUE INDEX unique_notifications (user_id, type, post_id, read_at)
 );
 
+DROP INDEX sorted_posts;
+CREATE INDEX sorted_posts ON posts (created_at DESC, id);
+
+DROP INDEX sorted_comments;
+CREATE INDEX sorted_comments ON comments (created_at DESC, id);
+
+DROP INDEX sorted_notifications;
+CREATE INDEX sorted_notifications ON notifications (issued_at DESC, id);
+
 -- INSERT INTO users (id, email, username) VALUES
 --     ('24ca6ce6-b3e9-4276-a99a-45c77115cc9f', 'shinji@example.org', 'shinji'),
 --     ('93dfcef9-0b45-46ae-933c-ea52fbf80edb', 'rei@example.org', 'rei');

@@ -12,29 +12,43 @@ import (
 func (h *handler) users(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	search := q.Get("search")
-	first, _ := strconv.Atoi(q.Get("first"))
-	after := q.Get("after")
+	first, _ := strconv.ParseUint(q.Get("first"), 10, 64)
+	after := emptyStrPtr(q.Get("after"))
 	uu, err := h.svc.Users(r.Context(), search, first, after)
 	if err != nil {
 		h.respondErr(w, err)
 		return
 	}
 
-	h.respond(w, uu, http.StatusOK)
+	if uu == nil {
+		uu = []nakama.UserProfile{} // non null array
+	}
+
+	h.respond(w, paginatedRespBody{
+		Items:     uu,
+		EndCursor: uu.EndCursor(),
+	}, http.StatusOK)
 }
 
 func (h *handler) usernames(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	startingWith := q.Get("starting_with")
-	first, _ := strconv.Atoi(q.Get("first"))
-	after := q.Get("after")
+	first, _ := strconv.ParseUint(q.Get("first"), 10, 64)
+	after := emptyStrPtr(q.Get("after"))
 	uu, err := h.svc.Usernames(r.Context(), startingWith, first, after)
 	if err != nil {
 		h.respondErr(w, err)
 		return
 	}
 
-	h.respond(w, uu, http.StatusOK)
+	if uu == nil {
+		uu = []string{} // non null array
+	}
+
+	h.respond(w, paginatedRespBody{
+		Items:     uu,
+		EndCursor: uu.EndCursor(),
+	}, http.StatusOK)
 }
 
 func (h *handler) user(w http.ResponseWriter, r *http.Request) {
@@ -81,28 +95,42 @@ func (h *handler) followers(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	q := r.URL.Query()
 	username := way.Param(ctx, "username")
-	first, _ := strconv.Atoi(q.Get("first"))
-	after := q.Get("after")
+	first, _ := strconv.ParseUint(q.Get("first"), 10, 64)
+	after := emptyStrPtr(q.Get("after"))
 	uu, err := h.svc.Followers(ctx, username, first, after)
 	if err != nil {
 		h.respondErr(w, err)
 		return
 	}
 
-	h.respond(w, uu, http.StatusOK)
+	if uu == nil {
+		uu = []nakama.UserProfile{} // non null array
+	}
+
+	h.respond(w, paginatedRespBody{
+		Items:     uu,
+		EndCursor: uu.EndCursor(),
+	}, http.StatusOK)
 }
 
 func (h *handler) followees(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	q := r.URL.Query()
 	username := way.Param(ctx, "username")
-	first, _ := strconv.Atoi(q.Get("first"))
-	after := q.Get("after")
+	first, _ := strconv.ParseUint(q.Get("first"), 10, 64)
+	after := emptyStrPtr(q.Get("after"))
 	uu, err := h.svc.Followees(ctx, username, first, after)
 	if err != nil {
 		h.respondErr(w, err)
 		return
 	}
 
-	h.respond(w, uu, http.StatusOK)
+	if uu == nil {
+		uu = []nakama.UserProfile{} // non null array
+	}
+
+	h.respond(w, paginatedRespBody{
+		Items:     uu,
+		EndCursor: uu.EndCursor(),
+	}, http.StatusOK)
 }

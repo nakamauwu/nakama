@@ -106,23 +106,46 @@ func (s *Service) commentCreated(c Comment) {
 	go s.broadcastComment(c)
 }
 
+type Comments []Comment
+
+func (cc Comments) EndCursor() *string {
+	if len(cc) == 0 {
+		return nil
+	}
+
+	last := cc[len(cc)-1]
+	return strPtr(encodeCursor(last.ID, last.CreatedAt))
+}
+
 // Comments from a post in descending order with backward pagination.
-func (s *Service) Comments(ctx context.Context, postID string, last int, before string) ([]Comment, error) {
+func (s *Service) Comments(ctx context.Context, postID string, last uint64, before *string) (Comments, error) {
 	if !reUUID.MatchString(postID) {
 		return nil, ErrInvalidPostID
 	}
 
-	if before != "" && !reUUID.MatchString(before) {
-		return nil, ErrInvalidCommentID
+	var beforeCommentID string
+	var beforeCreatedAt time.Time
+
+	if before != nil {
+		var err error
+		beforeCommentID, beforeCreatedAt, err = decodeCursor(*before)
+		if err != nil || !reUUID.MatchString(beforeCommentID) {
+			return nil, ErrInvalidCursor
+		}
 	}
 
 	uid, auth := ctx.Value(KeyAuthUserID).(string)
 	last = normalizePageSize(last)
 	query, args, err := buildQuery(`
-		SELECT comments.id, content, likes_count, created_at, username, avatar
+		SELECT comments.id
+		, comments.content
+		, comments.likes_count
+		, comments.created_at
+		, users.username
+		, users.avatar
 		{{if .auth}}
-		, comments.user_id = @uid AS mine
-		, likes.user_id IS NOT NULL AS liked
+		, comments.user_id = @uid AS comment_mine
+		, likes.user_id IS NOT NULL AS comment_liked
 		{{end}}
 		FROM comments
 		INNER JOIN users ON comments.user_id = users.id
@@ -130,15 +153,22 @@ func (s *Service) Comments(ctx context.Context, postID string, last int, before 
 		LEFT JOIN comment_likes AS likes
 			ON likes.comment_id = comments.id AND likes.user_id = @uid
 		{{end}}
-		WHERE comments.post_id = @post_id
-		{{if .before}}AND comments.id < @before{{end}}
-		ORDER BY created_at DESC
+		WHERE comments.post_id = @postID
+		{{ if and .beforeCommentID .beforeCreatedAt }}
+			AND comments.created_at <= @beforeCreatedAt
+			AND (
+				comments.id < @beforeCommentID
+					OR comments.created_at < @beforeCreatedAt
+			)
+		{{ end }}
+		ORDER BY comments.created_at DESC, comments.id ASC
 		LIMIT @last`, map[string]interface{}{
-		"auth":    auth,
-		"uid":     uid,
-		"post_id": postID,
-		"before":  before,
-		"last":    last,
+		"auth":            auth,
+		"uid":             uid,
+		"postID":          postID,
+		"last":            last,
+		"beforeCommentID": beforeCommentID,
+		"beforeCreatedAt": beforeCreatedAt,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("could not build comments sql query: %w", err)
@@ -151,7 +181,7 @@ func (s *Service) Comments(ctx context.Context, postID string, last int, before 
 
 	defer rows.Close()
 
-	cc := make([]Comment, 0, last)
+	var cc Comments
 	for rows.Next() {
 		var c Comment
 		var u User

@@ -22,6 +22,8 @@ var (
 	ErrPostNotFound = NotFoundError("post not found")
 	// ErrInvalidUpdatePostParams denotes invalid params to update a post, that is no params altogether.
 	ErrInvalidUpdatePostParams = InvalidArgumentError("invalid update post params")
+	// ErrInvalidCursor denotes an invalid cursor, that is not base64 encoded and has a key and timestamp separated by comma.
+	ErrInvalidCursor = InvalidArgumentError("invalid cursor")
 )
 
 // Post model.
@@ -135,42 +137,73 @@ func (s *Service) postCreated(p Post) {
 	go s.notifyPostMention(p)
 }
 
+type Posts []Post
+
+func (pp Posts) EndCursor() *string {
+	if len(pp) == 0 {
+		return nil
+	}
+
+	last := pp[len(pp)-1]
+	return strPtr(encodeCursor(last.ID, last.CreatedAt))
+}
+
 // Posts from a user in descending order and with backward pagination.
-func (s *Service) Posts(ctx context.Context, username string, last int, before string) ([]Post, error) {
+func (s *Service) Posts(ctx context.Context, username string, last uint64, before *string) (Posts, error) {
 	username = strings.TrimSpace(username)
 	if !reUsername.MatchString(username) {
 		return nil, ErrInvalidUsername
 	}
 
-	if before != "" && !reUUID.MatchString(before) {
-		return nil, ErrInvalidPostID
+	var beforePostID string
+	var beforeCreatedAt time.Time
+
+	if before != nil {
+		var err error
+		beforePostID, beforeCreatedAt, err = decodeCursor(*before)
+		if err != nil || !reUUID.MatchString(beforePostID) {
+			return nil, ErrInvalidCursor
+		}
 	}
 
 	uid, auth := ctx.Value(KeyAuthUserID).(string)
 	last = normalizePageSize(last)
 	query, args, err := buildQuery(`
-		SELECT id, content, spoiler_of, nsfw, likes_count, comments_count, created_at
-		{{if .auth}}
-		, posts.user_id = @uid AS mine
-		, likes.user_id IS NOT NULL AS liked
-		, subscriptions.user_id IS NOT NULL AS subscribed
-		{{end}}
+		SELECT posts.id
+		, posts.content
+		, posts.spoiler_of
+		, posts.nsfw
+		, posts.likes_count
+		, posts.comments_count
+		, posts.created_at
+		{{ if .auth }}
+		, posts.user_id = @uid AS post_mine
+		, likes.user_id IS NOT NULL AS post_liked
+		, subscriptions.user_id IS NOT NULL AS post_subscribed
+		{{ end }}
 		FROM posts
-		{{if .auth}}
+		{{ if .auth }}
 		LEFT JOIN post_likes AS likes
 			ON likes.user_id = @uid AND likes.post_id = posts.id
 		LEFT JOIN post_subscriptions AS subscriptions
 			ON subscriptions.user_id = @uid AND subscriptions.post_id = posts.id
-		{{end}}
+		{{ end }}
 		WHERE posts.user_id = (SELECT id FROM users WHERE username = @username)
-		{{if .before}}AND posts.id < @before{{end}}
-		ORDER BY created_at DESC
+		{{ if and .beforePostID .beforeCreatedAt }}
+			AND posts.created_at <= @beforeCreatedAt
+			AND (
+				posts.id < @beforePostID
+					OR posts.created_at < @beforeCreatedAt
+			)
+		{{ end }}
+		ORDER BY posts.created_at DESC, posts.id ASC
 		LIMIT @last`, map[string]interface{}{
-		"auth":     auth,
-		"uid":      uid,
-		"username": username,
-		"last":     last,
-		"before":   before,
+		"auth":            auth,
+		"uid":             uid,
+		"username":        username,
+		"last":            last,
+		"beforePostID":    beforePostID,
+		"beforeCreatedAt": beforeCreatedAt,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("could not build posts sql query: %w", err)
@@ -183,7 +216,7 @@ func (s *Service) Posts(ctx context.Context, username string, last int, before s
 
 	defer rows.Close()
 
-	pp := make([]Post, 0, last)
+	var pp Posts
 	for rows.Next() {
 		var p Post
 		dest := []interface{}{

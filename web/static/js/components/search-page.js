@@ -17,12 +17,17 @@ template.innerHTML = /*html*/`
 
 export default async function renderSearchPage() {
     const url = new URL(location.toString())
-    const searchQuery = url.searchParams.has("q") ? decodeURIComponent(url.searchParams.get("q")).trim() : ""
+    let searchQuery = /** @type {string|null} */ (null)
+    if (url.searchParams.has("q")) {
+        const s = decodeURIComponent(url.searchParams.get("q")).trim()
+        if (s !== "") {
+            searchQuery = s
+        }
+    }
 
-    const users = await fetchUsers(searchQuery)
+    const paginatedUsers = await fetchUsers(searchQuery)
     const list = renderList({
-        getID: u => u.username,
-        items: users,
+        page: paginatedUsers,
         loadMoreFunc: after => fetchUsers(searchQuery, after),
         pageSize: PAGE_SIZE,
         renderItem: renderUserProfile,
@@ -50,10 +55,10 @@ export default async function renderSearchPage() {
 }
 
 /**
- * @param {string} search
- * @param {string=} after
- * @returns {Promise<import("../types.js").UserProfile[]>}
+ * @param {string|null} search
+ * @param {string|null} after
+ * @returns {Promise<import("../types.js").Page<import("../types.js").UserProfile>>}
  */
-function fetchUsers(search, after = "") {
-    return doGet(`/api/users?search=${search}&after=${after}&first=${PAGE_SIZE}`)
+function fetchUsers(search = null, after = null) {
+    return doGet(`/api/users?first=${encodeURIComponent(PAGE_SIZE)}` + (search !== null ? "&search=" + encodeURIComponent(search) : "") + (after !== null ? "&after=" + encodeURIComponent(after) : ""))
 }

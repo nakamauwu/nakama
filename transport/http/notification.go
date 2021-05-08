@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/matryer/way"
+	"github.com/nicolasparada/nakama"
 )
 
 func (h *handler) notifications(w http.ResponseWriter, r *http.Request) {
@@ -15,15 +16,22 @@ func (h *handler) notifications(w http.ResponseWriter, r *http.Request) {
 	}
 
 	q := r.URL.Query()
-	last, _ := strconv.Atoi(q.Get("last"))
-	before := q.Get("before")
+	last, _ := strconv.ParseUint(q.Get("last"), 10, 64)
+	before := emptyStrPtr(q.Get("before"))
 	nn, err := h.svc.Notifications(r.Context(), last, before)
 	if err != nil {
 		h.respondErr(w, err)
 		return
 	}
 
-	h.respond(w, nn, http.StatusOK)
+	if nn == nil {
+		nn = []nakama.Notification{} // non null array
+	}
+
+	h.respond(w, paginatedRespBody{
+		Items:     nn,
+		EndCursor: nn.EndCursor(),
+	}, http.StatusOK)
 }
 
 func (h *handler) notificationStream(w http.ResponseWriter, r *http.Request) {

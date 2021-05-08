@@ -51,14 +51,6 @@ func (h *handler) sendMagicLink(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func emptyStringPtr(s string) *string {
-	if s != "" {
-		return &s
-	}
-
-	return nil
-}
-
 func (h *handler) verifyMagicLink(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	redirectURI, err := h.svc.ParseRedirectURI(q.Get("redirect_uri"))
@@ -70,7 +62,7 @@ func (h *handler) verifyMagicLink(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	email := q.Get("email")
 	code := q.Get("verification_code")
-	username := emptyStringPtr(q.Get("username"))
+	username := emptyStrPtr(q.Get("username"))
 	auth, err := h.svc.VerifyMagicLink(ctx, email, code, username)
 	if err == nakama.ErrUserNotFound || err == nakama.ErrUsernameTaken {
 		redirectWithHashFragment(w, r, redirectURI, url.Values{

@@ -27,28 +27,58 @@ type Notification struct {
 	IssuedAt time.Time `json:"issuedAt"`
 }
 
+type Notifications []Notification
+
+func (pp Notifications) EndCursor() *string {
+	if len(pp) == 0 {
+		return nil
+	}
+
+	last := pp[len(pp)-1]
+	return strPtr(encodeCursor(last.ID, last.IssuedAt))
+}
+
 // Notifications from the authenticated user in descending order with backward pagination.
-func (s *Service) Notifications(ctx context.Context, last int, before string) ([]Notification, error) {
+func (s *Service) Notifications(ctx context.Context, last uint64, before *string) (Notifications, error) {
 	uid, ok := ctx.Value(KeyAuthUserID).(string)
 	if !ok {
 		return nil, ErrUnauthenticated
 	}
 
-	if before != "" && !reUUID.MatchString(before) {
-		return nil, ErrInvalidNotificationID
+	var beforeNotificationID string
+	var beforeIssuedAt time.Time
+
+	if before != nil {
+		var err error
+		beforeNotificationID, beforeIssuedAt, err = decodeCursor(*before)
+		if err != nil || !reUUID.MatchString(beforeNotificationID) {
+			return nil, ErrInvalidCursor
+		}
 	}
 
 	last = normalizePageSize(last)
 	query, args, err := buildQuery(`
-		SELECT id, actors, type, post_id, read_at, issued_at
+		SELECT id
+		, actors
+		, type
+		, post_id
+		, read_at
+		, issued_at
 		FROM notifications
 		WHERE user_id = @uid
-		{{if .before}}AND id < @before{{end}}
+		{{ if and .beforeNotificationID .beforeIssuedAt }}
+			AND issued_at <= @beforeIssuedAt
+			AND (
+				id < @beforeNotificationID
+					OR issued_at < @beforeIssuedAt
+			)
+		{{ end }}
 		ORDER BY issued_at DESC
 		LIMIT @last`, map[string]interface{}{
-		"uid":    uid,
-		"before": before,
-		"last":   last,
+		"uid":                  uid,
+		"last":                 last,
+		"beforeNotificationID": beforeNotificationID,
+		"beforeIssuedAt":       beforeIssuedAt,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("could not build notifications sql query: %w", err)
@@ -61,7 +91,7 @@ func (s *Service) Notifications(ctx context.Context, last int, before string) ([
 
 	defer rows.Close()
 
-	nn := make([]Notification, 0, last)
+	var nn Notifications
 	for rows.Next() {
 		var n Notification
 		var readAt *time.Time

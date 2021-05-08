@@ -23,24 +23,24 @@ template.innerHTML = /*html*/`
  * @param {string} params.username
  */
 export default async function renderUserPage(params) {
-    const [user, posts] = await Promise.all([
+    const [user, paginatedPosts] = await Promise.all([
         fetchUser(params.username),
         fetchPosts(params.username),
     ])
-    for (const post of posts) {
+    for (const post of paginatedPosts.items) {
         post.user = user
     }
 
     const loadMore = async before => {
-        const posts = await fetchPosts(user.username, before)
-        for (const post of posts) {
+        const paginatedPosts = await fetchPosts(user.username, before)
+        for (const post of paginatedPosts.items) {
             post.user = user
         }
-        return posts
+        return paginatedPosts
     }
 
     const list = renderList({
-        items: posts,
+        page: paginatedPosts,
         loadMoreFunc: loadMore,
         pageSize: PAGE_SIZE,
         renderItem: renderPost,
@@ -68,9 +68,9 @@ function fetchUser(username) {
 
 /**
  * @param {string} username
- * @param {string=} before
- * @returns {Promise<import("../types.js").Post[]>}
+ * @param {string|null} before
+ * @returns {Promise<import("../types.js").Page<import("../types.js").Post>>}
  */
-function fetchPosts(username, before = "") {
-    return doGet(`/api/users/${username}/posts?before=${before}&last=${PAGE_SIZE}`)
+function fetchPosts(username, before = null) {
+    return doGet(`/api/users/${username}/posts?last=${encodeURIComponent(PAGE_SIZE)}` + (before !== null ? "&before=" + encodeURIComponent(before) : ""))
 }

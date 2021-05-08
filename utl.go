@@ -2,12 +2,15 @@ package nakama
 
 import (
 	"bytes"
+	"encoding/base64"
+	"errors"
 	"fmt"
 	"net/url"
 	"regexp"
 	"strings"
 	"sync"
 	"text/template"
+	"time"
 
 	"github.com/lib/pq"
 )
@@ -64,12 +67,12 @@ func buildQuery(text string, data map[string]interface{}) (string, []interface{}
 		}
 
 		args = append(args, val)
-		query = strings.Replace(query, "@"+key, fmt.Sprintf("$%d", len(args)), -1)
+		query = strings.ReplaceAll(query, "@"+key, fmt.Sprintf("$%d", len(args)))
 	}
 	return query, args, nil
 }
 
-func normalizePageSize(i int) int {
+func normalizePageSize(i uint64) uint64 {
 	if i == 0 {
 		return defaultPageSize
 	}
@@ -118,4 +121,46 @@ func cloneURL(u *url.URL) *url.URL {
 		*u2.User = *u.User
 	}
 	return u2
+}
+
+func encodeCursor(key string, ts time.Time) string {
+	s := fmt.Sprintf("%s,%s", key, ts.Format(time.RFC3339Nano))
+	return base64.StdEncoding.EncodeToString([]byte(s))
+}
+
+func encodeSimpleCursor(key string) string {
+	return base64.StdEncoding.EncodeToString([]byte(key))
+}
+
+func decodeCursor(s string) (string, time.Time, error) {
+	b, err := base64.StdEncoding.DecodeString(s)
+	if err != nil {
+		return "", time.Time{}, fmt.Errorf("could not base64 decode cursor: %w", err)
+	}
+
+	parts := strings.Split(string(b), ",")
+	if len(parts) != 2 {
+		return "", time.Time{}, errors.New("expected cursor to have two items split by comma")
+	}
+
+	ts, err := time.Parse(time.RFC3339Nano, parts[1])
+	if err != nil {
+		return "", time.Time{}, fmt.Errorf("could not parse cursor timestamp: %w", err)
+	}
+
+	key := parts[0]
+	return key, ts, nil
+}
+
+func decodeSimpleCursor(s string) (string, error) {
+	b, err := base64.StdEncoding.DecodeString(s)
+	if err != nil {
+		return "", fmt.Errorf("could not base64 decode cursor: %w", err)
+	}
+
+	return string(b), nil
+}
+
+func strPtr(s string) *string {
+	return &s
 }

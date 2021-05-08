@@ -7,6 +7,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"io"
+	"time"
 )
 
 // ErrInvalidTimelineItemID denotes an invalid timeline item id; that is not uuid.
@@ -20,20 +21,54 @@ type TimelineItem struct {
 	Post   *Post  `json:"post,omitempty"`
 }
 
+type Timeline []TimelineItem
+
+func (tt Timeline) EndCursor() *string {
+	if len(tt) == 0 {
+		return nil
+	}
+
+	last := tt[len(tt)-1]
+	if last.Post == nil {
+		return nil
+	}
+
+	return strPtr(encodeCursor(last.Post.ID, last.Post.CreatedAt))
+}
+
 // Timeline of the authenticated user in descending order and with backward pagination.
-func (s *Service) Timeline(ctx context.Context, last int, before string) ([]TimelineItem, error) {
+func (s *Service) Timeline(ctx context.Context, last uint64, before *string) (Timeline, error) {
 	uid, ok := ctx.Value(KeyAuthUserID).(string)
 	if !ok {
 		return nil, ErrUnauthenticated
 	}
 
+	var beforePostID string
+	var beforeCreatedAt time.Time
+
+	if before != nil {
+		var err error
+		beforePostID, beforeCreatedAt, err = decodeCursor(*before)
+		if err != nil || !reUUID.MatchString(beforePostID) {
+			return nil, ErrInvalidCursor
+		}
+	}
+
 	last = normalizePageSize(last)
 	query, args, err := buildQuery(`
-		SELECT timeline.id, posts.id, content, spoiler_of, nsfw, likes_count, comments_count, created_at
-		, posts.user_id = @uid AS mine
-		, likes.user_id IS NOT NULL AS liked
-		, subscriptions.user_id IS NOT NULL AS subscribed
-		, users.username, users.avatar
+		SELECT timeline.id
+		, posts.id
+		, posts.content
+		, posts.spoiler_of
+		, posts.nsfw
+		, posts.likes_count
+		, posts.comments_count
+		, posts.created_at
+		, posts.user_id = @uid AS post_mine
+		, likes.user_id IS NOT NULL AS post_liked
+		, subscriptions.user_id IS NOT NULL AS post_subscribed
+		, users.username
+		, users.avatar
 		FROM timeline
 		INNER JOIN posts ON timeline.post_id = posts.id
 		INNER JOIN users ON posts.user_id = users.id
@@ -42,12 +77,19 @@ func (s *Service) Timeline(ctx context.Context, last int, before string) ([]Time
 		LEFT JOIN post_subscriptions AS subscriptions
 			ON subscriptions.user_id = @uid AND subscriptions.post_id = posts.id
 		WHERE timeline.user_id = @uid
-		{{if .before}}AND timeline.id < @before{{end}}
-		ORDER BY created_at DESC
+		{{ if and .beforePostID .beforeCreatedAt }}
+			AND posts.created_at <= @beforeCreatedAt
+			AND (
+				posts.id < @beforePostID
+					OR posts.created_at < @beforeCreatedAt
+			)
+		{{ end }}
+		ORDER BY posts.created_at DESC, posts.id ASC
 		LIMIT @last`, map[string]interface{}{
-		"uid":    uid,
-		"last":   last,
-		"before": before,
+		"uid":             uid,
+		"last":            last,
+		"beforePostID":    beforePostID,
+		"beforeCreatedAt": beforeCreatedAt,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("could not build timeline sql query: %w", err)
@@ -60,7 +102,7 @@ func (s *Service) Timeline(ctx context.Context, last int, before string) ([]Time
 
 	defer rows.Close()
 
-	tt := make([]TimelineItem, 0, last)
+	var tt Timeline
 	for rows.Next() {
 		var ti TimelineItem
 		var p Post

@@ -16,10 +16,9 @@ template.innerHTML = /*html*/`
  * @param {string} params.username
  */
 export default async function renderFollowersPage(params) {
-    const users = await fetchFollowers(params.username)
+    const paginatedUsers = await fetchFollowers(params.username)
     const list = renderList({
-        getID: u => u.username,
-        items: users,
+        page: paginatedUsers,
         loadMoreFunc: after => fetchFollowers(params.username, after),
         pageSize: PAGE_SIZE,
         renderItem: renderUserProfile,
@@ -37,9 +36,9 @@ export default async function renderFollowersPage(params) {
 
 /**
  * @param {string} username
- * @param {string=} after
- * @returns {Promise<import("../types.js").UserProfile[]>}
+ * @param {string|null} after
+ * @returns {Promise<import("../types.js").Page<import("../types.js").UserProfile>>}
  */
-function fetchFollowers(username, after = "") {
-    return doGet(`/api/users/${username}/followers?after=${after}&first=${PAGE_SIZE}`)
+function fetchFollowers(username, after = null) {
+    return doGet(`/api/users/${encodeURIComponent(username)}/followers?first=${encodeURIComponent(PAGE_SIZE)}` + (after !== null ? "&after=" + encodeURIComponent(after) : ""))
 }

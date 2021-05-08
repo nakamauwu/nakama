@@ -32,7 +32,7 @@ var _ Service = &ServiceMock{}
 // 			CommentStreamFunc: func(ctx context.Context, postID string) (<-chan nakama.Comment, error) {
 // 				panic("mock out the CommentStream method")
 // 			},
-// 			CommentsFunc: func(ctx context.Context, postID string, last int, before string) ([]nakama.Comment, error) {
+// 			CommentsFunc: func(ctx context.Context, postID string, last uint64, before *string) (nakama.Comments, error) {
 // 				panic("mock out the Comments method")
 // 			},
 // 			CreateCommentFunc: func(ctx context.Context, postID string, content string) (nakama.Comment, error) {
@@ -56,10 +56,10 @@ var _ Service = &ServiceMock{}
 // 			DevLoginFunc: func(ctx context.Context, email string) (nakama.AuthOutput, error) {
 // 				panic("mock out the DevLogin method")
 // 			},
-// 			FolloweesFunc: func(ctx context.Context, username string, first int, after string) ([]nakama.UserProfile, error) {
+// 			FolloweesFunc: func(ctx context.Context, username string, first uint64, after *string) (nakama.UserProfiles, error) {
 // 				panic("mock out the Followees method")
 // 			},
-// 			FollowersFunc: func(ctx context.Context, username string, first int, after string) ([]nakama.UserProfile, error) {
+// 			FollowersFunc: func(ctx context.Context, username string, first uint64, after *string) (nakama.UserProfiles, error) {
 // 				panic("mock out the Followers method")
 // 			},
 // 			HasUnreadNotificationsFunc: func(ctx context.Context) (bool, error) {
@@ -74,7 +74,7 @@ var _ Service = &ServiceMock{}
 // 			NotificationStreamFunc: func(ctx context.Context) (<-chan nakama.Notification, error) {
 // 				panic("mock out the NotificationStream method")
 // 			},
-// 			NotificationsFunc: func(ctx context.Context, last int, before string) ([]nakama.Notification, error) {
+// 			NotificationsFunc: func(ctx context.Context, last uint64, before *string) (nakama.Notifications, error) {
 // 				panic("mock out the Notifications method")
 // 			},
 // 			ParseRedirectURIFunc: func(rawurl string) (*url.URL, error) {
@@ -83,7 +83,7 @@ var _ Service = &ServiceMock{}
 // 			PostFunc: func(ctx context.Context, postID string) (nakama.Post, error) {
 // 				panic("mock out the Post method")
 // 			},
-// 			PostsFunc: func(ctx context.Context, username string, last int, before string) ([]nakama.Post, error) {
+// 			PostsFunc: func(ctx context.Context, username string, last uint64, before *string) (nakama.Posts, error) {
 // 				panic("mock out the Posts method")
 // 			},
 // 			RegisterCredentialFunc: func(ctx context.Context, data webauthn.SessionData, parsedReply *protocol.ParsedCredentialCreationData) error {
@@ -92,7 +92,7 @@ var _ Service = &ServiceMock{}
 // 			SendMagicLinkFunc: func(ctx context.Context, email string, redirectURI string) error {
 // 				panic("mock out the SendMagicLink method")
 // 			},
-// 			TimelineFunc: func(ctx context.Context, last int, before string) ([]nakama.TimelineItem, error) {
+// 			TimelineFunc: func(ctx context.Context, last uint64, before *string) (nakama.Timeline, error) {
 // 				panic("mock out the Timeline method")
 // 			},
 // 			TimelineItemStreamFunc: func(ctx context.Context) (<-chan nakama.TimelineItem, error) {
@@ -119,10 +119,10 @@ var _ Service = &ServiceMock{}
 // 			UserFunc: func(ctx context.Context, username string) (nakama.UserProfile, error) {
 // 				panic("mock out the User method")
 // 			},
-// 			UsernamesFunc: func(ctx context.Context, startingWith string, first int, after string) ([]string, error) {
+// 			UsernamesFunc: func(ctx context.Context, startingWith string, first uint64, after *string) (nakama.Usernames, error) {
 // 				panic("mock out the Usernames method")
 // 			},
-// 			UsersFunc: func(ctx context.Context, search string, first int, after string) ([]nakama.UserProfile, error) {
+// 			UsersFunc: func(ctx context.Context, search string, first uint64, after *string) (nakama.UserProfiles, error) {
 // 				panic("mock out the Users method")
 // 			},
 // 			VerifyMagicLinkFunc: func(ctx context.Context, email string, code string, username *string) (nakama.AuthOutput, error) {
@@ -148,7 +148,7 @@ type ServiceMock struct {
 	CommentStreamFunc func(ctx context.Context, postID string) (<-chan nakama.Comment, error)
 
 	// CommentsFunc mocks the Comments method.
-	CommentsFunc func(ctx context.Context, postID string, last int, before string) ([]nakama.Comment, error)
+	CommentsFunc func(ctx context.Context, postID string, last uint64, before *string) (nakama.Comments, error)
 
 	// CreateCommentFunc mocks the CreateComment method.
 	CreateCommentFunc func(ctx context.Context, postID string, content string) (nakama.Comment, error)
@@ -172,10 +172,10 @@ type ServiceMock struct {
 	DevLoginFunc func(ctx context.Context, email string) (nakama.AuthOutput, error)
 
 	// FolloweesFunc mocks the Followees method.
-	FolloweesFunc func(ctx context.Context, username string, first int, after string) ([]nakama.UserProfile, error)
+	FolloweesFunc func(ctx context.Context, username string, first uint64, after *string) (nakama.UserProfiles, error)
 
 	// FollowersFunc mocks the Followers method.
-	FollowersFunc func(ctx context.Context, username string, first int, after string) ([]nakama.UserProfile, error)
+	FollowersFunc func(ctx context.Context, username string, first uint64, after *string) (nakama.UserProfiles, error)
 
 	// HasUnreadNotificationsFunc mocks the HasUnreadNotifications method.
 	HasUnreadNotificationsFunc func(ctx context.Context) (bool, error)
@@ -190,7 +190,7 @@ type ServiceMock struct {
 	NotificationStreamFunc func(ctx context.Context) (<-chan nakama.Notification, error)
 
 	// NotificationsFunc mocks the Notifications method.
-	NotificationsFunc func(ctx context.Context, last int, before string) ([]nakama.Notification, error)
+	NotificationsFunc func(ctx context.Context, last uint64, before *string) (nakama.Notifications, error)
 
 	// ParseRedirectURIFunc mocks the ParseRedirectURI method.
 	ParseRedirectURIFunc func(rawurl string) (*url.URL, error)
@@ -199,7 +199,7 @@ type ServiceMock struct {
 	PostFunc func(ctx context.Context, postID string) (nakama.Post, error)
 
 	// PostsFunc mocks the Posts method.
-	PostsFunc func(ctx context.Context, username string, last int, before string) ([]nakama.Post, error)
+	PostsFunc func(ctx context.Context, username string, last uint64, before *string) (nakama.Posts, error)
 
 	// RegisterCredentialFunc mocks the RegisterCredential method.
 	RegisterCredentialFunc func(ctx context.Context, data webauthn.SessionData, parsedReply *protocol.ParsedCredentialCreationData) error
@@ -208,7 +208,7 @@ type ServiceMock struct {
 	SendMagicLinkFunc func(ctx context.Context, email string, redirectURI string) error
 
 	// TimelineFunc mocks the Timeline method.
-	TimelineFunc func(ctx context.Context, last int, before string) ([]nakama.TimelineItem, error)
+	TimelineFunc func(ctx context.Context, last uint64, before *string) (nakama.Timeline, error)
 
 	// TimelineItemStreamFunc mocks the TimelineItemStream method.
 	TimelineItemStreamFunc func(ctx context.Context) (<-chan nakama.TimelineItem, error)
@@ -235,10 +235,10 @@ type ServiceMock struct {
 	UserFunc func(ctx context.Context, username string) (nakama.UserProfile, error)
 
 	// UsernamesFunc mocks the Usernames method.
-	UsernamesFunc func(ctx context.Context, startingWith string, first int, after string) ([]string, error)
+	UsernamesFunc func(ctx context.Context, startingWith string, first uint64, after *string) (nakama.Usernames, error)
 
 	// UsersFunc mocks the Users method.
-	UsersFunc func(ctx context.Context, search string, first int, after string) ([]nakama.UserProfile, error)
+	UsersFunc func(ctx context.Context, search string, first uint64, after *string) (nakama.UserProfiles, error)
 
 	// VerifyMagicLinkFunc mocks the VerifyMagicLink method.
 	VerifyMagicLinkFunc func(ctx context.Context, email string, code string, username *string) (nakama.AuthOutput, error)
@@ -272,9 +272,9 @@ type ServiceMock struct {
 			// PostID is the postID argument value.
 			PostID string
 			// Last is the last argument value.
-			Last int
+			Last uint64
 			// Before is the before argument value.
-			Before string
+			Before *string
 		}
 		// CreateComment holds details about calls to the CreateComment method.
 		CreateComment []struct {
@@ -338,9 +338,9 @@ type ServiceMock struct {
 			// Username is the username argument value.
 			Username string
 			// First is the first argument value.
-			First int
+			First uint64
 			// After is the after argument value.
-			After string
+			After *string
 		}
 		// Followers holds details about calls to the Followers method.
 		Followers []struct {
@@ -349,9 +349,9 @@ type ServiceMock struct {
 			// Username is the username argument value.
 			Username string
 			// First is the first argument value.
-			First int
+			First uint64
 			// After is the after argument value.
-			After string
+			After *string
 		}
 		// HasUnreadNotifications holds details about calls to the HasUnreadNotifications method.
 		HasUnreadNotifications []struct {
@@ -380,9 +380,9 @@ type ServiceMock struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// Last is the last argument value.
-			Last int
+			Last uint64
 			// Before is the before argument value.
-			Before string
+			Before *string
 		}
 		// ParseRedirectURI holds details about calls to the ParseRedirectURI method.
 		ParseRedirectURI []struct {
@@ -403,9 +403,9 @@ type ServiceMock struct {
 			// Username is the username argument value.
 			Username string
 			// Last is the last argument value.
-			Last int
+			Last uint64
 			// Before is the before argument value.
-			Before string
+			Before *string
 		}
 		// RegisterCredential holds details about calls to the RegisterCredential method.
 		RegisterCredential []struct {
@@ -430,9 +430,9 @@ type ServiceMock struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// Last is the last argument value.
-			Last int
+			Last uint64
 			// Before is the before argument value.
-			Before string
+			Before *string
 		}
 		// TimelineItemStream holds details about calls to the TimelineItemStream method.
 		TimelineItemStream []struct {
@@ -493,9 +493,9 @@ type ServiceMock struct {
 			// StartingWith is the startingWith argument value.
 			StartingWith string
 			// First is the first argument value.
-			First int
+			First uint64
 			// After is the after argument value.
-			After string
+			After *string
 		}
 		// Users holds details about calls to the Users method.
 		Users []struct {
@@ -504,9 +504,9 @@ type ServiceMock struct {
 			// Search is the search argument value.
 			Search string
 			// First is the first argument value.
-			First int
+			First uint64
 			// After is the after argument value.
-			After string
+			After *string
 		}
 		// VerifyMagicLink holds details about calls to the VerifyMagicLink method.
 		VerifyMagicLink []struct {
@@ -665,15 +665,15 @@ func (mock *ServiceMock) CommentStreamCalls() []struct {
 }
 
 // Comments calls CommentsFunc.
-func (mock *ServiceMock) Comments(ctx context.Context, postID string, last int, before string) ([]nakama.Comment, error) {
+func (mock *ServiceMock) Comments(ctx context.Context, postID string, last uint64, before *string) (nakama.Comments, error) {
 	if mock.CommentsFunc == nil {
 		panic("ServiceMock.CommentsFunc: method is nil but Service.Comments was just called")
 	}
 	callInfo := struct {
 		Ctx    context.Context
 		PostID string
-		Last   int
-		Before string
+		Last   uint64
+		Before *string
 	}{
 		Ctx:    ctx,
 		PostID: postID,
@@ -692,14 +692,14 @@ func (mock *ServiceMock) Comments(ctx context.Context, postID string, last int, 
 func (mock *ServiceMock) CommentsCalls() []struct {
 	Ctx    context.Context
 	PostID string
-	Last   int
-	Before string
+	Last   uint64
+	Before *string
 } {
 	var calls []struct {
 		Ctx    context.Context
 		PostID string
-		Last   int
-		Before string
+		Last   uint64
+		Before *string
 	}
 	mock.lockComments.RLock()
 	calls = mock.calls.Comments
@@ -965,15 +965,15 @@ func (mock *ServiceMock) DevLoginCalls() []struct {
 }
 
 // Followees calls FolloweesFunc.
-func (mock *ServiceMock) Followees(ctx context.Context, username string, first int, after string) ([]nakama.UserProfile, error) {
+func (mock *ServiceMock) Followees(ctx context.Context, username string, first uint64, after *string) (nakama.UserProfiles, error) {
 	if mock.FolloweesFunc == nil {
 		panic("ServiceMock.FolloweesFunc: method is nil but Service.Followees was just called")
 	}
 	callInfo := struct {
 		Ctx      context.Context
 		Username string
-		First    int
-		After    string
+		First    uint64
+		After    *string
 	}{
 		Ctx:      ctx,
 		Username: username,
@@ -992,14 +992,14 @@ func (mock *ServiceMock) Followees(ctx context.Context, username string, first i
 func (mock *ServiceMock) FolloweesCalls() []struct {
 	Ctx      context.Context
 	Username string
-	First    int
-	After    string
+	First    uint64
+	After    *string
 } {
 	var calls []struct {
 		Ctx      context.Context
 		Username string
-		First    int
-		After    string
+		First    uint64
+		After    *string
 	}
 	mock.lockFollowees.RLock()
 	calls = mock.calls.Followees
@@ -1008,15 +1008,15 @@ func (mock *ServiceMock) FolloweesCalls() []struct {
 }
 
 // Followers calls FollowersFunc.
-func (mock *ServiceMock) Followers(ctx context.Context, username string, first int, after string) ([]nakama.UserProfile, error) {
+func (mock *ServiceMock) Followers(ctx context.Context, username string, first uint64, after *string) (nakama.UserProfiles, error) {
 	if mock.FollowersFunc == nil {
 		panic("ServiceMock.FollowersFunc: method is nil but Service.Followers was just called")
 	}
 	callInfo := struct {
 		Ctx      context.Context
 		Username string
-		First    int
-		After    string
+		First    uint64
+		After    *string
 	}{
 		Ctx:      ctx,
 		Username: username,
@@ -1035,14 +1035,14 @@ func (mock *ServiceMock) Followers(ctx context.Context, username string, first i
 func (mock *ServiceMock) FollowersCalls() []struct {
 	Ctx      context.Context
 	Username string
-	First    int
-	After    string
+	First    uint64
+	After    *string
 } {
 	var calls []struct {
 		Ctx      context.Context
 		Username string
-		First    int
-		After    string
+		First    uint64
+		After    *string
 	}
 	mock.lockFollowers.RLock()
 	calls = mock.calls.Followers
@@ -1179,14 +1179,14 @@ func (mock *ServiceMock) NotificationStreamCalls() []struct {
 }
 
 // Notifications calls NotificationsFunc.
-func (mock *ServiceMock) Notifications(ctx context.Context, last int, before string) ([]nakama.Notification, error) {
+func (mock *ServiceMock) Notifications(ctx context.Context, last uint64, before *string) (nakama.Notifications, error) {
 	if mock.NotificationsFunc == nil {
 		panic("ServiceMock.NotificationsFunc: method is nil but Service.Notifications was just called")
 	}
 	callInfo := struct {
 		Ctx    context.Context
-		Last   int
-		Before string
+		Last   uint64
+		Before *string
 	}{
 		Ctx:    ctx,
 		Last:   last,
@@ -1203,13 +1203,13 @@ func (mock *ServiceMock) Notifications(ctx context.Context, last int, before str
 //     len(mockedService.NotificationsCalls())
 func (mock *ServiceMock) NotificationsCalls() []struct {
 	Ctx    context.Context
-	Last   int
-	Before string
+	Last   uint64
+	Before *string
 } {
 	var calls []struct {
 		Ctx    context.Context
-		Last   int
-		Before string
+		Last   uint64
+		Before *string
 	}
 	mock.lockNotifications.RLock()
 	calls = mock.calls.Notifications
@@ -1284,15 +1284,15 @@ func (mock *ServiceMock) PostCalls() []struct {
 }
 
 // Posts calls PostsFunc.
-func (mock *ServiceMock) Posts(ctx context.Context, username string, last int, before string) ([]nakama.Post, error) {
+func (mock *ServiceMock) Posts(ctx context.Context, username string, last uint64, before *string) (nakama.Posts, error) {
 	if mock.PostsFunc == nil {
 		panic("ServiceMock.PostsFunc: method is nil but Service.Posts was just called")
 	}
 	callInfo := struct {
 		Ctx      context.Context
 		Username string
-		Last     int
-		Before   string
+		Last     uint64
+		Before   *string
 	}{
 		Ctx:      ctx,
 		Username: username,
@@ -1311,14 +1311,14 @@ func (mock *ServiceMock) Posts(ctx context.Context, username string, last int, b
 func (mock *ServiceMock) PostsCalls() []struct {
 	Ctx      context.Context
 	Username string
-	Last     int
-	Before   string
+	Last     uint64
+	Before   *string
 } {
 	var calls []struct {
 		Ctx      context.Context
 		Username string
-		Last     int
-		Before   string
+		Last     uint64
+		Before   *string
 	}
 	mock.lockPosts.RLock()
 	calls = mock.calls.Posts
@@ -1405,14 +1405,14 @@ func (mock *ServiceMock) SendMagicLinkCalls() []struct {
 }
 
 // Timeline calls TimelineFunc.
-func (mock *ServiceMock) Timeline(ctx context.Context, last int, before string) ([]nakama.TimelineItem, error) {
+func (mock *ServiceMock) Timeline(ctx context.Context, last uint64, before *string) (nakama.Timeline, error) {
 	if mock.TimelineFunc == nil {
 		panic("ServiceMock.TimelineFunc: method is nil but Service.Timeline was just called")
 	}
 	callInfo := struct {
 		Ctx    context.Context
-		Last   int
-		Before string
+		Last   uint64
+		Before *string
 	}{
 		Ctx:    ctx,
 		Last:   last,
@@ -1429,13 +1429,13 @@ func (mock *ServiceMock) Timeline(ctx context.Context, last int, before string) 
 //     len(mockedService.TimelineCalls())
 func (mock *ServiceMock) TimelineCalls() []struct {
 	Ctx    context.Context
-	Last   int
-	Before string
+	Last   uint64
+	Before *string
 } {
 	var calls []struct {
 		Ctx    context.Context
-		Last   int
-		Before string
+		Last   uint64
+		Before *string
 	}
 	mock.lockTimeline.RLock()
 	calls = mock.calls.Timeline
@@ -1716,15 +1716,15 @@ func (mock *ServiceMock) UserCalls() []struct {
 }
 
 // Usernames calls UsernamesFunc.
-func (mock *ServiceMock) Usernames(ctx context.Context, startingWith string, first int, after string) ([]string, error) {
+func (mock *ServiceMock) Usernames(ctx context.Context, startingWith string, first uint64, after *string) (nakama.Usernames, error) {
 	if mock.UsernamesFunc == nil {
 		panic("ServiceMock.UsernamesFunc: method is nil but Service.Usernames was just called")
 	}
 	callInfo := struct {
 		Ctx          context.Context
 		StartingWith string
-		First        int
-		After        string
+		First        uint64
+		After        *string
 	}{
 		Ctx:          ctx,
 		StartingWith: startingWith,
@@ -1743,14 +1743,14 @@ func (mock *ServiceMock) Usernames(ctx context.Context, startingWith string, fir
 func (mock *ServiceMock) UsernamesCalls() []struct {
 	Ctx          context.Context
 	StartingWith string
-	First        int
-	After        string
+	First        uint64
+	After        *string
 } {
 	var calls []struct {
 		Ctx          context.Context
 		StartingWith string
-		First        int
-		After        string
+		First        uint64
+		After        *string
 	}
 	mock.lockUsernames.RLock()
 	calls = mock.calls.Usernames
@@ -1759,15 +1759,15 @@ func (mock *ServiceMock) UsernamesCalls() []struct {
 }
 
 // Users calls UsersFunc.
-func (mock *ServiceMock) Users(ctx context.Context, search string, first int, after string) ([]nakama.UserProfile, error) {
+func (mock *ServiceMock) Users(ctx context.Context, search string, first uint64, after *string) (nakama.UserProfiles, error) {
 	if mock.UsersFunc == nil {
 		panic("ServiceMock.UsersFunc: method is nil but Service.Users was just called")
 	}
 	callInfo := struct {
 		Ctx    context.Context
 		Search string
-		First  int
-		After  string
+		First  uint64
+		After  *string
 	}{
 		Ctx:    ctx,
 		Search: search,
@@ -1786,14 +1786,14 @@ func (mock *ServiceMock) Users(ctx context.Context, search string, first int, af
 func (mock *ServiceMock) UsersCalls() []struct {
 	Ctx    context.Context
 	Search string
-	First  int
-	After  string
+	First  uint64
+	After  *string
 } {
 	var calls []struct {
 		Ctx    context.Context
 		Search string
-		First  int
-		After  string
+		First  uint64
+		After  *string
 	}
 	mock.lockUsers.RLock()
 	calls = mock.calls.Users

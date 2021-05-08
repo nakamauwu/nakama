@@ -34,17 +34,18 @@ template.innerHTML = /*html*/`
  * @param {string} params.postID
  */
 export default async function renderPostPage(params) {
-    const [post, comments] = await Promise.all([
+    const [post, paginatedComments] = await Promise.all([
         fetchPost(params.postID),
         fetchComments(params.postID),
     ])
 
     const list = renderList({
-        items: comments,
+        page: paginatedComments,
         renderItem: renderComment,
         loadMoreFunc: before => fetchComments(post.id, before),
         pageSize: PAGE_SIZE,
         reverse: true,
+        loadMoreText: "Load previous"
     })
 
     const page = /** @type {DocumentFragment} */ (template.content.cloneNode(true))
@@ -262,11 +263,11 @@ function fetchPost(postID) {
 
 /**
  * @param {string} postID
- * @param {string=} before
- * @returns {Promise<import("../types.js").Comment[]>}
+ * @param {string|null} before
+ * @returns {Promise<import("../types.js").Page<import("../types.js").Comment>>}
  */
-function fetchComments(postID, before = "") {
-    return doGet(`/api/posts/${postID}/comments?before=${before}&last=${PAGE_SIZE}`)
+function fetchComments(postID, before = null) {
+    return doGet(`/api/posts/${postID}/comments?last=${encodeURIComponent(PAGE_SIZE)}` + (before !== null ? "&before=" + encodeURIComponent(before) : ""))
 }
 
 /**

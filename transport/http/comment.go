@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/matryer/way"
+	"github.com/nicolasparada/nakama"
 )
 
 type createCommentInput struct {
@@ -42,15 +43,22 @@ func (h *handler) comments(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	q := r.URL.Query()
 	postID := way.Param(ctx, "post_id")
-	last, _ := strconv.Atoi(q.Get("last"))
-	before := q.Get("before")
+	last, _ := strconv.ParseUint(q.Get("last"), 10, 64)
+	before := emptyStrPtr(q.Get("before"))
 	cc, err := h.svc.Comments(ctx, postID, last, before)
 	if err != nil {
 		h.respondErr(w, err)
 		return
 	}
 
-	h.respond(w, cc, http.StatusOK)
+	if cc == nil {
+		cc = []nakama.Comment{} // non null array
+	}
+
+	h.respond(w, paginatedRespBody{
+		Items:     cc,
+		EndCursor: cc.EndCursor(),
+	}, http.StatusOK)
 }
 
 func (h *handler) commentStream(w http.ResponseWriter, r *http.Request) {

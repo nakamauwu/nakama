@@ -24,6 +24,12 @@ var (
 	errInvalidTargetURL     = nakama.InvalidArgumentError("invalid target URL")
 )
 
+type paginatedRespBody struct {
+	Items       interface{} `json:"items"`
+	StartCursor *string     `json:"startCursor"`
+	EndCursor   *string     `json:"endCursor"`
+}
+
 func (h *handler) respond(w http.ResponseWriter, v interface{}, statusCode int) {
 	b, err := json.Marshal(v)
 	if err != nil {
@@ -129,4 +135,11 @@ func withCacheControl(d time.Duration) func(http.HandlerFunc) http.HandlerFunc {
 			h(w, r)
 		}
 	}
+}
+
+func emptyStrPtr(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
 }

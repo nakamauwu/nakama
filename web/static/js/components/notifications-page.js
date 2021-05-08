@@ -20,9 +20,9 @@ template.innerHTML = /*html*/`
 `
 
 export default async function renderNotificationsPage() {
-    const notifications = await fetchNotifications()
+    const paginatedNotifications = await fetchNotifications()
     const list = renderList({
-        items: notifications,
+        page: paginatedNotifications,
         loadMoreFunc: fetchNotifications,
         pageSize: PAGE_SIZE,
         renderItem: renderNotification,
@@ -35,7 +35,7 @@ export default async function renderNotificationsPage() {
 
     const onReadAllBtnClick = () => {
         markAllNotificationsAsRead().then(() => {
-            for (const n of notifications) {
+            for (const n of paginatedNotifications.items) {
                 n.read = true
             }
 
@@ -97,11 +97,11 @@ export default async function renderNotificationsPage() {
 }
 
 /**
- * @param {string=} before
- * @returns {Promise<import("../types.js").Notification[]>}
+ * @param {string|null} before
+ * @returns {Promise<import("../types.js").Page<import("../types.js").Notification>>}
  */
-function fetchNotifications(before = "") {
-    return doGet(`/api/notifications?last=${PAGE_SIZE}&before=${encodeURIComponent(before)}`)
+function fetchNotifications(before = null) {
+    return doGet("/api/notifications?last=" + encodeURIComponent(PAGE_SIZE) + (before !== null ? "&before=" + encodeURIComponent(before) : ""))
 }
 
 /**

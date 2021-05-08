@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/matryer/way"
+	"github.com/nicolasparada/nakama"
 )
 
 func (h *handler) timeline(w http.ResponseWriter, r *http.Request) {
@@ -16,15 +17,22 @@ func (h *handler) timeline(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	q := r.URL.Query()
-	last, _ := strconv.Atoi(q.Get("last"))
-	before := q.Get("before")
+	last, _ := strconv.ParseUint(q.Get("last"), 10, 64)
+	before := emptyStrPtr(q.Get("before"))
 	tt, err := h.svc.Timeline(ctx, last, before)
 	if err != nil {
 		h.respondErr(w, err)
 		return
 	}
 
-	h.respond(w, tt, http.StatusOK)
+	if tt == nil {
+		tt = []nakama.TimelineItem{} // non null array
+	}
+
+	h.respond(w, paginatedRespBody{
+		Items:     tt,
+		EndCursor: tt.EndCursor(),
+	}, http.StatusOK)
 }
 
 func (h *handler) timelineItemStream(w http.ResponseWriter, r *http.Request) {

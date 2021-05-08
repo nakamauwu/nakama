@@ -27,32 +27,32 @@ type Service interface {
 	Token(ctx context.Context) (nakama.TokenOutput, error)
 
 	CreateComment(ctx context.Context, postID string, content string) (nakama.Comment, error)
-	Comments(ctx context.Context, postID string, last int, before string) ([]nakama.Comment, error)
+	Comments(ctx context.Context, postID string, last uint64, before *string) (nakama.Comments, error)
 	CommentStream(ctx context.Context, postID string) (<-chan nakama.Comment, error)
 	ToggleCommentLike(ctx context.Context, commentID string) (nakama.ToggleLikeOutput, error)
 
-	Notifications(ctx context.Context, last int, before string) ([]nakama.Notification, error)
+	Notifications(ctx context.Context, last uint64, before *string) (nakama.Notifications, error)
 	NotificationStream(ctx context.Context) (<-chan nakama.Notification, error)
 	HasUnreadNotifications(ctx context.Context) (bool, error)
 	MarkNotificationAsRead(ctx context.Context, notificationID string) error
 	MarkNotificationsAsRead(ctx context.Context) error
 
 	CreatePost(ctx context.Context, content string, spoilerOf *string, nsfw bool) (nakama.TimelineItem, error)
-	Posts(ctx context.Context, username string, last int, before string) ([]nakama.Post, error)
+	Posts(ctx context.Context, username string, last uint64, before *string) (nakama.Posts, error)
 	Post(ctx context.Context, postID string) (nakama.Post, error)
 	DeletePost(ctx context.Context, postID string) error
 	TogglePostLike(ctx context.Context, postID string) (nakama.ToggleLikeOutput, error)
 	TogglePostSubscription(ctx context.Context, postID string) (nakama.ToggleSubscriptionOutput, error)
 
-	Timeline(ctx context.Context, last int, before string) ([]nakama.TimelineItem, error)
+	Timeline(ctx context.Context, last uint64, before *string) (nakama.Timeline, error)
 	TimelineItemStream(ctx context.Context) (<-chan nakama.TimelineItem, error)
 	DeleteTimelineItem(ctx context.Context, timelineItemID string) error
 
-	Users(ctx context.Context, search string, first int, after string) ([]nakama.UserProfile, error)
-	Usernames(ctx context.Context, startingWith string, first int, after string) ([]string, error)
+	Users(ctx context.Context, search string, first uint64, after *string) (nakama.UserProfiles, error)
+	Usernames(ctx context.Context, startingWith string, first uint64, after *string) (nakama.Usernames, error)
 	User(ctx context.Context, username string) (nakama.UserProfile, error)
 	UpdateAvatar(ctx context.Context, r io.Reader) (string, error)
 	ToggleFollow(ctx context.Context, username string) (nakama.ToggleFollowOutput, error)
-	Followers(ctx context.Context, username string, first int, after string) ([]nakama.UserProfile, error)
-	Followees(ctx context.Context, username string, first int, after string) ([]nakama.UserProfile, error)
+	Followers(ctx context.Context, username string, first uint64, after *string) (nakama.UserProfiles, error)
+	Followees(ctx context.Context, username string, first uint64, after *string) (nakama.UserProfiles, error)
 }

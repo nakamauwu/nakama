@@ -71,36 +71,56 @@ type ToggleFollowOutput struct {
 	FollowersCount int  `json:"followersCount"`
 }
 
+type UserProfiles []UserProfile
+
+func (uu UserProfiles) EndCursor() *string {
+	if len(uu) == 0 {
+		return nil
+	}
+
+	last := uu[len(uu)-1]
+	return strPtr(encodeSimpleCursor(last.Username))
+}
+
 // Users in ascending order with forward pagination and filtered by username.
-func (s *Service) Users(ctx context.Context, search string, first int, after string) ([]UserProfile, error) {
+func (s *Service) Users(ctx context.Context, search string, first uint64, after *string) (UserProfiles, error) {
 	search = strings.TrimSpace(search)
 	first = normalizePageSize(first)
-	after = strings.TrimSpace(after)
+
+	var afterUsername string
+	if after != nil {
+		var err error
+		afterUsername, err = decodeSimpleCursor(*after)
+		if err != nil || !reUsername.MatchString(afterUsername) {
+			return nil, ErrInvalidCursor
+		}
+	}
+
 	uid, auth := ctx.Value(KeyAuthUserID).(string)
 	query, args, err := buildQuery(`
 		SELECT id, email, username, avatar, followers_count, followees_count
-		{{if .auth}}
+		{{ if .auth }}
 		, followers.follower_id IS NOT NULL AS following
 		, followees.followee_id IS NOT NULL AS followeed
-		{{end}}
+		{{ end }}
 		FROM users
-		{{if .auth}}
+		{{ if .auth }}
 		LEFT JOIN follows AS followers
 			ON followers.follower_id = @uid AND followers.followee_id = users.id
 		LEFT JOIN follows AS followees
 			ON followees.follower_id = users.id AND followees.followee_id = @uid
-		{{end}}
-		{{if or .search .after}}WHERE{{end}}
-		{{if .search}}username ILIKE '%' || @search || '%'{{end}}
-		{{if and .search .after}}AND{{end}}
-		{{if .after}}username > @after{{end}}
+		{{ end }}
+		{{ if or .search .afterUsername }}WHERE{{ end }}
+		{{ if .search }}username ILIKE '%' || @search || '%'{{ end }}
+		{{ if and .search .afterUsername }}AND{{ end }}
+		{{ if .afterUsername }}username > @afterUsername{{ end }}
 		ORDER BY username ASC
 		LIMIT @first`, map[string]interface{}{
-		"auth":   auth,
-		"uid":    uid,
-		"search": search,
-		"first":  first,
-		"after":  after,
+		"auth":          auth,
+		"uid":           uid,
+		"search":        search,
+		"first":         first,
+		"afterUsername": afterUsername,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("could not build users sql query: %w", err)
@@ -112,7 +132,8 @@ func (s *Service) Users(ctx context.Context, search string, first int, after str
 	}
 
 	defer rows.Close()
-	uu := make([]UserProfile, 0, first)
+
+	var uu UserProfiles
 	for rows.Next() {
 		var u UserProfile
 		var avatar sql.NullString
@@ -146,11 +167,31 @@ func (s *Service) Users(ctx context.Context, search string, first int, after str
 	return uu, nil
 }
 
+type Usernames []string
+
+func (uu Usernames) EndCursor() *string {
+	if len(uu) == 0 {
+		return nil
+	}
+
+	last := uu[len(uu)-1]
+	return strPtr(encodeSimpleCursor(last))
+}
+
 // Usernames to autocomplete a mention box or something.
-func (s *Service) Usernames(ctx context.Context, startingWith string, first int, after string) ([]string, error) {
+func (s *Service) Usernames(ctx context.Context, startingWith string, first uint64, after *string) (Usernames, error) {
 	startingWith = strings.TrimSpace(startingWith)
 	if startingWith == "" {
-		return []string{}, nil
+		return nil, nil
+	}
+
+	var afterUsername string
+	if after != nil {
+		var err error
+		afterUsername, err = decodeSimpleCursor(*after)
+		if err != nil || !reUsername.MatchString(afterUsername) {
+			return nil, ErrInvalidCursor
+		}
 	}
 
 	uid, auth := ctx.Value(KeyAuthUserID).(string)
@@ -158,15 +199,15 @@ func (s *Service) Usernames(ctx context.Context, startingWith string, first int,
 	query, args, err := buildQuery(`
 		SELECT username FROM users
 		WHERE username ILIKE @startingWith || '%'
-		{{if .auth}}AND users.id != @uid{{end}}
-		{{if .after}}AND username > @after{{end}}
+		{{ if .auth }}AND users.id != @uid{{ end }}
+		{{ if .afterUsername }}AND username > @afterUsername{{ end }}
 		ORDER BY username ASC
 		LIMIT @first`, map[string]interface{}{
-		"startingWith": startingWith,
-		"auth":         auth,
-		"uid":          uid,
-		"after":        after,
-		"first":        first,
+		"startingWith":  startingWith,
+		"auth":          auth,
+		"uid":           uid,
+		"first":         first,
+		"afterUsername": afterUsername,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("could not build usernames sql query: %w", err)
@@ -179,7 +220,7 @@ func (s *Service) Usernames(ctx context.Context, startingWith string, first int,
 
 	defer rows.Close()
 
-	uu := make([]string, 0, first)
+	var uu Usernames
 	for rows.Next() {
 		var u string
 		if err = rows.Scan(&u); err != nil {
@@ -444,38 +485,51 @@ func (s *Service) ToggleFollow(ctx context.Context, username string) (ToggleFoll
 }
 
 // Followers in ascending order with forward pagination.
-func (s *Service) Followers(ctx context.Context, username string, first int, after string) ([]UserProfile, error) {
+func (s *Service) Followers(ctx context.Context, username string, first uint64, after *string) (UserProfiles, error) {
 	username = strings.TrimSpace(username)
 	if !reUsername.MatchString(username) {
 		return nil, ErrInvalidUsername
 	}
 
+	var afterUsername string
+	if after != nil {
+		var err error
+		afterUsername, err = decodeSimpleCursor(*after)
+		if err != nil || !reUsername.MatchString(afterUsername) {
+			return nil, ErrInvalidCursor
+		}
+	}
+
 	first = normalizePageSize(first)
-	after = strings.TrimSpace(after)
 	uid, auth := ctx.Value(KeyAuthUserID).(string)
 	query, args, err := buildQuery(`
-		SELECT id, email, username, avatar, followers_count, followees_count
-		{{if .auth}}
+		SELECT users.id
+		, users.email
+		, users.username
+		, users.avatar
+		, users.followers_count
+		, users.followees_count
+		{{ if .auth }}
 		, followers.follower_id IS NOT NULL AS following
 		, followees.followee_id IS NOT NULL AS followeed
-		{{end}}
+		{{ end }}
 		FROM follows
 		INNER JOIN users ON follows.follower_id = users.id
-		{{if .auth}}
+		{{ if .auth }}
 		LEFT JOIN follows AS followers
 			ON followers.follower_id = @uid AND followers.followee_id = users.id
 		LEFT JOIN follows AS followees
 			ON followees.follower_id = users.id AND followees.followee_id = @uid
-		{{end}}
+		{{ end }}
 		WHERE follows.followee_id = (SELECT id FROM users WHERE username = @username)
-		{{if .after}}AND username > @after{{end}}
+		{{ if .afterUsername }}AND username > @afterUsername{{ end }}
 		ORDER BY username ASC
 		LIMIT @first`, map[string]interface{}{
-		"auth":     auth,
-		"uid":      uid,
-		"username": username,
-		"first":    first,
-		"after":    after,
+		"auth":          auth,
+		"uid":           uid,
+		"username":      username,
+		"first":         first,
+		"afterUsername": afterUsername,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("could not build followers sql query: %w", err)
@@ -487,7 +541,8 @@ func (s *Service) Followers(ctx context.Context, username string, first int, aft
 	}
 
 	defer rows.Close()
-	uu := make([]UserProfile, 0, first)
+
+	var uu UserProfiles
 	for rows.Next() {
 		var u UserProfile
 		var avatar sql.NullString
@@ -523,38 +578,51 @@ func (s *Service) Followers(ctx context.Context, username string, first int, aft
 }
 
 // Followees in ascending order with forward pagination.
-func (s *Service) Followees(ctx context.Context, username string, first int, after string) ([]UserProfile, error) {
+func (s *Service) Followees(ctx context.Context, username string, first uint64, after *string) (UserProfiles, error) {
 	username = strings.TrimSpace(username)
 	if !reUsername.MatchString(username) {
 		return nil, ErrInvalidUsername
 	}
 
+	var afterUsername string
+	if after != nil {
+		var err error
+		afterUsername, err = decodeSimpleCursor(*after)
+		if err != nil || !reUsername.MatchString(afterUsername) {
+			return nil, ErrInvalidCursor
+		}
+	}
+
 	first = normalizePageSize(first)
-	after = strings.TrimSpace(after)
 	uid, auth := ctx.Value(KeyAuthUserID).(string)
 	query, args, err := buildQuery(`
-		SELECT id, email, username, avatar, followers_count, followees_count
-		{{if .auth}}
+		SELECT users.id
+		, users.email
+		, users.username
+		, users.avatar
+		, users.followers_count
+		, users.followees_count
+		{{ if .auth }}
 		, followers.follower_id IS NOT NULL AS following
 		, followees.followee_id IS NOT NULL AS followeed
-		{{end}}
+		{{ end }}
 		FROM follows
 		INNER JOIN users ON follows.followee_id = users.id
-		{{if .auth}}
+		{{ if .auth }}
 		LEFT JOIN follows AS followers
 			ON followers.follower_id = @uid AND followers.followee_id = users.id
 		LEFT JOIN follows AS followees
 			ON followees.follower_id = users.id AND followees.followee_id = @uid
-		{{end}}
+		{{ end }}
 		WHERE follows.follower_id = (SELECT id FROM users WHERE username = @username)
-		{{if .after}}AND username > @after{{end}}
+		{{ if .afterUsername }}AND username > @afterUsername{{ end }}
 		ORDER BY username ASC
 		LIMIT @first`, map[string]interface{}{
-		"auth":     auth,
-		"uid":      uid,
-		"username": username,
-		"first":    first,
-		"after":    after,
+		"auth":          auth,
+		"uid":           uid,
+		"username":      username,
+		"first":         first,
+		"afterUsername": afterUsername,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("could not build followees sql query: %w", err)
@@ -566,7 +634,8 @@ func (s *Service) Followees(ctx context.Context, username string, first int, aft
 	}
 
 	defer rows.Close()
-	uu := make([]UserProfile, 0, first)
+
+	var uu UserProfiles
 	for rows.Next() {
 		var u UserProfile
 		var avatar sql.NullString

@@ -59,13 +59,14 @@ function renderFeed() {
 
 /**
  * @param {Object} opts
- * @param {any[]} opts.items
+ * @param {import("../types.js").Page<any>} opts.page
  * @param {function(any): HTMLElement} opts.renderItem
- * @param {function(any):Promise<any[]>} opts.loadMoreFunc
+ * @param {function(any):Promise<import("../types.js").Page<any>>} opts.loadMoreFunc
+ * @param {string=} opts.loadMoreText
  * @param {number} opts.pageSize
  * @param {function(number):string=} opts.newItemsMessageFunc
  * @param {boolean=} opts.reverse
- * @param {function(any):any=} opts.getID
+ * @param {boolean=} opts.forward
  * @param {function(Error):any=} opts.onError
  * @param {Node=} opts.noContent
  */
@@ -107,7 +108,7 @@ export default function renderList(opts) {
 
         let item = queue.pop()
         while (item !== undefined) {
-            opts.items.unshift(item)
+            opts.page.items.unshift(item)
 
             if (opts.reverse) {
                 feed.el.appendChild(opts.renderItem(item))
@@ -134,22 +135,18 @@ export default function renderList(opts) {
     }
 
     const onLoadMoreButtonClick = async () => {
-        const lastItem = opts.items[opts.items.length - 1]
-        const lastID = lastItem === undefined
-            ? undefined :
-            typeof opts.getID === "function"
-                ? opts.getID(lastItem)
-                : lastItem["id"]
-
         feed.setLoading(true)
         loadMoreButton.disabled = true
 
         try {
-            const newItems = await opts.loadMoreFunc(lastID)
+            const cursor = opts.forward ? opts.page.startCursor : opts.page.endCursor
+            const page = await opts.loadMoreFunc(cursor)
 
-            opts.items.push(...newItems)
+            opts.page.items.push(...page.items)
+            opts.page.startCursor = page.startCursor
+            opts.page.endCursor = page.endCursor
 
-            for (const item of newItems) {
+            for (const item of page.items) {
                 if (opts.reverse) {
                     feed.el.insertAdjacentElement("afterbegin", opts.renderItem(item))
                 } else {
@@ -157,7 +154,7 @@ export default function renderList(opts) {
                 }
             }
 
-            if (newItems.length < opts.pageSize) {
+            if (page.items.length < opts.pageSize) {
                 loadMoreButton.removeEventListener("click", onLoadMoreButtonClick)
                 loadMoreButton.remove()
             }
@@ -173,13 +170,13 @@ export default function renderList(opts) {
         }
     }
 
-    if (opts.items === null || opts.items.length === 0) {
+    if (opts.page.items === null || opts.page.items.length === 0) {
         if (opts.noContent instanceof Node) {
             feed.el.appendChild(opts.noContent)
             noContentRendered = true
         }
     } else {
-        for (const item of opts.items) {
+        for (const item of opts.page.items) {
             if (opts.reverse) {
                 feed.el.insertAdjacentElement("afterbegin", opts.renderItem(item))
             } else {
@@ -189,11 +186,11 @@ export default function renderList(opts) {
     }
 
 
-    if (opts.items.length === opts.pageSize) {
+    if (opts.page.items.length === opts.pageSize) {
         setTimeout(() => {
             loadMoreButton = document.createElement("button")
             loadMoreButton.className = "load-more-button"
-            loadMoreButton.textContent = "Load more"
+            loadMoreButton.textContent = typeof opts.loadMoreText === "string" ? opts.loadMoreText : "Load more"
             loadMoreButton.addEventListener("click", onLoadMoreButtonClick)
             feed.el.insertAdjacentElement(opts.reverse ? "beforebegin" : "afterend", loadMoreButton)
         })

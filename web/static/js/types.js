@@ -47,6 +47,14 @@
  */
 
 /**
+ * @template T
+ * @typedef Page
+ * @property {T[]} items
+ * @property {string|null} startCursor
+ * @property {string|null} endCursor
+ */
+
+/**
  * @typedef Comment
  * @property {string} id
  * @property {string} content

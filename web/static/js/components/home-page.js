@@ -7,7 +7,8 @@ import renderList from "./list.js"
 import renderPost from "./post.js"
 
 const PAGE_SIZE = 10
-let timeline = /** @type {import("../types.js").TimelineItem[]} */ (null)
+const AUTOCOMPLETE_PAGE_SIZE = 5
+let paginatedTimeline = /** @type {import("../types.js").Page<import("../types.js").TimelineItem>} */ (null)
 
 addEventListener("postcommentcountinc", timelineUpdater("comment"))
 addEventListener("postlikecountchange", timelineUpdater("like"))
@@ -22,12 +23,12 @@ function timelineUpdater(type) {
      * @param {CustomEvent} ev
      */
     const handler = ev => {
-        if (timeline === null) {
+        if (paginatedTimeline === null) {
             return
         }
 
         const postID = ev.detail.postID
-        for (const ti of timeline) {
+        for (const ti of paginatedTimeline.items) {
             if (ti.post.id !== postID) {
                 continue
             }
@@ -70,11 +71,12 @@ emptyTimelineTmpl.innerHTML = `
 `
 
 export default async function renderHomePage() {
-    if (timeline === null || timeline.length === 0) {
-        timeline = await fetchTimeline()
+    if (paginatedTimeline === null || paginatedTimeline.items === null || paginatedTimeline.items.length === 0) {
+        paginatedTimeline = await fetchTimeline()
     }
+
     const list = renderList({
-        items: timeline,
+        page: paginatedTimeline,
         loadMoreFunc: fetchTimeline,
         pageSize: PAGE_SIZE,
         renderItem: renderTimelineItem,
@@ -92,7 +94,7 @@ export default async function renderHomePage() {
     const textcomplete = new Textcomplete(editor, [{
         match: /\B@([\-+\w]*)$/,
         search: async (term, cb) => {
-            cb(await fetchUsernames(term, 5))
+            cb(await fetchUsernames(term).then(page => page.items))
         },
         replace: username => `@${username} `,
     }], {})
@@ -189,11 +191,11 @@ async function publishPost(input) {
 }
 
 /**
- * @param {string=} before
- * @returns {Promise<import("../types.js").TimelineItem[]>}
+ * @param {string|null} before
+ * @returns {Promise<import("../types.js").Page<import("../types.js").TimelineItem>>}
  */
-function fetchTimeline(before = "") {
-    return doGet(`/api/timeline?before=${before}&last=${PAGE_SIZE}`)
+function fetchTimeline(before = null) {
+    return doGet(`/api/timeline?last=${encodeURIComponent(PAGE_SIZE)}` + (before !== null ? "&before=" + encodeURIComponent(before) : ""))
 }
 
 /**
@@ -205,12 +207,12 @@ function subscribeToTimeline(cb) {
 
 /**
  * @param {string} startingWith
- * @param {number} first
- * @returns {Promise<string[]>}
+ * @param {string|null} after
+ * @returns {Promise<import("../types.js").Page<string>>}
  */
-function fetchUsernames(startingWith, first = 25) {
+function fetchUsernames(startingWith, after = null) {
     if (startingWith === "") {
-        return Promise.resolve([])
+        return Promise.resolve({ items: [], startCursor: null, endCursor: null })
     }
-    return doGet(`/api/usernames?starting_with=${encodeURIComponent(startingWith)}&first=${encodeURIComponent(first)}`)
+    return doGet(`/api/usernames?starting_with=${encodeURIComponent(startingWith)}&first=${encodeURIComponent(AUTOCOMPLETE_PAGE_SIZE)}` + (after !== null ? "&after=" + encodeURIComponent(after) : ""))
 }
