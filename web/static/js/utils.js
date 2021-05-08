@@ -261,8 +261,9 @@ function findImgurID(href) {
             return null
         }
 
+        // /{id}
         const parts = url.pathname.split("/")
-        if (parts.length === 2 && !parts[1].includes(".")) {
+        if (parts.length === 2 && parts[0] === "" && !parts[1].includes(".")) {
             return parts[1]
         }
     } catch (_) { }
@@ -276,16 +277,24 @@ function findImgurID(href) {
 function findYouTubeVideoID(href) {
     try {
         const url = new URL(href)
-        if ((url.hostname === "www.youtube.com" || url.hostname === "m.youtube.com") && url.pathname === "/watch" && url.searchParams.has("v")) {
-            return decodeURIComponent(url.searchParams.get("v"))
+        if (url.hostname === "youtube.com" || url.hostname === "www.youtube.com" || url.hostname === "m.youtube.com") {
+            if (url.pathname === "/watch" && url.searchParams.has("v")) {
+                return decodeURIComponent(url.searchParams.get("v"))
+            }
+
+            // /embed/{id}
+            const parts = url.pathname.split("/")
+            if (parts.length === 3 && parts[0] === "" && parts[1] === "embed") {
+                return decodeURIComponent(parts[2])
+            }
         }
 
-        if (url.hostname === "youtu.be" && url.pathname.startsWith("/") && url.pathname !== "/") {
-            return decodeURIComponent(url.pathname.substr(1))
-        }
-
-        if (url.hostname === "www.youtube.com" && url.pathname.startsWith("/embed/") && url.pathname !== "/embed/") {
-            return decodeURIComponent(url.pathname.substr(7))
+        if (url.hostname === "youtu.be") {
+            // /{id}
+            const parts = url.pathname.split("/")
+            if (parts.length === 2 && parts[0] === "") {
+                return decodeURIComponent(parts[1])
+            }
         }
     } catch (_) { }
     return null
@@ -301,7 +310,7 @@ function findCoubVideoID(href) {
         const parts = url.pathname.split("/")
         // /view/{id}
         // /embed/{id}
-        if (parts.length === 3 && (parts[1] === "view" || parts[1] === "embed")) {
+        if (parts.length === 3 && parts[0] === "" && (parts[1] === "view" || parts[1] === "embed")) {
             return decodeURIComponent(parts[2])
         }
     } catch (_) { }
@@ -317,7 +326,7 @@ function isSoundCloudURL(href) {
 
         // /{username}/{slug}
         const parts = url.pathname.split("/")
-        return parts.length == 3
+        return parts.length == 3 && parts[0] === ""
     } catch (_) { }
     return false
 }
@@ -339,7 +348,7 @@ function isTweet(href) {
 
         // /{username}/status/{id}
         const parts = url.pathname.split("/")
-        return parts.length === 4 && parts[2] === "status"
+        return parts.length === 4 && parts[0] === "" && parts[2] === "status"
     } catch (_) { }
     return false
 }
