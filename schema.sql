@@ -30,8 +30,8 @@ CREATE TABLE IF NOT EXISTS webauthn_authenticators (
 
 CREATE TABLE IF NOT EXISTS webauthn_credentials (
     id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
-    webauthn_authenticator_id UUID NOT NULL REFERENCES webauthn_authenticators,
-    user_id UUID NOT NULL REFERENCES users,
+    webauthn_authenticator_id UUID NOT NULL REFERENCES webauthn_authenticators ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users ON DELETE CASCADE,
     credential_id VARCHAR NOT NULL,
     public_key BYTES NOT NULL,
     attestation_type VARCHAR NOT NULL,
@@ -40,14 +40,14 @@ CREATE TABLE IF NOT EXISTS webauthn_credentials (
 );
 
 CREATE TABLE IF NOT EXISTS follows (
-    follower_id UUID NOT NULL REFERENCES users,
-    followee_id UUID NOT NULL REFERENCES users,
+    follower_id UUID NOT NULL REFERENCES users ON DELETE CASCADE,
+    followee_id UUID NOT NULL REFERENCES users ON DELETE CASCADE,
     PRIMARY KEY (follower_id, followee_id)
 );
 
 CREATE TABLE IF NOT EXISTS posts (
     id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES users,
+    user_id UUID NOT NULL REFERENCES users ON DELETE CASCADE,
     content VARCHAR NOT NULL,
     spoiler_of VARCHAR,
     nsfw BOOLEAN NOT NULL DEFAULT false,
@@ -58,28 +58,28 @@ CREATE TABLE IF NOT EXISTS posts (
 );
 
 CREATE TABLE IF NOT EXISTS post_likes (
-    user_id UUID NOT NULL REFERENCES users,
-    post_id UUID NOT NULL REFERENCES posts,
+    user_id UUID NOT NULL REFERENCES users ON DELETE CASCADE,
+    post_id UUID NOT NULL REFERENCES posts ON DELETE CASCADE,
     PRIMARY KEY (user_id, post_id)
 );
 
 CREATE TABLE IF NOT EXISTS post_subscriptions (
-    user_id UUID NOT NULL REFERENCES users,
-    post_id UUID NOT NULL REFERENCES posts,
+    user_id UUID NOT NULL REFERENCES users ON DELETE CASCADE,
+    post_id UUID NOT NULL REFERENCES posts ON DELETE CASCADE,
     PRIMARY KEY (user_id, post_id)
 );
 
 CREATE TABLE IF NOT EXISTS timeline (
     id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES users,
-    post_id UUID NOT NULL REFERENCES posts,
+    user_id UUID NOT NULL REFERENCES users ON DELETE CASCADE,
+    post_id UUID NOT NULL REFERENCES posts ON DELETE CASCADE,
     UNIQUE INDEX unique_timeline_items (user_id, post_id)
 );
 
 CREATE TABLE IF NOT EXISTS comments (
     id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES users,
-    post_id UUID NOT NULL REFERENCES posts,
+    user_id UUID NOT NULL REFERENCES users ON DELETE CASCADE,
+    post_id UUID NOT NULL REFERENCES posts ON DELETE CASCADE,
     content VARCHAR NOT NULL,
     likes_count INT NOT NULL DEFAULT 0 CHECK (likes_count >= 0),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -87,73 +87,22 @@ CREATE TABLE IF NOT EXISTS comments (
 );
 
 CREATE TABLE IF NOT EXISTS comment_likes (
-    user_id UUID NOT NULL REFERENCES users,
-    comment_id UUID NOT NULL REFERENCES comments,
+    user_id UUID NOT NULL REFERENCES users ON DELETE CASCADE,
+    comment_id UUID NOT NULL REFERENCES comments ON DELETE CASCADE,
     PRIMARY KEY (user_id, comment_id)
 );
 
 CREATE TABLE IF NOT EXISTS notifications (
     id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES users,
+    user_id UUID NOT NULL REFERENCES users ON DELETE CASCADE,
     actors VARCHAR[] NOT NULL,
     type VARCHAR NOT NULL,
-    post_id UUID REFERENCES posts,
+    post_id UUID REFERENCES posts ON DELETE CASCADE,
     read_at TIMESTAMPTZ,
     issued_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     INDEX sorted_notifications (issued_at DESC),
     UNIQUE INDEX unique_notifications (user_id, type, post_id, read_at)
 );
-
-ALTER TABLE webauthn_credentials DROP CONSTRAINT fk_webauthn_authenticator_id_ref_webauthn_authenticators;
-ALTER TABLE webauthn_credentials ADD CONSTRAINT fk_webauthn_authenticator_id_ref_webauthn_authenticators FOREIGN KEY (webauthn_authenticator_id) REFERENCES webauthn_authenticators ON DELETE CASCADE;
-
-ALTER TABLE webauthn_credentials DROP CONSTRAINT fk_user_id_ref_users;
-ALTER TABLE webauthn_credentials ADD CONSTRAINT fk_user_id_ref_users FOREIGN KEY (user_id) REFERENCES users ON DELETE CASCADE;
-
-ALTER TABLE follows DROP CONSTRAINT fk_follower_id_ref_users;
-ALTER TABLE follows ADD CONSTRAINT fk_follower_id_ref_users FOREIGN KEY (follower_id) REFERENCES users ON DELETE CASCADE;
-
-ALTER TABLE follows DROP CONSTRAINT fk_followee_id_ref_users;
-ALTER TABLE follows ADD CONSTRAINT fk_followee_id_ref_users FOREIGN KEY (followee_id) REFERENCES users ON DELETE CASCADE;
-
-ALTER TABLE posts DROP CONSTRAINT fk_user_id_ref_users;
-ALTER TABLE posts ADD CONSTRAINT fk_user_id_ref_users FOREIGN KEY (user_id) REFERENCES users ON DELETE CASCADE;
-
-ALTER TABLE post_likes DROP CONSTRAINT fk_user_id_ref_users;
-ALTER TABLE post_likes ADD CONSTRAINT fk_user_id_ref_users FOREIGN KEY (user_id) REFERENCES users ON DELETE CASCADE;
-
-ALTER TABLE post_likes DROP CONSTRAINT fk_post_id_ref_posts;
-ALTER TABLE post_likes ADD CONSTRAINT fk_post_id_ref_posts FOREIGN KEY (post_id) REFERENCES posts ON DELETE CASCADE;
-
-ALTER TABLE post_subscriptions DROP CONSTRAINT fk_user_id_ref_users;
-ALTER TABLE post_subscriptions ADD CONSTRAINT fk_user_id_ref_users FOREIGN KEY (user_id) REFERENCES users ON DELETE CASCADE;
-
-ALTER TABLE post_subscriptions DROP CONSTRAINT fk_post_id_ref_posts;
-ALTER TABLE post_subscriptions ADD CONSTRAINT fk_post_id_ref_posts FOREIGN KEY (post_id) REFERENCES posts ON DELETE CASCADE;
-
-ALTER TABLE timeline DROP CONSTRAINT fk_user_id_ref_users;
-ALTER TABLE timeline ADD CONSTRAINT fk_user_id_ref_users FOREIGN KEY (user_id) REFERENCES users ON DELETE CASCADE;
-
-ALTER TABLE timeline DROP CONSTRAINT fk_post_id_ref_posts;
-ALTER TABLE timeline ADD CONSTRAINT fk_post_id_ref_posts FOREIGN KEY (post_id) REFERENCES posts ON DELETE CASCADE;
-
-ALTER TABLE comments DROP CONSTRAINT fk_user_id_ref_users;
-ALTER TABLE comments ADD CONSTRAINT fk_user_id_ref_users FOREIGN KEY (user_id) REFERENCES users ON DELETE CASCADE;
-
-ALTER TABLE comments DROP CONSTRAINT fk_post_id_ref_posts;
-ALTER TABLE comments ADD CONSTRAINT fk_post_id_ref_posts FOREIGN KEY (post_id) REFERENCES posts ON DELETE CASCADE;
-
-ALTER TABLE comment_likes DROP CONSTRAINT fk_user_id_ref_users;
-ALTER TABLE comment_likes ADD CONSTRAINT fk_user_id_ref_users FOREIGN KEY (user_id) REFERENCES users ON DELETE CASCADE;
-
-ALTER TABLE comment_likes DROP CONSTRAINT fk_comment_id_ref_comments;
-ALTER TABLE comment_likes ADD CONSTRAINT fk_comment_id_ref_comments FOREIGN KEY (comment_id) REFERENCES comments ON DELETE CASCADE;
-
-ALTER TABLE notifications DROP CONSTRAINT fk_user_id_ref_users;
-ALTER TABLE notifications ADD CONSTRAINT fk_user_id_ref_users FOREIGN KEY (user_id) REFERENCES users ON DELETE CASCADE;
-
-ALTER TABLE notifications DROP CONSTRAINT fk_post_id_ref_posts;
-ALTER TABLE notifications ADD CONSTRAINT fk_post_id_ref_posts FOREIGN KEY (post_id) REFERENCES posts ON DELETE CASCADE;
 
 -- INSERT INTO users (id, email, username) VALUES
 --     ('24ca6ce6-b3e9-4276-a99a-45c77115cc9f', 'shinji@example.org', 'shinji'),
