@@ -108,6 +108,10 @@ export default async function renderPostPage(params) {
             list.enqueue(comment)
             list.flush()
             incrementCommentsCount()
+            post.subscribed = true
+            dispatchEvent(new CustomEvent("postsubscriptionchange", {
+                detail: { postID: post.id, subscribed: true }
+            }))
 
             commentForm.reset()
         } catch (err) {

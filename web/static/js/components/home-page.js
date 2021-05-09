@@ -12,10 +12,11 @@ let paginatedTimeline = /** @type {import("../types.js").Page<import("../types.j
 
 addEventListener("postcommentcountinc", timelineUpdater("comment"))
 addEventListener("postlikecountchange", timelineUpdater("like"))
+addEventListener("postsubscriptionchange", timelineUpdater("subscription"))
 
 /**
  *
- * @param {"comment"|"like"} type
+ * @param {"comment"|"like"|"subscription"} type
  * @returns
  */
 function timelineUpdater(type) {
@@ -40,6 +41,9 @@ function timelineUpdater(type) {
                 case "like":
                     ti.post.liked = ev.detail.liked
                     ti.post.likesCount = ev.detail.likesCount
+                    break
+                case "subscription":
+                    ti.post.subscribed = ev.detail.subscribed
                     break
             }
             return
