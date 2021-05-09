@@ -6,6 +6,8 @@ const imageExtRegExp = /(\.gif|\.jpg|\.jpeg|\.png|\.avif|\.apng|\.webp|\.bmp|\.i
 const videoExtRegExp = /(\.mp4|\.webm|\.3gp|\.mov)$/
 const audioExtRegExp = /(\.wav|\.mp3|\.aac|\.ogg|\.flac|\.m4a)$/
 
+export const reUsername = /^[a-zA-Z][a-zA-Z0-9_-]{0,17}$/
+
 export function isLocalhost() {
     return ["localhost", "127.0.0.1"].includes(window.location.hostname)
 }

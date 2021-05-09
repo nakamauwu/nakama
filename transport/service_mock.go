@@ -116,6 +116,9 @@ var _ Service = &ServiceMock{}
 // 			UpdateAvatarFunc: func(ctx context.Context, r io.Reader) (string, error) {
 // 				panic("mock out the UpdateAvatar method")
 // 			},
+// 			UpdateUserFunc: func(ctx context.Context, params nakama.UpdateUserParams) (nakama.UpdatedUserFields, error) {
+// 				panic("mock out the UpdateUser method")
+// 			},
 // 			UserFunc: func(ctx context.Context, username string) (nakama.UserProfile, error) {
 // 				panic("mock out the User method")
 // 			},
@@ -230,6 +233,9 @@ type ServiceMock struct {
 
 	// UpdateAvatarFunc mocks the UpdateAvatar method.
 	UpdateAvatarFunc func(ctx context.Context, r io.Reader) (string, error)
+
+	// UpdateUserFunc mocks the UpdateUser method.
+	UpdateUserFunc func(ctx context.Context, params nakama.UpdateUserParams) (nakama.UpdatedUserFields, error)
 
 	// UserFunc mocks the User method.
 	UserFunc func(ctx context.Context, username string) (nakama.UserProfile, error)
@@ -479,6 +485,13 @@ type ServiceMock struct {
 			// R is the r argument value.
 			R io.Reader
 		}
+		// UpdateUser holds details about calls to the UpdateUser method.
+		UpdateUser []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Params is the params argument value.
+			Params nakama.UpdateUserParams
+		}
 		// User holds details about calls to the User method.
 		User []struct {
 			// Ctx is the ctx argument value.
@@ -560,6 +573,7 @@ type ServiceMock struct {
 	lockTogglePostSubscription    sync.RWMutex
 	lockToken                     sync.RWMutex
 	lockUpdateAvatar              sync.RWMutex
+	lockUpdateUser                sync.RWMutex
 	lockUser                      sync.RWMutex
 	lockUsernames                 sync.RWMutex
 	lockUsers                     sync.RWMutex
@@ -1677,6 +1691,41 @@ func (mock *ServiceMock) UpdateAvatarCalls() []struct {
 	mock.lockUpdateAvatar.RLock()
 	calls = mock.calls.UpdateAvatar
 	mock.lockUpdateAvatar.RUnlock()
+	return calls
+}
+
+// UpdateUser calls UpdateUserFunc.
+func (mock *ServiceMock) UpdateUser(ctx context.Context, params nakama.UpdateUserParams) (nakama.UpdatedUserFields, error) {
+	if mock.UpdateUserFunc == nil {
+		panic("ServiceMock.UpdateUserFunc: method is nil but Service.UpdateUser was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		Params nakama.UpdateUserParams
+	}{
+		Ctx:    ctx,
+		Params: params,
+	}
+	mock.lockUpdateUser.Lock()
+	mock.calls.UpdateUser = append(mock.calls.UpdateUser, callInfo)
+	mock.lockUpdateUser.Unlock()
+	return mock.UpdateUserFunc(ctx, params)
+}
+
+// UpdateUserCalls gets all the calls that were made to UpdateUser.
+// Check the length with:
+//     len(mockedService.UpdateUserCalls())
+func (mock *ServiceMock) UpdateUserCalls() []struct {
+	Ctx    context.Context
+	Params nakama.UpdateUserParams
+} {
+	var calls []struct {
+		Ctx    context.Context
+		Params nakama.UpdateUserParams
+	}
+	mock.lockUpdateUser.RLock()
+	calls = mock.calls.UpdateUser
+	mock.lockUpdateUser.RUnlock()
 	return calls
 }
 

@@ -1,6 +1,6 @@
 import { getAuthUser, isAuthenticated } from "../auth.js"
-import { doGet, doPost, doPut } from "../http.js"
-import { arrayBufferToBase64, base64ToArrayBuffer, el, replaceNode } from "../utils.js"
+import { doGet, doPatch, doPost, doPut } from "../http.js"
+import { arrayBufferToBase64, base64ToArrayBuffer, el, replaceNode, reUsername } from "../utils.js"
 import renderAvatarHTML from "./avatar.js"
 import { personAddIconSVG, personDoneIconSVG } from "./icons.js"
 
@@ -61,7 +61,26 @@ export default function renderUserProfile(user, full = false) {
 
     if (full && user.me) {
         const onUsernameDoubleClick = () => {
-            prompt("New username:", user.username)
+            const username = prompUsername(user.username)
+            if (username === null) {
+                return null
+            }
+
+            updateUser({ username }).then(updated => {
+                user.username = updated.username
+                const authUser = getAuthUser()
+                authUser.username = updated.username
+                localStorage.setItem("auth_user", JSON.stringify(authUser))
+                usernameText.textContent = updated.username
+
+                const ok = confirm("Username changed, refresh the page to see the changes")
+                if (ok) {
+                    window.location.replace("/users/" + encodeURIComponent(updated.username))
+                }
+            }).catch(err => {
+                console.error(err)
+                alert("Something went wrong while updating your username: " + err.message)
+            })
         }
 
         const onAvatarDoubleClick = () => {
@@ -128,6 +147,12 @@ export default function renderUserProfile(user, full = false) {
                 webAuthnBtn.disabled = false
             }
         }
+
+        usernameText.style.userSelect = "none"
+        usernameText.style.touchAction = "manipulation"
+
+        avatarPic.style.userSelect = "none"
+        avatarPic.style.touchAction = "manipulation"
 
         usernameText.addEventListener("dblclick", onUsernameDoubleClick)
         avatarPic.addEventListener("dblclick", onAvatarDoubleClick)
@@ -239,4 +264,29 @@ async function createCredential(cred) {
     }
 
     await doPost("/api/credentials", b)
+}
+
+function prompUsername(initialUsername) {
+    let username = prompt("New username:", initialUsername)
+    if (username === null) {
+        return null
+    }
+
+    username = username.trim()
+
+    if (!reUsername.test(username)) {
+        alert("invalid username")
+        return prompUsername(initialUsername)
+    }
+
+    return username
+}
+
+/**
+ * @param {object} params
+ * @param {string|null} params.username
+ * @returns {Promise<{username:string}>}
+ */
+function updateUser(params) {
+    return doPatch("/api/auth_user", params)
 }

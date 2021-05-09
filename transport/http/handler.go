@@ -41,6 +41,7 @@ func New(svc transport.Service, logger log.Logger, store storage.Store, cdc *sec
 	api.HandleFunc("GET", "/api/users", h.users)
 	api.HandleFunc("GET", "/api/usernames", h.usernames)
 	api.HandleFunc("GET", "/api/users/:username", h.user)
+	api.HandleFunc("PATCH", "/api/auth_user", h.updateUser)
 	api.HandleFunc("PUT", "/api/auth_user/avatar", h.updateAvatar)
 	api.HandleFunc("POST", "/api/users/:username/toggle_follow", h.toggleFollow)
 	api.HandleFunc("GET", "/api/users/:username/followers", h.followers)

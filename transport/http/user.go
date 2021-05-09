@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -61,6 +62,28 @@ func (h *handler) user(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.respond(w, u, http.StatusOK)
+}
+
+type updateUserReqBody nakama.UpdateUserParams
+
+func (h *handler) updateUser(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	var reqBody updateUserReqBody
+	err := json.NewDecoder(r.Body).Decode(&reqBody)
+	if err != nil {
+		h.respondErr(w, errBadRequest)
+		return
+	}
+
+	ctx := r.Context()
+	updated, err := h.svc.UpdateUser(ctx, nakama.UpdateUserParams(reqBody))
+	if err != nil {
+		h.respondErr(w, err)
+		return
+	}
+
+	h.respond(w, updated, http.StatusOK)
 }
 
 func (h *handler) updateAvatar(w http.ResponseWriter, r *http.Request) {

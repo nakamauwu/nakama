@@ -1,6 +1,7 @@
 import { navigate } from "../lib/router.js"
+import { reUsername } from "../utils.js"
 
-const reUsername = /^[a-zA-Z][a-zA-Z0-9_-]{0,17}$/
+
 const template = document.createElement("template")
 template.innerHTML = /*html*/`
     <main class="container login-callback-page">

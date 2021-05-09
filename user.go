@@ -45,6 +45,8 @@ var (
 	ErrUnsupportedAvatarFormat = InvalidArgumentError("unsupported avatar format")
 	// ErrUserGone denotes that the user has already been deleted.
 	ErrUserGone = GoneError("user gone")
+	// ErrInvalidUpdateUserParams denotes invalid params to update a user, that is no params altogether.
+	ErrInvalidUpdateUserParams = InvalidArgumentError("invalid update user params")
 )
 
 // User model.
@@ -310,6 +312,48 @@ func (s *Service) User(ctx context.Context, username string) (UserProfile, error
 	}
 	u.AvatarURL = s.avatarURL(avatar)
 	return u, nil
+}
+
+type UpdateUserParams struct {
+	Username *string `json:"username"`
+}
+
+func (params UpdateUserParams) Empty() bool {
+	return params.Username == nil
+}
+
+type UpdatedUserFields struct {
+	Username string `json:"username"`
+}
+
+func (s *Service) UpdateUser(ctx context.Context, params UpdateUserParams) (UpdatedUserFields, error) {
+	var updated UpdatedUserFields
+	uid, ok := ctx.Value(KeyAuthUserID).(string)
+	if !ok {
+		return updated, ErrUnauthenticated
+	}
+
+	if params.Empty() {
+		return updated, ErrInvalidUpdateUserParams
+	}
+
+	if params.Username != nil && !reUsername.MatchString(*params.Username) {
+		return updated, ErrInvalidUsername
+	}
+
+	query := "UPDATE users SET username = $1 WHERE id = $2"
+	_, err := s.DB.ExecContext(ctx, query, *params.Username, uid)
+	if isUniqueViolation(err) {
+		return updated, ErrUsernameTaken
+	}
+
+	if err != nil {
+		return updated, fmt.Errorf("could not sql update user: %w", err)
+	}
+
+	updated.Username = *params.Username
+
+	return updated, nil
 }
 
 // UpdateAvatar of the authenticated user returning the new avatar URL.

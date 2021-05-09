@@ -53,6 +53,28 @@ export function doPut(url, body, headers) {
 
 /**
  * @param {string} url
+ * @param {{[field:string]:any}=} body
+ * @param {{[key:string]:string}=} headers
+ */
+export function doPatch(url, body, headers) {
+    const init = {
+        method: "PATCH",
+        headers: defaultHeaders(),
+    }
+    if (body instanceof File) {
+        init["body"] = body
+        init.headers["content-type"] = body.type
+        init.headers["content-length"] = String(body.size)
+    } else if (isPlainObject(body)) {
+        init["body"] = JSON.stringify(body)
+        init.headers["content-type"] = "application/json; charset=utf-8"
+    }
+    Object.assign(init.headers, headers)
+    return fetch(url, init).then(parseResponse, handleErr)
+}
+
+/**
+ * @param {string} url
  * @param {{[key:string]:string}=} headers
  */
 export function doDelete(url, headers) {
