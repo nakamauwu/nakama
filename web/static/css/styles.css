@@ -640,17 +640,6 @@ header .profile-link {
     border-radius: .5rem;
 }
 
-.youtube-video-wrapper {
-    position: relative;
-    aspect-ratio: 16 / 9;
-}
-
-.youtube-video-wrapper img {
-    width: 100%;
-    height: auto;
-    object-fit: cover;
-}
-
 iframe.media-item {
     width: 100%;
     height: auto;
@@ -661,19 +650,6 @@ iframe.media-item {
 .media-item.soundcloud,
 .media-item.coub {
     border-radius: .5rem;
-}
-
-.youtube-video-wrapper::after {
-    content: "";
-    background-image: url("/img/youtube-2017.svg");
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: 18%;
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    top: 0;
-    left: 0;
 }
 
 audio {

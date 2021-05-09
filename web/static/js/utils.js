@@ -106,7 +106,9 @@ export async function collectMedia(el) {
             continue
         }
 
-        const imgurID = findImgurID(link.href)
+        const url = new URL(link.href)
+
+        const imgurID = findImgurID(url)
         if (imgurID !== null) {
             const img = document.createElement("img")
             // TODO: better detect imgur image extension.
@@ -121,37 +123,28 @@ export async function collectMedia(el) {
             continue
         }
 
-        const youtubeVideoID = findYouTubeVideoID(link.href)
+        const youtubeVideoID = findYouTubeVideoID(url)
         if (youtubeVideoID !== null) {
-            const img = document.createElement("img")
-            img.src = `https://img.youtube.com/vi/${youtubeVideoID}/0.jpg`
-            // img.crossOrigin = ""
-            img.width = 540
-            img.height = 304
-            const a = document.createElement("a")
-            a.href = link.href
-            a.target = "_blank"
-            a.rel = "noopener"
-            a.className = "media-item youtube-video-wrapper"
-            a.appendChild(img)
-            a.onclick = ev => {
-                ev.preventDefault()
-                ev.stopImmediatePropagation()
-
-                const iframe = document.createElement("iframe")
-                iframe.src = "https://www.youtube.com/embed/" + encodeURIComponent(youtubeVideoID) + "?autoplay=1"
-                iframe.setAttribute("frameborder", "0")
-                iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                iframe.allowFullscreen = true
-                iframe.className = "media-item youtube"
-                a.insertAdjacentElement("afterend", iframe)
-                a.remove()
+            let start = null
+            if (url.searchParams.has("t")) {
+                start = decodeURIComponent(url.searchParams.get("t"))
+            } else if (url.searchParams.has("start")) {
+                start = decodeURIComponent(url.searchParams.get("start"))
             }
-            media.push(a)
+            if (start !== null && !(/^[0-9]+$/.test(start))) {
+                start = durationSeconds(start)
+            }
+            const iframe = document.createElement("iframe")
+            iframe.src = "https://www.youtube.com/embed/" + encodeURIComponent(youtubeVideoID) + (start !== null ? "?start=" + encodeURIComponent(start) : "")
+            iframe.setAttribute("frameborder", "0")
+            iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            iframe.allowFullscreen = true
+            iframe.className = "media-item youtube"
+            media.push(iframe)
             continue
         }
 
-        const coubVideoID = findCoubVideoID(link.href)
+        const coubVideoID = findCoubVideoID(url)
         if (coubVideoID !== null) {
             const iframe = document.createElement("iframe")
             iframe.src = "https://coub.com/embed/" + encodeURIComponent(coubVideoID) + "?muted=false&autostart=false&originalSize=true&startWithHD=true"
@@ -163,7 +156,7 @@ export async function collectMedia(el) {
             continue
         }
 
-        if (isSoundCloudURL(link.href)) {
+        if (isSoundCloudURL(url)) {
             await getSoundCloudIframe(link.href).then(iframe => {
                 iframe.className = "media-item soundcloud"
                 media.push(iframe)
@@ -171,7 +164,7 @@ export async function collectMedia(el) {
             continue
         }
 
-        if (isTweet(link.href)) {
+        if (isTweet(url)) {
             await getTweetEmbed(link.href).then(node => {
                 const div = document.createElement("div")
                 div.className = "media-item tweet"
@@ -273,12 +266,11 @@ function findImgurID(href) {
 }
 
 /***
- * @param {string} href
+ * @param {URL} url
  * @returns {string|null}
  */
-function findYouTubeVideoID(href) {
+function findYouTubeVideoID(url) {
     try {
-        const url = new URL(href)
         if (url.hostname === "youtube.com" || url.hostname === "www.youtube.com" || url.hostname === "m.youtube.com") {
             if (url.pathname === "/watch" && url.searchParams.has("v")) {
                 return decodeURIComponent(url.searchParams.get("v"))
@@ -306,9 +298,47 @@ function findYouTubeVideoID(href) {
     return null
 }
 
-function findCoubVideoID(href) {
+/**
+ * @param {string} s
+ */
+function durationSeconds(s) {
+    const re = /([0-9]+(?:s|m|h))/g
+    const matches = s.matchAll(re)
+    let t = 0
+    for (const match of matches) {
+        const s = match[1]
+        try {
+            const val = parseInt(s.substr(0, s.length - 1))
+            const unit = s[s.length - 1]
+            switch (unit) {
+                case "s":
+                    t += val
+                    break
+                case "m":
+                    t += (val * 60)
+                    break
+                case "h":
+                    t += (val * 60 * 60)
+                    break
+                default:
+                    t = 0
+                    break
+            }
+        } catch (_) { }
+    }
+
+    if (t === 0) {
+        return null
+    }
+
+    return String(t)
+}
+
+/**
+ * @param {URL} url
+ */
+function findCoubVideoID(url) {
     try {
-        const url = new URL(href)
         if (url.hostname !== "coub.com") {
             return null
         }
@@ -323,9 +353,12 @@ function findCoubVideoID(href) {
     return null
 }
 
-function isSoundCloudURL(href) {
+/**
+ * @param {URL} url
+ * @returns
+ */
+function isSoundCloudURL(url) {
     try {
-        const url = new URL(href)
         if (url.hostname !== "soundcloud.com") {
             return false
         }
@@ -337,6 +370,9 @@ function isSoundCloudURL(href) {
     return false
 }
 
+/**
+ * @param {string} url
+ */
 function getSoundCloudIframe(url) {
     return fetch(`https://soundcloud.com/oembed?format=json&url=${encodeURIComponent(url)}`).then(parseResponse).then(body => {
         const tmpl = document.createElement("template")
@@ -345,9 +381,11 @@ function getSoundCloudIframe(url) {
     })
 }
 
-function isTweet(href) {
+/**
+ * @param {URL} url
+ */
+function isTweet(url) {
     try {
-        const url = new URL(href)
         if (url.hostname !== "twitter.com") {
             return false
         }
@@ -359,6 +397,9 @@ function isTweet(href) {
     return false
 }
 
+/**
+ * @param {string} url
+ */
 function getTweetEmbed(url) {
     return fetchJSONP(`https://publish.twitter.com/oembed?url=${encodeURIComponent(url)}&theme=dark`).then(parseResponse).then(body => {
         const tmpl = document.createElement("template")
@@ -368,6 +409,9 @@ function getTweetEmbed(url) {
 }
 
 let jsonPCounter = 0
+/**
+ * @param {string} url
+ */
 function fetchJSONP(url) {
     return new Promise(resolve => {
         jsonPCounter++
