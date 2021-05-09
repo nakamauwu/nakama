@@ -298,6 +298,10 @@ function findYouTubeVideoID(href) {
                 return decodeURIComponent(parts[1])
             }
         }
+
+        if (url.hostname === "music.youtube.com" && url.pathname === "/watch" && url.searchParams.has("v")) {
+            return decodeURIComponent(url.searchParams.get("v"))
+        }
     } catch (_) { }
     return null
 }
