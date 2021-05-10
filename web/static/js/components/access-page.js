@@ -1,20 +1,19 @@
 import { doGet, doPost } from "../http.js"
+import { translate } from "../i18n/i18n.js"
 import { arrayBufferToBase64, base64ToArrayBuffer, isLocalhost } from "../utils.js"
-
-const reUsername = /^[a-zA-Z][a-zA-Z0-9_-]{0,17}$/
 
 const template = document.createElement("template")
 template.innerHTML = /*html*/`
     <div class="container">
         <h1>Nakama</h1>
-        <p>Welcome to Nakama, the next social network for anime fans 🤗</p>
-        <h2>Access</h2>
+        <p>${translate("homePage.welcomeMsg")}</p>
+        <h2>${translate("homePage.accessHeading")}</h2>
         <form id="login-form" name="loginform" action="webauthn" class="login-form">
-            <input type="email" name="email" placeholder="Email" autocomplete="email" required>
-            <button type="submit">Login</button>
+            <input type="email" name="email" placeholder="${translate("homePage.emailInputPlaceholder")}" autocomplete="email" required>
+            <button type="submit">${translate("homePage.accessBtn")}</button>
         </form>
         <div class="login-info">
-            <em>This is a pre-release version of nakama. Things will break</em>
+            <em>${translate("homePage.preReleaseWarn")}</em>
         </div>
     </div>
 `
@@ -56,7 +55,7 @@ async function onLoginFormSubmit(ev) {
         return
     } catch (err) {
         console.error(err)
-        alert(err.message)
+        alert(translate("errors."+err.name, translate("defaultError")))
         setTimeout(() => {
             input.focus()
         })
@@ -98,14 +97,14 @@ async function runLoginProgram(email) {
             } catch (err) {
                 console.error(err)
                 if (err.name !== "UserNotFoundError" && err.name !== "NoWebAuthnCredentialsError") {
-                    alert("Could not login with device credentials. Login you with email instead.")
+                    alert(translate("accessPage.webAuthnFailMsg"))
                 }
             }
         }
     }
 
     await sendMagicLink(email, location.origin + "/login-callback")
-    alert("Click on the link we sent to your email address to login.")
+    alert(translate("accessPage.magicLinkSentMsg"))
 }
 
 /**

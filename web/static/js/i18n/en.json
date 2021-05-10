@@ -1,0 +1,31 @@
+{
+    "defaultError": "Something went wrong",
+    "errors": {
+        "InternalServerError": "Unexpected error at nakama's servers. Try again later",
+        "InvalidTokenError": "Invalid token",
+        "ExpiredTokenError": "Expired token",
+        "InvalidUserIDError": "Invalid user ID",
+        "UnauthenticatedError": "Unauthenticated",
+        "InvalidEmailError": "Invalid email",
+        "InvalidRedirectURIError": "Invalid redirect URI",
+        "UntrustedRedirectURIError": "Untrusted redirect URI",
+        "UnimplementedError": "Unimplemented",
+        "UserNotFoundError": "User not found",
+        "NoWebAuthnCredentialsError": "No credentials found",
+        "InvalidWebAuthnCredentialIDError": "Invalid credential ID",
+        "UserGoneError": "User gone",
+        "InvalidWebAuthnCredentialsError": "Invalid credentials",
+        "ErrWebAuthnCredentialCloned": "Credential cloned"
+    },
+    "homePage": {
+        "welcomeMsg": "Welcome to Nakama, the next social network for anime fans 🤗",
+        "accessHeading": "Access",
+        "emailInputPlaceholder": "Email",
+        "accessBtn": "Access",
+        "preReleaseWarn": "This is a pre-release version of nakama. Things will break."
+    },
+    "accessPage": {
+        "webAuthnFailMsg": "Could not login with device credentials. Login you with email instead.",
+        "magicLinkSentMsg": "Click on the link we sent to your email address to access."
+    }
+}

@@ -1,0 +1,31 @@
+{
+    "defaultError": "Algo salió mal",
+    "errors": {
+        "InternalServerError": "Error inesperado en los servidores de nakama, trata más tarde",
+        "InvalidTokenError": "Token inválido",
+        "ExpiredTokenError": "Token expiró",
+        "InvalidUserIDError": "ID de usuario inválida",
+        "UnauthenticatedError": "No authentificado",
+        "InvalidEmailError": "Correo inválido",
+        "InvalidRedirectURIError": "URI de redireccionamiento inválida",
+        "UntrustedRedirectURIError": "URI de redireccionamiento no es confiable",
+        "UnimplementedError": "No implementado",
+        "UserNotFoundError": "Usuario no encontrado",
+        "NoWebAuthnCredentialsError": "No se encontró ninguna credencial",
+        "InvalidWebAuthnCredentialIDError": "ID de credencial inválida",
+        "UserGoneError": "El usuario ya no existe",
+        "InvalidWebAuthnCredentialsError": "Credenciales inválidas",
+        "ErrWebAuthnCredentialCloned": "Credencial clonada"
+    },
+    "homePage": {
+        "welcomeMsg": "Bienvenido a Nakama, la nueva red social para fans de anime 🤗",
+        "accessHeading": "Acceso",
+        "emailInputPlaceholder": "Correo",
+        "accessBtn": "Acceder",
+        "preReleaseWarn": "Esto es un prelanzamiento de Nakama. Hay cosas que puede no funcionen."
+    },
+    "accessPage": {
+        "webAuthnFailMsg": "No se pudo acceder con las credenciales del dispositivo. Accediendo con tu correo en lugar.",
+        "magicLinkSentMsg": "Haz click en el link que enviamos en tu correo para acceder."
+    }
+}
