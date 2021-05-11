@@ -1,19 +1,22 @@
 import { navigate } from "../lib/router.js"
 import { reUsername } from "../utils.js"
 
-
 const template = document.createElement("template")
 template.innerHTML = /*html*/`
     <main class="container login-callback-page">
-        <h1>Authenticating you...</h1>
+        <h1 data-node="heading"></h1>
         <div class="error-wrapper"></div>
     </main>
 `
 
 export default function renderLoginCallbackPage() {
     const page = /** @type {DocumentFragment} */ (template.content.cloneNode(true))
+    const headingNode = page.querySelector(`[data-node="heading"]`)
     const errorWrapper = page.querySelector(".error-wrapper")
+
     setTimeout(() => {
+        headingNode.textContent = "Authenticating you..."
+
         loginCallback().then(({ url, hard = false, replace = false }) => {
             if (hard) {
                 if (replace) {

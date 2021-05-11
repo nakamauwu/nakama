@@ -17,6 +17,12 @@
         "InvalidWebAuthnCredentialsError": "Invalid credentials",
         "ErrWebAuthnCredentialCloned": "Credential cloned"
     },
+    "header": {
+        "home": "Home",
+        "notifications": "Notifications",
+        "search": "Search",
+        "profile": "Profile"
+    },
     "homePage": {
         "welcomeMsg": "Welcome to Nakama, the next social network for anime fans 🤗",
         "accessHeading": "Access",

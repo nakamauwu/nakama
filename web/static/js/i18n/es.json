@@ -17,6 +17,12 @@
         "InvalidWebAuthnCredentialsError": "Credenciales inválidas",
         "ErrWebAuthnCredentialCloned": "Credencial clonada"
     },
+    "header": {
+        "home": "Inicio",
+        "notifications": "Notificaciones",
+        "search": "Buscar",
+        "profile": "Perfil"
+    },
     "homePage": {
         "welcomeMsg": "Bienvenido a Nakama, la nueva red social para fans de anime 🤗",
         "accessHeading": "Acceso",

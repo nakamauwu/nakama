@@ -1,6 +1,7 @@
 import { guard } from "./auth.js"
 import renderErrorPage from "./components/error-page.js"
-import { useLang } from "./i18n/i18n.js"
+import { updateHeaderView } from "./header.js"
+import { detectLang, useLang } from "./i18n/i18n.js"
 import { createRouter } from "./lib/router.js"
 
 const modulesCache = new Map()
@@ -19,10 +20,10 @@ r.route(/^\/posts\/(?<postID>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-
 r.route(/\//, view("not-found"))
 
 useLang(detectLang()).then(() => {
+    updateHeaderView(document.querySelector("header"))
     r.subscribe(renderInto(document.querySelector("main")))
     r.install()
 })
-
 
 function view(name) {
     return (...args) => {
@@ -97,32 +98,4 @@ function activateLinks() {
             link.removeAttribute("aria-current")
         }
     }
-}
-
-function detectLang() {
-    const preferredLang = localStorage.getItem("preferred_lang")
-    if (preferredLang === "es") {
-        return "es"
-    }
-
-    if (Array.isArray(window.navigator.languages)) {
-        for (const lang of window.navigator.languages) {
-            if (typeof lang === "string" && (lang === "es" || lang.startsWith("es-"))) {
-                return "es"
-            }
-        }
-    }
-    if (typeof window.navigator["userLanguage"] === "string") {
-        if (window.navigator["userLanguage"] === "es" || window.navigator["userLanguage"].startsWith("es-")) {
-            return "es"
-        }
-    }
-
-    if (typeof window.navigator.language === "string") {
-        if (window.navigator.language === "es" || window.navigator.language.startsWith("es-")) {
-            return "es"
-        }
-    }
-
-    return "en"
 }
