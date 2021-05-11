@@ -23,6 +23,9 @@
         "search": "Search",
         "profile": "Profile"
     },
+    "footer": {
+        "msgPrefix": "Found any issues or have a feature request? Go to "
+    },
     "homePage": {
         "welcomeMsg": "Welcome to Nakama, the next social network for anime fans 🤗",
         "accessHeading": "Access",

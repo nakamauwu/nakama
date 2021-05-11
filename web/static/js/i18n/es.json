@@ -23,6 +23,9 @@
         "search": "Buscar",
         "profile": "Perfil"
     },
+    "footer": {
+        "msgPrefix": "¿Encontraste algún bug o tienes alguna idea? Ve a "
+    },
     "homePage": {
         "welcomeMsg": "Bienvenido a Nakama, la nueva red social para fans de anime 🤗",
         "accessHeading": "Acceso",

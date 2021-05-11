@@ -1,5 +1,6 @@
 import { guard } from "./auth.js"
 import renderErrorPage from "./components/error-page.js"
+import { footerView } from "./footer.js"
 import { updateHeaderView } from "./header.js"
 import { detectLang, useLang } from "./i18n/i18n.js"
 import { createRouter } from "./lib/router.js"
@@ -21,6 +22,10 @@ r.route(/\//, view("not-found"))
 
 useLang(detectLang()).then(() => {
     updateHeaderView(document.querySelector("header"))
+
+    const updateFooterView = footerView()
+    document.querySelector("footer").appendChild(updateFooterView())
+
     r.subscribe(renderInto(document.querySelector("main")))
     r.install()
 })
