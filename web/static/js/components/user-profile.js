@@ -1,5 +1,6 @@
 import { getAuthUser, isAuthenticated } from "../auth.js"
 import { doGet, doPatch, doPost, doPut } from "../http.js"
+import { translate } from "../i18n/i18n.js"
 import { arrayBufferToBase64, base64ToArrayBuffer, el, replaceNode, reUsername } from "../utils.js"
 import renderAvatarHTML from "./avatar.js"
 import { personAddIconSVG, personDoneIconSVG } from "./icons.js"
@@ -13,26 +14,26 @@ export default function renderUserProfile(user, full = false) {
     article.className = "user-profile"
     article.innerHTML = /*html*/`
         ${full ? /*html*/`
-            ${renderAvatarHTML(user, "Double click to update avatar")}
-            <h1 class="user-username" title="Double click to update username">${user.username}</h1>
+            ${renderAvatarHTML(user, translate("userProfile.updateAvatarHelp"))}
+            <h1 class="user-username" title="${translate("userProfile.updateUsernameHelp")}">${user.username}</h1>
         ` : /*html*/`
             <a href="/users/${user.username}">${renderAvatarHTML(user)}</a>
             <a href="/users/${user.username}" class="user-username">${user.username}</a>
         `}
-        ${user.followeed ? `<span class="badge">Follows you</span>` : ""}
+        ${user.followeed ? `<span class="badge">${translate("userProfile.followeed")}</span>` : ""}
         ${authenticated && !user.me ? /*html*/`
             <div class="user-controls">
                 <button class="follow-button" aria-pressed="${user.following}">
                     ${user.following ? personDoneIconSVG : personAddIconSVG}
-                    <span>${user.following ? "Following" : "Follow"}</span>
+                    <span>${user.following ? translate("userProfile.following") : translate("userProfile.follow")}</span>
                 </button>
             </div>
         ` : full && user.me ? /*html*/`
             <div class="user-controls">
-                <button class="webauthn-btn" hidden>Register device credentials</button>
+                <button class="webauthn-btn" hidden>${translate("userProfile.registerWebAuthn")}</button>
                 <button class="logout-button">
                     <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g data-name="Layer 2"><g data-name="log-out"><rect width="24" height="24" transform="rotate(90 12 12)" opacity="0"/><path d="M7 6a1 1 0 0 0 0-2H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h2a1 1 0 0 0 0-2H6V6z"/><path d="M20.82 11.42l-2.82-4a1 1 0 0 0-1.39-.24 1 1 0 0 0-.24 1.4L18.09 11H10a1 1 0 0 0 0 2h8l-1.8 2.4a1 1 0 0 0 .2 1.4 1 1 0 0 0 .6.2 1 1 0 0 0 .8-.4l3-4a1 1 0 0 0 .02-1.18z"/></g></g></svg>
-                    <span>Logout</span>
+                    <span>${translate("userProfile.logout")}</span>
                 </button>
                 <form hidden>
                     <input class="js-avatar-input" type="file" name="avatar" accept="image/png,image/jpeg" required hidden>
@@ -42,16 +43,16 @@ export default function renderUserProfile(user, full = false) {
         <div class="user-stats">
             <a href="/users/${user.username}/followers">
                 <span class="followers-count">${user.followersCount}</span>
-                <span class="label">followers</span>
+                <span class="label">${user.followersCount === 1 ? translate("userProfile.follower") : translate("userProfile.followers")}</span>
             </a>
             <a href="/users/${user.username}/followees">
                 <span class="followees-count">${user.followeesCount}</span>
-                <span class="label">followees</span>
+                <span class="label">${user.followeesCount === 1 ? translate("userProfile.followee") : translate("userProfile.followees")}</span>
             </a>
         </div>
     `
 
-    const usernameText = article.querySelector(".user-username")
+    const usernameText = /** @type {HTMLElement} */ (article.querySelector(".user-username"))
     const avatarPic = /** @type {HTMLImageElement|HTMLSpanElement} */ (article.querySelector(".avatar"))
     const followersCountSpan = /** @type {HTMLSpanElement} */ (article.querySelector(".followers-count"))
     const avatarInput = /** @type {HTMLInputElement=} */ (article.querySelector(".js-avatar-input"))
@@ -73,13 +74,13 @@ export default function renderUserProfile(user, full = false) {
                 localStorage.setItem("auth_user", JSON.stringify(authUser))
                 usernameText.textContent = updated.username
 
-                const ok = confirm("Username changed, refresh the page to see the changes")
+                const ok = confirm(translate("userProfile.usernameUpdatedConfirm"))
                 if (ok) {
                     window.location.replace("/users/" + encodeURIComponent(updated.username))
                 }
             }).catch(err => {
                 console.error(err)
-                alert("Something went wrong while updating your username: " + err.message)
+                alert(translate("errors."+err.name, translate("defaultError")))
             })
         }
 
@@ -100,13 +101,13 @@ export default function renderUserProfile(user, full = false) {
                 localStorage.setItem("auth_user", JSON.stringify(authUser))
                 avatarPic["src"] = avatarURL
 
-                const ok = confirm("Avatar updated, refresh the page to see the changes")
+                const ok = confirm(translate("userProfile.avatarUpdatedConfirm"))
                 if (ok) {
                     window.location.reload()
                 }
             }).catch(err => {
                 console.error(err)
-                alert("Something went wrong while updating your avatar: " + err.message)
+                alert(translate("errors." + err.name, translate("defaultError")))
             })
         }
 
@@ -135,14 +136,14 @@ export default function renderUserProfile(user, full = false) {
                 await createCredential(cred)
 
                 localStorage.setItem("webauthn_credential_id", cred.id)
-                alert("Device registered successfully. Now you can login with device credentials")
+                alert(translate("userProfile.webAuthnDeviceRegistered"))
             } catch (err) {
                 if (err instanceof Error && err.name === "InvalidStateError") {
-                    alert("Device already registered")
+                    alert(translate("userProfile.deviceAlreadyRegisteredError"))
                     return
                 }
                 console.error(err)
-                alert(err.message)
+                alert(translate("errors." + err.name, translate("defaultError")))
             } finally {
                 webAuthnBtn.disabled = false
             }
@@ -190,10 +191,10 @@ export default function renderUserProfile(user, full = false) {
                     followButton.querySelector("svg"),
                     el(out.following ? personDoneIconSVG : personAddIconSVG),
                 )
-                followText.textContent = out.following ? "Following" : "Follow"
+                followText.textContent = out.following ? translate("userProfile.following") : translate("userProfile.follow")
             } catch (err) {
                 console.error(err)
-                alert(err.message)
+                alert(translate("errors." + err.name, translate("defaultError")))
             } finally {
                 followButton.disabled = false
             }
@@ -267,7 +268,7 @@ async function createCredential(cred) {
 }
 
 function prompUsername(initialUsername) {
-    let username = prompt("New username:", initialUsername)
+    let username = prompt(translate("userProfile.usernamePrompt"), initialUsername)
     if (username === null) {
         return null
     }
@@ -275,7 +276,7 @@ function prompUsername(initialUsername) {
     username = username.trim()
 
     if (!reUsername.test(username)) {
-        alert("invalid username")
+        alert(translate("errors.InvalidUsernameError"))
         return prompUsername(initialUsername)
     }
 

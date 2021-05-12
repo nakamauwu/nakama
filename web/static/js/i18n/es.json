@@ -15,7 +15,8 @@
         "InvalidWebAuthnCredentialIDError": "ID de credencial inválida",
         "UserGoneError": "El usuario ya no existe",
         "InvalidWebAuthnCredentialsError": "Credenciales inválidas",
-        "ErrWebAuthnCredentialCloned": "Credencial clonada"
+        "WebAuthnCredentialClonedError": "Credencial clonada",
+        "InvalidUsernameError": "Nombre de usuario inválido"
     },
     "header": {
         "home": "Inicio",
@@ -43,5 +44,27 @@
         "emptyTimelineLink": "busca",
         "emptyTimelineSufffix": " algunos usuarios para seguir y comenzar a ver actividad.",
         "emptyPostTextArea": "Vacio"
+    },
+    "searchPage": {
+        "heading": "Busqueda",
+        "searchBoxPlaceholder": "Buscar..."
+    },
+    "userProfile": {
+        "updateAvatarHelp": "Doble click para actualizar avatar",
+        "updateUsernameHelp": "Doble click para cambiar nombre de usuario",
+        "followeed": "Te sigue",
+        "following": "Siguiendo",
+        "follow": "Seguir",
+        "registerWebAuthn": "Registrar credenciales de dispositivo",
+        "logout": "Cerrar sesión",
+        "follower": "seguidor",
+        "followers": "seguidores",
+        "followee": "siguiendo",
+        "followees": "siguiendo",
+        "usernameUpdatedConfirm": "Nombre de usuario actualizado, refresca la página para ver los cambios",
+        "avatarUpdatedConfirm": "Avatar actualizado, refresca la página para ver los cambios",
+        "webAuthnDeviceRegistered": "Dispositivo registrado exitosamente. Ahora puedes acceder con las credenciales de tu dispositivo",
+        "deviceAlreadyRegisteredError": "El dispositivo ya se encuentra registrado",
+        "usernamePrompt": "Nuevo nombre de usuario:"
     }
 }

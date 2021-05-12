@@ -1,4 +1,5 @@
 import { doGet } from "../http.js"
+import { translate } from "../i18n/i18n.js"
 import { navigate } from "../lib/router.js"
 import renderList from "./list.js"
 import renderUserProfile from "./user-profile.js"
@@ -7,9 +8,9 @@ const PAGE_SIZE = 10
 const template = document.createElement("template")
 template.innerHTML = /*html*/`
     <div class="container">
-        <h1>Search</h1>
+        <h1>${translate("searchPage.heading")}</h1>
         <form id="search-form" class="search-form">
-            <input type="search" name="q" placeholder="Search..." autocomplete="off">
+            <input type="search" name="q" placeholder="${translate("searchPage.searchBoxPlaceholder")}" autocomplete="off">
         </form>
         <div id="search-results-outlet" class="search-results-wrapper users-wrapper"></div>
     </div>

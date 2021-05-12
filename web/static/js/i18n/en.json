@@ -15,7 +15,8 @@
         "InvalidWebAuthnCredentialIDError": "Invalid credential ID",
         "UserGoneError": "User gone",
         "InvalidWebAuthnCredentialsError": "Invalid credentials",
-        "ErrWebAuthnCredentialCloned": "Credential cloned"
+        "WebAuthnCredentialClonedError": "Credential cloned",
+        "InvalidUsernameError": "Invalid username"
     },
     "header": {
         "home": "Home",
@@ -43,5 +44,27 @@
         "emptyTimelineLink": "search",
         "emptyTimelineSufffix": " for some users to follow and start getting some activity.",
         "emptyPostTextArea": "Empty"
+    },
+    "searchPage": {
+        "heading": "Search",
+        "searchBoxPlacehoder": "Search..."
+    },
+    "userProfile": {
+        "updateAvatarHelp": "Double click to update avatar",
+        "updateUsernameHelp": "Double click to update username",
+        "followeed": "Follows you",
+        "following": "Following",
+        "follow": "Follow",
+        "registerWebAuthn": "Register device credentials",
+        "logout": "Logout",
+        "follower": "follower",
+        "followers": "followers",
+        "followee": "followee",
+        "followees": "followees",
+        "usernameUpdatedConfirm": "Username changed, refresh the page to see the changes",
+        "avatarUpdatedConfirm": "Avatar updated, refresh the page to see the changes",
+        "webAuthnDeviceRegistered": "Device registered successfully. Now you can access with device credentials",
+        "deviceAlreadyRegisteredError": "Device already registered",
+        "usernamePrompt": "New username:"
     }
 }
