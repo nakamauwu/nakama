@@ -30,7 +30,8 @@
         "home": "Home",
         "notifications": "Notifications",
         "search": "Search",
-        "profile": "Profile"
+        "profile": "Profile",
+        "sysNotificationTitle": "New notification"
     },
     "footer": {
         "msgPrefix": "Found any issues or have a feature request? Go to "

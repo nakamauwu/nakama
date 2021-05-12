@@ -30,7 +30,8 @@
         "home": "Inicio",
         "notifications": "Notificaciones",
         "search": "Buscar",
-        "profile": "Perfil"
+        "profile": "Perfil",
+        "sysNotificationTitle": "Nueva notificación"
     },
     "footer": {
         "msgPrefix": "¿Encontraste algún bug o tienes alguna idea? Ve a "
