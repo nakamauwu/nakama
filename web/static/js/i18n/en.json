@@ -34,5 +34,14 @@
         "preReleaseWarn": "This is a pre-release version of nakama. Things will break.",
         "webAuthnFailMsg": "Could not login with device credentials. Login you with email instead.",
         "magicLinkSentMsg": "Click on the link we sent to your email address to access."
+    },
+    "homePage": {
+        "heading": "Timeline",
+        "postFormPlaceholder": "Write something...",
+        "publishBtn": "Publish",
+        "emptyTimelinePrefix": "This looks quite empty. Go ",
+        "emptyTimelineLink": "search",
+        "emptyTimelineSufffix": " for some users to follow and start getting some activity.",
+        "emptyPostTextArea": "Empty"
     }
 }

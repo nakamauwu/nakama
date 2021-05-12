@@ -2,6 +2,7 @@ import { Textcomplete } from "https://cdn.skypack.dev/pin/@textcomplete/core@v0.
 import { TextareaEditor } from "https://cdn.skypack.dev/pin/@textcomplete/textarea@v0.1.9-Qukalkviy1RfFEqhHqaD/mode=imports,min/optimized/@textcomplete/textarea.js"
 import { getAuthUser } from "../auth.js"
 import { doGet, doPost, subscribe } from "../http.js"
+import { translate } from "../i18n/i18n.js"
 import { smartTrim } from "../utils.js"
 import renderList from "./list.js"
 import renderPost from "./post.js"
@@ -55,12 +56,12 @@ function timelineUpdater(type) {
 const template = document.createElement("template")
 template.innerHTML = /*html*/`
     <div class="container">
-        <h1>Timeline</h1>
+        <h1>${translate("homePage.heading")}</h1>
         <form id="post-form" class="post-form">
-            <textarea name="content" placeholder="Write something..." maxlength="480" required></textarea>
+            <textarea name="content" placeholder="${translate("homePage.postFormPlaceholder")}" maxlength="480" required></textarea>
             <button class="post-form-button" hidden>
                 <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g data-name="Layer 2"><g data-name="paper-plane"><rect width="24" height="24" opacity="0"/><path d="M21 4a1.31 1.31 0 0 0-.06-.27v-.09a1 1 0 0 0-.2-.3 1 1 0 0 0-.29-.19h-.09a.86.86 0 0 0-.31-.15H20a1 1 0 0 0-.3 0l-18 6a1 1 0 0 0 0 1.9l8.53 2.84 2.84 8.53a1 1 0 0 0 1.9 0l6-18A1 1 0 0 0 21 4zm-4.7 2.29l-5.57 5.57L5.16 10zM14 18.84l-1.86-5.57 5.57-5.57z"/></g></g></svg>
-                <span>Publish</span>
+                <span>${translate("homePage.publishBtn")}</span>
             </button>
         </form>
         <div id="timeline-outlet" class="posts-wrapper"></div>
@@ -70,7 +71,7 @@ template.innerHTML = /*html*/`
 const emptyTimelineTmpl = document.createElement("template")
 emptyTimelineTmpl.innerHTML = `
     <div>
-        <p>This looks quite empty. Go <a href="/search">search</a> for some users to follow and start getting some activity.</p>
+        <p>${translate("homePage.emptyTimelinePrefix")}<a href="/search">${translate("homePage.emptyTimelineLink")}</a>${translate("homePage.emptyTimelineSufffix")}</p>
     </div>
 `
 
@@ -115,7 +116,7 @@ export default async function renderHomePage() {
 
         const content = smartTrim(postFormTextArea.value)
         if (content === "") {
-            postFormTextArea.setCustomValidity("Empty")
+            postFormTextArea.setCustomValidity(translate("homePage.emptyPostTextArea"))
             postFormTextArea.reportValidity()
             return
         }
@@ -133,7 +134,7 @@ export default async function renderHomePage() {
             postFormButton.hidden = true
         } catch (err) {
             console.error(err)
-            alert(err.message)
+            alert(translate("errors."+err.name, translate("defaultError")))
             if (err.name === "UserGoneError") {
                 localStorage.clear()
                 location.reload()
