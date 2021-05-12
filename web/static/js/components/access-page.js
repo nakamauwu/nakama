@@ -6,14 +6,14 @@ const template = document.createElement("template")
 template.innerHTML = /*html*/`
     <div class="container">
         <h1>Nakama</h1>
-        <p>${translate("homePage.welcomeMsg")}</p>
-        <h2>${translate("homePage.accessHeading")}</h2>
+        <p>${translate("accessPage.welcomeMsg")}</p>
+        <h2>${translate("accessPage.accessHeading")}</h2>
         <form id="login-form" name="loginform" action="webauthn" class="login-form">
-            <input type="email" name="email" placeholder="${translate("homePage.emailInputPlaceholder")}" autocomplete="email" required>
-            <button type="submit">${translate("homePage.accessBtn")}</button>
+            <input type="email" name="email" placeholder="${translate("accessPage.emailInputPlaceholder")}" autocomplete="email" required>
+            <button type="submit">${translate("accessPage.accessBtn")}</button>
         </form>
         <div class="login-info">
-            <em>${translate("homePage.preReleaseWarn")}</em>
+            <em>${translate("accessPage.preReleaseWarn")}</em>
         </div>
     </div>
 `

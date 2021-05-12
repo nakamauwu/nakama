@@ -26,14 +26,12 @@
     "footer": {
         "msgPrefix": "Found any issues or have a feature request? Go to "
     },
-    "homePage": {
+    "accessPage": {
         "welcomeMsg": "Welcome to Nakama, the next social network for anime fans 🤗",
         "accessHeading": "Access",
         "emailInputPlaceholder": "Email",
         "accessBtn": "Access",
-        "preReleaseWarn": "This is a pre-release version of nakama. Things will break."
-    },
-    "accessPage": {
+        "preReleaseWarn": "This is a pre-release version of nakama. Things will break.",
         "webAuthnFailMsg": "Could not login with device credentials. Login you with email instead.",
         "magicLinkSentMsg": "Click on the link we sent to your email address to access."
     }
