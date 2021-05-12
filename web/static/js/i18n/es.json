@@ -17,7 +17,7 @@
         "InvalidWebAuthnCredentialsError": "Credenciales inválidas",
         "WebAuthnCredentialClonedError": "Credencial clonada",
         "InvalidVerificationCodeError": "Código de verificación inválido",
-        "VerificationCodeNotFoundError": "Códigod e verificación no encontrado",
+        "VerificationCodeNotFoundError": "Código de verificación no encontrado",
         "WebAuthnCredentialExistsError": "La credencial ya existe",
         "InvalidUsernameError": "Nombre de usuario inválido",
         "EmailTakenError": "Correo ya en uso",
