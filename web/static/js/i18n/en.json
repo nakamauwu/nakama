@@ -16,7 +16,15 @@
         "UserGoneError": "User gone",
         "InvalidWebAuthnCredentialsError": "Invalid credentials",
         "WebAuthnCredentialClonedError": "Credential cloned",
-        "InvalidUsernameError": "Invalid username"
+        "InvalidVerificationCodeError": "Invalid verification code",
+        "VerificationCodeNotFoundError": "Verification code not found",
+        "WebAuthnCredentialExistsError": "Credential already exists",
+        "InvalidUsernameError": "Invalid username",
+        "EmailTakenError": "Email taken",
+        "UsernameTakenError": "Username taken",
+        "ForbiddenFollowError": "Cannot follow yourself",
+        "UnsupportedAvatarFormatError": "Unsupported avatar format",
+        "InvalidUpdateUserParamsError": "Invalid update user parameters"
     },
     "header": {
         "home": "Home",

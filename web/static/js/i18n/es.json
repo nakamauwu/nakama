@@ -16,7 +16,15 @@
         "UserGoneError": "El usuario ya no existe",
         "InvalidWebAuthnCredentialsError": "Credenciales inválidas",
         "WebAuthnCredentialClonedError": "Credencial clonada",
-        "InvalidUsernameError": "Nombre de usuario inválido"
+        "InvalidVerificationCodeError": "Código de verificación inválido",
+        "VerificationCodeNotFoundError": "Códigod e verificación no encontrado",
+        "WebAuthnCredentialExistsError": "La credencial ya existe",
+        "InvalidUsernameError": "Nombre de usuario inválido",
+        "EmailTakenError": "Correo ya en uso",
+        "UsernameTakenError": "Nombre de usuario ya en uso",
+        "ForbiddenFollowError": "No puedes seguirte a ti mismo",
+        "UnsupportedAvatarFormatError": "Formato de avatar no soportado",
+        "InvalidUpdateUserParamsError": "Parámetros para actualizar usuario incorrectos"
     },
     "header": {
         "home": "Inicio",
