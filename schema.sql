@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS posts (
     likes_count INT NOT NULL DEFAULT 0 CHECK (likes_count >= 0),
     comments_count INT NOT NULL DEFAULT 0 CHECK (comments_count >= 0),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    INDEX sorted_posts (created_at DESC)
+    INDEX sorted_posts (created_at DESC, id)
 );
 
 CREATE TABLE IF NOT EXISTS post_likes (
@@ -83,7 +83,7 @@ CREATE TABLE IF NOT EXISTS comments (
     content VARCHAR NOT NULL,
     likes_count INT NOT NULL DEFAULT 0 CHECK (likes_count >= 0),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    INDEX sorted_comments (created_at DESC)
+    INDEX sorted_comments (created_at DESC, id)
 );
 
 CREATE TABLE IF NOT EXISTS comment_likes (
@@ -100,18 +100,9 @@ CREATE TABLE IF NOT EXISTS notifications (
     post_id UUID REFERENCES posts ON DELETE CASCADE,
     read_at TIMESTAMPTZ,
     issued_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    INDEX sorted_notifications (issued_at DESC),
+    INDEX sorted_notifications (issued_at DESC, id),
     UNIQUE INDEX unique_notifications (user_id, type, post_id, read_at)
 );
-
-DROP INDEX sorted_posts;
-CREATE INDEX sorted_posts ON posts (created_at DESC, id);
-
-DROP INDEX sorted_comments;
-CREATE INDEX sorted_comments ON comments (created_at DESC, id);
-
-DROP INDEX sorted_notifications;
-CREATE INDEX sorted_notifications ON notifications (issued_at DESC, id);
 
 -- INSERT INTO users (id, email, username) VALUES
 --     ('24ca6ce6-b3e9-4276-a99a-45c77115cc9f', 'shinji@example.org', 'shinji'),
