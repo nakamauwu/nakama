@@ -648,7 +648,8 @@ iframe.media-item {
 
 .media-item.youtube,
 .media-item.soundcloud,
-.media-item.coub {
+.media-item.coub,
+.media-item.streamable {
     border-radius: .5rem;
 }
 

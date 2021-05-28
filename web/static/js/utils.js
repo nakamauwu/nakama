@@ -156,6 +156,19 @@ export async function collectMedia(el) {
             continue
         }
 
+        const streamableVideoID = findStreamableVideoID(url)
+        if (streamableVideoID !== null) {
+            const iframe = document.createElement("iframe")
+            iframe.src = "https://streamable.com/e/" + encodeURIComponent(streamableVideoID)
+            iframe.setAttribute("frameborder", "0")
+            iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            iframe.allowFullscreen = true
+            iframe.className = "media-item streamable"
+            media.push(iframe)
+            continue
+        }
+
+
         if (isSoundCloudURL(url)) {
             await getSoundCloudIframe(link.href).then(iframe => {
                 iframe.className = "media-item soundcloud"
@@ -347,6 +360,28 @@ function findCoubVideoID(url) {
         // /view/{id}
         // /embed/{id}
         if (parts.length === 3 && parts[0] === "" && (parts[1] === "view" || parts[1] === "embed")) {
+            return decodeURIComponent(parts[2])
+        }
+    } catch (_) { }
+    return null
+}
+
+/**
+ * @param {URL} url
+ */
+function findStreamableVideoID(url) {
+    try {
+        if (url.hostname !== "streamable.com") {
+            return null
+        }
+
+        const parts = url.pathname.split("/")
+        // /{id}
+        if (parts.length === 2 && parts[0] === "") {
+            return decodeURIComponent(parts[1])
+        }
+        // /e/{id}
+        if (parts.length === 3 && parts[0] === "" && parts[1] === "e") {
             return decodeURIComponent(parts[2])
         }
     } catch (_) { }
