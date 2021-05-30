@@ -44,7 +44,7 @@ services:
       - nats
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.nakama.rule=Host(`next.nakama.social`) || PathPrefix(`/`)"
+      - "traefik.http.routers.nakama.rule=Host(`nakama.social`) || PathPrefix(`/`)"
       - "traefik.http.routers.nakama.entrypoints=websecure"
       - "traefik.http.routers.nakama.tls.certresolver=tls-resolver"
   cockroach:
