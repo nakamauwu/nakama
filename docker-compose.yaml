@@ -29,7 +29,7 @@ services:
   nakama:
     image: "nicolasparada/nakama:latest"
     environment:
-      ORIGIN: "https://next.nakama.social"
+      ORIGIN: "https://nakama.social"
       DATABASE_URL: "postgresql://root@cockroach:26257/nakama?sslmode=disable"
       NATS_URL: "nats://nats:4222"
     env_file:
@@ -44,7 +44,7 @@ services:
       - nats
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.nakama.rule=Host(`nakama.social`) || PathPrefix(`/`)"
+      - "traefik.http.routers.nakama.rule=Host(`nakama.social`)"
       - "traefik.http.routers.nakama.entrypoints=websecure"
       - "traefik.http.routers.nakama.tls.certresolver=tls-resolver"
   cockroach:
