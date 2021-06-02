@@ -52,7 +52,7 @@ services:
       - "traefik.http.middlewares.next-redirectregex.redirectregex.replacement=https://nakama$${1}"
       - "traefik.http.middlewares.next-redirectregex.redirectregex.permanent=true"
       - "traefik.http.routers.next.rule=Host(`next.nakama.social`)"
-      - "traefik.http.routers.next.middlewares=next-redirectregex"
+      - "traefik.http.routers.next.middlewares=next-redirectregex@docker"
   cockroach:
     image: "cockroachdb/cockroach:latest"
     command: "start-single-node --insecure --listen-addr=0.0.0.0"
