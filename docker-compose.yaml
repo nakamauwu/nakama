@@ -49,7 +49,7 @@ services:
       - "traefik.http.routers.nakama.tls.certresolver=tls-resolver"
 
       - "traefik.http.middlewares.next-redirectregex.redirectregex.regex=^https?://next.nakama.social(.*)"
-      - "traefik.http.middlewares.next-redirectregex.redirectregex.replacement=https://nakama$${1}"
+      - "traefik.http.middlewares.next-redirectregex.redirectregex.replacement=https://nakama.social$${1}"
       - "traefik.http.middlewares.next-redirectregex.redirectregex.permanent=true"
       - "traefik.http.routers.next.rule=Host(`next.nakama.social`)"
       - "traefik.http.routers.next.middlewares=next-redirectregex@docker"
