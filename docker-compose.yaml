@@ -16,6 +16,11 @@ services:
       # - "--api.insecure=true"
       # - "--log.level=DEBUG"
       # - "--certificatesresolvers.tls-resolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
+      - "traefik.http.routers.next.rule=Host(`next.nakama.social`)"
+      - "traefik.http.routers.next.middlewares=nextredirectregex@docker"
+      - "traefik.http.middlewares.nextredirectregex.redirectregex.regex=^https?://next.nakama.social/(.*)"
+      - "traefik.http.middlewares.nextredirectregex.redirectregex.replacement=https://nakama.social/$${1}"
+      - "traefik.http.middlewares.nextredirectregex.redirectregex.permanent=true"
     ports:
       - "80:80"
       - "443:443"
@@ -44,14 +49,6 @@ services:
       - nats
     labels:
       - "traefik.enable=true"
-
-      - "traefik.http.middlewares.nextredirectregex.redirectregex.regex=^https?://next.nakama.social(.*)"
-      - "traefik.http.middlewares.nextredirectregex.redirectregex.replacement=https://nakama.social$${1}"
-      - "traefik.http.middlewares.nextredirectregex.redirectregex.permanent=true"
-
-      - "traefik.http.routers.next.rule=Host(`next.nakama.social`)"
-      - "traefik.http.routers.next.middlewares=nextredirectregex@docker"
-
       - "traefik.http.routers.nakama.rule=Host(`nakama.social`)"
       - "traefik.http.routers.nakama.entrypoints=websecure"
       - "traefik.http.routers.nakama.tls.certresolver=tls-resolver"
