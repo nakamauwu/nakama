@@ -17,7 +17,7 @@ services:
       # - "--log.level=DEBUG"
       # - "--certificatesresolvers.tls-resolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
       - "traefik.http.routers.next.rule=Host(`next.nakama.social`)"
-      - "traefik.http.routers.next.middlewares=nextredirectregex@docker"
+      - "traefik.http.routers.next.middlewares=nextredirectregex"
       - "traefik.http.middlewares.nextredirectregex.redirectregex.regex=^https?://next.nakama.social/(.*)"
       - "traefik.http.middlewares.nextredirectregex.redirectregex.replacement=https://nakama.social/$${1}"
       - "traefik.http.middlewares.nextredirectregex.redirectregex.permanent=true"
