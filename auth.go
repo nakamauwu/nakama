@@ -195,7 +195,7 @@ func (s *Service) ParseRedirectURI(rawurl string) (*url.URL, error) {
 		return nil, ErrInvalidRedirectURI
 	}
 
-	if uri.Host != s.Origin.Host {
+	if uri.Host != s.Origin.Host && !strings.HasSuffix(uri.Host, "."+s.Origin.Host) {
 		return nil, ErrUntrustedRedirectURI
 	}
 
