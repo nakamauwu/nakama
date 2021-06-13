@@ -135,7 +135,7 @@ export async function collectMedia(el) {
                 start = durationSeconds(start)
             }
             const iframe = document.createElement("iframe")
-            iframe.src = "https://www.youtube.com/embed/" + encodeURIComponent(youtubeVideoID) + (start !== null ? "?start=" + encodeURIComponent(start) : "")
+            iframe.src = "https://www.youtube-nocookie.com/embed/" + encodeURIComponent(youtubeVideoID) + (start !== null ? "?start=" + encodeURIComponent(start) : "")
             iframe.setAttribute("frameborder", "0")
             iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             iframe.allowFullscreen = true
