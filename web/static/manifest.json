@@ -22,7 +22,7 @@
       "type": "image/png"
     },
     {
-      "src": "img/icons/logo-circle-1024.png",
+      "src": "img/icons/logo-square-1024.png",
       "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "any maskable"
