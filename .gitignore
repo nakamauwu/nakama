@@ -4,3 +4,6 @@
 /web/static/img/avatars
 /letsencrypt
 *.exe
+node_modules/
+web/static/
+!web/static/img/avatars/
