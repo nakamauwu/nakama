@@ -171,14 +171,14 @@ function PostItem({ post: initialPost, type, timelineItemID = null }) {
                 </div>
             </div>
             <div class="post-content">
-                ${post.spoilerOf !== null && !displaySpoiler ? html`
+                ${type !== "comment" && post.spoilerOf !== null && !displaySpoiler ? html`
                     <div class="post-warning">
                         <p>This post contains spoilers of: ${post.spoilerOf}</p>
                         <button @click=${onDisplaySpoilerBtnClick}>Show it anyway</button>
                     </div>
                 ` : html`
                     <p .ref=${ref(contentRef)}>${unsafeHTML(linkify(escapeHTML(post.content)))}</p>
-                    ${post.nsfw && !displayNSFW ? html`
+                    ${type !== "comment" && post.nsfw && !displayNSFW ? html`
                         <div class="post-warning">
                             <p>This post has content not safe for work</p>
                             <button @click=${onDisplayNSFWBtnClick}>Show it anyway</button>
