@@ -32,7 +32,7 @@ var (
 	ErrInvalidCursor = InvalidArgumentError("invalid cursor")
 	// ErrInvalidReaction denotes an invalid reaction, that may by an invalid reaction type, or invalid reaction by itslef,
 	// not a valid emoji, or invalid reaction image URL.
-	ErrInvalidReaction = InvalidArgumentError("invalid reaction type")
+	ErrInvalidReaction = InvalidArgumentError("invalid reaction")
 )
 
 // Post model.

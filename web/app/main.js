@@ -141,3 +141,7 @@ function fetchToken() {
             return auth
         })
 }
+
+if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/sw.js")
+}
