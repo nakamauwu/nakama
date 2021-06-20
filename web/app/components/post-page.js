@@ -6,6 +6,7 @@ import { repeat } from "lit-html/directives/repeat.js"
 import { authStore, useStore } from "../ctx.js"
 import { ref } from "../directives/ref.js"
 import { request, subscribe } from "../http.js"
+import { navigate } from "../router.js"
 import "./post-item.js"
 import "./toast-item.js"
 
@@ -40,6 +41,24 @@ function PostPage({ postID }) {
 
     const onNewCommentArrive = useCallback(c => {
         setQueue(cc => [c, ...cc])
+        setPost(p => ({
+            ...p,
+            commentsCount: p.commentsCount + 1,
+        }))
+    }, [])
+
+    const onPostDeleted = useCallback(() => {
+        navigate("/", true)
+        setToast({ type: "success", content: "post deleted" })
+    }, [])
+
+    const onCommentDeleted = useCallback(ev => {
+        const payload = ev.detail
+        setComments(cc => cc.filter(c => c.id !== payload.id))
+        setPost(p => ({
+            ...p,
+            commentsCount: p.commentsCount - 1,
+        }))
     }, [])
 
     const onQueueBtnClick = useCallback(() => {
@@ -98,7 +117,7 @@ function PostPage({ postID }) {
                     ` : fetching ? html`
                         <p class="loader" aria-busy="true" aria-live="polite">Loading post... please wait.<p>
                     ` : html`
-                        <post-item .post=${post}></post-item>
+                        <post-item .post=${post} .type=${"post"} @resource-deleted=${onPostDeleted}></post-item>
                     `}
                 </div>
             </div>
@@ -118,7 +137,7 @@ function PostPage({ postID }) {
                             </button>
                         ` : nothing}
                         <div class="comments" role="feed">
-                            ${repeat(comments.slice().reverse(), c => c.id, c => html`<post-item .post=${c}></post-item>`)}
+                            ${repeat(comments.slice().reverse(), c => c.id, c => html`<post-item .post=${c} .type=${"comment"} @resource-deleted=${onCommentDeleted}></post-item>`)}
                         </div>
                     `}
                     ${auth !== null ? html`
@@ -204,7 +223,7 @@ function CommentForm({ postID }) {
 
     return html`
         <form class="comment-form${content !== "" ? " has-content" : ""}" name="comment-form" @submit=${onSubmit}>
-            <textarea name="content" placeholder="Say something..." maxlenght="480" aria-label="Content" required .disabled=${fetching} .value=${content} .ref=${ref(textAreaRef)} @input=${onTextAreaInput}></textarea>
+            <textarea name="content" placeholder="Say something..." maxlenght="2048" aria-label="Content" required .disabled=${fetching} .value=${content} .ref=${ref(textAreaRef)} @input=${onTextAreaInput}></textarea>
             ${content !== "" ? html`
                 <button .disabled=${fetching}>
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g data-name="Layer 2"><g data-name="paper-plane"><rect width="24" height="24" opacity="0"/><path d="M21 4a1.31 1.31 0 0 0-.06-.27v-.09a1 1 0 0 0-.2-.3 1 1 0 0 0-.29-.19h-.09a.86.86 0 0 0-.31-.15H20a1 1 0 0 0-.3 0l-18 6a1 1 0 0 0 0 1.9l8.53 2.84 2.84 8.53a1 1 0 0 0 1.9 0l6-18A1 1 0 0 0 21 4zm-4.7 2.29l-5.57 5.57L5.16 10zM14 18.84l-1.86-5.57 5.57-5.57z"/></g></g></svg>

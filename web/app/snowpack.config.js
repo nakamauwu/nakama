@@ -2,8 +2,12 @@ const proxy = require("http2-proxy")
 
 /** @type {import("snowpack").SnowpackUserConfig } */
 module.exports = {
+	plugins: [
+		["@snowpack/plugin-optimize", { preloadModules: true }],
+	],
 	buildOptions: {
 		out: "../static/",
+		metaUrlPath: "snowpack",
 	},
 	devOptions: {
 		port: 5000,

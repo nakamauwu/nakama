@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 
@@ -24,8 +25,8 @@ func (h *handler) posts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for i := range pp {
-		if pp[i].ReactionCounts == nil {
-			pp[i].ReactionCounts = []nakama.ReactionCount{} // non null array
+		if pp[i].Reactions == nil {
+			pp[i].Reactions = []nakama.Reaction{} // non null array
 		}
 	}
 
@@ -44,8 +45,8 @@ func (h *handler) post(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if p.ReactionCounts == nil {
-		p.ReactionCounts = []nakama.ReactionCount{} // non null array
+	if p.Reactions == nil {
+		p.Reactions = []nakama.Reaction{} // non null array
 	}
 
 	h.respond(w, p, http.StatusOK)
@@ -67,6 +68,28 @@ func (h *handler) togglePostLike(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	postID := way.Param(ctx, "post_id")
 	out, err := h.svc.TogglePostLike(ctx, postID)
+	if err != nil {
+		h.respondErr(w, err)
+		return
+	}
+
+	h.respond(w, out, http.StatusOK)
+}
+
+type togglePostReactionReqBody nakama.ReactionInput
+
+func (h *handler) togglePostReaction(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	var in togglePostReactionReqBody
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+		h.respondErr(w, errBadRequest)
+		return
+	}
+
+	ctx := r.Context()
+	postID := way.Param(ctx, "post_id")
+	out, err := h.svc.TogglePostReaction(ctx, postID, nakama.ReactionInput(in))
 	if err != nil {
 		h.respondErr(w, err)
 		return

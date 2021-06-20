@@ -144,7 +144,7 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 
 	s.magicLinkTmplOncer.Do(func() {
 		var text []byte
-		text, err = web.Files.ReadFile("template/mail/magic-link.html.tmpl")
+		text, err = web.TemplateFiles.ReadFile("template/mail/magic-link.html.tmpl")
 		if err != nil {
 			err = fmt.Errorf("could not read magic link template file: %w", err)
 			return

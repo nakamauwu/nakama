@@ -29,6 +29,8 @@ type Service interface {
 	CreateComment(ctx context.Context, postID string, content string) (nakama.Comment, error)
 	Comments(ctx context.Context, postID string, last uint64, before *string) (nakama.Comments, error)
 	CommentStream(ctx context.Context, postID string) (<-chan nakama.Comment, error)
+	DeleteComment(ctx context.Context, commentID string) error
+	ToggleCommentReaction(ctx context.Context, commentID string, in nakama.ReactionInput) ([]nakama.Reaction, error)
 	ToggleCommentLike(ctx context.Context, commentID string) (nakama.ToggleLikeOutput, error)
 
 	Notifications(ctx context.Context, last uint64, before *string) (nakama.Notifications, error)
@@ -40,6 +42,7 @@ type Service interface {
 	Posts(ctx context.Context, username string, last uint64, before *string) (nakama.Posts, error)
 	Post(ctx context.Context, postID string) (nakama.Post, error)
 	DeletePost(ctx context.Context, postID string) error
+	TogglePostReaction(ctx context.Context, postID string, in nakama.ReactionInput) ([]nakama.Reaction, error)
 	TogglePostLike(ctx context.Context, postID string) (nakama.ToggleLikeOutput, error)
 	TogglePostSubscription(ctx context.Context, postID string) (nakama.ToggleSubscriptionOutput, error)
 

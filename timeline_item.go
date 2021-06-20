@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/gob"
+	"encoding/json"
 	"fmt"
 	"io"
 	"time"
@@ -33,13 +34,13 @@ func (s *Service) CreateTimelineItem(ctx context.Context, content string, spoile
 	}
 
 	content = smartTrim(content)
-	if content == "" || utf8.RuneCountInString(content) > 480 {
+	if content == "" || utf8.RuneCountInString(content) > postContentMaxLength {
 		return ti, ErrInvalidContent
 	}
 
 	if spoilerOf != nil {
 		*spoilerOf = smartTrim(*spoilerOf)
-		if *spoilerOf == "" || utf8.RuneCountInString(*spoilerOf) > 64 {
+		if *spoilerOf == "" || utf8.RuneCountInString(*spoilerOf) > postSpoilerMaxLength {
 			return ti, ErrInvalidSpoiler
 		}
 	}
@@ -148,19 +149,24 @@ func (s *Service) Timeline(ctx context.Context, last uint64, before *string) (Ti
 		, posts.content
 		, posts.spoiler_of
 		, posts.nsfw
-		, posts.likes_count
+		, posts.reactions
+		, reactions.user_reactions
 		, posts.comments_count
 		, posts.created_at
 		, posts.user_id = @uid AS post_mine
-		, likes.user_id IS NOT NULL AS post_liked
 		, subscriptions.user_id IS NOT NULL AS post_subscribed
 		, users.username
 		, users.avatar
 		FROM timeline
 		INNER JOIN posts ON timeline.post_id = posts.id
 		INNER JOIN users ON posts.user_id = users.id
-		LEFT JOIN post_likes AS likes
-			ON likes.user_id = @uid AND likes.post_id = posts.id
+		LEFT JOIN (
+			SELECT user_id
+			, post_id
+			, json_agg(json_build_object('reaction', reaction, 'type', type)) AS user_reactions
+			FROM post_reactions
+			GROUP BY user_id, post_id
+		) AS reactions ON reactions.user_id = @uid AND reactions.post_id = posts.id
 		LEFT JOIN post_subscriptions AS subscriptions
 			ON subscriptions.user_id = @uid AND subscriptions.post_id = posts.id
 		WHERE timeline.user_id = @uid
@@ -193,6 +199,8 @@ func (s *Service) Timeline(ctx context.Context, last uint64, before *string) (Ti
 	for rows.Next() {
 		var ti TimelineItem
 		var p Post
+		var rawReactions []byte
+		var rawUserReactions []byte
 		var u User
 		var avatar sql.NullString
 		if err = rows.Scan(
@@ -201,16 +209,42 @@ func (s *Service) Timeline(ctx context.Context, last uint64, before *string) (Ti
 			&p.Content,
 			&p.SpoilerOf,
 			&p.NSFW,
-			&p.LikesCount,
+			&rawReactions,
+			&rawUserReactions,
 			&p.CommentsCount,
 			&p.CreatedAt,
 			&p.Mine,
-			&p.Liked,
 			&p.Subscribed,
 			&u.Username,
 			&avatar,
 		); err != nil {
 			return nil, fmt.Errorf("could not scan timeline item: %w", err)
+		}
+
+		if rawReactions != nil {
+			err = json.Unmarshal(rawReactions, &p.Reactions)
+			if err != nil {
+				return nil, fmt.Errorf("could not json unmarshall timeline post reactions: %w", err)
+			}
+		}
+
+		if rawUserReactions != nil {
+			var userReactions []userReaction
+			err = json.Unmarshal(rawUserReactions, &userReactions)
+			if err != nil {
+				return nil, fmt.Errorf("could not json unmarshall user timeline post reactions: %w", err)
+			}
+
+			for i, r := range p.Reactions {
+				var reacted bool
+				for _, ur := range userReactions {
+					if r.Type == ur.Type && r.Reaction == ur.Reaction {
+						reacted = true
+						break
+					}
+				}
+				p.Reactions[i].Reacted = &reacted
+			}
 		}
 
 		u.AvatarURL = s.avatarURL(avatar)

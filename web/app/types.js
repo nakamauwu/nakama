@@ -16,7 +16,7 @@
  * @typedef {object} Post
  * @prop {string} id
  * @prop {string} content
- * @prop {ReactionCount[]} reactionCounts
+ * @prop {ReactionCount[]} reactions
  * @prop {number} repliesCount
  * @prop {Date} createdAt
  * @prop {User|null} user

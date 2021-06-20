@@ -78,6 +78,8 @@ github.com/eapache/queue v1.1.0/go.mod h1:6eCeP0CKFpHLu8blIFXhExK/dRa7WDZfr6jVFP
 github.com/edsrzf/mmap-go v1.0.0/go.mod h1:YO35OhQPt3KJa3ryjFM5Bs14WD66h8eGKpfaBNrHW5M=
 github.com/eknkc/basex v1.0.0 h1:R2zGRGJAcqEES03GqHU9leUF5n4Pg6ahazPbSTQWCWc=
 github.com/eknkc/basex v1.0.0/go.mod h1:k/F/exNEHFdbs3ZHuasoP2E7zeWwZblG84Y7Z59vQRo=
+github.com/enescakir/emoji v1.0.0 h1:W+HsNql8swfCQFtioDGDHCHri8nudlK1n5p2rHCJoog=
+github.com/enescakir/emoji v1.0.0/go.mod h1:Bt1EKuLnKDTYpLALApstIkAjdDrS/8IAgTkKp+WKFD0=
 github.com/envoyproxy/go-control-plane v0.6.9/go.mod h1:SBwIajubJHhxtWwsL9s8ss4safvEdbitLhGGK48rN6g=
 github.com/envoyproxy/go-control-plane v0.9.1-0.20191026205805-5f8ba28d4473/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=

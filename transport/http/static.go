@@ -20,7 +20,7 @@ import (
 func (h *handler) staticHandler() http.Handler {
 	var root http.FileSystem
 	if h.embedStaticFiles {
-		sub, err := fs.Sub(web.Files, "static")
+		sub, err := fs.Sub(web.StaticFiles, "static")
 		if err != nil {
 			_ = h.logger.Log("error", fmt.Errorf("could not embed static files: %w", err))
 			os.Exit(1)

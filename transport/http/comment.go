@@ -31,8 +31,8 @@ func (h *handler) createComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if c.ReactionCounts == nil {
-		c.ReactionCounts = []nakama.ReactionCount{} // non null array
+	if c.Reactions == nil {
+		c.Reactions = []nakama.Reaction{} // non null array
 	}
 
 	h.respond(w, c, http.StatusCreated)
@@ -60,8 +60,8 @@ func (h *handler) comments(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for i := range cc {
-		if cc[i].ReactionCounts == nil {
-			cc[i].ReactionCounts = []nakama.ReactionCount{} // non null array
+		if cc[i].Reactions == nil {
+			cc[i].Reactions = []nakama.Reaction{} // non null array
 		}
 	}
 
@@ -93,8 +93,8 @@ func (h *handler) commentStream(w http.ResponseWriter, r *http.Request) {
 
 	select {
 	case c := <-cc:
-		if c.ReactionCounts == nil {
-			c.ReactionCounts = []nakama.ReactionCount{}
+		if c.Reactions == nil {
+			c.Reactions = []nakama.Reaction{}
 		}
 		h.writeSSE(w, c)
 		f.Flush()
@@ -103,10 +103,44 @@ func (h *handler) commentStream(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (h *handler) deleteComment(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	commentID := way.Param(ctx, "comment_id")
+	err := h.svc.DeleteComment(ctx, commentID)
+	if err != nil {
+		h.respondErr(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (h *handler) toggleCommentLike(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	commentID := way.Param(ctx, "comment_id")
 	out, err := h.svc.ToggleCommentLike(ctx, commentID)
+	if err != nil {
+		h.respondErr(w, err)
+		return
+	}
+
+	h.respond(w, out, http.StatusOK)
+}
+
+type toggleCommentReactionReqBody nakama.ReactionInput
+
+func (h *handler) toggleCommentReaction(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	var in toggleCommentReactionReqBody
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+		h.respondErr(w, errBadRequest)
+		return
+	}
+
+	ctx := r.Context()
+	commentID := way.Param(ctx, "comment_id")
+	out, err := h.svc.ToggleCommentReaction(ctx, commentID, nakama.ReactionInput(in))
 	if err != nil {
 		h.respondErr(w, err)
 		return

@@ -1,10 +1,13 @@
 import { component, html, useCallback, useEffect, useState } from "haunted"
+import { nothing } from "lit-html"
 import { ifDefined } from "lit-html/directives/if-defined"
+import { authStore, useStore } from "../ctx.js"
 import { Avatar } from "./avatar.js"
 import "./user-follow-btn.js"
 import "./user-follow-counts.js"
 
 function UserItem({ user: initialUser }) {
+    const [auth] = useStore(authStore)
     const [user, setUser] = useState(initialUser)
 
     const onFollowToggle = useCallback(ev => {
@@ -28,7 +31,9 @@ function UserItem({ user: initialUser }) {
                     <user-follow-counts .user=${user}></user-follow-counts>
                 </div>
             </a>
-            <user-follow-btn .user=${user} @follow-toggle=${onFollowToggle}></user-follow-btn>
+            ${auth !== null && !user.me ? html`
+                <user-follow-btn .user=${user} @follow-toggle=${onFollowToggle}></user-follow-btn>
+            ` : nothing}
         </article>
     `
 }

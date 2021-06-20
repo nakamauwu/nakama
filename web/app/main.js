@@ -1,8 +1,10 @@
 import { component, useCallback, useEffect, useState } from "haunted"
 import { html, render } from "lit-html"
 import { until } from "lit-html/directives/until.js"
+import { setLocalAuth } from "./auth.js"
 import "./components/app-header.js"
 import { authStore, useStore } from "./ctx.js"
+import { request } from "./http.js"
 import { createRouter, hijackClicks } from "./router.js"
 
 const router = createRouter()
@@ -77,9 +79,9 @@ customElements.define("router-view", component(RouterView, { useShadowDOM: false
 const oneDayInMs = 1000 * 60 * 60 * 24
 
 function NakamaApp() {
-    const [auth] = useStore(authStore)
+    const [auth, setAuth] = useStore(authStore)
 
-    const refreshAuth = useCallback(() => {
+    const tryRefreshAuth = useCallback(() => {
         if (auth === null) {
             return
         }
@@ -91,7 +93,18 @@ function NakamaApp() {
             return
         }
 
-        console.log("auth expirest in less than one day")
+        fetchToken().then(payload => {
+            setAuth(auth => {
+                const newAuth = {
+                    ...auth,
+                    ...payload,
+                }
+                setLocalAuth(newAuth)
+                return newAuth
+            })
+        }, err => {
+            console.error("could not refresh auth:", err)
+        })
     }, [auth])
 
     useEffect(() => {
@@ -99,16 +112,16 @@ function NakamaApp() {
             return
         }
 
-        refreshAuth()
+        tryRefreshAuth()
 
         const id = setInterval(() => {
-            refreshAuth()
+            tryRefreshAuth()
         }, oneDayInMs)
 
         return () => {
             clearInterval(id)
         }
-    }, [])
+    }, [auth])
 
     return html`
         <app-header></app-header>
@@ -119,3 +132,12 @@ function NakamaApp() {
 customElements.define("nakama-app", component(NakamaApp, { useShadowDOM: false }))
 
 render(html`<nakama-app></nakama-app>`, document.body)
+
+function fetchToken() {
+    return request("GET", "/api/token")
+        .then(resp => resp.body)
+        .then(auth => {
+            auth.expiresAt = new Date(auth.expiresAt)
+            return auth
+        })
+}

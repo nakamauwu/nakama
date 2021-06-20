@@ -1,7 +1,7 @@
 import { component, html, useCallback, useEffect, useState } from "haunted"
 import { nothing } from "lit-html"
 import { ifDefined } from "lit-html/directives/if-defined.js"
-import { authStore, hasUnreadNotificationsStore, useStore } from "../ctx.js"
+import { authStore, hasUnreadNotificationsStore, notificationsEnabledStore, useStore } from "../ctx.js"
 import { request, subscribe } from "../http.js"
 import { Avatar } from "./avatar.js"
 
@@ -10,26 +10,27 @@ const rePostPagePath = /^\/posts\/(?<postID>[^\/]+)$/
 function AppHeader() {
     const [auth] = useStore(authStore)
     const [hasUnreadNotifications, setHasUnreadNotifications] = useStore(hasUnreadNotificationsStore)
+    const [notificationsEnabled] = useStore(notificationsEnabledStore)
     const [activePath, setActivePath] = useState(location.pathname)
 
     const onNewNotificationArrive = useCallback(n => {
         if (viewingNotificationPage(n)) {
-            console.log("viewer")
             markNotificationAsRead(n.id).then(() => {
                 n.read = true
                 dispatchNewNotificationArrived(n)
             }, err => {
                 console.error("could not mark arriving notification as read:", err)
             })
-        } else {
-            setHasUnreadNotifications(true)
-            dispatchNewNotificationArrived(n)
-
-            if (Notification.permission === "granted") {
-                sysNotify(n)
-            }
+            return
         }
-    }, [])
+
+        setHasUnreadNotifications(true)
+        dispatchNewNotificationArrived(n)
+
+        if (notificationsEnabled) {
+            sysNotify(n)
+        }
+    }, [notificationsEnabled])
 
     const onLinkClick = useCallback(ev => {
         if (location.href === ev.currentTarget.href) {
@@ -116,6 +117,7 @@ function sysNotify(n) {
         ev.preventDefault()
 
         window.open(location.origin + notificationPathname(n))
+        // TODO: mark notification as read.
         sysn.close()
     }
 

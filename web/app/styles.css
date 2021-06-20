@@ -5,10 +5,10 @@
     --background: black;
     --primary: hsl(var(--hue), 100%, 86%);
     --secondary: hsl(calc(var(--hue) + 180), 100%, 86%);
-    --warning: hsl(60, 100%, 67%);
     --surface-0: hsl(var(--hue), 10%, 7%);
     --surface-1: hsl(var(--hue), 10%, 9%);
     --surface-2: hsl(var(--hue), 10%, 11%);
+    --surface-primary: hsl(var(--hue), 20%, 20%);
     --on-background: white;
     --on-surface: white;
     --on-primary: black;
@@ -23,8 +23,9 @@
                   0 16px 32px rgba(0,0,0,0.07),
                   0 32px 64px rgba(0,0,0,0.07);
 
-    --alt-surface: white;
-    --alt-on-surface: black;
+    --surface-alt: white;
+    --on-surface-alt: black;
+    --surface-backdrop: hsla(var(--hue), 10%, 0%, .95);
     --semi-transparent-surface: hsla(var(--hue), 10%, 7%, .75);
     --on-surface-error: hsl(345, 100%, 67%);
     --font: sans-serif;
@@ -42,6 +43,43 @@ dialog *,
     --surface-2: hsl(var(--hue), 12%, 14%);
 }
 
+@media (prefers-color-scheme: light) {
+    :root {
+        --background: white;
+        --primary: hsl(var(--hue), 100%, 66%);
+        --secondary: hsl(calc(var(--hue) + 180), 100%, 66%);
+        --surface-0: hsl(var(--hue), 10%, 93%);
+        --surface-1: hsl(var(--hue), 10%, 91%);
+        --surface-2: hsl(var(--hue), 10%, 89%);
+        --surface-primary: hsl(var(--hue), 20%, 80%);
+        --on-background: black;
+        --on-surface: black;
+        --on-primary: white;
+        --on-secondary: white;
+        --hint: hsl(var(--hue), 2%, 40%);
+        --line: hsla(var(--hue), 2%, 86%, .6);
+        --icon: hsl(var(--hue), 2%, 40%);
+
+        --surface-alt: black;
+        --on-surface-alt: white;
+        --surface-backdrop:  hsl(var(--hue), 10%, 100%, .95);
+        --semi-transparent-surface: hsla(var(--hue), 10%, 93%, .75);
+        --on-surface-error: hsl(345, 100%, 67%);
+    }
+
+    dialog *,
+    .post *,
+    .user-profile *,
+    .notification:not(.read) *,
+    .user-item *,
+    .queue-btn,
+    .textcomplete-dropdown {
+        --surface-0: hsl(var(--hue), 12%, 90%);
+        --surface-1: hsl(var(--hue), 12%, 88%);
+        --surface-2: hsl(var(--hue), 12%, 86%);
+    }
+}
+
 *,
 ::before,
 ::after {
@@ -55,6 +93,12 @@ body {
     background-color: var(--background);
     color: var(--on-background);
     padding-bottom: 4rem;
+}
+
+@media screen and (max-width: 414px) {
+    body {
+        padding-bottom: 8rem;
+    }
 }
 
 [hidden] {
@@ -75,6 +119,7 @@ notification-item,
 post-item,
 reaction-btn,
 add-reaction-btn,
+media-scroller,
 zoomable-img,
 post-page,
 comment-form,
@@ -239,8 +284,20 @@ input[type="email"]:focus,
 input[type="search"]:focus,
 textarea:focus {
     outline: none;
-    background-color: var(--alt-surface);
-    color: var(--alt-on-surface);
+    background-color: var(--surface-alt);
+    color: var(--on-surface-alt);
+}
+
+@media (prefers-color-scheme: light) {
+    input[type="text"]:focus,
+    input[type="email"]:focus,
+    input[type="search"]:focus,
+    textarea:focus {
+        outline: none;
+        background-color: var(--surface-2);
+        color: inherit;
+        box-shadow: inset 0 0 0 3px var(--surface-primary);
+    }
 }
 
 dialog {
@@ -253,7 +310,7 @@ dialog {
 }
 
 ::backdrop {
-    background-color: rgba(0, 0, 0, .95);
+    background-color: var(--surface-backdrop);
     backdrop-filter: blur(3px);
 }
 
@@ -303,6 +360,17 @@ input[role="switch"]::before {
 input[role="switch"]:checked::before {
     background-color: var(--on-surface);
     transform: translateX(100%);
+}
+
+@media (prefers-color-scheme: light) {
+    input[role="switch"]::before {
+        background-color: var(--surface-0);
+        box-shadow: var(--box-shadow);
+    }
+
+    input[role="switch"]:checked::before {
+        background-color: white;
+    }
 }
 
 .error {
@@ -414,13 +482,21 @@ header {
     left: 0;
     width: 100%;
     height: 4rem;
-    background-color: rgba(0, 0, 0, .95);
+    background-color: var(--surface-backdrop);
     box-shadow: var(--box-shadow);
     backdrop-filter: blur(3px);
     z-index: 1;
 
     display: grid;
     align-items: center;
+}
+
+@media screen and (max-width: 414px) {
+    header {
+        position: fixed;
+        top: unset;
+        bottom: 0;
+    }
 }
 
 header svg {
@@ -494,8 +570,25 @@ header .profile-link {
     width: 100%;
 }
 
-.warning {
-    color: var(--warning);
+.login-help {
+    margin-top: 2rem;
+}
+
+.login-help {
+    display: grid;
+    grid-auto-flow: row;
+    gap: 1rem;
+}
+
+.login-help h3 {
+    font-weight: normal;
+    margin-top: 0;
+    margin-bottom: .5rem;
+}
+
+.login-help p {
+    margin: 0;
+    color: var(--hint);
 }
 
 .home-page {
@@ -563,6 +656,7 @@ header .profile-link {
     .post-form-options {
         grid-auto-flow: row;
         gap: .5rem;
+        justify-items: left;
         justify-self: left;
     }
 }
@@ -712,8 +806,20 @@ header .profile-link {
     gap: 1rem;
 }
 
-.post p {
+.post-content p {
+    white-space: pre-line;
     margin: 0;
+}
+
+.post-warning {
+    background-color: var(--surface-primary);
+    border-radius: 1rem;
+    padding: 1rem 1rem .5rem 1rem;
+    border: 3px dashed var(--primary);
+}
+
+.post-warning p {
+    margin-bottom: 1rem;
 }
 
 .media-scroller {
@@ -801,6 +907,12 @@ header .profile-link {
 
 .post-reaction {
     gap: .25rem;
+    color: var(--hint);
+}
+
+.post-reaction.reacted {
+    background-color: var(--surface-primary);
+    color: var(--on-surface);
 }
 
 .post-wrapper {
@@ -974,13 +1086,24 @@ label,
 
 .notifications-page h1 {
     margin: 0;
-    /* padding: 0 1.5rem; */
 }
 
 .notifications {
     display: grid;
     grid-auto-flow: row;
     gap: .5rem;
+}
+
+.notifications-controls {
+    display: grid;
+    grid-auto-flow: column;
+    gap: .5rem;
+}
+
+@media screen and (min-width: 414px) and (max-width: 600px) {
+    .notifications-controls {
+        grid-auto-flow: row;
+    }
 }
 
 .notification {

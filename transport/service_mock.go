@@ -47,6 +47,9 @@ var _ Service = &ServiceMock{}
 // 			CredentialRequestOptionsFunc: func(ctx context.Context, email string, opts ...nakama.CredentialRequestOptionsOpt) (*protocol.CredentialAssertion, *webauthn.SessionData, error) {
 // 				panic("mock out the CredentialRequestOptions method")
 // 			},
+// 			DeleteCommentFunc: func(ctx context.Context, commentID string) error {
+// 				panic("mock out the DeleteComment method")
+// 			},
 // 			DeletePostFunc: func(ctx context.Context, postID string) error {
 // 				panic("mock out the DeletePost method")
 // 			},
@@ -101,11 +104,17 @@ var _ Service = &ServiceMock{}
 // 			ToggleCommentLikeFunc: func(ctx context.Context, commentID string) (nakama.ToggleLikeOutput, error) {
 // 				panic("mock out the ToggleCommentLike method")
 // 			},
+// 			ToggleCommentReactionFunc: func(ctx context.Context, commentID string, in nakama.ReactionInput) ([]nakama.Reaction, error) {
+// 				panic("mock out the ToggleCommentReaction method")
+// 			},
 // 			ToggleFollowFunc: func(ctx context.Context, username string) (nakama.ToggleFollowOutput, error) {
 // 				panic("mock out the ToggleFollow method")
 // 			},
 // 			TogglePostLikeFunc: func(ctx context.Context, postID string) (nakama.ToggleLikeOutput, error) {
 // 				panic("mock out the TogglePostLike method")
+// 			},
+// 			TogglePostReactionFunc: func(ctx context.Context, postID string, in nakama.ReactionInput) ([]nakama.Reaction, error) {
+// 				panic("mock out the TogglePostReaction method")
 // 			},
 // 			TogglePostSubscriptionFunc: func(ctx context.Context, postID string) (nakama.ToggleSubscriptionOutput, error) {
 // 				panic("mock out the TogglePostSubscription method")
@@ -165,6 +174,9 @@ type ServiceMock struct {
 	// CredentialRequestOptionsFunc mocks the CredentialRequestOptions method.
 	CredentialRequestOptionsFunc func(ctx context.Context, email string, opts ...nakama.CredentialRequestOptionsOpt) (*protocol.CredentialAssertion, *webauthn.SessionData, error)
 
+	// DeleteCommentFunc mocks the DeleteComment method.
+	DeleteCommentFunc func(ctx context.Context, commentID string) error
+
 	// DeletePostFunc mocks the DeletePost method.
 	DeletePostFunc func(ctx context.Context, postID string) error
 
@@ -219,11 +231,17 @@ type ServiceMock struct {
 	// ToggleCommentLikeFunc mocks the ToggleCommentLike method.
 	ToggleCommentLikeFunc func(ctx context.Context, commentID string) (nakama.ToggleLikeOutput, error)
 
+	// ToggleCommentReactionFunc mocks the ToggleCommentReaction method.
+	ToggleCommentReactionFunc func(ctx context.Context, commentID string, in nakama.ReactionInput) ([]nakama.Reaction, error)
+
 	// ToggleFollowFunc mocks the ToggleFollow method.
 	ToggleFollowFunc func(ctx context.Context, username string) (nakama.ToggleFollowOutput, error)
 
 	// TogglePostLikeFunc mocks the TogglePostLike method.
 	TogglePostLikeFunc func(ctx context.Context, postID string) (nakama.ToggleLikeOutput, error)
+
+	// TogglePostReactionFunc mocks the TogglePostReaction method.
+	TogglePostReactionFunc func(ctx context.Context, postID string, in nakama.ReactionInput) ([]nakama.Reaction, error)
 
 	// TogglePostSubscriptionFunc mocks the TogglePostSubscription method.
 	TogglePostSubscriptionFunc func(ctx context.Context, postID string) (nakama.ToggleSubscriptionOutput, error)
@@ -315,6 +333,13 @@ type ServiceMock struct {
 			Email string
 			// Opts is the opts argument value.
 			Opts []nakama.CredentialRequestOptionsOpt
+		}
+		// DeleteComment holds details about calls to the DeleteComment method.
+		DeleteComment []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// CommentID is the commentID argument value.
+			CommentID string
 		}
 		// DeletePost holds details about calls to the DeletePost method.
 		DeletePost []struct {
@@ -452,6 +477,15 @@ type ServiceMock struct {
 			// CommentID is the commentID argument value.
 			CommentID string
 		}
+		// ToggleCommentReaction holds details about calls to the ToggleCommentReaction method.
+		ToggleCommentReaction []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// CommentID is the commentID argument value.
+			CommentID string
+			// In is the in argument value.
+			In nakama.ReactionInput
+		}
 		// ToggleFollow holds details about calls to the ToggleFollow method.
 		ToggleFollow []struct {
 			// Ctx is the ctx argument value.
@@ -465,6 +499,15 @@ type ServiceMock struct {
 			Ctx context.Context
 			// PostID is the postID argument value.
 			PostID string
+		}
+		// TogglePostReaction holds details about calls to the TogglePostReaction method.
+		TogglePostReaction []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// PostID is the postID argument value.
+			PostID string
+			// In is the in argument value.
+			In nakama.ReactionInput
 		}
 		// TogglePostSubscription holds details about calls to the TogglePostSubscription method.
 		TogglePostSubscription []struct {
@@ -550,6 +593,7 @@ type ServiceMock struct {
 	lockCreateTimelineItem        sync.RWMutex
 	lockCredentialCreationOptions sync.RWMutex
 	lockCredentialRequestOptions  sync.RWMutex
+	lockDeleteComment             sync.RWMutex
 	lockDeletePost                sync.RWMutex
 	lockDeleteTimelineItem        sync.RWMutex
 	lockDevLogin                  sync.RWMutex
@@ -568,8 +612,10 @@ type ServiceMock struct {
 	lockTimeline                  sync.RWMutex
 	lockTimelineItemStream        sync.RWMutex
 	lockToggleCommentLike         sync.RWMutex
+	lockToggleCommentReaction     sync.RWMutex
 	lockToggleFollow              sync.RWMutex
 	lockTogglePostLike            sync.RWMutex
+	lockTogglePostReaction        sync.RWMutex
 	lockTogglePostSubscription    sync.RWMutex
 	lockToken                     sync.RWMutex
 	lockUpdateAvatar              sync.RWMutex
@@ -870,6 +916,41 @@ func (mock *ServiceMock) CredentialRequestOptionsCalls() []struct {
 	mock.lockCredentialRequestOptions.RLock()
 	calls = mock.calls.CredentialRequestOptions
 	mock.lockCredentialRequestOptions.RUnlock()
+	return calls
+}
+
+// DeleteComment calls DeleteCommentFunc.
+func (mock *ServiceMock) DeleteComment(ctx context.Context, commentID string) error {
+	if mock.DeleteCommentFunc == nil {
+		panic("ServiceMock.DeleteCommentFunc: method is nil but Service.DeleteComment was just called")
+	}
+	callInfo := struct {
+		Ctx       context.Context
+		CommentID string
+	}{
+		Ctx:       ctx,
+		CommentID: commentID,
+	}
+	mock.lockDeleteComment.Lock()
+	mock.calls.DeleteComment = append(mock.calls.DeleteComment, callInfo)
+	mock.lockDeleteComment.Unlock()
+	return mock.DeleteCommentFunc(ctx, commentID)
+}
+
+// DeleteCommentCalls gets all the calls that were made to DeleteComment.
+// Check the length with:
+//     len(mockedService.DeleteCommentCalls())
+func (mock *ServiceMock) DeleteCommentCalls() []struct {
+	Ctx       context.Context
+	CommentID string
+} {
+	var calls []struct {
+		Ctx       context.Context
+		CommentID string
+	}
+	mock.lockDeleteComment.RLock()
+	calls = mock.calls.DeleteComment
+	mock.lockDeleteComment.RUnlock()
 	return calls
 }
 
@@ -1523,6 +1604,45 @@ func (mock *ServiceMock) ToggleCommentLikeCalls() []struct {
 	return calls
 }
 
+// ToggleCommentReaction calls ToggleCommentReactionFunc.
+func (mock *ServiceMock) ToggleCommentReaction(ctx context.Context, commentID string, in nakama.ReactionInput) ([]nakama.Reaction, error) {
+	if mock.ToggleCommentReactionFunc == nil {
+		panic("ServiceMock.ToggleCommentReactionFunc: method is nil but Service.ToggleCommentReaction was just called")
+	}
+	callInfo := struct {
+		Ctx       context.Context
+		CommentID string
+		In        nakama.ReactionInput
+	}{
+		Ctx:       ctx,
+		CommentID: commentID,
+		In:        in,
+	}
+	mock.lockToggleCommentReaction.Lock()
+	mock.calls.ToggleCommentReaction = append(mock.calls.ToggleCommentReaction, callInfo)
+	mock.lockToggleCommentReaction.Unlock()
+	return mock.ToggleCommentReactionFunc(ctx, commentID, in)
+}
+
+// ToggleCommentReactionCalls gets all the calls that were made to ToggleCommentReaction.
+// Check the length with:
+//     len(mockedService.ToggleCommentReactionCalls())
+func (mock *ServiceMock) ToggleCommentReactionCalls() []struct {
+	Ctx       context.Context
+	CommentID string
+	In        nakama.ReactionInput
+} {
+	var calls []struct {
+		Ctx       context.Context
+		CommentID string
+		In        nakama.ReactionInput
+	}
+	mock.lockToggleCommentReaction.RLock()
+	calls = mock.calls.ToggleCommentReaction
+	mock.lockToggleCommentReaction.RUnlock()
+	return calls
+}
+
 // ToggleFollow calls ToggleFollowFunc.
 func (mock *ServiceMock) ToggleFollow(ctx context.Context, username string) (nakama.ToggleFollowOutput, error) {
 	if mock.ToggleFollowFunc == nil {
@@ -1590,6 +1710,45 @@ func (mock *ServiceMock) TogglePostLikeCalls() []struct {
 	mock.lockTogglePostLike.RLock()
 	calls = mock.calls.TogglePostLike
 	mock.lockTogglePostLike.RUnlock()
+	return calls
+}
+
+// TogglePostReaction calls TogglePostReactionFunc.
+func (mock *ServiceMock) TogglePostReaction(ctx context.Context, postID string, in nakama.ReactionInput) ([]nakama.Reaction, error) {
+	if mock.TogglePostReactionFunc == nil {
+		panic("ServiceMock.TogglePostReactionFunc: method is nil but Service.TogglePostReaction was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		PostID string
+		In     nakama.ReactionInput
+	}{
+		Ctx:    ctx,
+		PostID: postID,
+		In:     in,
+	}
+	mock.lockTogglePostReaction.Lock()
+	mock.calls.TogglePostReaction = append(mock.calls.TogglePostReaction, callInfo)
+	mock.lockTogglePostReaction.Unlock()
+	return mock.TogglePostReactionFunc(ctx, postID, in)
+}
+
+// TogglePostReactionCalls gets all the calls that were made to TogglePostReaction.
+// Check the length with:
+//     len(mockedService.TogglePostReactionCalls())
+func (mock *ServiceMock) TogglePostReactionCalls() []struct {
+	Ctx    context.Context
+	PostID string
+	In     nakama.ReactionInput
+} {
+	var calls []struct {
+		Ctx    context.Context
+		PostID string
+		In     nakama.ReactionInput
+	}
+	mock.lockTogglePostReaction.RLock()
+	calls = mock.calls.TogglePostReaction
+	mock.lockTogglePostReaction.RUnlock()
 	return calls
 }
 

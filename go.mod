@@ -7,6 +7,7 @@ require (
 	github.com/cockroachdb/cockroach-go v2.0.1+incompatible
 	github.com/disintegration/imaging v1.6.2
 	github.com/duo-labs/webauthn v0.0.0-20200714211715-1daaee874e43
+	github.com/enescakir/emoji v1.0.0 // indirect
 	github.com/go-kit/kit v0.10.0 // indirect
 	github.com/go-mail/mail v2.3.1+incompatible
 	github.com/gorilla/securecookie v1.1.1

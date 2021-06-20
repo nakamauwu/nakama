@@ -15,7 +15,7 @@ services:
       - "--pilot.token=${TRAEFIK_PILOT_TOKEN}"
       # - "--api.insecure=true"
       # - "--log.level=DEBUG"
-      # - "--certificatesresolvers.tls-resolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
+      - "--certificatesresolvers.tls-resolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
     ports:
       - "80:80"
       - "443:443"
@@ -27,7 +27,8 @@ services:
     depends_on:
       - nakama
   nakama:
-    image: "nicolasparada/nakama:latest"
+    build: .
+    # image: "nicolasparada/nakama:latest"
     environment:
       ORIGIN: "https://nakama.social"
       DATABASE_URL: "postgresql://root@cockroach:26257/nakama?sslmode=disable"

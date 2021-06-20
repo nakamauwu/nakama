@@ -108,7 +108,7 @@ func (h *handler) proxy(w http.ResponseWriter, r *http.Request) {
 	}
 
 	target, err := url.Parse(targetStr)
-	if err != nil || !target.IsAbs() {
+	if err != nil || (target.Scheme != "http" && target.Scheme != "https") {
 		h.respondErr(w, errInvalidTargetURL)
 		return
 	}

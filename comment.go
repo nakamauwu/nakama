@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/gob"
+	"encoding/json"
 	"fmt"
 	"io"
 	"time"
@@ -12,6 +13,8 @@ import (
 
 	"github.com/cockroachdb/cockroach-go/crdb"
 )
+
+const commentContentMaxLength = 2048
 
 var (
 	// ErrInvalidCommentID denotes an invalid comment id; that is not uuid.
@@ -22,16 +25,16 @@ var (
 
 // Comment model.
 type Comment struct {
-	ID         string    `json:"id"`
-	UserID     string    `json:"-"`
-	PostID     string    `json:"-"`
-	Content    string    `json:"content"`
-	LikesCount int       `json:"likesCount"`
-	ReactionCounts []ReactionCount `json:"reactionCounts"`
-	CreatedAt  time.Time `json:"createdAt"`
-	User       *User     `json:"user,omitempty"`
-	Mine       bool      `json:"mine"`
-	Liked      bool      `json:"liked"`
+	ID         string     `json:"id"`
+	UserID     string     `json:"-"`
+	PostID     string     `json:"-"`
+	Content    string     `json:"content"`
+	LikesCount int        `json:"likesCount"`
+	Reactions  []Reaction `json:"reactions"`
+	CreatedAt  time.Time  `json:"createdAt"`
+	User       *User      `json:"user,omitempty"`
+	Mine       bool       `json:"mine"`
+	Liked      bool       `json:"liked"`
 }
 
 // CreateComment on a post.
@@ -47,7 +50,7 @@ func (s *Service) CreateComment(ctx context.Context, postID string, content stri
 	}
 
 	content = smartTrim(content)
-	if content == "" || utf8.RuneCountInString(content) > 480 {
+	if content == "" || utf8.RuneCountInString(content) > commentContentMaxLength {
 		return c, ErrInvalidContent
 	}
 
@@ -140,19 +143,24 @@ func (s *Service) Comments(ctx context.Context, postID string, last uint64, befo
 	query, args, err := buildQuery(`
 		SELECT comments.id
 		, comments.content
-		, comments.likes_count
+		, comments.reactions
 		, comments.created_at
 		, users.username
 		, users.avatar
 		{{if .auth}}
 		, comments.user_id = @uid AS comment_mine
-		, likes.user_id IS NOT NULL AS comment_liked
+		, reactions.user_reactions
 		{{end}}
 		FROM comments
 		INNER JOIN users ON comments.user_id = users.id
 		{{if .auth}}
-		LEFT JOIN comment_likes AS likes
-			ON likes.comment_id = comments.id AND likes.user_id = @uid
+		LEFT JOIN (
+			SELECT user_id
+			, comment_id
+			, json_agg(json_build_object('reaction', reaction, 'type', type)) AS user_reactions
+			FROM comment_reactions
+			GROUP BY user_id, comment_id
+		) AS reactions ON reactions.user_id = @uid AND reactions.comment_id = comments.id
 		{{end}}
 		WHERE comments.post_id = @postID
 		{{ if and .beforeCommentID .beforeCreatedAt }}
@@ -185,14 +193,42 @@ func (s *Service) Comments(ctx context.Context, postID string, last uint64, befo
 	var cc Comments
 	for rows.Next() {
 		var c Comment
+		var rawReactions []byte
+		var rawUserReactions []byte
 		var u User
 		var avatar sql.NullString
-		dest := []interface{}{&c.ID, &c.Content, &c.LikesCount, &c.CreatedAt, &u.Username, &avatar}
+		dest := []interface{}{&c.ID, &c.Content, &rawReactions, &c.CreatedAt, &u.Username, &avatar}
 		if auth {
-			dest = append(dest, &c.Mine, &c.Liked)
+			dest = append(dest, &c.Mine, &rawUserReactions)
 		}
 		if err = rows.Scan(dest...); err != nil {
 			return nil, fmt.Errorf("could not scan comment: %w", err)
+		}
+
+		if rawReactions != nil {
+			err = json.Unmarshal(rawReactions, &c.Reactions)
+			if err != nil {
+				return nil, fmt.Errorf("could not json unmarshall comment reactions: %w", err)
+			}
+		}
+
+		if rawUserReactions != nil {
+			var userReactions []userReaction
+			err = json.Unmarshal(rawUserReactions, &userReactions)
+			if err != nil {
+				return nil, fmt.Errorf("could not json unmarshall user comment reactions: %w", err)
+			}
+
+			for i, r := range c.Reactions {
+				var reacted bool
+				for _, ur := range userReactions {
+					if r.Type == ur.Type && r.Reaction == ur.Reaction {
+						reacted = true
+						break
+					}
+				}
+				c.Reactions[i].Reacted = &reacted
+			}
 		}
 
 		u.AvatarURL = s.avatarURL(avatar)
@@ -245,6 +281,50 @@ func (s *Service) CommentStream(ctx context.Context, postID string) (<-chan Comm
 	}()
 
 	return cc, nil
+}
+
+func (s *Service) DeleteComment(ctx context.Context, commentID string) error {
+	uid, ok := ctx.Value(KeyAuthUserID).(string)
+	if !ok {
+		return ErrUnauthenticated
+	}
+
+	if !reUUID.MatchString(commentID) {
+		return ErrInvalidCommentID
+	}
+
+	err := crdb.ExecuteTx(ctx, s.DB, nil, func(tx *sql.Tx) error {
+		var postID string
+		query := "SELECT post_id FROM comments WHERE id = $1 AND user_id = $2"
+		row := tx.QueryRowContext(ctx, query, commentID, uid)
+		err := row.Scan(&postID)
+		if err == sql.ErrNoRows {
+			return ErrCommentNotFound
+		}
+
+		if err != nil {
+			return fmt.Errorf("could not sql query select comment to delete post id: %w", err)
+		}
+
+		query = "DELETE FROM comments WHERE id = $1"
+		_, err = tx.ExecContext(ctx, query, commentID)
+		if err != nil {
+			return fmt.Errorf("could not delete comment: %w", err)
+		}
+
+		query = "UPDATE posts SET comments_count = comments_count - 1 WHERE id = $1"
+		_, err = tx.ExecContext(ctx, query, postID)
+		if err != nil {
+			return fmt.Errorf("could not update post comments count after comment deletion: %w", err)
+		}
+
+		return nil
+	})
+	if err != nil && err != ErrCommentNotFound {
+		return err
+	}
+
+	return nil
 }
 
 // ToggleCommentLike 🖤
@@ -305,6 +385,174 @@ func (s *Service) ToggleCommentLike(ctx context.Context, commentID string) (Togg
 	}
 
 	out.Liked = !out.Liked
+
+	return out, nil
+}
+
+func (s *Service) ToggleCommentReaction(ctx context.Context, commentID string, in ReactionInput) ([]Reaction, error) {
+	uid, ok := ctx.Value(KeyAuthUserID).(string)
+	if !ok {
+		return nil, ErrUnauthenticated
+	}
+
+	if !reUUID.MatchString(commentID) {
+		return nil, ErrInvalidCommentID
+	}
+
+	if in.Type != "emoji" || in.Reaction == "" {
+		return nil, ErrInvalidReaction
+	}
+
+	if in.Type == "emoji" {
+		_, ok := emojiMap[in.Reaction]
+		if !ok {
+			return nil, ErrInvalidReaction
+		}
+	}
+
+	var out []Reaction
+	err := crdb.ExecuteTx(ctx, s.DB, nil, func(tx *sql.Tx) error {
+		out = nil
+
+		var rawReactions []byte
+		var rawUserReactions []byte
+		query := `
+			SELECT comments.reactions, reactions.user_reactions
+			FROM comments
+			LEFT JOIN (
+				SELECT user_id
+				, comment_id
+				, json_agg(json_build_object('reaction', reaction, 'type', type)) AS user_reactions
+				FROM comment_reactions
+				GROUP BY user_id, comment_id
+			) AS reactions ON reactions.user_id = $1 AND reactions.comment_id = comments.id
+			WHERE comments.id = $2`
+		row := tx.QueryRowContext(ctx, query, uid, commentID)
+		err := row.Scan(&rawReactions, &rawUserReactions)
+		if err == sql.ErrNoRows {
+			return ErrCommentNotFound
+		}
+
+		if err != nil {
+			return fmt.Errorf("could not sql scan comment and user reactions: %w", err)
+		}
+
+		var reactions []Reaction
+		if rawReactions != nil {
+			err = json.Unmarshal(rawReactions, &reactions)
+			if err != nil {
+				return fmt.Errorf("could not json unmarshall comment reactions: %w", err)
+			}
+		}
+
+		var userReactions []userReaction
+		if rawUserReactions != nil {
+			err = json.Unmarshal(rawUserReactions, &userReactions)
+			if err != nil {
+				return fmt.Errorf("could not json unmarshall user comment reactions: %w", err)
+			}
+		}
+
+		userReactionIdx := -1
+		for i, ur := range userReactions {
+			if ur.Type == in.Type && ur.Reaction == in.Reaction {
+				userReactionIdx = i
+				break
+			}
+		}
+
+		reacted := userReactionIdx != -1
+		if !reacted {
+			query = "INSERT INTO comment_reactions (user_id, comment_id, type, reaction) VALUES ($1, $2, $3, $4)"
+			_, err = tx.ExecContext(ctx, query, uid, commentID, in.Type, in.Reaction)
+			if err != nil {
+				return fmt.Errorf("could not sql insert comment reaction: %w", err)
+			}
+		} else {
+			query = `
+				DELETE FROM comment_reactions
+				WHERE user_id = $1
+					AND comment_id = $2
+					AND type = $3
+					AND reaction = $4
+			`
+			_, err = tx.ExecContext(ctx, query, uid, commentID, in.Type, in.Reaction)
+			if err != nil {
+				return fmt.Errorf("could not sql delete comment reaction: %w", err)
+			}
+		}
+
+		if reacted {
+			userReactions = append(userReactions[:userReactionIdx], userReactions[userReactionIdx+1:]...)
+		} else {
+			userReactions = append(userReactions, userReaction{
+				Type:     in.Type,
+				Reaction: in.Reaction,
+			})
+		}
+
+		var updated bool
+		zeroReactionsIdx := -1
+		for i, r := range reactions {
+			if !(r.Type == in.Type && r.Reaction == in.Reaction) {
+				continue
+			}
+
+			if !reacted {
+				reactions[i].Count++
+			} else {
+				reactions[i].Count--
+				if reactions[i].Count == 0 {
+					zeroReactionsIdx = i
+				}
+			}
+			updated = true
+			break
+		}
+
+		if !updated {
+			reactions = append(reactions, Reaction{
+				Type:     in.Type,
+				Reaction: in.Reaction,
+				Count:    1,
+			})
+		}
+
+		if zeroReactionsIdx != -1 {
+			reactions = append(reactions[:zeroReactionsIdx], reactions[zeroReactionsIdx+1:]...)
+		}
+
+		rawReactions, err = json.Marshal(reactions)
+		if err != nil {
+			return fmt.Errorf("could not json marshall comment reactions: %w", err)
+		}
+
+		query = "UPDATE comments SET reactions = $1 WHERE comments.id = $2"
+		_, err = tx.ExecContext(ctx, query, rawReactions, commentID)
+		if err != nil {
+			return fmt.Errorf("could not sql update comment reactions: %w", err)
+		}
+
+		if len(userReactions) != 0 {
+			for i, r := range reactions {
+				var reacted bool
+				for _, ur := range userReactions {
+					if r.Type == ur.Type && r.Reaction == ur.Reaction {
+						reacted = true
+						break
+					}
+				}
+				reactions[i].Reacted = &reacted
+			}
+		}
+
+		out = reactions
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
 
 	return out, nil
 }

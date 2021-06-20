@@ -37,6 +37,16 @@ function HomePage() {
         setQueue(tt => [ti, ...tt])
     }, [])
 
+    const onRemovedFromTimeline = useCallback(ev => {
+        const payload = ev.detail
+        setTimeline(tt => tt.filter(ti => ti.id !== payload.timelineItemID))
+    }, [])
+
+    const onPostDeleted = useCallback(ev => {
+        const payload = ev.detail
+        setTimeline(tt => tt.filter(ti => ti.post.id !== payload.id))
+    }, [])
+
     const onQueueBtnClick = useCallback(() => {
         setTimeline(tt => [...queue, ...tt])
         setQueue([])
@@ -100,7 +110,7 @@ function HomePage() {
                     <p>0 timeline items</p>
                 ` : html`
                     <div class="posts" role="feed">
-                        ${repeat(timeline, ti => ti.id, ti => html`<post-item .post=${ti.post}></post-item>`)}
+                        ${repeat(timeline, ti => ti.id, ti => html`<post-item .post=${ti.post} .type=${"timeline_item"} .timelineItemID=${ti.id} @removed-from-timeline=${onRemovedFromTimeline} @resource-deleted=${onPostDeleted}></post-item>`)}
                     </div>
                     ${!noMoreTimelineItems ? html`
                         <intersectable-comp @is-intersecting=${loadMore}></intersectable-comp>
@@ -225,7 +235,7 @@ function PostForm() {
 
     return html`
         <form class="post-form${content !== "" ? " has-content" : ""}" name="post-form" @submit=${onSubmit}>
-            <textarea name="content" placeholder="Write something..." maxlenght="480" aria-label="Content" required .value=${content} .ref=${ref(textAreaRef)} @input=${onTextAreaInput}></textarea>
+            <textarea name="content" placeholder="Write something..." maxlenght="2048" aria-label="Content" required .value=${content} .ref=${ref(textAreaRef)} @input=${onTextAreaInput}></textarea>
             ${content !== "" ? html`
                 <div class="post-form-controls">
                     <div class="post-form-options">
@@ -248,7 +258,7 @@ function PostForm() {
         <dialog .ref=${ref(spoilerOfDialogRef)} @close=${onSpoilerOfDialogClose}>
             <form method="dialog" class="spoiler-of-form" @submit=${onSpoilerOfFormSubmit}>
                 <label for="spoiler-of-input">Spoiler of:</label>
-                <input type="text" id="spoiler-of-input" name="spoiler_of" placeholder="Spoiler of..." autocomplete="off" .value=${spoilerOf} ?required=${isSpoiler} @input=${onSpoilerOfInput}>
+                <input type="text" id="spoiler-of-input" name="spoiler_of" placeholder="Spoiler of..." maxlenght="64" autocomplete="off" .value=${spoilerOf} ?required=${isSpoiler} @input=${onSpoilerOfInput}>
                 <div class="spoiler-of-controls">
                     <button>OK</button>
                     <button type="reset" @click=${onSpoilerOfCancelBtnClick}>Cancel</button>

@@ -3,12 +3,18 @@ package nakama
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 	"unicode/utf8"
 
 	"github.com/cockroachdb/cockroach-go/crdb"
+)
+
+const (
+	postContentMaxLength = 2048
+	postSpoilerMaxLength = 64
 )
 
 var (
@@ -24,29 +30,38 @@ var (
 	ErrInvalidUpdatePostParams = InvalidArgumentError("invalid update post params")
 	// ErrInvalidCursor denotes an invalid cursor, that is not base64 encoded and has a key and timestamp separated by comma.
 	ErrInvalidCursor = InvalidArgumentError("invalid cursor")
+	// ErrInvalidReaction denotes an invalid reaction, that may by an invalid reaction type, or invalid reaction by itslef,
+	// not a valid emoji, or invalid reaction image URL.
+	ErrInvalidReaction = InvalidArgumentError("invalid reaction type")
 )
 
 // Post model.
 type Post struct {
-	ID             string          `json:"id"`
-	UserID         string          `json:"-"`
-	Content        string          `json:"content"`
-	SpoilerOf      *string         `json:"spoilerOf"`
-	NSFW           bool            `json:"NSFW"`
-	LikesCount     int             `json:"likesCount"`
-	ReactionCounts []ReactionCount `json:"reactionCounts"`
-	CommentsCount  int             `json:"commentsCount"`
-	CreatedAt      time.Time       `json:"createdAt"`
-	User           *User           `json:"user,omitempty"`
-	Mine           bool            `json:"mine"`
-	Liked          bool            `json:"liked"`
-	Subscribed     bool            `json:"subscribed"`
+	ID            string     `json:"id"`
+	UserID        string     `json:"-"`
+	Content       string     `json:"content"`
+	SpoilerOf     *string    `json:"spoilerOf"`
+	NSFW          bool       `json:"nsfw"`
+	LikesCount    int        `json:"likesCount"`
+	Reactions     []Reaction `json:"reactions"`
+	CommentsCount int        `json:"commentsCount"`
+	CreatedAt     time.Time  `json:"createdAt"`
+	User          *User      `json:"user,omitempty"`
+	Mine          bool       `json:"mine"`
+	Liked         bool       `json:"liked"`
+	Subscribed    bool       `json:"subscribed"`
 }
 
-type ReactionCount struct {
+type Reaction struct {
 	Type     string `json:"type"`
 	Reaction string `json:"reaction"`
 	Count    uint64 `json:"count"`
+	Reacted  *bool  `json:"reacted,omitempty"`
+}
+
+type userReaction struct {
+	Reaction string `json:"reaction"`
+	Type     string `json:"type"`
 }
 
 // ToggleLikeOutput response.
@@ -96,18 +111,23 @@ func (s *Service) Posts(ctx context.Context, username string, last uint64, befor
 		, posts.content
 		, posts.spoiler_of
 		, posts.nsfw
-		, posts.likes_count
+		, posts.reactions
 		, posts.comments_count
 		, posts.created_at
 		{{ if .auth }}
 		, posts.user_id = @uid AS post_mine
-		, likes.user_id IS NOT NULL AS post_liked
+		, reactions.user_reactions
 		, subscriptions.user_id IS NOT NULL AS post_subscribed
 		{{ end }}
 		FROM posts
 		{{ if .auth }}
-		LEFT JOIN post_likes AS likes
-			ON likes.user_id = @uid AND likes.post_id = posts.id
+		LEFT JOIN (
+			SELECT user_id
+			, post_id
+			, json_agg(json_build_object('reaction', reaction, 'type', type)) AS user_reactions
+			FROM post_reactions
+			GROUP BY user_id, post_id
+		) AS reactions ON reactions.user_id = @uid AND reactions.post_id = posts.id
 		LEFT JOIN post_subscriptions AS subscriptions
 			ON subscriptions.user_id = @uid AND subscriptions.post_id = posts.id
 		{{ end }}
@@ -142,21 +162,49 @@ func (s *Service) Posts(ctx context.Context, username string, last uint64, befor
 	var pp Posts
 	for rows.Next() {
 		var p Post
+		var rawReactions []byte
+		var rawUserReactions []byte
 		dest := []interface{}{
 			&p.ID,
 			&p.Content,
 			&p.SpoilerOf,
 			&p.NSFW,
-			&p.LikesCount,
+			&rawReactions,
 			&p.CommentsCount,
 			&p.CreatedAt,
 		}
 		if auth {
-			dest = append(dest, &p.Mine, &p.Liked, &p.Subscribed)
+			dest = append(dest, &p.Mine, &rawUserReactions, &p.Subscribed)
 		}
 
 		if err = rows.Scan(dest...); err != nil {
 			return nil, fmt.Errorf("could not scan post: %w", err)
+		}
+
+		if rawReactions != nil {
+			err = json.Unmarshal(rawReactions, &p.Reactions)
+			if err != nil {
+				return nil, fmt.Errorf("could not json unmarshall post reactions: %w", err)
+			}
+		}
+
+		if rawUserReactions != nil {
+			var userReactions []userReaction
+			err = json.Unmarshal(rawUserReactions, &userReactions)
+			if err != nil {
+				return nil, fmt.Errorf("could not json unmarshall user post reactions: %w", err)
+			}
+
+			for i, r := range p.Reactions {
+				var reacted bool
+				for _, ur := range userReactions {
+					if r.Type == ur.Type && r.Reaction == ur.Reaction {
+						reacted = true
+						break
+					}
+				}
+				p.Reactions[i].Reacted = &reacted
+			}
 		}
 
 		pp = append(pp, p)
@@ -178,18 +226,30 @@ func (s *Service) Post(ctx context.Context, postID string) (Post, error) {
 
 	uid, auth := ctx.Value(KeyAuthUserID).(string)
 	query, args, err := buildQuery(`
-		SELECT posts.id, content, spoiler_of, nsfw, likes_count, comments_count, created_at
-		, users.username, users.avatar
-		{{if .auth}}
-		, posts.user_id = @uid AS mine
-		, likes.user_id IS NOT NULL AS liked
-		, subscriptions.user_id IS NOT NULL AS subscribed
+		SELECT posts.id
+			, posts.content
+			, posts.spoiler_of
+			, posts.nsfw
+			, posts.reactions
+			, posts.comments_count
+			, posts.created_at
+			, users.username
+			, users.avatar
+			{{if .auth}}
+			, posts.user_id = @uid AS mine
+			, reactions.user_reactions
+			, subscriptions.user_id IS NOT NULL AS subscribed
 		{{end}}
 		FROM posts
 		INNER JOIN users ON posts.user_id = users.id
 		{{if .auth}}
-		LEFT JOIN post_likes AS likes
-			ON likes.user_id = @uid AND likes.post_id = posts.id
+		LEFT JOIN (
+			SELECT user_id
+			, post_id
+			, json_agg(json_build_object('reaction', reaction, 'type', type)) AS user_reactions
+			FROM post_reactions
+			GROUP BY user_id, post_id
+		) AS reactions ON reactions.user_id = @uid AND reactions.post_id = posts.id
 		LEFT JOIN post_subscriptions AS subscriptions
 			ON subscriptions.user_id = @uid AND subscriptions.post_id = posts.id
 		{{end}}
@@ -202,6 +262,8 @@ func (s *Service) Post(ctx context.Context, postID string) (Post, error) {
 		return p, fmt.Errorf("could not build post sql query: %w", err)
 	}
 
+	var rawReactions []byte
+	var rawUserReactions []byte
 	var u User
 	var avatar sql.NullString
 	dest := []interface{}{
@@ -209,14 +271,14 @@ func (s *Service) Post(ctx context.Context, postID string) (Post, error) {
 		&p.Content,
 		&p.SpoilerOf,
 		&p.NSFW,
-		&p.LikesCount,
+		&rawReactions,
 		&p.CommentsCount,
 		&p.CreatedAt,
 		&u.Username,
 		&avatar,
 	}
 	if auth {
-		dest = append(dest, &p.Mine, &p.Liked, &p.Subscribed)
+		dest = append(dest, &p.Mine, &rawUserReactions, &p.Subscribed)
 	}
 	err = s.DB.QueryRowContext(ctx, query, args...).Scan(dest...)
 	if err == sql.ErrNoRows {
@@ -225,6 +287,32 @@ func (s *Service) Post(ctx context.Context, postID string) (Post, error) {
 
 	if err != nil {
 		return p, fmt.Errorf("could not query select post: %w", err)
+	}
+
+	if rawReactions != nil {
+		err = json.Unmarshal(rawReactions, &p.Reactions)
+		if err != nil {
+			return p, fmt.Errorf("could not json unmarshall post reactions: %w", err)
+		}
+	}
+
+	if rawUserReactions != nil {
+		var userReactions []userReaction
+		err = json.Unmarshal(rawUserReactions, &userReactions)
+		if err != nil {
+			return p, fmt.Errorf("could not json unmarshall user post reactions: %w", err)
+		}
+
+		for i, r := range p.Reactions {
+			var reacted bool
+			for _, ur := range userReactions {
+				if r.Type == ur.Type && r.Reaction == ur.Reaction {
+					reacted = true
+					break
+				}
+			}
+			p.Reactions[i].Reacted = &reacted
+		}
 	}
 
 	u.AvatarURL = s.avatarURL(avatar)
@@ -266,14 +354,14 @@ func (s *Service) UpdatePost(ctx context.Context, postID string, params UpdatePo
 
 	if params.Content != nil {
 		*params.Content = smartTrim(*params.Content)
-		if *params.Content == "" || utf8.RuneCountInString(*params.Content) > 480 {
+		if *params.Content == "" || utf8.RuneCountInString(*params.Content) > postContentMaxLength {
 			return updated, ErrInvalidContent
 		}
 	}
 
 	if params.SpoilerOf != nil {
 		*params.SpoilerOf = smartTrim(*params.SpoilerOf)
-		if *params.SpoilerOf == "" || utf8.RuneCountInString(*params.SpoilerOf) > 64 {
+		if *params.SpoilerOf == "" || utf8.RuneCountInString(*params.SpoilerOf) > postSpoilerMaxLength {
 			return updated, ErrInvalidSpoiler
 		}
 	}
@@ -393,6 +481,179 @@ func (s *Service) TogglePostLike(ctx context.Context, postID string) (ToggleLike
 	}
 
 	out.Liked = !out.Liked
+
+	return out, nil
+}
+
+type ReactionInput struct {
+	Type     string `json:"type"`
+	Reaction string `json:"reaction"`
+}
+
+func (s *Service) TogglePostReaction(ctx context.Context, postID string, in ReactionInput) ([]Reaction, error) {
+	uid, ok := ctx.Value(KeyAuthUserID).(string)
+	if !ok {
+		return nil, ErrUnauthenticated
+	}
+
+	if !reUUID.MatchString(postID) {
+		return nil, ErrInvalidPostID
+	}
+
+	if in.Type != "emoji" || in.Reaction == "" {
+		return nil, ErrInvalidReaction
+	}
+
+	if in.Type == "emoji" {
+		_, ok := emojiMap[in.Reaction]
+		if !ok {
+			return nil, ErrInvalidReaction
+		}
+	}
+
+	var out []Reaction
+	err := crdb.ExecuteTx(ctx, s.DB, nil, func(tx *sql.Tx) error {
+		out = nil
+
+		var rawReactions []byte
+		var rawUserReactions []byte
+		query := `
+			SELECT posts.reactions, reactions.user_reactions
+			FROM posts
+			LEFT JOIN (
+				SELECT user_id
+				, post_id
+				, json_agg(json_build_object('reaction', reaction, 'type', type)) AS user_reactions
+				FROM post_reactions
+				GROUP BY user_id, post_id
+			) AS reactions ON reactions.user_id = $1 AND reactions.post_id = posts.id
+			WHERE posts.id = $2`
+		row := tx.QueryRowContext(ctx, query, uid, postID)
+		err := row.Scan(&rawReactions, &rawUserReactions)
+		if err == sql.ErrNoRows {
+			return ErrPostNotFound
+		}
+
+		if err != nil {
+			return fmt.Errorf("could not sql scan post and user reactions: %w", err)
+		}
+
+		var reactions []Reaction
+		if rawReactions != nil {
+			err = json.Unmarshal(rawReactions, &reactions)
+			if err != nil {
+				return fmt.Errorf("could not json unmarshall post reactions: %w", err)
+			}
+		}
+
+		var userReactions []userReaction
+		if rawUserReactions != nil {
+			err = json.Unmarshal(rawUserReactions, &userReactions)
+			if err != nil {
+				return fmt.Errorf("could not json unmarshall user post reactions: %w", err)
+			}
+		}
+
+		userReactionIdx := -1
+		for i, ur := range userReactions {
+			if ur.Type == in.Type && ur.Reaction == in.Reaction {
+				userReactionIdx = i
+				break
+			}
+		}
+
+		reacted := userReactionIdx != -1
+		if !reacted {
+			query = "INSERT INTO post_reactions (user_id, post_id, type, reaction) VALUES ($1, $2, $3, $4)"
+			_, err = tx.ExecContext(ctx, query, uid, postID, in.Type, in.Reaction)
+			if err != nil {
+				return fmt.Errorf("could not sql insert post reaction: %w", err)
+			}
+		} else {
+			query = `
+				DELETE FROM post_reactions
+				WHERE user_id = $1
+					AND post_id = $2
+					AND type = $3
+					AND reaction = $4
+			`
+			_, err = tx.ExecContext(ctx, query, uid, postID, in.Type, in.Reaction)
+			if err != nil {
+				return fmt.Errorf("could not sql delete post reaction: %w", err)
+			}
+		}
+
+		if reacted {
+			userReactions = append(userReactions[:userReactionIdx], userReactions[userReactionIdx+1:]...)
+		} else {
+			userReactions = append(userReactions, userReaction{
+				Type:     in.Type,
+				Reaction: in.Reaction,
+			})
+		}
+
+		var updated bool
+		zeroReactionsIdx := -1
+		for i, r := range reactions {
+			if !(r.Type == in.Type && r.Reaction == in.Reaction) {
+				continue
+			}
+
+			if !reacted {
+				reactions[i].Count++
+			} else {
+				reactions[i].Count--
+				if reactions[i].Count == 0 {
+					zeroReactionsIdx = i
+				}
+			}
+			updated = true
+			break
+		}
+
+		if !updated {
+			reactions = append(reactions, Reaction{
+				Type:     in.Type,
+				Reaction: in.Reaction,
+				Count:    1,
+			})
+		}
+
+		if zeroReactionsIdx != -1 {
+			reactions = append(reactions[:zeroReactionsIdx], reactions[zeroReactionsIdx+1:]...)
+		}
+
+		rawReactions, err = json.Marshal(reactions)
+		if err != nil {
+			return fmt.Errorf("could not json marshall post reactions: %w", err)
+		}
+
+		query = "UPDATE posts SET reactions = $1 WHERE posts.id = $2"
+		_, err = tx.ExecContext(ctx, query, rawReactions, postID)
+		if err != nil {
+			return fmt.Errorf("could not sql update post reactions: %w", err)
+		}
+
+		if len(userReactions) != 0 {
+			for i, r := range reactions {
+				var reacted bool
+				for _, ur := range userReactions {
+					if r.Type == ur.Type && r.Reaction == ur.Reaction {
+						reacted = true
+						break
+					}
+				}
+				reactions[i].Reacted = &reacted
+			}
+		}
+
+		out = reactions
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
 
 	return out, nil
 }

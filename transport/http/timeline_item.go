@@ -31,8 +31,8 @@ func (h *handler) createTimelineItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if ti.Post.ReactionCounts == nil {
-		ti.Post.ReactionCounts = []nakama.ReactionCount{} // non null array
+	if ti.Post.Reactions == nil {
+		ti.Post.Reactions = []nakama.Reaction{} // non null array
 	}
 
 	h.respond(w, ti, http.StatusCreated)
@@ -59,8 +59,8 @@ func (h *handler) timeline(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for i := range tt {
-		if tt[i].Post.ReactionCounts == nil {
-			tt[i].Post.ReactionCounts = []nakama.ReactionCount{} // non null array
+		if tt[i].Post.Reactions == nil {
+			tt[i].Post.Reactions = []nakama.Reaction{} // non null array
 		}
 	}
 
@@ -91,8 +91,8 @@ func (h *handler) timelineItemStream(w http.ResponseWriter, r *http.Request) {
 
 	select {
 	case ti := <-tt:
-		if ti.Post.ReactionCounts == nil {
-			ti.Post.ReactionCounts = []nakama.ReactionCount{} // non null array
+		if ti.Post.Reactions == nil {
+			ti.Post.Reactions = []nakama.Reaction{} // non null array
 		}
 
 		h.writeSSE(w, ti)

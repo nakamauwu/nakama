@@ -13,9 +13,6 @@ export default function AccessPage() {
             <h1>Access Page</h1>
             <p>Welcome to Nakama, the next social network for anime fans 🤗</p>
             <login-form></login-form>
-            <div class="warning">
-                <p>This is a pre-release version of nakama. Things will break.</p>
-            </div>
         </main>
     `
 }
@@ -64,6 +61,16 @@ function LoginForm() {
             <input id="email-input" type="email" name="email" placeholder="Email" autocomplete="email" aria-label="Email" required .value=${email} .disabled=${fetching} @input=${onEmailInput}>
             <button .disabled=${fetching}>Login</button>
         </form>
+        <div class="login-help">
+            <div>
+                <h3>First time here?</h3>
+                <p>Nakama uses an email-based passwordless login flow. Just enter your email address and you'll receive an access link. After you click on the link, you will be able to pick your username and be part of nakama.</p>
+            </div>
+            <div>
+                <h3>Back again?</h3>
+                <p>If you already have an account, then just enter the email adress you used the first time here. Nakama will send you an email  with an access link.</p>
+            </div>
+        </div>
         ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : nothing}
     `
 }

@@ -32,6 +32,11 @@ function UserPage({ username }) {
     const [endReached, setEndReached] = useState(false)
     const [toast, setToast] = useState(null)
 
+    const onPostDeleted = useCallback(ev => {
+        const payload = ev.detail
+        setPosts(pp => pp.filter(p => p.id !== payload.id))
+    }, [])
+
     const onUsernameUpdated = useCallback(ev => {
         updateUser(ev.detail)
     }, [])
@@ -141,7 +146,7 @@ function UserPage({ username }) {
                         <p>0 posts</p>
                     ` : html`
                         <div class="posts" role="feed">
-                            ${repeat(posts, p => p.id, p => html`<post-item .post=${p}></post-item>`)}
+                            ${repeat(posts, p => p.id, p => html`<post-item .post=${p} .type=${"post"} @resource-deleted=${onPostDeleted}></post-item>`)}
                         </div>
                         ${!noMorePosts ? html`
                             <intersectable-comp @is-intersecting=${loadMore}></intersectable-comp>

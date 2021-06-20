@@ -61,7 +61,7 @@ function SearchPage() {
                 setNoMoreUsers(true)
             }
         }, err => {
-            console.error("could not feth users:", err)
+            console.error("could not fetch users:", err)
             setErr(err)
         }).finally(() => {
             setFetching(false)

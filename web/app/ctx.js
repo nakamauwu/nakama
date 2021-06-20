@@ -48,3 +48,14 @@ export function useStore(store) {
 export const authStore = createStore(getLocalAuth())
 
 export const hasUnreadNotificationsStore = createStore(false)
+
+export const notificationsEnabledStore = createStore(getLocalNotifiactionsEnabled())
+
+function getLocalNotifiactionsEnabled() {
+    return Notification.permission === "granted"
+        && localStorage.getItem("notifications_enabled") === "true"
+}
+
+export function setLocalNotificationsEnabled(val) {
+    localStorage.setItem("notifications_enabled", String(val))
+}
