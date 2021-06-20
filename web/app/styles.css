@@ -222,6 +222,10 @@ a {
     color: var(--primary);
 }
 
+p a {
+    word-break: break-all;
+}
+
 audio,
 video,
 img {
