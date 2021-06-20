@@ -1,6 +1,5 @@
 import { component, useCallback, useEffect, useState } from "haunted"
 import { html, nothing } from "lit-html"
-import { ifDefined } from "lit-html/directives/if-defined"
 import { repeat } from "lit-html/directives/repeat.js"
 import { hasUnreadNotificationsStore, notificationsEnabledStore, setLocalNotificationsEnabled, useStore } from "../ctx.js"
 import { request } from "../http.js"
@@ -138,38 +137,52 @@ function NotificationsPage() {
             <div class="notifications-heading">
                 <h1>Notifications</h1>
                 <div class="notifications-controls">
+                    ${window.Notification ? html`
                     <label class="switch-wrapper">
-                        <input type="checkbox" role="switch" name="notifications_enabled" .checked=${notificationsEnabled} @change=${onNotifyInputChange}>
+                        <input type="checkbox" role="switch" name="notifications_enabled" .checked=${notificationsEnabled}
+                            @change=${onNotifyInputChange}>
                         <span>Notify?</span>
                     </label>
+                    ` : nothing}
                     <button .disabled=${markingAllAsRead} @click=${onReadAllBtnClick}>
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g data-name="Layer 2"><g data-name="checkmark-circle"><rect width="24" height="24" opacity="0"/><path d="M9.71 11.29a1 1 0 0 0-1.42 1.42l3 3A1 1 0 0 0 12 16a1 1 0 0 0 .72-.34l7-8a1 1 0 0 0-1.5-1.32L12 13.54z"/><path d="M21 11a1 1 0 0 0-1 1 8 8 0 0 1-8 8A8 8 0 0 1 6.33 6.36 7.93 7.93 0 0 1 12 4a8.79 8.79 0 0 1 1.9.22 1 1 0 1 0 .47-1.94A10.54 10.54 0 0 0 12 2a10 10 0 0 0-7 17.09A9.93 9.93 0 0 0 12 22a10 10 0 0 0 10-10 1 1 0 0 0-1-1z"/></g></g></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                            <g data-name="Layer 2">
+                                <g data-name="checkmark-circle">
+                                    <rect width="24" height="24" opacity="0" />
+                                    <path
+                                        d="M9.71 11.29a1 1 0 0 0-1.42 1.42l3 3A1 1 0 0 0 12 16a1 1 0 0 0 .72-.34l7-8a1 1 0 0 0-1.5-1.32L12 13.54z" />
+                                    <path
+                                        d="M21 11a1 1 0 0 0-1 1 8 8 0 0 1-8 8A8 8 0 0 1 6.33 6.36 7.93 7.93 0 0 1 12 4a8.79 8.79 0 0 1 1.9.22 1 1 0 1 0 .47-1.94A10.54 10.54 0 0 0 12 2a10 10 0 0 0-7 17.09A9.93 9.93 0 0 0 12 22a10 10 0 0 0 10-10 1 1 0 0 0-1-1z" />
+                                </g>
+                            </g>
+                        </svg>
                         <span>Read all</span>
                     </button>
                 </div>
             </div>
             ${err !== null ? html`
-                <p class="error" role="alert">Could not fetch notifications: ${err.message}</p>
+            <p class="error" role="alert">Could not fetch notifications: ${err.message}</p>
             ` : fetching ? html`
-                <p class="loader" aria-busy="true" aria-live="polite">Loading notifications... please wait.<p>
-            ` : html`
-                ${queue.length !== 0 ? html`
+            <p class="loader" aria-busy="true" aria-live="polite">Loading notifications... please wait.<p>
+                    ` : html`
+                    ${queue.length !== 0 ? html`
                     <button class="queue-btn" @click=${onQueueBtnClick}>${queue.length} new notifications</button>
-                ` : nothing}
-                ${notifications.length === 0 ? html`
+                    ` : nothing}
+                    ${notifications.length === 0 ? html`
                     <p>0 notifications</p>
-                ` : html`
+                    ` : html`
                     <div class="notifications" role="feed">
-                        ${repeat(notifications, n => n.id, n => html`<notification-item .notification=${n}></notification-item>`)}
+                        ${repeat(notifications, n => n.id, n => html`<notification-item .notification=${n}></notification-item>
+                        `)}
                     </div>
                     ${!noMoreNotifications ? html`
-                        <intersectable-comp @is-intersecting=${loadMore}></intersectable-comp>
-                        <p class="loader" aria-busy="true" aria-live="polite">Loading notifications... please wait.<p>
-                    ` : endReached ? html`
-                        <p>End reached.</p>
-                    ` : nothing}
-                `}
-            `}
+                    <intersectable-comp @is-intersecting=${loadMore}></intersectable-comp>
+                    <p class="loader" aria-busy="true" aria-live="polite">Loading notifications... please wait.<p>
+                            ` : endReached ? html`
+                            <p>End reached.</p>
+                            ` : nothing}
+                            `}
+                            `}
         </main>
         ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : nothing}
     `
@@ -196,7 +209,8 @@ function NotificationItem({ notification: initialNotification }) {
                 return html`<a href="/@${aa[0]}">${aa[0]}</a> and <a href="/@${aa[1]}">${aa[1]}</a>`
             default:
                 return notification.type === "follow"
-                    ? html`${repeat(aa.slice(0, aa.length - 1), u => u, (u, i) => html`${i > 0 ? ", " : ""}<a href="/@${u}">${u}</a>`)} and <a href="/@${aa[aa.length - 1]}">${aa[aa.length - 1]}</a>`
+                    ? html`${repeat(aa.slice(0, aa.length - 1), u => u, (u, i) => html`${i > 0 ? ", " : ""}<a href="/@${u}">${u}</a>`)} and <a
+    href="/@${aa[aa.length - 1]}">${aa[aa.length - 1]}</a>`
                     : html`<a href="/@${aa[0]}">${aa[0]}</a> and ${aa.length - 1} others`
         }
     }
@@ -250,16 +264,26 @@ function NotificationItem({ notification: initialNotification }) {
     }, [initialNotification])
 
     return html`
-        <div class="notification" style=${ifDefined(fetching ? "pointer-events: none;" : undefined)} @click=${onClick}>
+        <div class="notification" style=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx @click=${onClick}>
             <div>
                 <p>${getActors()} ${getAction()}.</p>
                 <relative-datetime .datetime=${notification.issuedAt}></relative-datetime>
             </div>
             ${!notification.read ? html`
-                <button .disabled=${fetching}>
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g data-name="Layer 2"><g data-name="checkmark-circle"><rect width="24" height="24" opacity="0"/><path d="M9.71 11.29a1 1 0 0 0-1.42 1.42l3 3A1 1 0 0 0 12 16a1 1 0 0 0 .72-.34l7-8a1 1 0 0 0-1.5-1.32L12 13.54z"/><path d="M21 11a1 1 0 0 0-1 1 8 8 0 0 1-8 8A8 8 0 0 1 6.33 6.36 7.93 7.93 0 0 1 12 4a8.79 8.79 0 0 1 1.9.22 1 1 0 1 0 .47-1.94A10.54 10.54 0 0 0 12 2a10 10 0 0 0-7 17.09A9.93 9.93 0 0 0 12 22a10 10 0 0 0 10-10 1 1 0 0 0-1-1z"/></g></g></svg>
-                    <span>Read</span>
-                </button>
+            <button .disabled=${fetching}>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <g data-name="Layer 2">
+                        <g data-name="checkmark-circle">
+                            <rect width="24" height="24" opacity="0" />
+                            <path
+                                d="M9.71 11.29a1 1 0 0 0-1.42 1.42l3 3A1 1 0 0 0 12 16a1 1 0 0 0 .72-.34l7-8a1 1 0 0 0-1.5-1.32L12 13.54z" />
+                            <path
+                                d="M21 11a1 1 0 0 0-1 1 8 8 0 0 1-8 8A8 8 0 0 1 6.33 6.36 7.93 7.93 0 0 1 12 4a8.79 8.79 0 0 1 1.9.22 1 1 0 1 0 .47-1.94A10.54 10.54 0 0 0 12 2a10 10 0 0 0-7 17.09A9.93 9.93 0 0 0 12 22a10 10 0 0 0 10-10 1 1 0 0 0-1-1z" />
+                        </g>
+                    </g>
+                </svg>
+                <span>Read</span>
+            </button>
             ` : nothing}
         </div>
         ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : nothing}

@@ -52,7 +52,7 @@ export const hasUnreadNotificationsStore = createStore(false)
 export const notificationsEnabledStore = createStore(getLocalNotifiactionsEnabled())
 
 function getLocalNotifiactionsEnabled() {
-    return Notification.permission === "granted"
+    return window.Notification && Notification.permission === "granted"
         && localStorage.getItem("notifications_enabled") === "true"
 }
 
