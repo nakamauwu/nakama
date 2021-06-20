@@ -1,9 +1,8 @@
+/cockroach-data/
+/web/app/node_modules/
+/web/static/
+/letsencrypt/
+
 /.env
-/cockroach-data
 /nakama
-/web/static/img/avatars
-/letsencrypt
 *.exe
-node_modules/
-web/static/
-!web/static/img/avatars/
