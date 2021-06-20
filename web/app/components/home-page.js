@@ -99,27 +99,29 @@ function HomePage() {
             <h1>Timeline</h1>
             <post-form @timeline-item-created=${onTimelineItemCreated}></post-form>
             ${err !== null ? html`
-                <p class="error" role="alert">Could not fetch timeline: ${err.message}</p>
+            <p class="error" role="alert">Could not fetch timeline: ${err.message}</p>
             ` : fetchingTimeline ? html`
-                <p class="loader" aria-busy="true" aria-live="polite">Loading timeline... please wait.<p>
-            ` : html`
-                ${queue.length !== 0 ? html`
+            <p class="loader" aria-busy="true" aria-live="polite">Loading timeline... please wait.<p>
+                    ` : html`
+                    ${queue.length !== 0 ? html`
                     <button class="queue-btn" @click=${onQueueBtnClick}>${queue.length} new timeline items</button>
-                ` : nothing}
-                ${timeline.length === 0 ? html`
+                    ` : nothing}
+                    ${timeline.length === 0 ? html`
                     <p>0 timeline items</p>
-                ` : html`
+                    ` : html`
                     <div class="posts" role="feed">
-                        ${repeat(timeline, ti => ti.id, ti => html`<post-item .post=${ti.post} .type=${"timeline_item"} .timelineItemID=${ti.id} @removed-from-timeline=${onRemovedFromTimeline} @resource-deleted=${onPostDeleted}></post-item>`)}
+                        ${repeat(timeline, ti => ti.id, ti => html`<post-item .post=${ti.post} .type=${"timeline_item"}
+                            .timelineItemID=${ti.id} @removed-from-timeline=${onRemovedFromTimeline}
+                            @resource-deleted=${onPostDeleted}></post-item>`)}
                     </div>
                     ${!noMoreTimelineItems ? html`
-                        <intersectable-comp @is-intersecting=${loadMore}></intersectable-comp>
-                        <p class="loader" aria-busy="true" aria-live="polite">Loading timeline... please wait.<p>
-                    ` : endReached ? html`
-                        <p>End reached.</p>
-                    ` : nothing}
-                `}
-            `}
+                    <intersectable-comp @is-intersecting=${loadMore}></intersectable-comp>
+                    <p class="loader" aria-busy="true" aria-live="polite">Loading timeline... please wait.<p>
+                            ` : endReached ? html`
+                            <p>End reached.</p>
+                            ` : nothing}
+                            `}
+                            `}
         </main>
         ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : nothing}
     `
@@ -210,6 +212,14 @@ function PostForm() {
     }, [spoilerOfDialogRef])
 
     useEffect(() => {
+        if (spoilerOfDialogRef.current !== null && !(window.HTMLDialogElement || spoilerOfDialogRef.current.showModal)) {
+            import("dialog-polyfill").then(m => m.default).then(dialogPolyfill => {
+                dialogPolyfill.registerDialog(spoilerOfDialogRef.current)
+            })
+        }
+    }, [spoilerOfDialogRef])
+
+    useEffect(() => {
         if (textAreaRef.current === null) {
             return
         }
@@ -231,34 +241,45 @@ function PostForm() {
         return () => {
             textcompleteRef.current.destroy()
         }
-    }, [])
+    }, [textAreaRef, textcompleteRef])
 
     return html`
         <form class="post-form${content !== "" ? " has-content" : ""}" name="post-form" @submit=${onSubmit}>
-            <textarea name="content" placeholder="Write something..." maxlenght="2048" aria-label="Content" required .value=${content} .ref=${ref(textAreaRef)} @input=${onTextAreaInput}></textarea>
+            <textarea name="content" placeholder="Write something..." maxlenght="2048" aria-label="Content" required
+                .value=${content} .ref=${ref(textAreaRef)} @input=${onTextAreaInput}></textarea>
             ${content !== "" ? html`
-                <div class="post-form-controls">
-                    <div class="post-form-options">
-                        <label class="switch-wrapper">
-                            <input type="checkbox" role="switch" name="nsfw" .checked=${nsfw} @change=${onNSFWInputChange}>
-                            <span>NSFW</span>
-                        </label>
-                        <label class="switch-wrapper">
-                            <input type="checkbox" role="switch" name="is_spoiler" .checked=${isSpoiler} @change=${onIsSpoilerInputChange}>
-                            <span>Spoiler${spoilerOf.trim() !== "" ? ` of ${spoilerOf}` : ""}</span>
-                        </label>
-                    </div>
-                    <button>
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g data-name="Layer 2"><g data-name="paper-plane"><rect width="24" height="24" opacity="0"/><path d="M21 4a1.31 1.31 0 0 0-.06-.27v-.09a1 1 0 0 0-.2-.3 1 1 0 0 0-.29-.19h-.09a.86.86 0 0 0-.31-.15H20a1 1 0 0 0-.3 0l-18 6a1 1 0 0 0 0 1.9l8.53 2.84 2.84 8.53a1 1 0 0 0 1.9 0l6-18A1 1 0 0 0 21 4zm-4.7 2.29l-5.57 5.57L5.16 10zM14 18.84l-1.86-5.57 5.57-5.57z"/></g></g></svg>
-                        <span>Publish</button>
-                    </button>
+            <div class="post-form-controls">
+                <div class="post-form-options">
+                    <label class="switch-wrapper">
+                        <input type="checkbox" role="switch" name="nsfw" .checked=${nsfw} @change=${onNSFWInputChange}>
+                        <span>NSFW</span>
+                    </label>
+                    <label class="switch-wrapper">
+                        <input type="checkbox" role="switch" name="is_spoiler" .checked=${isSpoiler}
+                            @change=${onIsSpoilerInputChange}>
+                        <span>Spoiler${spoilerOf.trim() !== "" ? ` of ${spoilerOf}` : ""}</span>
+                    </label>
                 </div>
+                <button>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <g data-name="Layer 2">
+                            <g data-name="paper-plane">
+                                <rect width="24" height="24" opacity="0" />
+                                <path
+                                    d="M21 4a1.31 1.31 0 0 0-.06-.27v-.09a1 1 0 0 0-.2-.3 1 1 0 0 0-.29-.19h-.09a.86.86 0 0 0-.31-.15H20a1 1 0 0 0-.3 0l-18 6a1 1 0 0 0 0 1.9l8.53 2.84 2.84 8.53a1 1 0 0 0 1.9 0l6-18A1 1 0 0 0 21 4zm-4.7 2.29l-5.57 5.57L5.16 10zM14 18.84l-1.86-5.57 5.57-5.57z" />
+                            </g>
+                        </g>
+                    </svg>
+                    <span>Publish</button>
+                </button>
+            </div>
             ` : nothing}
         </form>
         <dialog .ref=${ref(spoilerOfDialogRef)} @close=${onSpoilerOfDialogClose}>
             <form method="dialog" class="spoiler-of-form" @submit=${onSpoilerOfFormSubmit}>
                 <label for="spoiler-of-input">Spoiler of:</label>
-                <input type="text" id="spoiler-of-input" name="spoiler_of" placeholder="Spoiler of..." maxlenght="64" autocomplete="off" .value=${spoilerOf} ?required=${isSpoiler} @input=${onSpoilerOfInput}>
+                <input type="text" id="spoiler-of-input" name="spoiler_of" placeholder="Spoiler of..." maxlenght="64"
+                    autocomplete="off" .value=${spoilerOf} ?required=${isSpoiler} @input=${onSpoilerOfInput}>
                 <div class="spoiler-of-controls">
                     <button>OK</button>
                     <button type="reset" @click=${onSpoilerOfCancelBtnClick}>Cancel</button>
