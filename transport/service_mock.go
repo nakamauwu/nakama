@@ -38,8 +38,8 @@ var _ Service = &ServiceMock{}
 // 			CreateCommentFunc: func(ctx context.Context, postID string, content string) (nakama.Comment, error) {
 // 				panic("mock out the CreateComment method")
 // 			},
-// 			CreatePostFunc: func(ctx context.Context, content string, spoilerOf *string, nsfw bool) (nakama.TimelineItem, error) {
-// 				panic("mock out the CreatePost method")
+// 			CreateTimelineItemFunc: func(ctx context.Context, content string, spoilerOf *string, nsfw bool) (nakama.TimelineItem, error) {
+// 				panic("mock out the CreateTimelineItem method")
 // 			},
 // 			CredentialCreationOptionsFunc: func(ctx context.Context) (*protocol.CredentialCreation, *webauthn.SessionData, error) {
 // 				panic("mock out the CredentialCreationOptions method")
@@ -156,8 +156,8 @@ type ServiceMock struct {
 	// CreateCommentFunc mocks the CreateComment method.
 	CreateCommentFunc func(ctx context.Context, postID string, content string) (nakama.Comment, error)
 
-	// CreatePostFunc mocks the CreatePost method.
-	CreatePostFunc func(ctx context.Context, content string, spoilerOf *string, nsfw bool) (nakama.TimelineItem, error)
+	// CreateTimelineItemFunc mocks the CreateTimelineItem method.
+	CreateTimelineItemFunc func(ctx context.Context, content string, spoilerOf *string, nsfw bool) (nakama.TimelineItem, error)
 
 	// CredentialCreationOptionsFunc mocks the CredentialCreationOptions method.
 	CredentialCreationOptionsFunc func(ctx context.Context) (*protocol.CredentialCreation, *webauthn.SessionData, error)
@@ -291,8 +291,8 @@ type ServiceMock struct {
 			// Content is the content argument value.
 			Content string
 		}
-		// CreatePost holds details about calls to the CreatePost method.
-		CreatePost []struct {
+		// CreateTimelineItem holds details about calls to the CreateTimelineItem method.
+		CreateTimelineItem []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// Content is the content argument value.
@@ -547,7 +547,7 @@ type ServiceMock struct {
 	lockCommentStream             sync.RWMutex
 	lockComments                  sync.RWMutex
 	lockCreateComment             sync.RWMutex
-	lockCreatePost                sync.RWMutex
+	lockCreateTimelineItem        sync.RWMutex
 	lockCredentialCreationOptions sync.RWMutex
 	lockCredentialRequestOptions  sync.RWMutex
 	lockDeletePost                sync.RWMutex
@@ -760,10 +760,10 @@ func (mock *ServiceMock) CreateCommentCalls() []struct {
 	return calls
 }
 
-// CreatePost calls CreatePostFunc.
-func (mock *ServiceMock) CreatePost(ctx context.Context, content string, spoilerOf *string, nsfw bool) (nakama.TimelineItem, error) {
-	if mock.CreatePostFunc == nil {
-		panic("ServiceMock.CreatePostFunc: method is nil but Service.CreatePost was just called")
+// CreateTimelineItem calls CreateTimelineItemFunc.
+func (mock *ServiceMock) CreateTimelineItem(ctx context.Context, content string, spoilerOf *string, nsfw bool) (nakama.TimelineItem, error) {
+	if mock.CreateTimelineItemFunc == nil {
+		panic("ServiceMock.CreateTimelineItemFunc: method is nil but Service.CreateTimelineItem was just called")
 	}
 	callInfo := struct {
 		Ctx       context.Context
@@ -776,16 +776,16 @@ func (mock *ServiceMock) CreatePost(ctx context.Context, content string, spoiler
 		SpoilerOf: spoilerOf,
 		Nsfw:      nsfw,
 	}
-	mock.lockCreatePost.Lock()
-	mock.calls.CreatePost = append(mock.calls.CreatePost, callInfo)
-	mock.lockCreatePost.Unlock()
-	return mock.CreatePostFunc(ctx, content, spoilerOf, nsfw)
+	mock.lockCreateTimelineItem.Lock()
+	mock.calls.CreateTimelineItem = append(mock.calls.CreateTimelineItem, callInfo)
+	mock.lockCreateTimelineItem.Unlock()
+	return mock.CreateTimelineItemFunc(ctx, content, spoilerOf, nsfw)
 }
 
-// CreatePostCalls gets all the calls that were made to CreatePost.
+// CreateTimelineItemCalls gets all the calls that were made to CreateTimelineItem.
 // Check the length with:
-//     len(mockedService.CreatePostCalls())
-func (mock *ServiceMock) CreatePostCalls() []struct {
+//     len(mockedService.CreateTimelineItemCalls())
+func (mock *ServiceMock) CreateTimelineItemCalls() []struct {
 	Ctx       context.Context
 	Content   string
 	SpoilerOf *string
@@ -797,9 +797,9 @@ func (mock *ServiceMock) CreatePostCalls() []struct {
 		SpoilerOf *string
 		Nsfw      bool
 	}
-	mock.lockCreatePost.RLock()
-	calls = mock.calls.CreatePost
-	mock.lockCreatePost.RUnlock()
+	mock.lockCreateTimelineItem.RLock()
+	calls = mock.calls.CreateTimelineItem
+	mock.lockCreateTimelineItem.RUnlock()
 	return calls
 }
 

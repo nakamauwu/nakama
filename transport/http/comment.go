@@ -31,6 +31,10 @@ func (h *handler) createComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if c.ReactionCounts == nil {
+		c.ReactionCounts = []nakama.ReactionCount{} // non null array
+	}
+
 	h.respond(w, c, http.StatusCreated)
 }
 
@@ -53,6 +57,12 @@ func (h *handler) comments(w http.ResponseWriter, r *http.Request) {
 
 	if cc == nil {
 		cc = []nakama.Comment{} // non null array
+	}
+
+	for i := range cc {
+		if cc[i].ReactionCounts == nil {
+			cc[i].ReactionCounts = []nakama.ReactionCount{} // non null array
+		}
 	}
 
 	h.respond(w, paginatedRespBody{
@@ -83,6 +93,9 @@ func (h *handler) commentStream(w http.ResponseWriter, r *http.Request) {
 
 	select {
 	case c := <-cc:
+		if c.ReactionCounts == nil {
+			c.ReactionCounts = []nakama.ReactionCount{}
+		}
 		h.writeSSE(w, c)
 		f.Flush()
 	case <-ctx.Done():

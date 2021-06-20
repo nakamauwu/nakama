@@ -27,6 +27,7 @@ type Comment struct {
 	PostID     string    `json:"-"`
 	Content    string    `json:"content"`
 	LikesCount int       `json:"likesCount"`
+	ReactionCounts []ReactionCount `json:"reactionCounts"`
 	CreatedAt  time.Time `json:"createdAt"`
 	User       *User     `json:"user,omitempty"`
 	Mine       bool      `json:"mine"`

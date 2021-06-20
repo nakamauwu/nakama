@@ -59,12 +59,13 @@ type User struct {
 // UserProfile model.
 type UserProfile struct {
 	User
-	Email          string `json:"email,omitempty"`
-	FollowersCount int    `json:"followersCount"`
-	FolloweesCount int    `json:"followeesCount"`
-	Me             bool   `json:"me"`
-	Following      bool   `json:"following"`
-	Followeed      bool   `json:"followeed"`
+	Email          string  `json:"email,omitempty"`
+	CoverURL       *string `json:"coverURL"`
+	FollowersCount int     `json:"followersCount"`
+	FolloweesCount int     `json:"followeesCount"`
+	Me             bool    `json:"me"`
+	Following      bool    `json:"following"`
+	Followeed      bool    `json:"followeed"`
 }
 
 // ToggleFollowOutput response.

@@ -28,18 +28,25 @@ var (
 
 // Post model.
 type Post struct {
-	ID            string    `json:"id"`
-	UserID        string    `json:"-"`
-	Content       string    `json:"content"`
-	SpoilerOf     *string   `json:"spoilerOf"`
-	NSFW          bool      `json:"NSFW"`
-	LikesCount    int       `json:"likesCount"`
-	CommentsCount int       `json:"commentsCount"`
-	CreatedAt     time.Time `json:"createdAt"`
-	User          *User     `json:"user,omitempty"`
-	Mine          bool      `json:"mine"`
-	Liked         bool      `json:"liked"`
-	Subscribed    bool      `json:"subscribed"`
+	ID             string          `json:"id"`
+	UserID         string          `json:"-"`
+	Content        string          `json:"content"`
+	SpoilerOf      *string         `json:"spoilerOf"`
+	NSFW           bool            `json:"NSFW"`
+	LikesCount     int             `json:"likesCount"`
+	ReactionCounts []ReactionCount `json:"reactionCounts"`
+	CommentsCount  int             `json:"commentsCount"`
+	CreatedAt      time.Time       `json:"createdAt"`
+	User           *User           `json:"user,omitempty"`
+	Mine           bool            `json:"mine"`
+	Liked          bool            `json:"liked"`
+	Subscribed     bool            `json:"subscribed"`
+}
+
+type ReactionCount struct {
+	Type     string `json:"type"`
+	Reaction string `json:"reaction"`
+	Count    uint64 `json:"count"`
 }
 
 // ToggleLikeOutput response.
@@ -51,90 +58,6 @@ type ToggleLikeOutput struct {
 // ToggleSubscriptionOutput response.
 type ToggleSubscriptionOutput struct {
 	Subscribed bool `json:"subscribed"`
-}
-
-// CreatePost publishes a post to the user timeline and fan-outs it to his followers.
-func (s *Service) CreatePost(ctx context.Context, content string, spoilerOf *string, nsfw bool) (TimelineItem, error) {
-	var ti TimelineItem
-	uid, ok := ctx.Value(KeyAuthUserID).(string)
-	if !ok {
-		return ti, ErrUnauthenticated
-	}
-
-	content = smartTrim(content)
-	if content == "" || utf8.RuneCountInString(content) > 480 {
-		return ti, ErrInvalidContent
-	}
-
-	if spoilerOf != nil {
-		*spoilerOf = smartTrim(*spoilerOf)
-		if *spoilerOf == "" || utf8.RuneCountInString(*spoilerOf) > 64 {
-			return ti, ErrInvalidSpoiler
-		}
-	}
-
-	var p Post
-	err := crdb.ExecuteTx(ctx, s.DB, nil, func(tx *sql.Tx) error {
-		query := `
-			INSERT INTO posts (user_id, content, spoiler_of, nsfw) VALUES ($1, $2, $3, $4)
-			RETURNING id, created_at`
-		row := tx.QueryRowContext(ctx, query, uid, content, spoilerOf, nsfw)
-		err := row.Scan(&p.ID, &p.CreatedAt)
-		if isForeignKeyViolation(err) {
-			return ErrUserGone
-		}
-
-		if err != nil {
-			return fmt.Errorf("could not insert post: %w", err)
-		}
-
-		p.UserID = uid
-		p.Content = content
-		p.SpoilerOf = spoilerOf
-		p.NSFW = nsfw
-		p.Mine = true
-
-		query = "INSERT INTO post_subscriptions (user_id, post_id) VALUES ($1, $2)"
-		if _, err = tx.ExecContext(ctx, query, uid, p.ID); err != nil {
-			return fmt.Errorf("could not insert post subscription: %w", err)
-		}
-
-		p.Subscribed = true
-
-		query = "INSERT INTO timeline (user_id, post_id) VALUES ($1, $2) RETURNING id"
-		err = tx.QueryRowContext(ctx, query, uid, p.ID).Scan(&ti.ID)
-		if err != nil {
-			return fmt.Errorf("could not insert timeline item: %w", err)
-		}
-
-		ti.UserID = uid
-		ti.PostID = p.ID
-		ti.Post = &p
-
-		return nil
-	})
-	if err != nil {
-		return ti, err
-	}
-
-	go s.postCreated(p)
-
-	return ti, nil
-}
-
-func (s *Service) postCreated(p Post) {
-	u, err := s.userByID(context.Background(), p.UserID)
-	if err != nil {
-		_ = s.Logger.Log("error", fmt.Errorf("could not fetch post user: %w", err))
-		return
-	}
-
-	p.User = &u
-	p.Mine = false
-	p.Subscribed = false
-
-	go s.fanoutPost(p)
-	go s.notifyPostMention(p)
 }
 
 type Posts []Post

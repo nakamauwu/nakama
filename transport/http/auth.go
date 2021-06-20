@@ -64,7 +64,7 @@ func (h *handler) verifyMagicLink(w http.ResponseWriter, r *http.Request) {
 	code := q.Get("verification_code")
 	username := emptyStrPtr(q.Get("username"))
 	auth, err := h.svc.VerifyMagicLink(ctx, email, code, username)
-	if err == nakama.ErrUserNotFound || err == nakama.ErrUsernameTaken {
+	if err == nakama.ErrUserNotFound || err == nakama.ErrInvalidUsername || err == nakama.ErrUsernameTaken {
 		redirectWithHashFragment(w, r, redirectURI, url.Values{
 			"error":          []string{err.Error()},
 			"retry_endpoint": []string{r.RequestURI},

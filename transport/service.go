@@ -37,13 +37,13 @@ type Service interface {
 	MarkNotificationAsRead(ctx context.Context, notificationID string) error
 	MarkNotificationsAsRead(ctx context.Context) error
 
-	CreatePost(ctx context.Context, content string, spoilerOf *string, nsfw bool) (nakama.TimelineItem, error)
 	Posts(ctx context.Context, username string, last uint64, before *string) (nakama.Posts, error)
 	Post(ctx context.Context, postID string) (nakama.Post, error)
 	DeletePost(ctx context.Context, postID string) error
 	TogglePostLike(ctx context.Context, postID string) (nakama.ToggleLikeOutput, error)
 	TogglePostSubscription(ctx context.Context, postID string) (nakama.ToggleSubscriptionOutput, error)
 
+	CreateTimelineItem(ctx context.Context, content string, spoilerOf *string, nsfw bool) (nakama.TimelineItem, error)
 	Timeline(ctx context.Context, last uint64, before *string) (nakama.Timeline, error)
 	TimelineItemStream(ctx context.Context) (<-chan nakama.TimelineItem, error)
 	DeleteTimelineItem(ctx context.Context, timelineItemID string) error

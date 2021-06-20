@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"mime"
 	"net/http"
 	"strconv"
@@ -8,6 +9,34 @@ import (
 	"github.com/matryer/way"
 	"github.com/nicolasparada/nakama"
 )
+
+type createTimelineItemInput struct {
+	Content   string  `json:"content"`
+	SpoilerOf *string `json:"spoilerOf"`
+	NSFW      bool    `json:"nsfw"`
+}
+
+func (h *handler) createTimelineItem(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	var in createTimelineItemInput
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+		h.respondErr(w, errBadRequest)
+		return
+	}
+
+	ti, err := h.svc.CreateTimelineItem(r.Context(), in.Content, in.SpoilerOf, in.NSFW)
+	if err != nil {
+		h.respondErr(w, err)
+		return
+	}
+
+	if ti.Post.ReactionCounts == nil {
+		ti.Post.ReactionCounts = []nakama.ReactionCount{} // non null array
+	}
+
+	h.respond(w, ti, http.StatusCreated)
+}
 
 func (h *handler) timeline(w http.ResponseWriter, r *http.Request) {
 	if a, _, err := mime.ParseMediaType(r.Header.Get("Accept")); err == nil && a == "text/event-stream" {
@@ -27,6 +56,12 @@ func (h *handler) timeline(w http.ResponseWriter, r *http.Request) {
 
 	if tt == nil {
 		tt = []nakama.TimelineItem{} // non null array
+	}
+
+	for i := range tt {
+		if tt[i].Post.ReactionCounts == nil {
+			tt[i].Post.ReactionCounts = []nakama.ReactionCount{} // non null array
+		}
 	}
 
 	h.respond(w, paginatedRespBody{
@@ -56,6 +91,10 @@ func (h *handler) timelineItemStream(w http.ResponseWriter, r *http.Request) {
 
 	select {
 	case ti := <-tt:
+		if ti.Post.ReactionCounts == nil {
+			ti.Post.ReactionCounts = []nakama.ReactionCount{} // non null array
+		}
+
 		h.writeSSE(w, ti)
 		f.Flush()
 	case <-ctx.Done():

@@ -1,37 +1,12 @@
 package handler
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
 
 	"github.com/matryer/way"
 	"github.com/nicolasparada/nakama"
 )
-
-type createPostInput struct {
-	Content   string
-	SpoilerOf *string
-	NSFW      bool
-}
-
-func (h *handler) createPost(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-
-	var in createPostInput
-	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-		h.respondErr(w, errBadRequest)
-		return
-	}
-
-	ti, err := h.svc.CreatePost(r.Context(), in.Content, in.SpoilerOf, in.NSFW)
-	if err != nil {
-		h.respondErr(w, err)
-		return
-	}
-
-	h.respond(w, ti, http.StatusCreated)
-}
 
 func (h *handler) posts(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -48,6 +23,12 @@ func (h *handler) posts(w http.ResponseWriter, r *http.Request) {
 		pp = []nakama.Post{} // non null array
 	}
 
+	for i := range pp {
+		if pp[i].ReactionCounts == nil {
+			pp[i].ReactionCounts = []nakama.ReactionCount{} // non null array
+		}
+	}
+
 	h.respond(w, paginatedRespBody{
 		Items:     pp,
 		EndCursor: pp.EndCursor(),
@@ -61,6 +42,10 @@ func (h *handler) post(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.respondErr(w, err)
 		return
+	}
+
+	if p.ReactionCounts == nil {
+		p.ReactionCounts = []nakama.ReactionCount{} // non null array
 	}
 
 	h.respond(w, p, http.StatusOK)
