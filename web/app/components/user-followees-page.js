@@ -6,7 +6,7 @@ import "./intersectable-comp.js"
 import "./toast-item.js"
 import "./user-item.js"
 
-const pageSize = 3
+const pageSize = 10
 
 export default function ({ params }) {
     return html`<user-followees-page .username=${params.username}></user-followees-page>`

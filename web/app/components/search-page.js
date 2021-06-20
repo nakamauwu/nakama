@@ -6,7 +6,7 @@ import "./intersectable-comp.js"
 import "./toast-item.js"
 import "./user-item.js"
 
-const pageSize = 3
+const pageSize = 10
 
 export default function () {
     return html`<search-page></search-page>`

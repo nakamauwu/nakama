@@ -10,7 +10,7 @@ import { navigate } from "../router.js"
 import "./post-item.js"
 import "./toast-item.js"
 
-const pageSize = 3
+const pageSize = 10
 
 export default function ({ params }) {
     return html`<post-page .postID=${params.postID}></post-page>`

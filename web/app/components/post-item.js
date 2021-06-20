@@ -187,7 +187,6 @@ function PostItem({ post: initialPost, type, timelineItemID = null }) {
                         <media-scroller .urls=${mediaURLs}></media-scroller>
                     `}
                 `}
-
             </div>
             <div class="post-footer">
                 ${post.reactions.length !== 0 || auth !== null ? html`

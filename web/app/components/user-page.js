@@ -14,7 +14,7 @@ import "./toast-item.js"
 import "./user-follow-btn.js"
 import "./user-follow-counts.js"
 
-const pageSize = 3
+const pageSize = 10
 
 export default function ({ params }) {
     return html`<user-page .username=${params.username}></user-page>`
