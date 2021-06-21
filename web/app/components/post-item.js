@@ -428,10 +428,10 @@ function MediaScroller({ urls }) {
                             items.push(html`<zoomable-img .src=${endpoint}></zoomable-img>`)
                             break
                         case "audio":
-                            items.push(html`<video src="${endpoint}" preload="metadata" controls loop></video>`)
+                            items.push(html`<audio src="${endpoint}" preload="metadata" controls loop></audio>`)
                             break
                         case "video":
-                            items.push(html`<audio src="${endpoint}" preload="metadata" controls loop></audio>`)
+                            items.push(html`<video src="${endpoint}" preload="metadata" controls loop></video>`)
                             break
                     }
                 } catch (_) { }
@@ -445,11 +445,9 @@ function MediaScroller({ urls }) {
     }
 
     return html`
-        <ul class="media-scroller" data-length="${items.length}">
-            ${items.map(item => html`
-                <li>${item}</li>
-            `)}
-        </ul>
+        <div class="media-scroller" data-length="${items.length}">
+            ${items}
+        </div>
     `
 }
 
