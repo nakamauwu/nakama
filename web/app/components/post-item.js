@@ -392,7 +392,7 @@ function MediaScroller({ urls }) {
                     const id = findCoubVideoID(url)
                     if (id !== null) {
                         items.push(html`<iframe
-                            src="https://coub.com/embed/${id}?muted=true&autostart=false&originalSize=true&startWithHD=true"
+                            src="https://coub.com/embed/${id}?muted=false&autostart=false&originalSize=true&startWithHD=true"
                             title="Coub video player"
                             frameborder="0"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
