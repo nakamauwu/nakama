@@ -379,11 +379,25 @@ function MediaScroller({ urls }) {
                     const result = findYouTubeID(url)
                     if (result.id !== null) {
                         items.push(html`<iframe
-                        src="https://www.youtube-nocookie.com/embed/${result.id}${result.seconds !== null ? "?start=" + result.seconds : ""}"
-                        title="YouTube video player"
-                        frameborder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowfullscreen></iframe>`)
+                            src="https://www.youtube-nocookie.com/embed/${result.id}${result.seconds !== null ? "?start=" + result.seconds : ""}"
+                            title="YouTube video player"
+                            frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen></iframe>`)
+                        continue
+                    }
+                }
+
+                {
+                    const id = findCoubVideoID(url)
+                    if (id !== null) {
+                        items.push(html`<iframe
+                            src="https://coub.com/embed/${id}?muted=true&autostart=false&originalSize=true&startWithHD=true"
+                            title="Coub video player"
+                            frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen></iframe>`)
+                        continue
                     }
                 }
 
@@ -484,6 +498,22 @@ function findYouTubeID(url) {
     }
 
     return { id, seconds }
+}
+
+/**
+ * @param {URL} url
+ */
+function findCoubVideoID(url) {
+    if (url.hostname !== "coub.com") {
+        return null
+    }
+
+    const parts = url.pathname.split("/")
+    if (parts.length !== 3 && parts[0] !== "" && parts[1] != "view") {
+        return null
+    }
+
+    return decodeURIComponent(parts[2])
 }
 
 const zoom = mediumZoom()
