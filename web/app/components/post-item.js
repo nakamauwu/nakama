@@ -130,7 +130,7 @@ function PostItem({ post: initialPost, type, timelineItemID = null }) {
                     <a href="/posts/${post.id}" class="post-ts">
                         <relative-datetime .datetime=${post.createdAt}></relative-datetime>
                     </a>
-                    ${auth !== null ? html`
+                    ${auth !== null && !(type === "comment" && !post.mine) ? html`
                         <div class="post-menu-wrapper">
                             <button class="post-menu-wrapper-btn" id="${post.id}-more-menu-btn" aria-haspopup="true" aria-controls="${post.id}-more-menu" title="More" aria-expanded="${ifDefined(showMenu ? "true" : undefined)}" @click=${onMenuBtnClick} @blur=${onMenuWrapperBlur}>
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g data-name="Layer 2"><g data-name="more-vertical"><rect width="24" height="24" transform="rotate(-90 12 12)" opacity="0"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="12" cy="19" r="2"/></g></g></svg>
