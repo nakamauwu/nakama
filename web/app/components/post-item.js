@@ -445,9 +445,11 @@ function MediaScroller({ urls }) {
     }
 
     return html`
-        <div class="media-scroller" data-length="${items.length}">
-            ${items}
-        </div>
+        <ul class="media-scroller" data-length="${items.length}">
+            ${items.map(item => html`
+                <li>${item}</li>
+            `)}
+        </ul>
     `
 }
 
