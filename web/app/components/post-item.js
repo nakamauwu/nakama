@@ -104,7 +104,7 @@ function PostItem({ post: initialPost, type, timelineItemID = null }) {
     }, [initialPost])
 
     useEffect(() => {
-        if (contentRef === null) {
+        if (contentRef.current === null) {
             return
         }
 
