@@ -115,18 +115,6 @@ func (h *handler) deleteComment(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (h *handler) toggleCommentLike(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	commentID := way.Param(ctx, "comment_id")
-	out, err := h.svc.ToggleCommentLike(ctx, commentID)
-	if err != nil {
-		h.respondErr(w, err)
-		return
-	}
-
-	h.respond(w, out, http.StatusOK)
-}
-
 type toggleCommentReactionReqBody nakama.ReactionInput
 
 func (h *handler) toggleCommentReaction(w http.ResponseWriter, r *http.Request) {

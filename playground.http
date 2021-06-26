@@ -79,10 +79,6 @@ GET {{host}}/api/posts/{{createPost.response.body.post.id}}
 Authorization: Bearer {{login.response.body.token}}
 
 ###
-POST {{host}}/api/posts/{{createPost.response.body.post.id}}/toggle_like
-Authorization: Bearer {{login.response.body.token}}
-
-###
 POST {{host}}/api/posts/{{createPost.response.body.post.id}}/toggle_subscription
 Authorization: Bearer {{login.response.body.token}}
 
@@ -102,10 +98,6 @@ Content-Type: application/json
 
 ###
 GET {{host}}/api/posts/{{createPost.response.body.post.id}}/comments?last=&before=
-Authorization: Bearer {{login.response.body.token}}
-
-###
-POST {{host}}/api/comments/{{createComment.response.body.id}}/toggle_like
 Authorization: Bearer {{login.response.body.token}}
 
 ###

@@ -101,17 +101,11 @@ var _ Service = &ServiceMock{}
 // 			TimelineItemStreamFunc: func(ctx context.Context) (<-chan nakama.TimelineItem, error) {
 // 				panic("mock out the TimelineItemStream method")
 // 			},
-// 			ToggleCommentLikeFunc: func(ctx context.Context, commentID string) (nakama.ToggleLikeOutput, error) {
-// 				panic("mock out the ToggleCommentLike method")
-// 			},
 // 			ToggleCommentReactionFunc: func(ctx context.Context, commentID string, in nakama.ReactionInput) ([]nakama.Reaction, error) {
 // 				panic("mock out the ToggleCommentReaction method")
 // 			},
 // 			ToggleFollowFunc: func(ctx context.Context, username string) (nakama.ToggleFollowOutput, error) {
 // 				panic("mock out the ToggleFollow method")
-// 			},
-// 			TogglePostLikeFunc: func(ctx context.Context, postID string) (nakama.ToggleLikeOutput, error) {
-// 				panic("mock out the TogglePostLike method")
 // 			},
 // 			TogglePostReactionFunc: func(ctx context.Context, postID string, in nakama.ReactionInput) ([]nakama.Reaction, error) {
 // 				panic("mock out the TogglePostReaction method")
@@ -228,17 +222,11 @@ type ServiceMock struct {
 	// TimelineItemStreamFunc mocks the TimelineItemStream method.
 	TimelineItemStreamFunc func(ctx context.Context) (<-chan nakama.TimelineItem, error)
 
-	// ToggleCommentLikeFunc mocks the ToggleCommentLike method.
-	ToggleCommentLikeFunc func(ctx context.Context, commentID string) (nakama.ToggleLikeOutput, error)
-
 	// ToggleCommentReactionFunc mocks the ToggleCommentReaction method.
 	ToggleCommentReactionFunc func(ctx context.Context, commentID string, in nakama.ReactionInput) ([]nakama.Reaction, error)
 
 	// ToggleFollowFunc mocks the ToggleFollow method.
 	ToggleFollowFunc func(ctx context.Context, username string) (nakama.ToggleFollowOutput, error)
-
-	// TogglePostLikeFunc mocks the TogglePostLike method.
-	TogglePostLikeFunc func(ctx context.Context, postID string) (nakama.ToggleLikeOutput, error)
 
 	// TogglePostReactionFunc mocks the TogglePostReaction method.
 	TogglePostReactionFunc func(ctx context.Context, postID string, in nakama.ReactionInput) ([]nakama.Reaction, error)
@@ -470,13 +458,6 @@ type ServiceMock struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 		}
-		// ToggleCommentLike holds details about calls to the ToggleCommentLike method.
-		ToggleCommentLike []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-			// CommentID is the commentID argument value.
-			CommentID string
-		}
 		// ToggleCommentReaction holds details about calls to the ToggleCommentReaction method.
 		ToggleCommentReaction []struct {
 			// Ctx is the ctx argument value.
@@ -492,13 +473,6 @@ type ServiceMock struct {
 			Ctx context.Context
 			// Username is the username argument value.
 			Username string
-		}
-		// TogglePostLike holds details about calls to the TogglePostLike method.
-		TogglePostLike []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-			// PostID is the postID argument value.
-			PostID string
 		}
 		// TogglePostReaction holds details about calls to the TogglePostReaction method.
 		TogglePostReaction []struct {
@@ -611,10 +585,8 @@ type ServiceMock struct {
 	lockSendMagicLink             sync.RWMutex
 	lockTimeline                  sync.RWMutex
 	lockTimelineItemStream        sync.RWMutex
-	lockToggleCommentLike         sync.RWMutex
 	lockToggleCommentReaction     sync.RWMutex
 	lockToggleFollow              sync.RWMutex
-	lockTogglePostLike            sync.RWMutex
 	lockTogglePostReaction        sync.RWMutex
 	lockTogglePostSubscription    sync.RWMutex
 	lockToken                     sync.RWMutex
@@ -1569,41 +1541,6 @@ func (mock *ServiceMock) TimelineItemStreamCalls() []struct {
 	return calls
 }
 
-// ToggleCommentLike calls ToggleCommentLikeFunc.
-func (mock *ServiceMock) ToggleCommentLike(ctx context.Context, commentID string) (nakama.ToggleLikeOutput, error) {
-	if mock.ToggleCommentLikeFunc == nil {
-		panic("ServiceMock.ToggleCommentLikeFunc: method is nil but Service.ToggleCommentLike was just called")
-	}
-	callInfo := struct {
-		Ctx       context.Context
-		CommentID string
-	}{
-		Ctx:       ctx,
-		CommentID: commentID,
-	}
-	mock.lockToggleCommentLike.Lock()
-	mock.calls.ToggleCommentLike = append(mock.calls.ToggleCommentLike, callInfo)
-	mock.lockToggleCommentLike.Unlock()
-	return mock.ToggleCommentLikeFunc(ctx, commentID)
-}
-
-// ToggleCommentLikeCalls gets all the calls that were made to ToggleCommentLike.
-// Check the length with:
-//     len(mockedService.ToggleCommentLikeCalls())
-func (mock *ServiceMock) ToggleCommentLikeCalls() []struct {
-	Ctx       context.Context
-	CommentID string
-} {
-	var calls []struct {
-		Ctx       context.Context
-		CommentID string
-	}
-	mock.lockToggleCommentLike.RLock()
-	calls = mock.calls.ToggleCommentLike
-	mock.lockToggleCommentLike.RUnlock()
-	return calls
-}
-
 // ToggleCommentReaction calls ToggleCommentReactionFunc.
 func (mock *ServiceMock) ToggleCommentReaction(ctx context.Context, commentID string, in nakama.ReactionInput) ([]nakama.Reaction, error) {
 	if mock.ToggleCommentReactionFunc == nil {
@@ -1675,41 +1612,6 @@ func (mock *ServiceMock) ToggleFollowCalls() []struct {
 	mock.lockToggleFollow.RLock()
 	calls = mock.calls.ToggleFollow
 	mock.lockToggleFollow.RUnlock()
-	return calls
-}
-
-// TogglePostLike calls TogglePostLikeFunc.
-func (mock *ServiceMock) TogglePostLike(ctx context.Context, postID string) (nakama.ToggleLikeOutput, error) {
-	if mock.TogglePostLikeFunc == nil {
-		panic("ServiceMock.TogglePostLikeFunc: method is nil but Service.TogglePostLike was just called")
-	}
-	callInfo := struct {
-		Ctx    context.Context
-		PostID string
-	}{
-		Ctx:    ctx,
-		PostID: postID,
-	}
-	mock.lockTogglePostLike.Lock()
-	mock.calls.TogglePostLike = append(mock.calls.TogglePostLike, callInfo)
-	mock.lockTogglePostLike.Unlock()
-	return mock.TogglePostLikeFunc(ctx, postID)
-}
-
-// TogglePostLikeCalls gets all the calls that were made to TogglePostLike.
-// Check the length with:
-//     len(mockedService.TogglePostLikeCalls())
-func (mock *ServiceMock) TogglePostLikeCalls() []struct {
-	Ctx    context.Context
-	PostID string
-} {
-	var calls []struct {
-		Ctx    context.Context
-		PostID string
-	}
-	mock.lockTogglePostLike.RLock()
-	calls = mock.calls.TogglePostLike
-	mock.lockTogglePostLike.RUnlock()
 	return calls
 }
 

@@ -42,13 +42,11 @@ type Post struct {
 	Content       string     `json:"content"`
 	SpoilerOf     *string    `json:"spoilerOf"`
 	NSFW          bool       `json:"nsfw"`
-	LikesCount    int        `json:"likesCount"`
 	Reactions     []Reaction `json:"reactions"`
 	CommentsCount int        `json:"commentsCount"`
 	CreatedAt     time.Time  `json:"createdAt"`
 	User          *User      `json:"user,omitempty"`
 	Mine          bool       `json:"mine"`
-	Liked         bool       `json:"liked"`
 	Subscribed    bool       `json:"subscribed"`
 }
 
@@ -62,12 +60,6 @@ type Reaction struct {
 type userReaction struct {
 	Reaction string `json:"reaction"`
 	Type     string `json:"type"`
-}
-
-// ToggleLikeOutput response.
-type ToggleLikeOutput struct {
-	Liked      bool `json:"liked"`
-	LikesCount int  `json:"likesCount"`
 }
 
 // ToggleSubscriptionOutput response.
@@ -420,69 +412,6 @@ func (s *Service) DeletePost(ctx context.Context, postID string) error {
 	}
 
 	return nil
-}
-
-// TogglePostLike 🖤
-func (s *Service) TogglePostLike(ctx context.Context, postID string) (ToggleLikeOutput, error) {
-	var out ToggleLikeOutput
-	uid, ok := ctx.Value(KeyAuthUserID).(string)
-	if !ok {
-		return out, ErrUnauthenticated
-	}
-
-	if !reUUID.MatchString(postID) {
-		return out, ErrInvalidPostID
-	}
-
-	err := crdb.ExecuteTx(ctx, s.DB, nil, func(tx *sql.Tx) error {
-		query := `
-			SELECT EXISTS (
-				SELECT 1 FROM post_likes WHERE user_id = $1 AND post_id = $2
-			)`
-		err := tx.QueryRowContext(ctx, query, uid, postID).Scan(&out.Liked)
-		if err != nil {
-			return fmt.Errorf("could not query select post like existence: %w", err)
-		}
-
-		if out.Liked {
-			query = "DELETE FROM post_likes WHERE user_id = $1 AND post_id = $2"
-			if _, err = tx.ExecContext(ctx, query, uid, postID); err != nil {
-				return fmt.Errorf("could not delete post like: %w", err)
-			}
-
-			query = "UPDATE posts SET likes_count = likes_count - 1 WHERE id = $1 RETURNING likes_count"
-			err = tx.QueryRowContext(ctx, query, postID).Scan(&out.LikesCount)
-			if err != nil {
-				return fmt.Errorf("could not update and decrement post likes count: %w", err)
-			}
-		} else {
-			query = "INSERT INTO post_likes (user_id, post_id) VALUES ($1, $2)"
-			_, err = tx.ExecContext(ctx, query, uid, postID)
-
-			if isForeignKeyViolation(err) {
-				return ErrPostNotFound
-			}
-
-			if err != nil {
-				return fmt.Errorf("could not insert post like: %w", err)
-			}
-
-			query = "UPDATE posts SET likes_count = likes_count + 1 WHERE id = $1 RETURNING likes_count"
-			err = tx.QueryRowContext(ctx, query, postID).Scan(&out.LikesCount)
-			if err != nil {
-				return fmt.Errorf("could not update and increment post likes count: %w", err)
-			}
-		}
-
-		return nil
-	})
-	if err != nil {
-		return out, err
-	}
-
-	out.Liked = !out.Liked
-
-	return out, nil
 }
 
 type ReactionInput struct {

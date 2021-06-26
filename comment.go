@@ -25,16 +25,14 @@ var (
 
 // Comment model.
 type Comment struct {
-	ID         string     `json:"id"`
-	UserID     string     `json:"-"`
-	PostID     string     `json:"-"`
-	Content    string     `json:"content"`
-	LikesCount int        `json:"likesCount"`
-	Reactions  []Reaction `json:"reactions"`
-	CreatedAt  time.Time  `json:"createdAt"`
-	User       *User      `json:"user,omitempty"`
-	Mine       bool       `json:"mine"`
-	Liked      bool       `json:"liked"`
+	ID        string     `json:"id"`
+	UserID    string     `json:"-"`
+	PostID    string     `json:"-"`
+	Content   string     `json:"content"`
+	Reactions []Reaction `json:"reactions"`
+	CreatedAt time.Time  `json:"createdAt"`
+	User      *User      `json:"user,omitempty"`
+	Mine      bool       `json:"mine"`
 }
 
 // CreateComment on a post.
@@ -325,68 +323,6 @@ func (s *Service) DeleteComment(ctx context.Context, commentID string) error {
 	}
 
 	return nil
-}
-
-// ToggleCommentLike 🖤
-func (s *Service) ToggleCommentLike(ctx context.Context, commentID string) (ToggleLikeOutput, error) {
-	var out ToggleLikeOutput
-	uid, ok := ctx.Value(KeyAuthUserID).(string)
-	if !ok {
-		return out, ErrUnauthenticated
-	}
-
-	if !reUUID.MatchString(commentID) {
-		return out, ErrInvalidCommentID
-	}
-
-	err := crdb.ExecuteTx(ctx, s.DB, nil, func(tx *sql.Tx) error {
-		query := `
-			SELECT EXISTS (
-				SELECT 1 FROM comment_likes WHERE user_id = $1 AND comment_id = $2
-			)`
-		err := tx.QueryRowContext(ctx, query, uid, commentID).Scan(&out.Liked)
-		if err != nil {
-			return fmt.Errorf("could not query select comment like existence: %w", err)
-		}
-
-		if out.Liked {
-			query = "DELETE FROM comment_likes WHERE user_id = $1 AND comment_id = $2"
-			if _, err = tx.ExecContext(ctx, query, uid, commentID); err != nil {
-				return fmt.Errorf("could not delete comment like: %w", err)
-			}
-
-			query = "UPDATE comments SET likes_count = likes_count - 1 WHERE id = $1 RETURNING likes_count"
-			err = tx.QueryRowContext(ctx, query, commentID).Scan(&out.LikesCount)
-			if err != nil {
-				return fmt.Errorf("could not update and decrement comment likes count: %w", err)
-			}
-		} else {
-			query = "INSERT INTO comment_likes (user_id, comment_id) VALUES ($1, $2)"
-			_, err = tx.ExecContext(ctx, query, uid, commentID)
-			if isForeignKeyViolation(err) {
-				return ErrCommentNotFound
-			}
-
-			if err != nil {
-				return fmt.Errorf("could not insert comment like: %w", err)
-			}
-
-			query = "UPDATE comments SET likes_count = likes_count + 1 WHERE id = $1 RETURNING likes_count"
-			err = tx.QueryRowContext(ctx, query, commentID).Scan(&out.LikesCount)
-			if err != nil {
-				return fmt.Errorf("could not update and increment comment likes count: %w", err)
-			}
-		}
-
-		return nil
-	})
-	if err != nil {
-		return out, err
-	}
-
-	out.Liked = !out.Liked
-
-	return out, nil
 }
 
 func (s *Service) ToggleCommentReaction(ctx context.Context, commentID string, in ReactionInput) ([]Reaction, error) {

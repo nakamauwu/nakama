@@ -64,18 +64,6 @@ func (h *handler) deletePost(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (h *handler) togglePostLike(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	postID := way.Param(ctx, "post_id")
-	out, err := h.svc.TogglePostLike(ctx, postID)
-	if err != nil {
-		h.respondErr(w, err)
-		return
-	}
-
-	h.respond(w, out, http.StatusOK)
-}
-
 type togglePostReactionReqBody nakama.ReactionInput
 
 func (h *handler) togglePostReaction(w http.ResponseWriter, r *http.Request) {
