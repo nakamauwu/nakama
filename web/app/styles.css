@@ -248,6 +248,14 @@ pre {
     overflow-x: auto;
 }
 
+pre {
+    scrollbar-width: none;
+}
+
+pre::-webkit-scrollbar {
+    display: none;
+}
+
 input[type="text"],
 input[type="email"],
 input[type="search"],
@@ -844,6 +852,10 @@ header .profile-link {
     overflow-x: auto;
 
     scroll-snap-type: inline mandatory;
+}
+
+.media-scroller {
+    scrollbar-width: none;
 }
 
 .media-scroller::-webkit-scrollbar {
