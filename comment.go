@@ -339,11 +339,8 @@ func (s *Service) ToggleCommentReaction(ctx context.Context, commentID string, i
 		return nil, ErrInvalidReaction
 	}
 
-	if in.Type == "emoji" {
-		_, ok := emojiMap[in.Reaction]
-		if !ok {
-			return nil, ErrInvalidReaction
-		}
+	if in.Type == "emoji" && !validEmoji(in.Reaction) {
+		return nil, ErrInvalidReaction
 	}
 
 	var out []Reaction

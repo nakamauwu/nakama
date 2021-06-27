@@ -433,11 +433,8 @@ func (s *Service) TogglePostReaction(ctx context.Context, postID string, in Reac
 		return nil, ErrInvalidReaction
 	}
 
-	if in.Type == "emoji" {
-		_, ok := emojiMap[in.Reaction]
-		if !ok {
-			return nil, ErrInvalidReaction
-		}
+	if in.Type == "emoji" && !validEmoji(in.Reaction) {
+		return nil, ErrInvalidReaction
 	}
 
 	var out []Reaction

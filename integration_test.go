@@ -2,6 +2,7 @@ package nakama
 
 import (
 	"database/sql"
+	"flag"
 	"fmt"
 	"os"
 	"testing"
@@ -16,6 +17,14 @@ func TestMain(m *testing.M) {
 }
 
 func testMain(m *testing.M) int {
+	var skipIntegration bool
+	flag.BoolVar(&skipIntegration, "skip-integration", false, "Skip integration tests docker setup")
+	flag.Parse()
+
+	if skipIntegration {
+		return m.Run()
+	}
+
 	pool, err := dockertest.NewPool("")
 	if err != nil {
 		fmt.Printf("could not create docker pool: %v\n", err)
