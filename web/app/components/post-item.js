@@ -13,7 +13,6 @@ import "./toast-item.js"
 function PostItem({ post: initialPost, type, timelineItemID = null }) {
     const [auth] = useStore(authStore)
     const [post, setPost] = useState(initialPost)
-    const contentRef = useRef(null)
     const [mediaURLs, setMediaURLs] = useState([])
     const [showMenu, setShowMenu] = useState(false)
     const [togglingPostSubscription, setTogglingPostSubscription] = useState(false)
@@ -100,24 +99,12 @@ function PostItem({ post: initialPost, type, timelineItemID = null }) {
     }, [])
 
     useEffect(() => {
-        setPost(initialPost)
-    }, [initialPost])
+        setMediaURLs(collectMediaURLs(post.content))
+    }, [post])
 
     useEffect(() => {
-        if (contentRef.current === null) {
-            return
-        }
-
-        const links = contentRef.current.querySelectorAll("a")
-        const urls = []
-        for (const link of links) {
-            try {
-                const url = new URL(link.href)
-                urls.push(url)
-            } catch (_) { }
-        }
-        setMediaURLs(urls)
-    }, [contentRef])
+        setPost(initialPost)
+    }, [initialPost])
 
     return html`
         <article class="post">
@@ -177,7 +164,7 @@ function PostItem({ post: initialPost, type, timelineItemID = null }) {
                         <button @click=${onDisplaySpoilerBtnClick}>Show it anyway</button>
                     </div>
                 ` : html`
-                    <p .ref=${ref(contentRef)}>${unsafeHTML(linkify(escapeHTML(post.content)))}</p>
+                    <p>${unsafeHTML(linkify(escapeHTML(post.content)))}</p>
                     ${type !== "comment" && post.nsfw && !displayNSFW ? html`
                         <div class="post-warning">
                             <p>This post has content not safe for work</p>
@@ -366,6 +353,22 @@ function linkify(s) {
     return s
         .replace(mentionsRegExp, '<a href="/users/$1">@$1</a>')
         .replace(urlsRegExp, '<a href="$1" target="_blank" rel="noopener">$1</a>')
+}
+
+/**
+ * @param {string} s
+ */
+function collectMediaURLs(s) {
+    const out = []
+    for (const match of s.matchAll(urlsRegExp)) {
+        if (match !== null && match.length >= 2) {
+            try {
+                const url = new URL(match[1])
+                out.push(url)
+            } catch (_) { }
+        }
+    }
+    return out
 }
 
 function MediaScroller({ urls }) {
