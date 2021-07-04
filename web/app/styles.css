@@ -747,7 +747,7 @@ header .profile-link {
 }
 
 .post-author .username {
-    word-break: break-all;
+    word-break: break-word;
 }
 
 .post-meta {
@@ -1056,7 +1056,7 @@ comments-list .post {
 .user-profile h1 {
     font-size: 3rem;
     margin: 0;
-    word-break: break-all;
+    word-break: break-word;
 }
 
 .user-counts {
@@ -1256,7 +1256,7 @@ notification-item[read] + notification-item[read] .notification::before {
 }
 
 .user-item .username {
-    word-break: break-all;
+    word-break: break-word;
 }
 
 .user-item a {
@@ -1303,7 +1303,7 @@ notification-item[read] + notification-item[read] .notification::before {
 .followees-page h1,
 .followers-page h1 {
     margin: 0;
-    word-break: break-all;
+    word-break: break-word;
 }
 
 /* post-item, */
