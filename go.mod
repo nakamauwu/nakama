@@ -15,12 +15,13 @@ require (
 	github.com/kyokomi/emoji/v2 v2.2.8
 	github.com/lib/pq v1.10.2
 	github.com/matoous/go-nanoid v1.5.0
-	github.com/matryer/moq v0.2.1 // indirect
+	github.com/matryer/moq v0.2.2 // indirect
 	github.com/matryer/way v0.0.0-20180416093233-9632d0c407b0
-	github.com/minio/minio-go/v7 v7.0.11
+	github.com/minio/minio-go/v7 v7.0.12
 	github.com/nats-io/nats.go v1.11.0
 	github.com/ory/dockertest/v3 v3.7.0 // indirect
 	github.com/sendgrid/rest v2.6.4+incompatible // indirect
 	github.com/sendgrid/sendgrid-go v3.10.0+incompatible
+	golang.org/x/oauth2 v0.0.0-20210628180205-a41e5a781914
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 )

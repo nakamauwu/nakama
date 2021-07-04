@@ -59,6 +59,9 @@ var _ Service = &ServiceMock{}
 // 			DevLoginFunc: func(ctx context.Context, email string) (nakama.AuthOutput, error) {
 // 				panic("mock out the DevLogin method")
 // 			},
+// 			EnsureUserFunc: func(ctx context.Context, email string, username *string) (nakama.User, error) {
+// 				panic("mock out the EnsureUser method")
+// 			},
 // 			FolloweesFunc: func(ctx context.Context, username string, first uint64, after *string) (nakama.UserProfiles, error) {
 // 				panic("mock out the Followees method")
 // 			},
@@ -179,6 +182,9 @@ type ServiceMock struct {
 
 	// DevLoginFunc mocks the DevLogin method.
 	DevLoginFunc func(ctx context.Context, email string) (nakama.AuthOutput, error)
+
+	// EnsureUserFunc mocks the EnsureUser method.
+	EnsureUserFunc func(ctx context.Context, email string, username *string) (nakama.User, error)
 
 	// FolloweesFunc mocks the Followees method.
 	FolloweesFunc func(ctx context.Context, username string, first uint64, after *string) (nakama.UserProfiles, error)
@@ -349,6 +355,15 @@ type ServiceMock struct {
 			Ctx context.Context
 			// Email is the email argument value.
 			Email string
+		}
+		// EnsureUser holds details about calls to the EnsureUser method.
+		EnsureUser []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Email is the email argument value.
+			Email string
+			// Username is the username argument value.
+			Username *string
 		}
 		// Followees holds details about calls to the Followees method.
 		Followees []struct {
@@ -571,6 +586,7 @@ type ServiceMock struct {
 	lockDeletePost                sync.RWMutex
 	lockDeleteTimelineItem        sync.RWMutex
 	lockDevLogin                  sync.RWMutex
+	lockEnsureUser                sync.RWMutex
 	lockFollowees                 sync.RWMutex
 	lockFollowers                 sync.RWMutex
 	lockHasUnreadNotifications    sync.RWMutex
@@ -1028,6 +1044,45 @@ func (mock *ServiceMock) DevLoginCalls() []struct {
 	mock.lockDevLogin.RLock()
 	calls = mock.calls.DevLogin
 	mock.lockDevLogin.RUnlock()
+	return calls
+}
+
+// EnsureUser calls EnsureUserFunc.
+func (mock *ServiceMock) EnsureUser(ctx context.Context, email string, username *string) (nakama.User, error) {
+	if mock.EnsureUserFunc == nil {
+		panic("ServiceMock.EnsureUserFunc: method is nil but Service.EnsureUser was just called")
+	}
+	callInfo := struct {
+		Ctx      context.Context
+		Email    string
+		Username *string
+	}{
+		Ctx:      ctx,
+		Email:    email,
+		Username: username,
+	}
+	mock.lockEnsureUser.Lock()
+	mock.calls.EnsureUser = append(mock.calls.EnsureUser, callInfo)
+	mock.lockEnsureUser.Unlock()
+	return mock.EnsureUserFunc(ctx, email, username)
+}
+
+// EnsureUserCalls gets all the calls that were made to EnsureUser.
+// Check the length with:
+//     len(mockedService.EnsureUserCalls())
+func (mock *ServiceMock) EnsureUserCalls() []struct {
+	Ctx      context.Context
+	Email    string
+	Username *string
+} {
+	var calls []struct {
+		Ctx      context.Context
+		Email    string
+		Username *string
+	}
+	mock.lockEnsureUser.RLock()
+	calls = mock.calls.EnsureUser
+	mock.lockEnsureUser.RUnlock()
 	return calls
 }
 

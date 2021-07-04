@@ -1,4 +1,4 @@
-package handler
+package http
 
 import (
 	"net/http"
@@ -19,7 +19,7 @@ type handler struct {
 }
 
 // New makes use of the service to provide an http.Handler with predefined routing.
-func New(svc transport.Service, logger log.Logger, store storage.Store, cdc *securecookie.SecureCookie, embedStaticFiles bool) http.Handler {
+func New(svc transport.Service, oauthProviders []OauthProvider, logger log.Logger, store storage.Store, cdc *securecookie.SecureCookie, embedStaticFiles bool) http.Handler {
 	h := &handler{
 		svc:              svc,
 		logger:           logger,
@@ -31,6 +31,12 @@ func New(svc transport.Service, logger log.Logger, store storage.Store, cdc *sec
 	api := way.NewRouter()
 	api.HandleFunc("POST", "/api/send_magic_link", h.sendMagicLink)
 	api.HandleFunc("GET", "/api/verify_magic_link", h.verifyMagicLink)
+
+	for _, provider := range oauthProviders {
+		api.HandleFunc("GET", "/api/"+provider.Name+"_auth", h.oauth2Handler(provider))
+		api.HandleFunc("GET", "/api/"+provider.Name+"_auth/callback", h.oauth2CallbackHandler(provider))
+	}
+
 	api.HandleFunc("GET", "/api/credential_creation_options", h.credentialCreationOptions)
 	api.HandleFunc("POST", "/api/credentials", h.registerCredential)
 	api.HandleFunc("GET", "/api/credential_request_options", h.credentialRequestOptions)

@@ -575,37 +575,42 @@ header .profile-link {
     }
 }
 
-.login-form {
+.access-form {
     display: grid;
     grid-auto-flow: row;
     justify-items: left;
     gap: .5rem;
     max-width: 40ch;
+    margin-bottom: 1rem;
 }
 
-.login-form input {
+.access-form input {
     width: 100%;
 }
 
-.login-help {
-    margin-top: 2rem;
+.oauth-providers {
+    display: grid;
+    grid-auto-flow: column;
+    gap: .5rem;
+    justify-content: left;
 }
 
-.login-help {
+.access-help {
+    margin-top: 2rem;
     display: grid;
     grid-auto-flow: row;
     gap: 1rem;
 }
 
-.login-help h3 {
+.access-help p {
+    margin: 0;
+    color: var(--hint);
+}
+
+.access-page h3 {
     font-weight: normal;
     margin-top: 0;
     margin-bottom: .5rem;
-}
-
-.login-help p {
-    margin: 0;
-    color: var(--hint);
 }
 
 .home-page {

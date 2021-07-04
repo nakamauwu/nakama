@@ -31,6 +31,7 @@ type Service struct {
 	AvatarURLPrefix  string
 	WebAuthn         *webauthn.WebAuthn
 	DisabledDevLogin bool
+	AllowedOrigins   []string
 
 	magicLinkTmplOncer sync.Once
 	magicLinkTmpl      *template.Template

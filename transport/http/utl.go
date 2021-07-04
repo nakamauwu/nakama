@@ -1,4 +1,4 @@
-package handler
+package http
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/nicolasparada/nakama"
@@ -22,6 +23,11 @@ var (
 	errStreamingUnsupported = errors.New("streaming unsupported")
 	errTeaPot               = errors.New("i am a teapot")
 	errInvalidTargetURL     = nakama.InvalidArgumentError("invalid target URL")
+	errWebAuthnTimeout      = errors.New("webAuthn timeout")
+	errOauthTimeout         = errors.New("oauth timeout")
+	errEmailNotVerified     = errors.New("email not verified")
+	errEmailNotProvided     = errors.New("email not provided")
+	errServiceUnavailable   = errors.New("service unavailable")
 )
 
 type paginatedRespBody struct {
@@ -63,7 +69,10 @@ func err2code(err error) int {
 
 	switch {
 	case err == errBadRequest ||
-		err == errWebAuthnTimeout:
+		err == errWebAuthnTimeout ||
+		err == errOauthTimeout ||
+		err == errEmailNotVerified ||
+		err == errEmailNotProvided:
 		return http.StatusBadRequest
 	case err == errStreamingUnsupported:
 		return http.StatusExpectationFailed
@@ -84,6 +93,8 @@ func err2code(err error) int {
 		return http.StatusNotImplemented
 	case errors.Is(err, nakama.ErrGone):
 		return http.StatusGone
+	case err == errServiceUnavailable:
+		return http.StatusServiceUnavailable
 	}
 
 	return http.StatusInternalServerError
@@ -124,7 +135,12 @@ func (h *handler) proxy(w http.ResponseWriter, r *http.Request) {
 			newr.Header.Set("User-Agent", "")
 		}
 	}
-	proxy := &httputil.ReverseProxy{Director: director}
+	proxy := &httputil.ReverseProxy{
+		Director: director,
+		ErrorHandler: func(w http.ResponseWriter, _ *http.Request, _ error) {
+			w.WriteHeader(http.StatusBadGateway)
+		},
+	}
 	proxy.ServeHTTP(w, r)
 }
 
@@ -142,4 +158,13 @@ func emptyStrPtr(s string) *string {
 		return nil
 	}
 	return &s
+}
+
+func redirectWithHashFragment(w http.ResponseWriter, r *http.Request, uri *url.URL, data url.Values, statusCode int) {
+	// Using query string instead of hash fragment because golang's url.URL#RawFragment is a no-op.
+	// We set the RawQuery instead, and then string replace the "?" symbol by "#".
+	uri.RawQuery = data.Encode()
+	location := uri.String()
+	location = strings.Replace(location, "?", "#", 1)
+	http.Redirect(w, r, location, statusCode)
 }

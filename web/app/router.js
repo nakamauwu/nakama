@@ -80,7 +80,8 @@ export function hijackClicks(ev) {
     const a = el.closest("a")
     if (a === null
         || (a.target !== "" && a.target !== "_self")
-        || a.hostname !== location.hostname) {
+        || a.hostname !== location.hostname
+        || a.dataset["default"] === "true") {
         return
     }
 

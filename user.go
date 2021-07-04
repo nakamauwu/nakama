@@ -94,7 +94,7 @@ func (s *Service) Users(ctx context.Context, search string, first uint64, after 
 	if after != nil {
 		var err error
 		afterUsername, err = decodeSimpleCursor(*after)
-		if err != nil || !reUsername.MatchString(afterUsername) {
+		if err != nil || !ValidUsername(afterUsername) {
 			return nil, ErrInvalidCursor
 		}
 	}
@@ -192,7 +192,7 @@ func (s *Service) Usernames(ctx context.Context, startingWith string, first uint
 	if after != nil {
 		var err error
 		afterUsername, err = decodeSimpleCursor(*after)
-		if err != nil || !reUsername.MatchString(afterUsername) {
+		if err != nil || !ValidUsername(afterUsername) {
 			return nil, ErrInvalidCursor
 		}
 	}
@@ -264,7 +264,7 @@ func (s *Service) User(ctx context.Context, username string) (UserProfile, error
 	var u UserProfile
 
 	username = strings.TrimSpace(username)
-	if !reUsername.MatchString(username) {
+	if !ValidUsername(username) {
 		return u, ErrInvalidUsername
 	}
 
@@ -338,7 +338,7 @@ func (s *Service) UpdateUser(ctx context.Context, params UpdateUserParams) (Upda
 		return updated, ErrInvalidUpdateUserParams
 	}
 
-	if params.Username != nil && !reUsername.MatchString(*params.Username) {
+	if params.Username != nil && !ValidUsername(*params.Username) {
 		return updated, ErrInvalidUsername
 	}
 
@@ -443,7 +443,7 @@ func (s *Service) ToggleFollow(ctx context.Context, username string) (ToggleFoll
 	}
 
 	username = strings.TrimSpace(username)
-	if !reUsername.MatchString(username) {
+	if !ValidUsername(username) {
 		return out, ErrInvalidUsername
 	}
 
@@ -532,7 +532,7 @@ func (s *Service) ToggleFollow(ctx context.Context, username string) (ToggleFoll
 // Followers in ascending order with forward pagination.
 func (s *Service) Followers(ctx context.Context, username string, first uint64, after *string) (UserProfiles, error) {
 	username = strings.TrimSpace(username)
-	if !reUsername.MatchString(username) {
+	if !ValidUsername(username) {
 		return nil, ErrInvalidUsername
 	}
 
@@ -540,7 +540,7 @@ func (s *Service) Followers(ctx context.Context, username string, first uint64, 
 	if after != nil {
 		var err error
 		afterUsername, err = decodeSimpleCursor(*after)
-		if err != nil || !reUsername.MatchString(afterUsername) {
+		if err != nil || !ValidUsername(afterUsername) {
 			return nil, ErrInvalidCursor
 		}
 	}
@@ -625,7 +625,7 @@ func (s *Service) Followers(ctx context.Context, username string, first uint64, 
 // Followees in ascending order with forward pagination.
 func (s *Service) Followees(ctx context.Context, username string, first uint64, after *string) (UserProfiles, error) {
 	username = strings.TrimSpace(username)
-	if !reUsername.MatchString(username) {
+	if !ValidUsername(username) {
 		return nil, ErrInvalidUsername
 	}
 
@@ -633,7 +633,7 @@ func (s *Service) Followees(ctx context.Context, username string, first uint64, 
 	if after != nil {
 		var err error
 		afterUsername, err = decodeSimpleCursor(*after)
-		if err != nil || !reUsername.MatchString(afterUsername) {
+		if err != nil || !ValidUsername(afterUsername) {
 			return nil, ErrInvalidCursor
 		}
 	}
@@ -725,4 +725,8 @@ func (s *Service) avatarURL(avatar sql.NullString) *string {
 	// str := avatarURL.String()
 	str := s.AvatarURLPrefix + avatar.String
 	return &str
+}
+
+func ValidUsername(s string) bool {
+	return reUsername.MatchString(s)
 }

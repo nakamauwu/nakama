@@ -13,6 +13,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -30,6 +31,8 @@ import (
 	fsstorage "github.com/nicolasparada/nakama/storage/fs"
 	s3storage "github.com/nicolasparada/nakama/storage/s3"
 	httptransport "github.com/nicolasparada/nakama/transport/http"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/endpoints"
 )
 
 func main() {
@@ -69,7 +72,12 @@ func run(ctx context.Context, logger log.Logger, args []string) error {
 		avatarURLPrefix     = env("AVATAR_URL_PREFIX", originStr+"/img/avatars/")
 		cookieHashKey       = env("COOKIE_HASH_KEY", "supersecretkeyyoushouldnotcommit")
 		cookieBlockKey      = env("COOKIE_BLOCK_KEY", "supersecretkeyyoushouldnotcommit")
+		githubClientID      = os.Getenv("GITHUB_CLIENT_ID")
+		githubClientSecret  = os.Getenv("GITHUB_CLIENT_SECRET")
+		googleClientID      = os.Getenv("GOOGLE_CLIENT_ID")
+		googleClientSecret  = os.Getenv("GOOGLE_CLIENT_SECRET")
 		disabledDevLogin, _ = strconv.ParseBool(os.Getenv("DISABLE_DEV_LOGIN"))
+		allowedOrigins      = os.Getenv("ALLOWED_ORIGINS")
 	)
 
 	fs := flag.NewFlagSet("nakama", flag.ExitOnError)
@@ -88,7 +96,10 @@ func run(ctx context.Context, logger log.Logger, args []string) error {
 	fs.StringVar(&avatarURLPrefix, "avatar-url-prefix", avatarURLPrefix, "Avatar URL prefix")
 	fs.StringVar(&cookieHashKey, "cookie-hash-key", cookieHashKey, "Cookie hash key. 32 or 64 bytes")
 	fs.StringVar(&cookieBlockKey, "cookie-block-key", cookieBlockKey, "Cookie block key. 16, 24, or 32 bytes")
+	fs.StringVar(&githubClientID, "github-client-id", githubClientID, "GitHub client ID")
+	fs.StringVar(&googleClientID, "google-client-id", googleClientID, "Google client ID")
 	fs.BoolVar(&disabledDevLogin, "disable-dev-login", disabledDevLogin, "Disable development login endpoint")
+	fs.StringVar(&allowedOrigins, "allowed-origins", allowedOrigins, "Comma separated list of allowed origins")
 	if err := fs.Parse(args); err != nil {
 		return fmt.Errorf("could not parse flags: %w", err)
 	}
@@ -205,13 +216,45 @@ func run(ctx context.Context, logger log.Logger, args []string) error {
 		AvatarURLPrefix:  avatarURLPrefix,
 		WebAuthn:         webauthn,
 		DisabledDevLogin: disabledDevLogin,
+		AllowedOrigins:   strings.Split(allowedOrigins, ","),
 	}
 
+	var oauthProviders []httptransport.OauthProvider
+	if githubClientID != "" && githubClientSecret != "" {
+		oauthProviders = append(oauthProviders, httptransport.OauthProvider{
+			Name: "github",
+			Config: &oauth2.Config{
+				ClientID:     githubClientID,
+				ClientSecret: githubClientSecret,
+				RedirectURL:  origin.String() + "/api/github_auth/callback",
+				Endpoint:     endpoints.GitHub,
+				Scopes:       []string{"read:user", "user:email"},
+			},
+			FetchEmail: httptransport.GithubEmailFetcher,
+		})
+	}
+	if googleClientID != "" && googleClientSecret != "" {
+		oauthProviders = append(oauthProviders, httptransport.OauthProvider{
+			Name: "google",
+			Config: &oauth2.Config{
+				ClientID:     googleClientID,
+				ClientSecret: googleClientSecret,
+				RedirectURL:  origin.String() + "/api/google_auth/callback",
+				Endpoint:     endpoints.Google,
+				Scopes: []string{
+					"openid",
+					"https://www.googleapis.com/auth/userinfo.email",
+					"https://www.googleapis.com/auth/userinfo.profile",
+				},
+			},
+			FetchEmail: httptransport.GoogleEmailFetcher,
+		})
+	}
 	cookieCodec := securecookie.New(
 		[]byte(cookieHashKey),
 		[]byte(cookieBlockKey),
 	)
-	h := httptransport.New(svc, log.With(logger, "component", "http"), store, cookieCodec, embedStaticFiles)
+	h := httptransport.New(svc, oauthProviders, log.With(logger, "component", "http"), store, cookieCodec, embedStaticFiles)
 	server := &http.Server{
 		Addr:              fmt.Sprintf(":%d", port),
 		Handler:           h,

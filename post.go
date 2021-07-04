@@ -81,7 +81,7 @@ func (pp Posts) EndCursor() *string {
 // Posts from a user in descending order and with backward pagination.
 func (s *Service) Posts(ctx context.Context, username string, last uint64, before *string) (Posts, error) {
 	username = strings.TrimSpace(username)
-	if !reUsername.MatchString(username) {
+	if !ValidUsername(username) {
 		return nil, ErrInvalidUsername
 	}
 
