@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS posts (
     content VARCHAR NOT NULL,
     spoiler_of VARCHAR,
     nsfw BOOLEAN NOT NULL DEFAULT false,
+    reactions JSONB,
     comments_count INT NOT NULL DEFAULT 0 CHECK (comments_count >= 0),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     INDEX sorted_posts (created_at DESC, id)
@@ -84,6 +85,7 @@ CREATE TABLE IF NOT EXISTS comments (
     user_id UUID NOT NULL REFERENCES users ON DELETE CASCADE,
     post_id UUID NOT NULL REFERENCES posts ON DELETE CASCADE,
     content VARCHAR NOT NULL,
+    reactions JSONB,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     INDEX sorted_comments (created_at DESC, id)
 );
