@@ -111,7 +111,7 @@ function PostItem({ post: initialPost, type, timelineItemID = null }) {
             <div class="post-header">
                 <a href="/@${post.user.username}" class="post-author">
                     ${Avatar(post.user)}
-                    <span>${post.user.username}</span>
+                    <span class="username">${post.user.username}</span>
                 </a>
                 <div class="post-meta">
                     <a href="/posts/${post.id}" class="post-ts">
