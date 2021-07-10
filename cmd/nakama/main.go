@@ -254,7 +254,7 @@ func run(ctx context.Context, logger log.Logger, args []string) error {
 		[]byte(cookieHashKey),
 		[]byte(cookieBlockKey),
 	)
-	h := httptransport.New(svc, oauthProviders, log.With(logger, "component", "http"), store, cookieCodec, embedStaticFiles)
+	h := httptransport.New(svc, oauthProviders, origin, log.With(logger, "component", "http"), store, cookieCodec, embedStaticFiles)
 	server := &http.Server{
 		Addr:              fmt.Sprintf(":%d", port),
 		Handler:           h,

@@ -2,6 +2,7 @@ package http
 
 import (
 	"net/http"
+	"net/url"
 
 	"github.com/go-kit/kit/log"
 	"github.com/gorilla/securecookie"
@@ -12,6 +13,7 @@ import (
 
 type handler struct {
 	svc              transport.Service
+	origin           *url.URL
 	logger           log.Logger
 	store            storage.Store
 	cookieCodec      *securecookie.SecureCookie
@@ -19,9 +21,10 @@ type handler struct {
 }
 
 // New makes use of the service to provide an http.Handler with predefined routing.
-func New(svc transport.Service, oauthProviders []OauthProvider, logger log.Logger, store storage.Store, cdc *securecookie.SecureCookie, embedStaticFiles bool) http.Handler {
+func New(svc transport.Service, oauthProviders []OauthProvider, origin *url.URL, logger log.Logger, store storage.Store, cdc *securecookie.SecureCookie, embedStaticFiles bool) http.Handler {
 	h := &handler{
 		svc:              svc,
+		origin:           origin,
 		logger:           logger,
 		store:            store,
 		cookieCodec:      cdc,
@@ -72,6 +75,8 @@ func New(svc transport.Service, oauthProviders []OauthProvider, logger log.Logge
 	proxy := withCacheControl(proxyCacheControl)(h.proxy)
 	api.HandleFunc("HEAD", "/api/proxy", proxy)
 	api.HandleFunc("GET", "/api/proxy", proxy)
+
+	api.HandleFunc("POST", "/api/logs", h.pushLog)
 
 	r := way.NewRouter()
 	r.Handle("*", "/api/...", h.withAuth(api))

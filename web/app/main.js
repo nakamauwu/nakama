@@ -146,3 +146,28 @@ function fetchToken() {
 if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("/sw.js")
 }
+
+addEventListener("error", onError)
+addEventListener("unhandledrejection", onUnHandledRejection)
+
+/**
+ * @param {ErrorEvent} ev
+ */
+function onError(ev) {
+    pushLog(String(ev.error)).catch(err => {
+        console.error("could not push error log:", err)
+    })
+}
+
+/**
+ * @param {PromiseRejectionEvent} ev
+ */
+function onUnHandledRejection(ev) {
+    pushLog(String(ev.reason)).catch(err => {
+        console.error("could not push unhandled rejection log:", err)
+    })
+}
+
+function pushLog(err) {
+    return request("POST", "/api/logs", { body: { error: err } })
+}
