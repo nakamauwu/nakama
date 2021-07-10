@@ -47,14 +47,16 @@ func (h *handler) respond(w http.ResponseWriter, v interface{}, statusCode int) 
 	w.WriteHeader(statusCode)
 	_, err = w.Write(b)
 	if err != nil && !errors.Is(err, context.Canceled) {
-		_ = h.logger.Log("error", fmt.Errorf("could not write down http response: %w", err))
+		_ = h.logger.Log("err", fmt.Errorf("could not write down http response: %w", err))
 	}
 }
 
 func (h *handler) respondErr(w http.ResponseWriter, err error) {
 	statusCode := err2code(err)
 	if statusCode == http.StatusInternalServerError {
-		_ = h.logger.Log("error", err)
+		if !errors.Is(err, context.Canceled) {
+			_ = h.logger.Log("err", err)
+		}
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -103,7 +105,7 @@ func err2code(err error) int {
 func (h *handler) writeSSE(w io.Writer, v interface{}) {
 	b, err := json.Marshal(v)
 	if err != nil {
-		_ = h.logger.Log("error", fmt.Errorf("could not json marshal sse data: %w", err))
+		_ = h.logger.Log("err", fmt.Errorf("could not json marshal sse data: %w", err))
 		fmt.Fprintf(w, "event: error\ndata: %v\n\n", err)
 		return
 	}

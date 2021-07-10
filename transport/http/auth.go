@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/url"
 	"strings"
@@ -68,7 +69,9 @@ func (h *handler) verifyMagicLink(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		_ = h.logger.Log("error", err)
+		if !errors.Is(err, context.Canceled) {
+			_ = h.logger.Log("err", err)
+		}
 		redirectWithHashFragment(w, r, redirectURI, url.Values{
 			"error": []string{"internal server error"},
 		}, http.StatusFound)

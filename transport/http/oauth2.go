@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -255,7 +256,9 @@ func (h *handler) oauth2CallbackHandler(provider OauthProvider) http.HandlerFunc
 				return
 			}
 
-			_ = h.logger.Log("error", err)
+			if !errors.Is(err, context.Canceled) {
+				_ = h.logger.Log("err", err)
+			}
 			redirectWithHashFragment(w, r, redirectURI, url.Values{
 				"error": []string{"internal server error"},
 			}, http.StatusSeeOther)
@@ -285,7 +288,9 @@ func (h *handler) oauth2CallbackHandler(provider OauthProvider) http.HandlerFunc
 				return
 			}
 
-			_ = h.logger.Log("error", err)
+			if !errors.Is(err, context.Canceled) {
+				_ = h.logger.Log("err", err)
+			}
 			redirectWithHashFragment(w, r, redirectURI, url.Values{
 				"error": []string{"internal server error"},
 			}, http.StatusSeeOther)
@@ -303,7 +308,9 @@ func (h *handler) oauth2CallbackHandler(provider OauthProvider) http.HandlerFunc
 				return
 			}
 
-			_ = h.logger.Log("error", err)
+			if !errors.Is(err, context.Canceled) {
+				_ = h.logger.Log("err", err)
+			}
 			redirectWithHashFragment(w, r, redirectURI, url.Values{
 				"error": []string{"internal server error"},
 			}, http.StatusSeeOther)

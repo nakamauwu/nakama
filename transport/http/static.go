@@ -22,14 +22,14 @@ func (h *handler) staticHandler() http.Handler {
 	if h.embedStaticFiles {
 		sub, err := fs.Sub(web.StaticFiles, "static")
 		if err != nil {
-			_ = h.logger.Log("error", fmt.Errorf("could not embed static files: %w", err))
+			_ = h.logger.Log("err", fmt.Errorf("could not embed static files: %w", err))
 			os.Exit(1)
 		}
 		root = http.FS(sub)
 	} else {
 		_, file, _, ok := runtime.Caller(0)
 		if !ok {
-			_ = h.logger.Log("error", "could not get runtime caller")
+			_ = h.logger.Log("err", "could not get runtime caller")
 			os.Exit(1)
 		}
 		root = http.Dir(filepath.Join(path.Dir(file), "..", "..", "web", "static"))
@@ -66,6 +66,6 @@ func (h *handler) avatar(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	_, err = io.Copy(w, f)
 	if err != nil && !errors.Is(err, context.Canceled) {
-		_ = h.logger.Log("error", fmt.Errorf("could not write down avatar: %w", err))
+		_ = h.logger.Log("err", fmt.Errorf("could not write down avatar: %w", err))
 	}
 }
