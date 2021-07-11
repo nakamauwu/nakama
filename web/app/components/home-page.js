@@ -259,6 +259,8 @@ function PostForm() {
         <form class="post-form${content !== "" ? " has-content" : ""}" name="post-form" @submit=${onSubmit}>
             <textarea name="content" placeholder="Write something..." maxlenght="2048" aria-label="Content" required
                 .value=${content} .disabled=${fetching} .ref=${ref(textAreaRef)} @input=${onTextAreaInput}></textarea>
+            ${content !== "" ? html`
+            <div class="post-form-controls">
                 <div class="post-form-options">
                     <label class="switch-wrapper">
                         <input type="checkbox" role="switch" name="nsfw" .disabled=${fetching} .checked=${nsfw} @change=${onNSFWInputChange}>
