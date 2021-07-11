@@ -134,6 +134,7 @@ const reMention = /\B@([\-+\w]*)$/
 function PostForm() {
     const [auth] = useStore(authStore)
     const [content, setContent] = useState("")
+    const [fetching, setFetching] = useState(false)
     const [nsfw, setNSFW] = useState(false)
     const [isSpoiler, setIsSpoiler] = useState(false)
     const [spoilerOf, setSpoilerOf] = useState("")
@@ -141,6 +142,7 @@ function PostForm() {
     const [initialTextAreaHeight, setInitialTextAreaHeight] = useState(0)
     const textAreaRef = useRef(null)
     const textcompleteRef = useRef(null)
+    const [toast, setToast] = useState(null)
 
     const dispatchTimelineItemCreated = post => {
         this.dispatchEvent(new CustomEvent("timeline-item-created", { bubbles: true, detail: post }))
@@ -148,6 +150,8 @@ function PostForm() {
 
     const onSubmit = useCallback(ev => {
         ev.preventDefault()
+
+        setFetching(true)
         createTimelineItem({
             content,
             spoilerOf: spoilerOf.trim() === "" ? null : spoilerOf.trim(),
@@ -162,6 +166,12 @@ function PostForm() {
             textAreaRef.current.style.height = initialTextAreaHeight + "px"
 
             dispatchTimelineItemCreated(ti)
+        }, err => {
+            const msg = "could not create post: " + err.message
+            console.error(msg)
+            setToast({ type: "error", content: msg })
+        }).finally(() => {
+            setFetching(false)
         })
     }, [content, nsfw, spoilerOf, auth, textAreaRef, initialTextAreaHeight])
 
@@ -215,6 +225,8 @@ function PostForm() {
         if (spoilerOfDialogRef.current !== null && !(window.HTMLDialogElement || spoilerOfDialogRef.current.showModal)) {
             import("dialog-polyfill").then(m => m.default).then(dialogPolyfill => {
                 dialogPolyfill.registerDialog(spoilerOfDialogRef.current)
+            }).catch(err => {
+                console.error("could not import dialog polyfill:", err)
             })
         }
     }, [spoilerOfDialogRef])
@@ -246,21 +258,18 @@ function PostForm() {
     return html`
         <form class="post-form${content !== "" ? " has-content" : ""}" name="post-form" @submit=${onSubmit}>
             <textarea name="content" placeholder="Write something..." maxlenght="2048" aria-label="Content" required
-                .value=${content} .ref=${ref(textAreaRef)} @input=${onTextAreaInput}></textarea>
-            ${content !== "" ? html`
-            <div class="post-form-controls">
+                .value=${content} .disabled=${fetching} .ref=${ref(textAreaRef)} @input=${onTextAreaInput}></textarea>
                 <div class="post-form-options">
                     <label class="switch-wrapper">
-                        <input type="checkbox" role="switch" name="nsfw" .checked=${nsfw} @change=${onNSFWInputChange}>
+                        <input type="checkbox" role="switch" name="nsfw" .disabled=${fetching} .checked=${nsfw} @change=${onNSFWInputChange}>
                         <span>NSFW</span>
                     </label>
                     <label class="switch-wrapper">
-                        <input type="checkbox" role="switch" name="is_spoiler" .checked=${isSpoiler}
-                            @change=${onIsSpoilerInputChange}>
+                        <input type="checkbox" role="switch" name="is_spoiler" .disabled=${fetching} .checked=${isSpoiler} @change=${onIsSpoilerInputChange}>
                         <span>Spoiler${spoilerOf.trim() !== "" ? ` of ${spoilerOf}` : ""}</span>
                     </label>
                 </div>
-                <button>
+                <button class="submit-btn" .disabled=${fetching}>
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                         <g data-name="Layer 2">
                             <g data-name="paper-plane">
@@ -286,6 +295,7 @@ function PostForm() {
                 </div>
             </form>
         </dialog>
+        ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : nothing}
     `
 }
 

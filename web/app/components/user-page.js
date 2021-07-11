@@ -1,6 +1,5 @@
 import { component, useCallback, useEffect, useRef, useState } from "haunted"
 import { html, nothing } from "lit-html"
-import { ifDefined } from "lit-html/directives/if-defined"
 import { repeat } from "lit-html/directives/repeat.js"
 import { setLocalAuth } from "../auth.js"
 import { authStore, useStore } from "../ctx.js"
@@ -231,7 +230,7 @@ function UserProfile({ user: initialUser }) {
 
     const onAvatarInputChange = useCallback(ev => {
         const files = ev.currentTarget.files
-        if (!(files instanceof window.FileList) || files.length !== 1) {
+        if (files === null || files.length !== 1) {
             return
         }
 
@@ -248,7 +247,7 @@ function UserProfile({ user: initialUser }) {
     }, [updatingAvatar, avatarInputRef])
 
     const onAvatarBtnClick = useCallback(() => {
-        if (updatingAvatar) {
+        if (avatarInputRef.current === null || updatingAvatar) {
             return
         }
 

@@ -651,7 +651,7 @@ header .profile-link {
     justify-content: right;
 }
 
-.post-form button {
+.post-form .submit-btn {
     border-top-right-radius: .25rem;
 }
 
