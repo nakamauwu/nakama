@@ -264,7 +264,7 @@ function NotificationItem({ notification: initialNotification }) {
     }, [initialNotification])
 
     return html`
-        <div class="notification" style=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx @click=${onClick}>
+        <div class="notification" @click=${onClick}>
             <div>
                 <p>${getActors()} ${getAction()}.</p>
                 <relative-datetime .datetime=${notification.issuedAt}></relative-datetime>

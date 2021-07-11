@@ -1,5 +1,6 @@
 :root {
     box-sizing: border-box;
+    color-scheme: dark;
 
     --hue: 220;
     --background: black;
@@ -45,6 +46,8 @@ dialog *,
 
 @media (prefers-color-scheme: light) {
     :root {
+        color-scheme: light;
+
         --background: white;
         --primary: hsl(var(--hue), 100%, 66%);
         --secondary: hsl(calc(var(--hue) + 180), 100%, 66%);
@@ -78,6 +81,80 @@ dialog *,
         --surface-1: hsl(var(--hue), 12%, 88%);
         --surface-2: hsl(var(--hue), 12%, 86%);
     }
+}
+
+[color-scheme=dark] {
+    color-scheme: dark;
+
+    --background: black;
+    --primary: hsl(var(--hue), 100%, 86%);
+    --secondary: hsl(calc(var(--hue) + 180), 100%, 86%);
+    --surface-0: hsl(var(--hue), 10%, 7%);
+    --surface-1: hsl(var(--hue), 10%, 9%);
+    --surface-2: hsl(var(--hue), 10%, 11%);
+    --surface-primary: hsl(var(--hue), 20%, 20%);
+    --on-background: white;
+    --on-surface: white;
+    --on-primary: black;
+    --on-secondary: black;
+    --hint: hsl(var(--hue), 2%, 60%);
+    --line: hsla(var(--hue), 2%, 14%, .6);
+    --icon: hsl(var(--hue), 2%, 60%);
+
+    --surface-alt: white;
+    --on-surface-alt: black;
+    --surface-backdrop: hsla(var(--hue), 10%, 0%, .95);
+    --semi-transparent-surface: hsla(var(--hue), 10%, 7%, .75);
+    --on-surface-error: hsl(345, 100%, 67%);
+}
+
+[color-scheme=dark] dialog *,
+[color-scheme=dark] .post *,
+[color-scheme=dark] .user-profile *,
+[color-scheme=dark] .notification:not(.read) *,
+[color-scheme=dark] .user-item *,
+[color-scheme=dark] .queue-btn,
+[color-scheme=dark] .textcomplete-dropdown {
+    --surface-0: hsl(var(--hue), 12%, 10%);
+    --surface-1: hsl(var(--hue), 12%, 12%);
+    --surface-2: hsl(var(--hue), 12%, 14%);
+}
+
+[color-scheme=light] {
+    color-scheme: light;
+
+    --background: white;
+    --primary: hsl(var(--hue), 100%, 66%);
+    --secondary: hsl(calc(var(--hue) + 180), 100%, 66%);
+    --surface-0: hsl(var(--hue), 10%, 93%);
+    --surface-1: hsl(var(--hue), 10%, 91%);
+    --surface-2: hsl(var(--hue), 10%, 89%);
+    --surface-primary: hsl(var(--hue), 20%, 80%);
+    --on-background: black;
+    --on-surface: black;
+    --on-primary: white;
+    --on-secondary: white;
+    --hint: hsl(var(--hue), 2%, 40%);
+    --line: hsla(var(--hue), 2%, 86%, .6);
+    --icon: hsl(var(--hue), 2%, 40%);
+
+    --surface-alt: black;
+    --on-surface-alt: white;
+    --surface-backdrop:  hsl(var(--hue), 10%, 100%, .95);
+    --semi-transparent-surface: hsla(var(--hue), 10%, 93%, .75);
+    --on-surface-error: hsl(345, 100%, 67%);
+}
+
+[color-scheme=light] dialog *,
+[color-scheme=light] .post *,
+[color-scheme=light] .user-profile *,
+[color-scheme=light] .notification:not(.read) *,
+[color-scheme=light] .user-item *,
+[color-scheme=light] .queue-btn,
+[color-scheme=light] .textcomplete-dropdown {
+    --surface-0: hsl(var(--hue), 12%, 90%);
+    --surface-1: hsl(var(--hue), 12%, 88%);
+    --surface-2: hsl(var(--hue), 12%, 86%);
 }
 
 *,
@@ -1390,10 +1467,32 @@ notification-item {
 }
 
 .username-fieldset,
-.avatar-fieldset {
+.avatar-fieldset,
+.theme-fieldset {
     border: 1px solid var(--line);
     padding: 1rem;
     border-radius: 1rem;
+}
+
+.theme-fieldset {
+    display: grid;
+    grid-auto-flow: row;
+    justify-content: left;
+    gap: .5rem;
+}
+
+.theme-fieldset label {
+    display: grid;
+    grid-auto-flow: column;
+    align-items: center;
+    justify-content: left;
+    gap: .5rem;
+}
+
+.theme-fieldset label input {
+    height: 1rem;
+    margin: 0;
+    padding: 0;
 }
 
 legend {

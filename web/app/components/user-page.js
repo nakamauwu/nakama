@@ -1,5 +1,6 @@
 import { component, useCallback, useEffect, useRef, useState } from "haunted"
 import { html, nothing } from "lit-html"
+import { ifDefined } from "lit-html/directives/if-defined.js"
 import { repeat } from "lit-html/directives/repeat.js"
 import { setLocalAuth } from "../auth.js"
 import { authStore, useStore } from "../ctx.js"
@@ -123,8 +124,7 @@ function UserPage({ username }) {
 
     return html`
         <main class="user-page">
-            <div class="user-profile-wrapper"
-                style="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+            <div class="user-profile-wrapper" style="${ifDefined(err === null && !fetching && user.coverURL !== null ? `--cover-url: url('${user.coverURL}');` : undefined)}">
                 <div class="container">
                     ${err !== null ? html`
                     <p class="error" role="alert">Could not fetch user: ${err.message}</p>
@@ -175,6 +175,10 @@ function UserProfile({ user: initialUser }) {
     const avatarInputRef = useRef(null)
     const [updatingUsername, setUpdatingUsername] = useState(false)
     const [updatingAvatar, setUpdatingAvatar] = useState(false)
+    const [theme, setTheme] = useState(() => {
+        const value = localStorage.getItem("color-scheme")
+        return value !== null ? value : "default"
+    })
     const [toast, setToast] = useState(null)
 
     const dispatchUsernameUpdated = payload => {
@@ -297,6 +301,20 @@ function UserProfile({ user: initialUser }) {
         })
     }, [])
 
+    const onThemeChange = useCallback(ev => {
+        const value = ev.currentTarget.value
+        setTheme(value)
+
+        if (value === "default") {
+            localStorage.removeItem("color-scheme")
+            document.firstElementChild.removeAttribute("color-scheme")
+            return
+        }
+
+        localStorage.setItem("color-scheme", value)
+        document.firstElementChild.setAttribute("color-scheme", value)
+    }, [])
+
     const onSettingsDialogCloseBtnClick = useCallback(() => {
         settingsDialogRef.current.close()
     }, [settingsDialogRef])
@@ -382,6 +400,21 @@ function UserProfile({ user: initialUser }) {
                             .disabled=${updatingAvatar} .ref=${ref(avatarInputRef)} @change=${onAvatarInputChange}>
                         <button .disabled=${updatingAvatar} @click=${onAvatarBtnClick}>Update</button>
                     </div>
+                </fieldset>
+                <fieldset class="theme-fieldset">
+                    <legend>Theme</legend>
+                    <label>
+                        <input type="radio" name="theme" value="default" .checked=${theme === "default"} @change=${onThemeChange}>
+                        <span>Default</span>
+                    </label>
+                    <label>
+                        <input type="radio" name="theme" value="dark" .checked=${theme === "dark"} @change=${onThemeChange}>
+                        <span>Dark</span>
+                    </label>
+                    <label>
+                        <input type="radio" name="theme" value="light" .checked=${theme === "light"} @change=${onThemeChange}>
+                        <span>Light</span>
+                    </label>
                 </fieldset>
             </div>
             ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : nothing}
