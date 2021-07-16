@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"syscall"
 
 	"github.com/matryer/way"
 	"github.com/nicolasparada/nakama/web"
@@ -65,7 +66,7 @@ func (h *handler) avatar(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Last-Modified", f.LastModified.Format(http.TimeFormat))
 	w.WriteHeader(http.StatusOK)
 	_, err = io.Copy(w, f)
-	if err != nil && !errors.Is(err, context.Canceled) {
+	if err != nil && !errors.Is(err, syscall.EPIPE) && !errors.Is(err, context.Canceled) {
 		_ = h.logger.Log("err", fmt.Errorf("could not write down avatar: %w", err))
 	}
 }

@@ -10,6 +10,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/nicolasparada/nakama"
@@ -46,7 +47,7 @@ func (h *handler) respond(w http.ResponseWriter, v interface{}, statusCode int) 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(statusCode)
 	_, err = w.Write(b)
-	if err != nil && !errors.Is(err, context.Canceled) {
+	if err != nil && !errors.Is(err, syscall.EPIPE) && !errors.Is(err, context.Canceled) {
 		_ = h.logger.Log("err", fmt.Errorf("could not write down http response: %w", err))
 	}
 }

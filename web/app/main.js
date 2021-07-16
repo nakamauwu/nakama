@@ -154,6 +154,10 @@ addEventListener("unhandledrejection", onUnHandledRejection)
  * @param {ErrorEvent} ev
  */
 function onError(ev) {
+    if (ev.error instanceof DOMException && ev.error.name === "AbortError") {
+        return
+    }
+
     pushLog(String(ev.error)).catch(err => {
         console.error("could not push error log:", err)
     })
@@ -163,6 +167,10 @@ function onError(ev) {
  * @param {PromiseRejectionEvent} ev
  */
 function onUnHandledRejection(ev) {
+    if (ev.reason instanceof DOMException && ev.reason.name === "AbortError") {
+        return
+    }
+
     pushLog(String(ev.reason)).catch(err => {
         console.error("could not push unhandled rejection log:", err)
     })
