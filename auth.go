@@ -214,7 +214,7 @@ func (s *Service) VerifyMagicLink(ctx context.Context, email, code string, usern
 		}
 
 		var avatar sql.NullString
-		query = "SELECT id, username, avatar, cover FROM users WHERE email = $1"
+		query = "SELECT id, username, avatar FROM users WHERE email = $1"
 		row = tx.QueryRowContext(ctx, query, email)
 		err = row.Scan(&auth.User.ID, &auth.User.Username, &avatar)
 		if err == sql.ErrNoRows {
