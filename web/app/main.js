@@ -78,6 +78,7 @@ function RouterView({ router }) {
 customElements.define("router-view", component(RouterView, { useShadowDOM: false }))
 
 const oneDayInMs = 1000 * 60 * 60 * 24
+const sevenDaysInMs = 1000 * 60 * 60 * 24
 
 function NakamaApp() {
     const [auth, setAuth] = useStore(authStore)
@@ -87,10 +88,10 @@ function NakamaApp() {
             return
         }
 
-        const inOneDay = new Date()
-        inOneDay.setTime(inOneDay.getTime() + oneDayInMs)
+        const inSevenDays = new Date()
+        inSevenDays.setTime(inSevenDays.getTime() + sevenDaysInMs)
 
-        if (auth.expiresAt >= inOneDay) {
+        if (auth.expiresAt >= inSevenDays) {
             return
         }
 
