@@ -8,10 +8,10 @@ import (
 
 func TestStore(t *testing.T) {
 	tests.RunStoreTests(t, &Store{
-		Endpoint:  testEndpoint,
-		Region:    testRegion,
-		Bucket:    testBucket,
-		AccessKey: testAccessKey,
-		SecretKey: testSecretKey,
+		Endpoint:   testEndpoint,
+		Region:     testRegion,
+		AccessKey:  testAccessKey,
+		SecretKey:  testSecretKey,
+		BucketList: []string{tests.Bucket},
 	})
 }

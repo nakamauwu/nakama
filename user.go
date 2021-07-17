@@ -18,8 +18,15 @@ import (
 	"github.com/nicolasparada/nakama/storage"
 )
 
-// MaxAvatarBytes to read.
-const MaxAvatarBytes = 5 << 20 // 5MB
+const (
+	// MaxAvatarBytes to read.
+	MaxAvatarBytes = 5 << 20 // 5MB
+	// MaxCoverBytes to read.
+	MaxCoverBytes = 20 << 20 // 20MB
+
+	AvatarsBucket = "avatars"
+	CoversBucket  = "covers"
+)
 
 var (
 	reEmail    = regexp.MustCompile(`^[^\s@]+@[^\s@]+\.[^\s@]+$`)
@@ -43,6 +50,8 @@ var (
 	ErrForbiddenFollow = PermissionDeniedError("forbidden follow")
 	// ErrUnsupportedAvatarFormat denotes an unsupported avatar image format.
 	ErrUnsupportedAvatarFormat = InvalidArgumentError("unsupported avatar format")
+	// ErrUnsupportedCoverFormat denotes an unsupported avatar image format.
+	ErrUnsupportedCoverFormat = InvalidArgumentError("unsupported cover format")
 	// ErrUserGone denotes that the user has already been deleted.
 	ErrUserGone = GoneError("user gone")
 	// ErrInvalidUpdateUserParams denotes invalid params to update a user, that is no params altogether.
@@ -101,7 +110,7 @@ func (s *Service) Users(ctx context.Context, search string, first uint64, after 
 
 	uid, auth := ctx.Value(KeyAuthUserID).(string)
 	query, args, err := buildQuery(`
-		SELECT id, email, username, avatar, followers_count, followees_count
+		SELECT id, email, username, avatar, cover, followers_count, followees_count
 		{{ if .auth }}
 		, followers.follower_id IS NOT NULL AS following
 		, followees.followee_id IS NOT NULL AS followeed
@@ -139,11 +148,12 @@ func (s *Service) Users(ctx context.Context, search string, first uint64, after 
 	var uu UserProfiles
 	for rows.Next() {
 		var u UserProfile
-		var avatar sql.NullString
+		var avatar, cover sql.NullString
 		dest := []interface{}{
 			&u.ID, &u.Email,
 			&u.Username,
 			&avatar,
+			&cover,
 			&u.FollowersCount,
 			&u.FolloweesCount,
 		}
@@ -160,6 +170,7 @@ func (s *Service) Users(ctx context.Context, search string, first uint64, after 
 			u.Email = ""
 		}
 		u.AvatarURL = s.avatarURL(avatar)
+		u.CoverURL = s.coverURL(cover)
 		uu = append(uu, u)
 	}
 
@@ -270,7 +281,7 @@ func (s *Service) User(ctx context.Context, username string) (UserProfile, error
 
 	uid, auth := ctx.Value(KeyAuthUserID).(string)
 	query, args, err := buildQuery(`
-		SELECT id, email, avatar, followers_count, followees_count
+		SELECT id, email, avatar, cover, followers_count, followees_count
 		{{if .auth}}
 		, followers.follower_id IS NOT NULL AS following
 		, followees.followee_id IS NOT NULL AS followeed
@@ -291,8 +302,8 @@ func (s *Service) User(ctx context.Context, username string) (UserProfile, error
 		return u, fmt.Errorf("could not build user sql query: %w", err)
 	}
 
-	var avatar sql.NullString
-	dest := []interface{}{&u.ID, &u.Email, &avatar, &u.FollowersCount, &u.FolloweesCount}
+	var avatar, cover sql.NullString
+	dest := []interface{}{&u.ID, &u.Email, &avatar, &cover, &u.FollowersCount, &u.FolloweesCount}
 	if auth {
 		dest = append(dest, &u.Following, &u.Followeed)
 	}
@@ -312,6 +323,7 @@ func (s *Service) User(ctx context.Context, username string) (UserProfile, error
 		u.Email = ""
 	}
 	u.AvatarURL = s.avatarURL(avatar)
+	u.CoverURL = s.coverURL(cover)
 	return u, nil
 }
 
@@ -387,7 +399,7 @@ func (s *Service) UpdateAvatar(ctx context.Context, r io.Reader) (string, error)
 		err = jpeg.Encode(buf, img, nil)
 	}
 	if err != nil {
-		return "", fmt.Errorf("could not write avatar to disk: %w", err)
+		return "", fmt.Errorf("could not resize avatar: %w", err)
 	}
 
 	avatarFileName, err := gonanoid.Nanoid()
@@ -401,19 +413,21 @@ func (s *Service) UpdateAvatar(ctx context.Context, r io.Reader) (string, error)
 		avatarFileName += ".jpg"
 	}
 
-	err = s.Store.Store(ctx, avatarFileName, buf.Bytes(), storage.StoreWithContentType("image/"+format))
+	err = s.Store.Store(ctx, AvatarsBucket, avatarFileName, buf.Bytes(), storage.StoreWithContentType("image/"+format))
 	if err != nil {
 		return "", fmt.Errorf("could not store avatar file: %w", err)
 	}
 
 	var oldAvatar sql.NullString
-	if err = s.DB.QueryRowContext(ctx, `
+	query := `
 		UPDATE users SET avatar = $1 WHERE id = $2
-		RETURNING (SELECT avatar FROM users WHERE id = $2) AS old_avatar`, avatarFileName, uid).
-		Scan(&oldAvatar); err != nil {
-
+		RETURNING (SELECT avatar FROM users WHERE id = $2) AS old_avatar
+	`
+	row := s.DB.QueryRowContext(ctx, query, avatarFileName, uid)
+	err = row.Scan(&oldAvatar)
+	if err != nil {
 		defer func() {
-			err := s.Store.Delete(context.Background(), avatarFileName)
+			err := s.Store.Delete(context.Background(), AvatarsBucket, avatarFileName)
 			if err != nil {
 				_ = s.Logger.Log("error", fmt.Errorf("could not delete avatar file after user update fail: %w", err))
 			}
@@ -424,7 +438,7 @@ func (s *Service) UpdateAvatar(ctx context.Context, r io.Reader) (string, error)
 
 	if oldAvatar.Valid {
 		defer func() {
-			err := s.Store.Delete(context.Background(), oldAvatar.String)
+			err := s.Store.Delete(context.Background(), AvatarsBucket, oldAvatar.String)
 			if err != nil {
 				_ = s.Logger.Log("error", fmt.Errorf("could not delete old avatar: %w", err))
 			}
@@ -432,6 +446,85 @@ func (s *Service) UpdateAvatar(ctx context.Context, r io.Reader) (string, error)
 	}
 
 	return s.AvatarURLPrefix + avatarFileName, nil
+}
+
+// UpdateCover of the authenticated user returning the new cover URL.
+// Please limit the reader before hand using MaxCoverBytes.
+func (s *Service) UpdateCover(ctx context.Context, r io.Reader) (string, error) {
+	uid, ok := ctx.Value(KeyAuthUserID).(string)
+	if !ok {
+		return "", ErrUnauthenticated
+	}
+
+	// r = io.LimitReader(r, MaxCoverBytes)
+	img, format, err := image.Decode(r)
+	if err == image.ErrFormat {
+		return "", ErrUnsupportedCoverFormat
+	}
+
+	if err != nil {
+		return "", fmt.Errorf("could not read cover: %w", err)
+	}
+
+	if format != "png" && format != "jpeg" {
+		return "", ErrUnsupportedCoverFormat
+	}
+
+	buf := &bytes.Buffer{}
+	img = imaging.CropCenter(img, 2560, 423)
+	if format == "png" {
+		err = png.Encode(buf, img)
+	} else {
+		err = jpeg.Encode(buf, img, nil)
+	}
+	if err != nil {
+		return "", fmt.Errorf("could not resize cover: %w", err)
+	}
+
+	coverFileName, err := gonanoid.Nanoid()
+	if err != nil {
+		return "", fmt.Errorf("could not generate cover filename: %w", err)
+	}
+
+	if format == "png" {
+		coverFileName += ".png"
+	} else {
+		coverFileName += ".jpg"
+	}
+
+	err = s.Store.Store(ctx, CoversBucket, coverFileName, buf.Bytes(), storage.StoreWithContentType("image/"+format))
+	if err != nil {
+		return "", fmt.Errorf("could not store cover file: %w", err)
+	}
+
+	var oldCover sql.NullString
+	query := `
+		UPDATE users SET cover = $1 WHERE id = $2
+		RETURNING (SELECT cover FROM users WHERE id = $2) AS old_cover
+	`
+	row := s.DB.QueryRowContext(ctx, query, coverFileName, uid)
+	err = row.Scan(&oldCover)
+	if err != nil {
+		defer func() {
+			err := s.Store.Delete(context.Background(), CoversBucket, coverFileName)
+			if err != nil {
+				_ = s.Logger.Log("error", fmt.Errorf("could not delete cover file after user update fail: %w", err))
+			}
+		}()
+
+		return "", fmt.Errorf("could not update cover: %w", err)
+	}
+
+	if oldCover.Valid {
+		defer func() {
+			err := s.Store.Delete(context.Background(), CoversBucket, oldCover.String)
+			if err != nil {
+				_ = s.Logger.Log("error", fmt.Errorf("could not delete old cover: %w", err))
+			}
+		}()
+	}
+
+	return s.CoverURLPrefix + coverFileName, nil
 }
 
 // ToggleFollow between two users.
@@ -552,6 +645,7 @@ func (s *Service) Followers(ctx context.Context, username string, first uint64, 
 		, users.email
 		, users.username
 		, users.avatar
+		, users.cover
 		, users.followers_count
 		, users.followees_count
 		{{ if .auth }}
@@ -590,12 +684,13 @@ func (s *Service) Followers(ctx context.Context, username string, first uint64, 
 	var uu UserProfiles
 	for rows.Next() {
 		var u UserProfile
-		var avatar sql.NullString
+		var avatar, cover sql.NullString
 		dest := []interface{}{
 			&u.ID,
 			&u.Email,
 			&u.Username,
 			&avatar,
+			&cover,
 			&u.FollowersCount,
 			&u.FolloweesCount,
 		}
@@ -612,6 +707,7 @@ func (s *Service) Followers(ctx context.Context, username string, first uint64, 
 			u.Email = ""
 		}
 		u.AvatarURL = s.avatarURL(avatar)
+		u.CoverURL = s.coverURL(cover)
 		uu = append(uu, u)
 	}
 
@@ -645,6 +741,7 @@ func (s *Service) Followees(ctx context.Context, username string, first uint64, 
 		, users.email
 		, users.username
 		, users.avatar
+		, users.cover
 		, users.followers_count
 		, users.followees_count
 		{{ if .auth }}
@@ -683,12 +780,13 @@ func (s *Service) Followees(ctx context.Context, username string, first uint64, 
 	var uu UserProfiles
 	for rows.Next() {
 		var u UserProfile
-		var avatar sql.NullString
+		var avatar, cover sql.NullString
 		dest := []interface{}{
 			&u.ID,
 			&u.Email,
 			&u.Username,
 			&avatar,
+			&cover,
 			&u.FollowersCount,
 			&u.FolloweesCount,
 		}
@@ -705,6 +803,7 @@ func (s *Service) Followees(ctx context.Context, username string, first uint64, 
 			u.Email = ""
 		}
 		u.AvatarURL = s.avatarURL(avatar)
+		u.CoverURL = s.coverURL(cover)
 		uu = append(uu, u)
 	}
 
@@ -719,11 +818,16 @@ func (s *Service) avatarURL(avatar sql.NullString) *string {
 	if !avatar.Valid {
 		return nil
 	}
-
-	// avatarURL := cloneURL(s.Origin)
-	// avatarURL.Path = "/img/avatars/" + avatar.String
-	// str := avatarURL.String()
 	str := s.AvatarURLPrefix + avatar.String
+	return &str
+}
+
+func (s *Service) coverURL(cover sql.NullString) *string {
+	if !cover.Valid {
+		return nil
+	}
+
+	str := s.CoverURLPrefix + cover.String
 	return &str
 }
 

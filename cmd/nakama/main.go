@@ -66,10 +66,10 @@ func run(ctx context.Context, logger log.Logger, args []string) error {
 		embedStaticFiles, _ = strconv.ParseBool(env("EMBED_STATIC", "false"))
 		s3Endpoint          = os.Getenv("S3_ENDPOINT")
 		s3Region            = os.Getenv("S3_REGION")
-		s3Bucket            = env("S3_BUCKET", "avatars")
 		s3AccessKey         = os.Getenv("S3_ACCESS_KEY")
 		s3SecretKey         = os.Getenv("S3_SECRET_KEY")
 		avatarURLPrefix     = env("AVATAR_URL_PREFIX", originStr+"/img/avatars/")
+		coverURLPrefix      = env("COVER_URL_PREFIX", originStr+"/img/covers/")
 		cookieHashKey       = env("COOKIE_HASH_KEY", "supersecretkeyyoushouldnotcommit")
 		cookieBlockKey      = env("COOKIE_BLOCK_KEY", "supersecretkeyyoushouldnotcommit")
 		githubClientID      = os.Getenv("GITHUB_CLIENT_ID")
@@ -94,6 +94,7 @@ func run(ctx context.Context, logger log.Logger, args []string) error {
 	fs.IntVar(&smtpPort, "smtp-port", smtpPort, "SMTP server port")
 	fs.BoolVar(&embedStaticFiles, "embed-static", embedStaticFiles, "Embed static files")
 	fs.StringVar(&avatarURLPrefix, "avatar-url-prefix", avatarURLPrefix, "Avatar URL prefix")
+	fs.StringVar(&coverURLPrefix, "cover-url-prefix", coverURLPrefix, "Cover URL prefix")
 	fs.StringVar(&cookieHashKey, "cookie-hash-key", cookieHashKey, "Cookie hash key. 32 or 64 bytes")
 	fs.StringVar(&cookieBlockKey, "cookie-block-key", cookieBlockKey, "Cookie block key. 16, 24, or 32 bytes")
 	fs.StringVar(&githubClientID, "github-client-id", githubClientID, "GitHub client ID")
@@ -171,11 +172,11 @@ func run(ctx context.Context, logger log.Logger, args []string) error {
 	if s3Enabled {
 		_ = logger.Log("storage_implementation", "s3")
 		store = &s3storage.Store{
-			Endpoint:  s3Endpoint,
-			Region:    s3Region,
-			Bucket:    s3Bucket,
-			AccessKey: s3AccessKey,
-			SecretKey: s3SecretKey,
+			Endpoint:   s3Endpoint,
+			Region:     s3Region,
+			AccessKey:  s3AccessKey,
+			SecretKey:  s3SecretKey,
+			BucketList: []string{nakama.AvatarsBucket, nakama.CoversBucket},
 		}
 	} else {
 		_ = logger.Log("storage_implementation", "os file system")
@@ -184,7 +185,7 @@ func run(ctx context.Context, logger log.Logger, args []string) error {
 			return fmt.Errorf("could not get current working directory: %w", err)
 		}
 
-		store = &fsstorage.Store{Root: filepath.Join(wd, "web", "static", "img", "avatars")}
+		store = &fsstorage.Store{Root: filepath.Join(wd, "web", "static", "img")}
 	}
 
 	webauthn, err := webauthn.New(&webauthn.Config{
@@ -214,6 +215,7 @@ func run(ctx context.Context, logger log.Logger, args []string) error {
 		PubSub:           pubsub,
 		Store:            store,
 		AvatarURLPrefix:  avatarURLPrefix,
+		CoverURLPrefix:   coverURLPrefix,
 		WebAuthn:         webauthn,
 		DisabledDevLogin: disabledDevLogin,
 		AllowedOrigins:   strings.Split(allowedOrigins, ","),

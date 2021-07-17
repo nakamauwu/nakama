@@ -1,4 +1,4 @@
-//go:generate moq -out service_mock.go . Service
+//go:generate moq -rm -out service_mock.go . Service
 
 package transport
 
@@ -59,6 +59,7 @@ type Service interface {
 	User(ctx context.Context, username string) (nakama.UserProfile, error)
 	UpdateUser(ctx context.Context, params nakama.UpdateUserParams) (nakama.UpdatedUserFields, error)
 	UpdateAvatar(ctx context.Context, r io.Reader) (string, error)
+	UpdateCover(ctx context.Context, r io.Reader) (string, error)
 	ToggleFollow(ctx context.Context, username string) (nakama.ToggleFollowOutput, error)
 	Followers(ctx context.Context, username string, first uint64, after *string) (nakama.UserProfiles, error)
 	Followees(ctx context.Context, username string, first uint64, after *string) (nakama.UserProfiles, error)

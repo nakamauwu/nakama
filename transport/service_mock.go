@@ -122,6 +122,9 @@ var _ Service = &ServiceMock{}
 // 			UpdateAvatarFunc: func(ctx context.Context, r io.Reader) (string, error) {
 // 				panic("mock out the UpdateAvatar method")
 // 			},
+// 			UpdateCoverFunc: func(ctx context.Context, r io.Reader) (string, error) {
+// 				panic("mock out the UpdateCover method")
+// 			},
 // 			UpdateUserFunc: func(ctx context.Context, params nakama.UpdateUserParams) (nakama.UpdatedUserFields, error) {
 // 				panic("mock out the UpdateUser method")
 // 			},
@@ -245,6 +248,9 @@ type ServiceMock struct {
 
 	// UpdateAvatarFunc mocks the UpdateAvatar method.
 	UpdateAvatarFunc func(ctx context.Context, r io.Reader) (string, error)
+
+	// UpdateCoverFunc mocks the UpdateCover method.
+	UpdateCoverFunc func(ctx context.Context, r io.Reader) (string, error)
 
 	// UpdateUserFunc mocks the UpdateUser method.
 	UpdateUserFunc func(ctx context.Context, params nakama.UpdateUserParams) (nakama.UpdatedUserFields, error)
@@ -517,6 +523,13 @@ type ServiceMock struct {
 			// R is the r argument value.
 			R io.Reader
 		}
+		// UpdateCover holds details about calls to the UpdateCover method.
+		UpdateCover []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// R is the r argument value.
+			R io.Reader
+		}
 		// UpdateUser holds details about calls to the UpdateUser method.
 		UpdateUser []struct {
 			// Ctx is the ctx argument value.
@@ -607,6 +620,7 @@ type ServiceMock struct {
 	lockTogglePostSubscription    sync.RWMutex
 	lockToken                     sync.RWMutex
 	lockUpdateAvatar              sync.RWMutex
+	lockUpdateCover               sync.RWMutex
 	lockUpdateUser                sync.RWMutex
 	lockUser                      sync.RWMutex
 	lockUsernames                 sync.RWMutex
@@ -1807,6 +1821,41 @@ func (mock *ServiceMock) UpdateAvatarCalls() []struct {
 	mock.lockUpdateAvatar.RLock()
 	calls = mock.calls.UpdateAvatar
 	mock.lockUpdateAvatar.RUnlock()
+	return calls
+}
+
+// UpdateCover calls UpdateCoverFunc.
+func (mock *ServiceMock) UpdateCover(ctx context.Context, r io.Reader) (string, error) {
+	if mock.UpdateCoverFunc == nil {
+		panic("ServiceMock.UpdateCoverFunc: method is nil but Service.UpdateCover was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+		R   io.Reader
+	}{
+		Ctx: ctx,
+		R:   r,
+	}
+	mock.lockUpdateCover.Lock()
+	mock.calls.UpdateCover = append(mock.calls.UpdateCover, callInfo)
+	mock.lockUpdateCover.Unlock()
+	return mock.UpdateCoverFunc(ctx, r)
+}
+
+// UpdateCoverCalls gets all the calls that were made to UpdateCover.
+// Check the length with:
+//     len(mockedService.UpdateCoverCalls())
+func (mock *ServiceMock) UpdateCoverCalls() []struct {
+	Ctx context.Context
+	R   io.Reader
+} {
+	var calls []struct {
+		Ctx context.Context
+		R   io.Reader
+	}
+	mock.lockUpdateCover.RLock()
+	calls = mock.calls.UpdateCover
+	mock.lockUpdateCover.RUnlock()
 	return calls
 }
 

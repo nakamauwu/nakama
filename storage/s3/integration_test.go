@@ -12,7 +12,6 @@ import (
 )
 
 const (
-	testBucket    = "testbucket"
 	testRegion    = "test_region"
 	testAccessKey = "test_access_key"
 	testSecretKey = "test_secret_key"

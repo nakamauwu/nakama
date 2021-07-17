@@ -101,6 +101,21 @@ func (h *handler) updateAvatar(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, avatarURL)
 }
 
+func (h *handler) updateCover(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	reader := http.MaxBytesReader(w, r.Body, nakama.MaxCoverBytes)
+	defer reader.Close()
+
+	coverURL, err := h.svc.UpdateCover(r.Context(), reader)
+	if err != nil {
+		h.respondErr(w, err)
+		return
+	}
+
+	fmt.Fprint(w, coverURL)
+}
+
 func (h *handler) toggleFollow(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	username := way.Param(ctx, "username")

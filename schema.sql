@@ -20,6 +20,8 @@ CREATE TABLE IF NOT EXISTS users (
     followees_count INT NOT NULL DEFAULT 0 CHECK (followees_count >= 0)
 );
 
+ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS cover VARCHAR;
+
 CREATE TABLE IF NOT EXISTS webauthn_authenticators (
     id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
     aaguid BYTES NOT NULL,

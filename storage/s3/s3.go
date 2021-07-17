@@ -19,9 +19,10 @@ type Store struct {
 
 	Endpoint  string
 	Region    string
-	Bucket    string
 	AccessKey string
 	SecretKey string
+
+	BucketList []string
 }
 
 func (s *Store) init(ctx context.Context) (err error) {
@@ -33,29 +34,31 @@ func (s *Store) init(ctx context.Context) (err error) {
 		return fmt.Errorf("could not create minio client: %w", err)
 	}
 
-	err = s.client.MakeBucket(ctx, s.Bucket, minio.MakeBucketOptions{
-		Region: s.Region,
-	})
-	if err != nil {
-		exists, errExists := s.client.BucketExists(ctx, s.Bucket)
-		if errExists != nil {
-			return fmt.Errorf("could not check bucket %q existence: %w", s.Bucket, errExists)
+	for _, bucket := range s.BucketList {
+		err = s.client.MakeBucket(ctx, bucket, minio.MakeBucketOptions{
+			Region: s.Region,
+		})
+		if err != nil {
+			exists, errExists := s.client.BucketExists(ctx, bucket)
+			if errExists != nil {
+				return fmt.Errorf("could not check bucket %q existence: %w", bucket, errExists)
+			}
+
+			if exists {
+				return nil
+			}
 		}
 
-		if exists {
-			return nil
+		if err != nil {
+			return fmt.Errorf("could not create bucket %q: %w", bucket, err)
 		}
-	}
-
-	if err != nil {
-		return fmt.Errorf("could not create bucket %q: %w", s.Bucket, err)
 	}
 
 	return nil
 }
 
 // Store a file.
-func (s *Store) Store(ctx context.Context, name string, data []byte, opts ...func(*storage.StoreOpts)) (err error) {
+func (s *Store) Store(ctx context.Context, bucket, name string, data []byte, opts ...func(*storage.StoreOpts)) (err error) {
 	s.once.Do(func() {
 		err = s.init(ctx)
 	})
@@ -70,7 +73,7 @@ func (s *Store) Store(ctx context.Context, name string, data []byte, opts ...fun
 
 	r := bytes.NewReader(data)
 	size := int64(len(data))
-	_, err = s.client.PutObject(ctx, s.Bucket, name, r, size, minio.PutObjectOptions{
+	_, err = s.client.PutObject(ctx, bucket, name, r, size, minio.PutObjectOptions{
 		ContentType:     options.ContentType,
 		ContentEncoding: options.ContentEncoding,
 		CacheControl:    options.CacheControl,
@@ -83,7 +86,7 @@ func (s *Store) Store(ctx context.Context, name string, data []byte, opts ...fun
 }
 
 // Open a file.
-func (s *Store) Open(ctx context.Context, name string) (f *storage.File, err error) {
+func (s *Store) Open(ctx context.Context, bucket, name string) (f *storage.File, err error) {
 	s.once.Do(func() {
 		err = s.init(ctx)
 	})
@@ -91,7 +94,7 @@ func (s *Store) Open(ctx context.Context, name string) (f *storage.File, err err
 		return nil, fmt.Errorf("could not init minio client: %w", err)
 	}
 
-	obj, err := s.client.GetObject(ctx, s.Bucket, name, minio.GetObjectOptions{})
+	obj, err := s.client.GetObject(ctx, bucket, name, minio.GetObjectOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("could not get object: %w", err)
 	}
@@ -115,7 +118,7 @@ func (s *Store) Open(ctx context.Context, name string) (f *storage.File, err err
 }
 
 // Delete a file.
-func (s *Store) Delete(ctx context.Context, name string) (err error) {
+func (s *Store) Delete(ctx context.Context, bucket, name string) (err error) {
 	s.once.Do(func() {
 		err = s.init(ctx)
 	})
@@ -123,7 +126,7 @@ func (s *Store) Delete(ctx context.Context, name string) (err error) {
 		return fmt.Errorf("could not init minio client: %w", err)
 	}
 
-	err = s.client.RemoveObject(ctx, s.Bucket, name, minio.RemoveObjectOptions{})
+	err = s.client.RemoveObject(ctx, bucket, name, minio.RemoveObjectOptions{})
 	if err != nil {
 		return fmt.Errorf("could not delete object: %w", err)
 	}

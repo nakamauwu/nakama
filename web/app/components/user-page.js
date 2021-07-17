@@ -45,6 +45,10 @@ function UserPage({ username }) {
         updateUser(ev.detail)
     }, [])
 
+    const onCoverUpdated = useCallback(ev => {
+        updateUser(ev.detail)
+    }, [])
+
     const updateUser = useCallback(payload => {
         setUser(u => ({
             ...u,
@@ -131,8 +135,7 @@ function UserPage({ username }) {
                     ` : fetching ? html`
                     <p class="loader" aria-busy="true" aria-live="polite">Loading user... please wait.<p>
                             ` : html`
-                            <user-profile .user=${user} @username-updated=${onUsernameUpdated}
-                                @avatar-updated=${onAvatarUpdated}></user-profile>
+                            <user-profile .user=${user} @username-updated=${onUsernameUpdated} @avatar-updated=${onAvatarUpdated} @cover-updated=${onCoverUpdated}></user-profile>
                             `}
                 </div>
             </div>
@@ -173,8 +176,10 @@ function UserProfile({ user: initialUser }) {
     const [username, setUsername] = useState(user.username)
     const settingsDialogRef = useRef(null)
     const avatarInputRef = useRef(null)
+    const coverInputRef = useRef(null)
     const [updatingUsername, setUpdatingUsername] = useState(false)
     const [updatingAvatar, setUpdatingAvatar] = useState(false)
+    const [updatingCover, setUpdatingCover] = useState(false)
     const [theme, setTheme] = useState(() => {
         const value = localStorage.getItem("color-scheme")
         return value !== null ? value : "default"
@@ -187,6 +192,10 @@ function UserProfile({ user: initialUser }) {
 
     const dispatchAvatarUpdated = payload => {
         this.dispatchEvent(new CustomEvent("avatar-updated", { bubbles: true, detail: payload }))
+    }
+
+    const dispatchCoverUpdated = payload => {
+        this.dispatchEvent(new CustomEvent("cover-updated", { bubbles: true, detail: payload }))
     }
 
     const onFollowToggle = useCallback(ev => {
@@ -301,6 +310,75 @@ function UserProfile({ user: initialUser }) {
         })
     }, [])
 
+    const onCoverInputChange = useCallback(ev => {
+        const files = ev.currentTarget.files
+        if (files === null || files.length !== 1) {
+            return
+        }
+
+        const cover = files.item(0)
+        submitCover(cover)
+    }, [])
+
+    const onCoverDblClick = useCallback(() => {
+        if (updatingCover) {
+            return
+        }
+
+        coverInputRef.current.click()
+    }, [updatingCover, coverInputRef])
+
+    const onCoverBtnClick = useCallback(() => {
+        if (coverInputRef.current === null || updatingCover) {
+            return
+        }
+
+        coverInputRef.current.click()
+    }, [updatingCover, coverInputRef])
+
+    const onCoverDragOver = useCallback(ev => {
+        ev.preventDefault()
+    }, [])
+
+    const onCoverDrop = useCallback(ev => {
+        ev.preventDefault()
+        if (updatingCover) {
+            return
+        }
+
+        const files = ev.dataTransfer.files
+        if (!(files instanceof FileList) || files.length !== 1) {
+            return
+        }
+
+        const cover = files.item(0)
+        submitCover(cover)
+    }, [updatingCover])
+
+    const submitCover = useCallback(cover => {
+        setUpdatingCover(true)
+        updateCover(cover).then(payload => {
+            setAuth(auth => ({
+                ...auth,
+                user: {
+                    ...auth.user,
+                    ...payload,
+                },
+            }))
+            setUser(u => ({
+                ...u,
+                ...payload,
+            }))
+            setToast({ type: "success", content: "cover updated" })
+            dispatchCoverUpdated(payload)
+        }, err => {
+            const msg = "could not update cover: " + err.message
+            setToast({ type: "error", content: msg })
+        }).finally(() => {
+            setUpdatingCover(false)
+        })
+    }, [])
+
     const onThemeChange = useCallback(ev => {
         const value = ev.currentTarget.value
         setTheme(value)
@@ -401,6 +479,17 @@ function UserProfile({ user: initialUser }) {
                         <button .disabled=${updatingAvatar} @click=${onAvatarBtnClick}>Update</button>
                     </div>
                 </fieldset>
+                <fieldset class="cover-fieldset" @drop=${onCoverDrop} @dragover=${onCoverDragOver}>
+                    <legend>Cover</legend>
+                    <div class="cover-grp">
+                        ${user.coverURL !== null ? html`
+                            <img src="${user.coverURL}" @dblclick=${onCoverDblClick}>
+                        ` : nothing}
+                        <input type="file" name="cover" accept="image/png,image/jpeg" required hidden
+                            .disabled=${updatingCover} .ref=${ref(coverInputRef)} @change=${onCoverInputChange}>
+                        <button .disabled=${updatingCover} @click=${onCoverBtnClick}>Update</button>
+                    </div>
+                </fieldset>
                 <fieldset class="theme-fieldset">
                     <legend>Theme</legend>
                     <label>
@@ -488,4 +577,13 @@ function updateAvatar(avatar) {
     return request("PUT", "/api/auth_user/avatar", { body: avatar })
         .then(resp => resp.body)
         .then(avatarURL => ({ avatarURL }))
+}
+
+/**
+ * @param {File} cover
+ */
+function updateCover(cover) {
+    return request("PUT", "/api/auth_user/cover", { body: cover })
+        .then(resp => resp.body)
+        .then(coverURL => ({ coverURL }))
 }

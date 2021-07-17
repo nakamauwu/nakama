@@ -29,6 +29,7 @@ type Service struct {
 	PubSub           pubsub.PubSub
 	Store            storage.Store
 	AvatarURLPrefix  string
+	CoverURLPrefix   string
 	WebAuthn         *webauthn.WebAuthn
 	DisabledDevLogin bool
 	AllowedOrigins   []string

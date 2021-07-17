@@ -26,10 +26,10 @@ func (s *Store) init() {
 	}
 }
 
-func (s *Store) Store(_ context.Context, name string, data []byte, opts ...func(*storage.StoreOpts)) error {
+func (s *Store) Store(_ context.Context, bucket, name string, data []byte, opts ...func(*storage.StoreOpts)) error {
 	s.once.Do(s.init)
 
-	f, err := os.Create(filepath.Join(s.Root, name))
+	f, err := os.Create(filepath.Join(s.Root, bucket, name))
 	if err != nil {
 		return fmt.Errorf("could not create file: %w", err)
 	}
@@ -44,10 +44,10 @@ func (s *Store) Store(_ context.Context, name string, data []byte, opts ...func(
 	return nil
 }
 
-func (s *Store) Open(_ context.Context, name string) (*storage.File, error) {
+func (s *Store) Open(_ context.Context, bucket, name string) (*storage.File, error) {
 	s.once.Do(s.init)
 
-	filename := filepath.Join(s.Root, name)
+	filename := filepath.Join(s.Root, bucket, name)
 
 	stat, err := os.Stat(filename)
 	if err != nil {
@@ -83,12 +83,13 @@ func (s *Store) Open(_ context.Context, name string) (*storage.File, error) {
 	}, nil
 }
 
-func (s *Store) Delete(_ context.Context, name string) error {
+func (s *Store) Delete(_ context.Context, bucket, name string) error {
 	s.once.Do(s.init)
 
-	err := os.Remove(filepath.Join(s.Root, name))
+	err := os.Remove(filepath.Join(s.Root, bucket, name))
 	if err != nil {
 		return fmt.Errorf("could not remove file: %w", err)
 	}
+
 	return nil
 }
