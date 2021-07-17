@@ -9,5 +9,5 @@ import (
 func TestStore(t *testing.T) {
 	tests.RunStoreTests(t, &Store{
 		Root: t.TempDir(),
-	})
+	}, "")
 }

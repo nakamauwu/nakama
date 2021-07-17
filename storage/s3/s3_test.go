@@ -12,6 +12,6 @@ func TestStore(t *testing.T) {
 		Region:     testRegion,
 		AccessKey:  testAccessKey,
 		SecretKey:  testSecretKey,
-		BucketList: []string{tests.Bucket},
-	})
+		BucketList: []string{testBucket},
+	}, testBucket)
 }

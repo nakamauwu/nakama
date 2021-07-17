@@ -15,6 +15,7 @@ const (
 	testRegion    = "test_region"
 	testAccessKey = "test_access_key"
 	testSecretKey = "test_secret_key"
+	testBucket    = "test-bucket"
 )
 
 var testEndpoint string

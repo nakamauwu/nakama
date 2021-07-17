@@ -11,9 +11,7 @@ import (
 	"github.com/nicolasparada/nakama/testutil"
 )
 
-const Bucket = "test-bucket"
-
-func RunStoreTests(t *testing.T, store storage.Store) {
+func RunStoreTests(t *testing.T, store storage.Store, bucket string) {
 	ctx := context.Background()
 
 	logoName := "go_logo.png"
@@ -30,10 +28,10 @@ func RunStoreTests(t *testing.T, store storage.Store) {
 
 	/* -------------------------------- end setup ------------------------------- */
 
-	err = store.Store(ctx, Bucket, logoName, logoBytes, storage.StoreWithContentType(logoContentType))
+	err = store.Store(ctx, bucket, logoName, logoBytes, storage.StoreWithContentType(logoContentType))
 	testutil.AssertEqual(t, nil, err, "error")
 
-	f, err := store.Open(ctx, Bucket, logoName)
+	f, err := store.Open(ctx, bucket, logoName)
 	testutil.AssertEqual(t, nil, err, "error")
 
 	t.Cleanup(func() { f.Close() })
@@ -45,6 +43,6 @@ func RunStoreTests(t *testing.T, store storage.Store) {
 	testutil.AssertEqual(t, logoContentType, f.ContentType, "content-type")
 	testutil.AssertEqual(t, logoBytes, gotBytes, "bytes")
 
-	err = store.Delete(ctx, Bucket, logoName)
+	err = store.Delete(ctx, bucket, logoName)
 	testutil.AssertEqual(t, nil, err, "error")
 }
