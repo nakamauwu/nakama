@@ -39,7 +39,7 @@ func (h *handler) credentialCreationOptions(w http.ResponseWriter, r *http.Reque
 			Name:     webAuthnCredentialCreationDataCookieName,
 			Value:    cookieValue,
 			MaxAge:   int(WebAuthnTimeout.Seconds()),
-			Secure:   r.TLS != nil,
+			Secure:   h.origin.Scheme == "https",
 			HttpOnly: true,
 		}
 		if samesite.IsSameSiteCookieSupported(r.UserAgent()) {
@@ -114,7 +114,7 @@ func (h *handler) credentialRequestOptions(w http.ResponseWriter, r *http.Reques
 			Name:     webAuthnCredentialRequestDataCookieName,
 			Value:    cookieValue,
 			MaxAge:   int(WebAuthnTimeout.Seconds()),
-			Secure:   r.TLS != nil,
+			Secure:   h.origin.Scheme == "https",
 			HttpOnly: true,
 		}
 		if samesite.IsSameSiteCookieSupported(r.UserAgent()) {

@@ -145,7 +145,7 @@ func (h *handler) oauth2Handler(provider OauthProvider) http.HandlerFunc {
 				Name:     "oauth2_state",
 				Value:    stateValue,
 				MaxAge:   int(oauth2Timeout.Seconds()),
-				Secure:   r.TLS != nil,
+				Secure:   h.origin.Scheme == "https",
 				HttpOnly: true,
 			}
 			if samesite.IsSameSiteCookieSupported(r.UserAgent()) {
@@ -159,7 +159,7 @@ func (h *handler) oauth2Handler(provider OauthProvider) http.HandlerFunc {
 				Name:     "oauth2_redirect_uri",
 				Value:    redirectURI.String(),
 				MaxAge:   int(oauth2Timeout.Seconds()),
-				Secure:   r.TLS != nil,
+				Secure:   h.origin.Scheme == "https",
 				HttpOnly: true,
 			}
 			if samesite.IsSameSiteCookieSupported(r.UserAgent()) {
@@ -173,7 +173,7 @@ func (h *handler) oauth2Handler(provider OauthProvider) http.HandlerFunc {
 				Name:     "oauth2_username",
 				Value:    username,
 				MaxAge:   int(oauth2Timeout.Seconds()),
-				Secure:   r.TLS != nil,
+				Secure:   h.origin.Scheme == "https",
 				HttpOnly: true,
 			}
 			if samesite.IsSameSiteCookieSupported(r.UserAgent()) {
