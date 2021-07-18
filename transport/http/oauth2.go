@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/hybridtheory/samesite-cookie-support"
 	"github.com/nicolasparada/nakama"
 	"golang.org/x/oauth2"
 )
@@ -147,7 +148,7 @@ func (h *handler) oauth2Handler(provider OauthProvider) http.HandlerFunc {
 				Secure:   r.TLS != nil,
 				HttpOnly: true,
 			}
-			if ok, _ := shouldSendSameSiteNone(r.UserAgent()); ok {
+			if samesite.IsSameSiteCookieSupported(r.UserAgent()) {
 				cookie.SameSite = http.SameSiteLaxMode
 			}
 			http.SetCookie(w, cookie)
@@ -161,7 +162,7 @@ func (h *handler) oauth2Handler(provider OauthProvider) http.HandlerFunc {
 				Secure:   r.TLS != nil,
 				HttpOnly: true,
 			}
-			if ok, _ := shouldSendSameSiteNone(r.UserAgent()); ok {
+			if samesite.IsSameSiteCookieSupported(r.UserAgent()) {
 				cookie.SameSite = http.SameSiteLaxMode
 			}
 			http.SetCookie(w, cookie)
@@ -175,7 +176,7 @@ func (h *handler) oauth2Handler(provider OauthProvider) http.HandlerFunc {
 				Secure:   r.TLS != nil,
 				HttpOnly: true,
 			}
-			if ok, _ := shouldSendSameSiteNone(r.UserAgent()); ok {
+			if samesite.IsSameSiteCookieSupported(r.UserAgent()) {
 				cookie.SameSite = http.SameSiteLaxMode
 			}
 			http.SetCookie(w, cookie)

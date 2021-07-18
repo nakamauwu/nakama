@@ -11,6 +11,7 @@ require (
 	github.com/gorilla/securecookie v1.1.1
 	github.com/hako/branca v0.0.0-20200807062402-6052ac720505
 	github.com/hako/durafmt v0.0.0-20210608085754-5c1018a4e16b
+	github.com/hybridtheory/samesite-cookie-support v0.4.0 // indirect
 	github.com/joho/godotenv v1.3.0
 	github.com/kyokomi/emoji/v2 v2.2.8
 	github.com/lib/pq v1.10.2

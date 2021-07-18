@@ -10,6 +10,7 @@ import (
 
 	"github.com/duo-labs/webauthn/protocol"
 	"github.com/duo-labs/webauthn/webauthn"
+	"github.com/hybridtheory/samesite-cookie-support"
 	"github.com/nicolasparada/nakama"
 )
 
@@ -41,7 +42,7 @@ func (h *handler) credentialCreationOptions(w http.ResponseWriter, r *http.Reque
 			Secure:   r.TLS != nil,
 			HttpOnly: true,
 		}
-		if ok, _ := shouldSendSameSiteNone(r.UserAgent()); ok {
+		if samesite.IsSameSiteCookieSupported(r.UserAgent()) {
 			cookie.SameSite = http.SameSiteLaxMode
 		}
 		http.SetCookie(w, cookie)
@@ -116,7 +117,7 @@ func (h *handler) credentialRequestOptions(w http.ResponseWriter, r *http.Reques
 			Secure:   r.TLS != nil,
 			HttpOnly: true,
 		}
-		if ok, _ := shouldSendSameSiteNone(r.UserAgent()); ok {
+		if samesite.IsSameSiteCookieSupported(r.UserAgent()) {
 			cookie.SameSite = http.SameSiteLaxMode
 		}
 		http.SetCookie(w, cookie)
