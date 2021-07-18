@@ -139,32 +139,47 @@ func (h *handler) oauth2Handler(provider OauthProvider) http.HandlerFunc {
 			return
 		}
 
-		http.SetCookie(w, &http.Cookie{
-			Name:     "oauth2_state",
-			Value:    stateValue,
-			MaxAge:   int(oauth2Timeout.Seconds()),
-			Secure:   r.TLS != nil,
-			SameSite: http.SameSiteLaxMode,
-			HttpOnly: true,
-		})
+		{
+			cookie := &http.Cookie{
+				Name:     "oauth2_state",
+				Value:    stateValue,
+				MaxAge:   int(oauth2Timeout.Seconds()),
+				Secure:   r.TLS != nil,
+				HttpOnly: true,
+			}
+			if ok, _ := shouldSendSameSiteNone(r.UserAgent()); ok {
+				cookie.SameSite = http.SameSiteLaxMode
+			}
+			http.SetCookie(w, cookie)
+		}
 
-		http.SetCookie(w, &http.Cookie{
-			Name:     "oauth2_redirect_uri",
-			Value:    redirectURI.String(),
-			MaxAge:   int(oauth2Timeout.Seconds()),
-			Secure:   r.TLS != nil,
-			SameSite: http.SameSiteLaxMode,
-			HttpOnly: true,
-		})
+		{
+			cookie := &http.Cookie{
+				Name:     "oauth2_redirect_uri",
+				Value:    redirectURI.String(),
+				MaxAge:   int(oauth2Timeout.Seconds()),
+				Secure:   r.TLS != nil,
+				HttpOnly: true,
+			}
+			if ok, _ := shouldSendSameSiteNone(r.UserAgent()); ok {
+				cookie.SameSite = http.SameSiteLaxMode
+			}
+			http.SetCookie(w, cookie)
+		}
 
-		http.SetCookie(w, &http.Cookie{
-			Name:     "oauth2_username",
-			Value:    username,
-			MaxAge:   int(oauth2Timeout.Seconds()),
-			Secure:   r.TLS != nil,
-			SameSite: http.SameSiteLaxMode,
-			HttpOnly: true,
-		})
+		{
+			cookie := &http.Cookie{
+				Name:     "oauth2_username",
+				Value:    username,
+				MaxAge:   int(oauth2Timeout.Seconds()),
+				Secure:   r.TLS != nil,
+				HttpOnly: true,
+			}
+			if ok, _ := shouldSendSameSiteNone(r.UserAgent()); ok {
+				cookie.SameSite = http.SameSiteLaxMode
+			}
+			http.SetCookie(w, cookie)
+		}
 
 		u := provider.Config.AuthCodeURL(state)
 		http.Redirect(w, r, u, http.StatusTemporaryRedirect)

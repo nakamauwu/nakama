@@ -33,14 +33,19 @@ func (h *handler) credentialCreationOptions(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     webAuthnCredentialCreationDataCookieName,
-		Value:    cookieValue,
-		MaxAge:   int(WebAuthnTimeout.Seconds()),
-		Secure:   r.TLS != nil,
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-	})
+	{
+		cookie := &http.Cookie{
+			Name:     webAuthnCredentialCreationDataCookieName,
+			Value:    cookieValue,
+			MaxAge:   int(WebAuthnTimeout.Seconds()),
+			Secure:   r.TLS != nil,
+			HttpOnly: true,
+		}
+		if ok, _ := shouldSendSameSiteNone(r.UserAgent()); ok {
+			cookie.SameSite = http.SameSiteLaxMode
+		}
+		http.SetCookie(w, cookie)
+	}
 
 	h.respond(w, out, http.StatusOK)
 }
@@ -58,14 +63,6 @@ func (h *handler) registerCredential(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cookieValue := c.Value
-	http.SetCookie(w, &http.Cookie{
-		Name:     webAuthnCredentialCreationDataCookieName,
-		Value:    "",
-		MaxAge:   -1,
-		Secure:   r.TLS != nil,
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-	})
 
 	var data webauthn.SessionData
 	err = h.cookieCodec.Decode(webAuthnCredentialCreationDataCookieName, cookieValue, &data)
@@ -111,14 +108,19 @@ func (h *handler) credentialRequestOptions(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     webAuthnCredentialRequestDataCookieName,
-		Value:    cookieValue,
-		MaxAge:   int(WebAuthnTimeout.Seconds()),
-		Secure:   r.TLS != nil,
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-	})
+	{
+		cookie := &http.Cookie{
+			Name:     webAuthnCredentialRequestDataCookieName,
+			Value:    cookieValue,
+			MaxAge:   int(WebAuthnTimeout.Seconds()),
+			Secure:   r.TLS != nil,
+			HttpOnly: true,
+		}
+		if ok, _ := shouldSendSameSiteNone(r.UserAgent()); ok {
+			cookie.SameSite = http.SameSiteLaxMode
+		}
+		http.SetCookie(w, cookie)
+	}
 
 	h.respond(w, out, http.StatusOK)
 }
@@ -136,15 +138,6 @@ func (h *handler) webAuthnLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cookieValue := c.Value
-
-	http.SetCookie(w, &http.Cookie{
-		Name:     webAuthnCredentialRequestDataCookieName,
-		Value:    "",
-		MaxAge:   -1,
-		Secure:   r.TLS != nil,
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-	})
 
 	var data webauthn.SessionData
 	err = h.cookieCodec.Decode(webAuthnCredentialRequestDataCookieName, cookieValue, &data)
