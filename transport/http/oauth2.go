@@ -183,7 +183,7 @@ func (h *handler) oauth2Handler(provider OauthProvider) http.HandlerFunc {
 		}
 
 		u := provider.Config.AuthCodeURL(state)
-		http.Redirect(w, r, u, http.StatusTemporaryRedirect)
+		http.Redirect(w, r, u, http.StatusFound)
 	}
 }
 
