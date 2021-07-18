@@ -1,0 +1,27 @@
+{
+    "defaultErr": "something went wrong",
+    "InternalServerError": "unexpected error at nakama's servers. Try again later",
+    "InvalidEmailError": "invalid email",
+    "InvalidRedirectURIError": "invalid redirect URI",
+    "UntrustedRedirectURIError": "untrusted redirect URI",
+    "accessPage": {
+        "title": "Access",
+        "welcome": "Welcome to Nakama, the next social network for anime fans 🤗"
+    },
+    "loginForm": {
+        "success": "Click on the link we sent to your email address to access.",
+        "errLogin": "could not login: ",
+        "errSendMagicLink": "could not send magic link: ",
+        "placeholder": "Email",
+        "btn": "Access",
+        "subheading": "Or access with:",
+        "signupHelp": {
+            "heading": "First time here?",
+            "summary": "Nakama uses an email-based passwordless login flow. Just enter your email address and you'll receive an access link. After you click on the link you will be able to pick your username and be part of nakama."
+        },
+        "signinHelp": {
+            "heading": "Back again?",
+            "summary": "If you already have an account then just enter the email adress you used the first time here. Nakama will send you an email with an access link."
+        }
+    }
+}

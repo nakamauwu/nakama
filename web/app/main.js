@@ -1,6 +1,6 @@
-import { component, useCallback, useEffect, useState } from "haunted"
-import { html, render } from "lit-html"
+import { component, html, render, useCallback, useEffect, useState } from "haunted"
 import { until } from "lit-html/directives/until.js"
+import { registerTranslateConfig, use as useLang } from "lit-translate"
 import { setLocalAuth } from "./auth.js"
 import "./components/app-header.js"
 import { authStore, useStore } from "./ctx.js"
@@ -133,7 +133,13 @@ function NakamaApp() {
 
 customElements.define("nakama-app", component(NakamaApp, { useShadowDOM: false }))
 
-render(html`<nakama-app></nakama-app>`, document.body)
+registerTranslateConfig({
+    loader: lang => fetch(`/i18n/${lang}.json`).then(res => res.json())
+})
+
+useLang(detectLang()).then(() => {
+    render(html`<nakama-app></nakama-app>`, document.body)
+})
 
 function fetchToken() {
     return request("GET", "/api/token")
@@ -142,6 +148,34 @@ function fetchToken() {
             auth.expiresAt = new Date(auth.expiresAt)
             return auth
         })
+}
+
+function detectLang() {
+    let lang = localStorage.getItem("preferred_lang")
+    if (lang === "es") {
+        return "es"
+    }
+
+    if (Array.isArray(window.navigator.languages)) {
+        for (const lang of window.navigator.languages) {
+            if (lang === "es" || (typeof lang === "string" && lang.startsWith("es-"))) {
+                return "es"
+            }
+        }
+    }
+
+    lang = window.navigator["userLanguage"]
+    if (lang === "es" || (typeof lang === "string" && lang.startsWith("es-"))) {
+        return "es"
+    }
+
+
+    lang = window.navigator.language
+    if (lang === "es" || (typeof lang === "string" && lang.startsWith("es-"))) {
+        return "es"
+    }
+
+    return "en"
 }
 
 if ("serviceWorker" in navigator) {
