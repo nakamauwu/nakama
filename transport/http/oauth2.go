@@ -144,7 +144,7 @@ func (h *handler) oauth2Handler(provider OauthProvider) http.HandlerFunc {
 			cookie := &http.Cookie{
 				Name:     "oauth2_state",
 				Value:    stateValue,
-				MaxAge:   int(oauth2Timeout.Seconds()),
+				Expires:  time.Now().Add(oauth2Timeout),
 				Secure:   h.origin.Scheme == "https",
 				HttpOnly: true,
 			}
@@ -158,7 +158,7 @@ func (h *handler) oauth2Handler(provider OauthProvider) http.HandlerFunc {
 			cookie := &http.Cookie{
 				Name:     "oauth2_redirect_uri",
 				Value:    redirectURI.String(),
-				MaxAge:   int(oauth2Timeout.Seconds()),
+				Expires:  time.Now().Add(oauth2Timeout),
 				Secure:   h.origin.Scheme == "https",
 				HttpOnly: true,
 			}
@@ -172,7 +172,7 @@ func (h *handler) oauth2Handler(provider OauthProvider) http.HandlerFunc {
 			cookie := &http.Cookie{
 				Name:     "oauth2_username",
 				Value:    username,
-				MaxAge:   int(oauth2Timeout.Seconds()),
+				Expires:  time.Now().Add(oauth2Timeout),
 				Secure:   h.origin.Scheme == "https",
 				HttpOnly: true,
 			}
@@ -183,7 +183,7 @@ func (h *handler) oauth2Handler(provider OauthProvider) http.HandlerFunc {
 		}
 
 		u := provider.Config.AuthCodeURL(state)
-		http.Redirect(w, r, u, http.StatusFound)
+		http.Redirect(w, r, u, http.StatusTemporaryRedirect)
 	}
 }
 
