@@ -6,7 +6,7 @@ WORKDIR /go/src/github.com/nicolasparada/nakama
 
 COPY . .
 
-RUN cd web/app && npm i && npm run build && cd ../..
+RUN cd web/app && npm i && npm run build && cd ../.. &&  && rm -rf web/static/node_modules/
 
 RUN go mod download && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o /go/bin/nakama ./cmd/nakama
 
