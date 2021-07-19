@@ -177,12 +177,15 @@ function PostForm() {
 
     const onTextAreaInput = useCallback(() => {
         setContent(textAreaRef.current.value)
+        updateTextAreaHeight()
+    }, [content, textAreaRef])
 
+    const updateTextAreaHeight = useCallback(() => {
         textAreaRef.current.style.height = initialTextAreaHeight + "px"
         if (textAreaRef.current.value !== "") {
             textAreaRef.current.style.height = Math.max(textAreaRef.current.scrollHeight, initialTextAreaHeight) + "px"
         }
-    }, [content, initialTextAreaHeight, textAreaRef])
+    }, [initialTextAreaHeight, textAreaRef])
 
     const onNSFWInputChange = useCallback(ev => {
         const checked = ev.currentTarget.checked
@@ -255,6 +258,7 @@ function PostForm() {
         }
     }, [textAreaRef, textcompleteRef])
 
+    // Share Target.
     useEffect(() => {
         const params = new URLSearchParams(window.location.search.slice(1))
         const preContent = []
@@ -276,6 +280,7 @@ function PostForm() {
 
         if (preContent.length !== 0) {
             setContent(preContent.join(" "))
+            updateTextAreaHeight()
         }
 
         if (cleanup) {
