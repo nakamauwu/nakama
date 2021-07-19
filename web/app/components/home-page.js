@@ -279,6 +279,10 @@ function PostForm() {
     }, [])
 
     useEffect(() => {
+        if (textAreaRef.current === null) {
+            return
+        }
+
         textAreaRef.current.style.height = initialTextAreaHeight + "px"
         if (textAreaRef.current.value !== "") {
             textAreaRef.current.style.height = Math.max(textAreaRef.current.scrollHeight, initialTextAreaHeight) + "px"
