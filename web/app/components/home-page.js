@@ -163,7 +163,6 @@ function PostForm() {
             setIsSpoiler(false)
             setSpoilerOf("")
             textcompleteRef.current.hide()
-            textAreaRef.current.style.height = initialTextAreaHeight + "px"
 
             dispatchTimelineItemCreated(ti)
         }, err => {
@@ -177,15 +176,7 @@ function PostForm() {
 
     const onTextAreaInput = useCallback(() => {
         setContent(textAreaRef.current.value)
-        updateTextAreaHeight()
     }, [content, textAreaRef])
-
-    const updateTextAreaHeight = useCallback(() => {
-        textAreaRef.current.style.height = initialTextAreaHeight + "px"
-        if (textAreaRef.current.value !== "") {
-            textAreaRef.current.style.height = Math.max(textAreaRef.current.scrollHeight, initialTextAreaHeight) + "px"
-        }
-    }, [initialTextAreaHeight, textAreaRef])
 
     const onNSFWInputChange = useCallback(ev => {
         const checked = ev.currentTarget.checked
@@ -280,13 +271,19 @@ function PostForm() {
 
         if (preContent.length !== 0) {
             setContent(preContent.join(" "))
-            updateTextAreaHeight()
         }
 
         if (cleanup) {
             history.replaceState(history.state, document.title, "/")
         }
     }, [])
+
+    useEffect(() => {
+        textAreaRef.current.style.height = initialTextAreaHeight + "px"
+        if (textAreaRef.current.value !== "") {
+            textAreaRef.current.style.height = Math.max(textAreaRef.current.scrollHeight, initialTextAreaHeight) + "px"
+        }
+    }, [content, initialTextAreaHeight, textAreaRef])
 
     return html`
         <form class="post-form${content !== "" ? " has-content" : ""}" name="post-form" @submit=${onSubmit}>
