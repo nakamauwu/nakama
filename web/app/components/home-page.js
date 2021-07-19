@@ -255,6 +255,34 @@ function PostForm() {
         }
     }, [textAreaRef, textcompleteRef])
 
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search.slice(1))
+        const preContent = []
+        let cleanup = false
+        if (params.has("text")) {
+            cleanup = true
+            const text = decodeURIComponent(params.get("text")).trim()
+            if (text !== "") {
+                preContent.push(text)
+            }
+        }
+        if (params.has("url")) {
+            cleanup = true
+            const url = decodeURIComponent(params.get("url"))
+            if (url !== "") {
+                preContent.push(url)
+            }
+        }
+
+        if (preContent.length !== 0) {
+            setContent(preContent.join(" "))
+        }
+
+        if (cleanup) {
+            history.replaceState(history.state, document.title, "/")
+        }
+    }, [])
+
     return html`
         <form class="post-form${content !== "" ? " has-content" : ""}" name="post-form" @submit=${onSubmit}>
             <textarea name="content" placeholder="Write something..." maxlenght="2048" aria-label="Content" required

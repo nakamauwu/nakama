@@ -27,5 +27,13 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "share_target": {
+    "action": "/",
+    "method": "GET",
+    "params": {
+      "text": "text",
+      "url": "url"
+    }
+  }
 }
