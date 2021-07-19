@@ -271,12 +271,15 @@ function PostForm() {
 
         if (preContent.length !== 0) {
             setContent(preContent.join(" "))
+            if (textAreaRef.current !== null) {
+                textAreaRef.current.focus()
+            }
         }
 
         if (cleanup) {
             history.replaceState(history.state, document.title, "/")
         }
-    }, [])
+    }, [textAreaRef])
 
     useEffect(() => {
         if (textAreaRef.current === null) {
