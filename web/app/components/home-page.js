@@ -17,111 +17,145 @@ export default function () {
 }
 
 function HomePage() {
-    const [timeline, setTimeline] = useState([])
-    const [timelineEndCursor, setTimelineEndCursor] = useState(null)
-    const [fetchingTimeline, setFetchingTimeline] = useState(timeline.length === 0)
+    const [mode, setMode] = useState("timeline")
+    const [posts, setPosts] = useState([])
+    const [endCursor, setEndCursor] = useState(null)
+    const [fetching, setFetching] = useState(posts.length === 0)
     const [err, setErr] = useState(null)
     const [loadingMore, setLoadingMore] = useState(false)
-    const [noMoreTimelineItems, setNoMoreTimelineItems] = useState(false)
+    const [noMore, setNoMore] = useState(false)
     const [endReached, setEndReached] = useState(false)
     const [queue, setQueue] = useState([])
     const [toast, setToast] = useState(null)
 
     const onTimelineItemCreated = useCallback(ev => {
         const payload = ev.detail
-        setTimeline(tt => [payload, ...queue, ...tt])
+        setPosts(pp => [payload, ...queue, ...pp])
         setQueue([])
     }, [queue])
 
     const onNewTimelineItemArrive = useCallback(ti => {
-        setQueue(tt => [ti, ...tt])
+        setQueue(pp => [ti, ...pp])
+    }, [])
+
+    const onNewPostArrive = useCallback(p => {
+        setQueue(pp => [p, ...pp])
     }, [])
 
     const onRemovedFromTimeline = useCallback(ev => {
         const payload = ev.detail
-        setTimeline(tt => tt.filter(ti => ti.id !== payload.timelineItemID))
+        setPosts(pp => pp.filter(p => p.timelineItemID !== payload.timelineItemID))
     }, [])
 
     const onPostDeleted = useCallback(ev => {
         const payload = ev.detail
-        setTimeline(tt => tt.filter(ti => ti.post.id !== payload.id))
+        setPosts(pp => pp.filter(p => p.id !== payload.id))
     }, [])
 
     const onQueueBtnClick = useCallback(() => {
-        setTimeline(tt => [...queue, ...tt])
+        setPosts(pp => [...queue, ...pp])
         setQueue([])
     }, [queue])
 
     const loadMore = useCallback(() => {
-        if (loadingMore || noMoreTimelineItems) {
+        if (loadingMore || noMore) {
             return
         }
 
         setLoadingMore(true)
-        fetchTimeline(timelineEndCursor).then(({ items: timeline, endCursor }) => {
-            setTimeline(tt => [...tt, ...timeline])
-            setTimelineEndCursor(endCursor)
+        const promise = mode === "timeline" ? fetchTimeline(endCursor) : fetchPosts(endCursor)
+        promise.then(({ items: posts, endCursor }) => {
+            setPosts(tt => [...tt, ...posts])
+            setEndCursor(endCursor)
 
-            if (timeline.length < pageSize) {
-                setNoMoreTimelineItems(true)
+            if (posts.length < pageSize) {
+                setNoMore(true)
                 setEndReached(true)
             }
         }, err => {
-            const msg = "could not fetch more timeline items: " + err.message
+            const msg = mode === ("timeline" ? "could not fetch more timeline items: " : "could not fetch more posts: ") + err.message
             console.error(msg)
             setToast({ type: "error", content: msg })
         }).finally(() => {
             setLoadingMore(false)
         })
-    }, [loadingMore, noMoreTimelineItems, timelineEndCursor])
+    }, [mode, loadingMore, noMore, endCursor])
 
-    useEffect(() => {
-        setFetchingTimeline(true)
-        fetchTimeline().then(({ items: timeline, endCursor }) => {
-            setTimeline(timeline)
-            setTimelineEndCursor(endCursor)
-
-            if (timeline.length < pageSize) {
-                setNoMoreTimelineItems(true)
-            }
-        }, err => {
-            console.error("could not fetch timeline:", err)
-            setErr(err)
-        }).finally(() => {
-            setFetchingTimeline(false)
-        })
+    const onTimelineModeClick = useCallback(() => {
+        setMode("timeline")
     }, [])
 
-    useEffect(() => subscribeToTimeline(onNewTimelineItemArrive), [])
+    const onPostsModeClick = useCallback(() => {
+        setMode("posts")
+    }, [])
+
+    useEffect(() => {
+        setPosts([])
+        setEndCursor(null)
+        setQueue([])
+        setNoMore(false)
+        setEndReached(false)
+
+        setFetching(true)
+        const promise = mode === "timeline" ? fetchTimeline() : fetchPosts()
+        promise.then(({ items: posts, endCursor }) => {
+            setPosts(posts)
+            setEndCursor(endCursor)
+
+            if (posts.length < pageSize) {
+                setNoMore(true)
+            }
+        }, err => {
+            console.error(mode === "timeline" ? "could not fetch timeline:" : "could not fetch posts:", err)
+            setErr(err)
+        }).finally(() => {
+            setFetching(false)
+        })
+    }, [mode])
+
+    useEffect(() => {
+        return mode === "timeline" ?
+            subscribeToTimeline(onNewTimelineItemArrive) :
+            subscribeToPosts(onNewPostArrive)
+    }, [mode])
 
     return html`
         <main class="container home-page">
-            <h1>Timeline</h1>
+            <h1>${mode === "timeline" ? "Timeline" : "Posts"}</h1>
             <post-form @timeline-item-created=${onTimelineItemCreated}></post-form>
+            ${queue.length !== 0 ? html`
+                <button class="queue-btn" @click=${onQueueBtnClick}>${queue.length} new ${mode === "timeline" ? "timeline items" : "posts"}</button>
+            ` : nothing}
+            <div role="tablist">
+                <button role="tab" id="${mode}-tab" aria-controls="${mode}-tabpanel" aria-selected=${String(mode === "timeline")} @click=${onTimelineModeClick}>
+                    Following
+                </button>
+                <button role="tab" id="${mode}-tab" aria-controls="${mode}-tabpanel" aria-selected=${String(mode === "posts")} @click=${onPostsModeClick}>
+                    Global
+                </button>
+            </div>
             ${err !== null ? html`
-            <p class="error" role="alert">Could not fetch timeline: ${err.message}</p>
-            ` : fetchingTimeline ? html`
-            <p class="loader" aria-busy="true" aria-live="polite">Loading timeline... please wait.<p>
-                    ` : html`
-                    ${queue.length !== 0 ? html`
-                    <button class="queue-btn" @click=${onQueueBtnClick}>${queue.length} new timeline items</button>
-                    ` : nothing}
-                    ${timeline.length === 0 ? html`
-                    <p>0 timeline items</p>
-                    ` : html`
+                <p class="error" role="alert">Could not fetch ${mode === "timeline" ? "timeline" : "posts"}: ${err.message}</p>
+            ` : fetching ? html`
+                <p class="loader" aria-busy="true" aria-live="polite">Loading ${mode === "timeline" ? "timeline" : "posts"}... please wait.<p>
+            ` : html`
+                <div role="tabpanel" id="${mode}-tabpanel" aria-labelledby="${mode}-tab">
+                ${posts.length === 0 ? html`
+                    <p>0 ${mode === "timeline" ? "timeline items" : "posts"}</p>
+                ` : html`
                     <div class="posts" role="feed">
-                        ${repeat(timeline, ti => ti.id, ti => html`<post-item .post=${ti.post} .type=${"timeline_item"}
-                            .timelineItemID=${ti.id} @removed-from-timeline=${onRemovedFromTimeline}
+                        ${repeat(posts, p => p.id, p => html`<post-item .post=${p} .type=${mode === "timeline" ? "timeline_item" : "post"}
+                            @removed-from-timeline=${onRemovedFromTimeline}
                             @resource-deleted=${onPostDeleted}></post-item>`)}
                     </div>
-                    ${!noMoreTimelineItems ? html`
-                    <intersectable-comp @is-intersecting=${loadMore}></intersectable-comp>
-                    <p class="loader" aria-busy="true" aria-live="polite">Loading timeline... please wait.<p>
-                            ` : endReached ? html`
-                            <p>End reached.</p>
-                            ` : nothing}
-                            `}
-                            `}
+                    ${!noMore ? html`
+                        <intersectable-comp @is-intersecting=${loadMore}></intersectable-comp>
+                        <p class="loader" aria-busy="true" aria-live="polite">Loading ${mode === "timeline" ? "timeline" : "posts"}... please wait.<p>
+                    ` : endReached ? html`
+                        <p>End reached.</p>
+                    ` : nothing}
+                `}
+            `}
         </main>
         ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : nothing}
     `
@@ -157,7 +191,7 @@ function PostForm() {
             spoilerOf: spoilerOf.trim() === "" ? null : spoilerOf.trim(),
             nsfw,
         }).then(ti => {
-            ti.post.user = auth.user
+            ti.user = auth.user
             setContent("")
             setNSFW(false)
             setIsSpoiler(false)
@@ -344,14 +378,14 @@ function createTimelineItem({ content, spoilerOf, nsfw }) {
     return request("POST", "/api/timeline", { body: { content, spoilerOf, nsfw } })
         .then(resp => resp.body)
         .then(ti => {
-            ti.post.createdAt = new Date(ti.post.createdAt)
+            ti.createdAt = new Date(ti.createdAt)
             return ti
         })
 }
 
 function subscribeToTimeline(cb) {
     return subscribe("/api/timeline", ti => {
-        ti.post.createdAt = new Date(ti.post.createdAt)
+        ti.createdAt = new Date(ti.createdAt)
         cb(ti)
     })
 }
@@ -362,10 +396,26 @@ function fetchTimeline(before = "", last = pageSize) {
         .then(page => {
             page.items = page.items.map(ti => ({
                 ...ti,
-                post: {
-                    ...ti.post,
-                    createdAt: new Date(ti.post.createdAt),
-                },
+                createdAt: new Date(ti.createdAt),
+            }))
+            return page
+        })
+}
+
+function subscribeToPosts(cb) {
+    return subscribe("/api/posts", p => {
+        p.createdAt = new Date(p.createdAt)
+        cb(p)
+    })
+}
+
+function fetchPosts(before = "", last = pageSize) {
+    return request("GET", `/api/posts?last=${encodeURIComponent(last)}&before=${encodeURIComponent(before)}`)
+        .then(resp => resp.body)
+        .then(page => {
+            page.items = page.items.map(p => ({
+                ...p,
+                createdAt: new Date(p.createdAt),
             }))
             return page
         })

@@ -19,10 +19,10 @@ var ErrInvalidTimelineItemID = InvalidArgumentError("invalid timeline item ID")
 
 // TimelineItem model.
 type TimelineItem struct {
-	ID     string `json:"id"`
+	ID     string `json:"timelineItemID"`
 	UserID string `json:"-"`
 	PostID string `json:"-"`
-	Post   *Post  `json:"post,omitempty"`
+	*Post
 }
 
 // CreateTimelineItem publishes a post to the user timeline and fan-outs it to his followers.
@@ -105,6 +105,7 @@ func (s *Service) postCreated(p Post) {
 	p.Mine = false
 	p.Subscribed = false
 
+	go s.broadcastPost(p)
 	go s.fanoutPost(p)
 	go s.notifyPostMention(p)
 }

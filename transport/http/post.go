@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"mime"
 	"net/http"
 	"strconv"
 
@@ -9,12 +10,12 @@ import (
 	"github.com/nicolasparada/nakama"
 )
 
-func (h *handler) posts(w http.ResponseWriter, r *http.Request) {
+func (h *handler) userPosts(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	q := r.URL.Query()
 	last, _ := strconv.ParseUint(q.Get("last"), 10, 64)
 	before := emptyStrPtr(q.Get("before"))
-	pp, err := h.svc.Posts(ctx, way.Param(ctx, "username"), last, before)
+	pp, err := h.svc.Posts(ctx, last, before, nakama.PostsFromUser(way.Param(ctx, "username")))
 	if err != nil {
 		h.respondErr(w, err)
 		return
@@ -34,6 +35,70 @@ func (h *handler) posts(w http.ResponseWriter, r *http.Request) {
 		Items:     pp,
 		EndCursor: pp.EndCursor(),
 	}, http.StatusOK)
+}
+
+func (h *handler) posts(w http.ResponseWriter, r *http.Request) {
+	if a, _, err := mime.ParseMediaType(r.Header.Get("Accept")); err == nil && a == "text/event-stream" {
+		h.postStream(w, r)
+		return
+	}
+
+	ctx := r.Context()
+	q := r.URL.Query()
+	last, _ := strconv.ParseUint(q.Get("last"), 10, 64)
+	before := emptyStrPtr(q.Get("before"))
+	pp, err := h.svc.Posts(ctx, last, before)
+	if err != nil {
+		h.respondErr(w, err)
+		return
+	}
+
+	if pp == nil {
+		pp = []nakama.Post{} // non null array
+	}
+
+	for i := range pp {
+		if pp[i].Reactions == nil {
+			pp[i].Reactions = []nakama.Reaction{} // non null array
+		}
+	}
+
+	h.respond(w, paginatedRespBody{
+		Items:     pp,
+		EndCursor: pp.EndCursor(),
+	}, http.StatusOK)
+}
+
+func (h *handler) postStream(w http.ResponseWriter, r *http.Request) {
+	f, ok := w.(http.Flusher)
+	if !ok {
+		h.respondErr(w, errStreamingUnsupported)
+		return
+	}
+
+	ctx := r.Context()
+	pp, err := h.svc.PostStream(ctx)
+	if err != nil {
+		h.respondErr(w, err)
+		return
+	}
+
+	header := w.Header()
+	header.Set("Cache-Control", "no-cache")
+	header.Set("Connection", "keep-alive")
+	header.Set("Content-Type", "text/event-stream; charset=utf-8")
+
+	select {
+	case p := <-pp:
+		if p.Reactions == nil {
+			p.Reactions = []nakama.Reaction{} // non null array
+		}
+
+		h.writeSSE(w, p)
+		f.Flush()
+	case <-ctx.Done():
+		return
+	}
 }
 
 func (h *handler) post(w http.ResponseWriter, r *http.Request) {

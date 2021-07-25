@@ -89,7 +89,10 @@ var _ Service = &ServiceMock{}
 // 			PostFunc: func(ctx context.Context, postID string) (nakama.Post, error) {
 // 				panic("mock out the Post method")
 // 			},
-// 			PostsFunc: func(ctx context.Context, username string, last uint64, before *string) (nakama.Posts, error) {
+// 			PostStreamFunc: func(ctx context.Context) (<-chan nakama.Post, error) {
+// 				panic("mock out the PostStream method")
+// 			},
+// 			PostsFunc: func(ctx context.Context, last uint64, before *string, opts ...nakama.PostsOpt) (nakama.Posts, error) {
 // 				panic("mock out the Posts method")
 // 			},
 // 			RegisterCredentialFunc: func(ctx context.Context, data webauthn.SessionData, parsedReply *protocol.ParsedCredentialCreationData) error {
@@ -216,8 +219,11 @@ type ServiceMock struct {
 	// PostFunc mocks the Post method.
 	PostFunc func(ctx context.Context, postID string) (nakama.Post, error)
 
+	// PostStreamFunc mocks the PostStream method.
+	PostStreamFunc func(ctx context.Context) (<-chan nakama.Post, error)
+
 	// PostsFunc mocks the Posts method.
-	PostsFunc func(ctx context.Context, username string, last uint64, before *string) (nakama.Posts, error)
+	PostsFunc func(ctx context.Context, last uint64, before *string, opts ...nakama.PostsOpt) (nakama.Posts, error)
 
 	// RegisterCredentialFunc mocks the RegisterCredential method.
 	RegisterCredentialFunc func(ctx context.Context, data webauthn.SessionData, parsedReply *protocol.ParsedCredentialCreationData) error
@@ -436,16 +442,21 @@ type ServiceMock struct {
 			// PostID is the postID argument value.
 			PostID string
 		}
+		// PostStream holds details about calls to the PostStream method.
+		PostStream []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+		}
 		// Posts holds details about calls to the Posts method.
 		Posts []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
-			// Username is the username argument value.
-			Username string
 			// Last is the last argument value.
 			Last uint64
 			// Before is the before argument value.
 			Before *string
+			// Opts is the opts argument value.
+			Opts []nakama.PostsOpt
 		}
 		// RegisterCredential holds details about calls to the RegisterCredential method.
 		RegisterCredential []struct {
@@ -609,6 +620,7 @@ type ServiceMock struct {
 	lockNotifications             sync.RWMutex
 	lockParseRedirectURI          sync.RWMutex
 	lockPost                      sync.RWMutex
+	lockPostStream                sync.RWMutex
 	lockPosts                     sync.RWMutex
 	lockRegisterCredential        sync.RWMutex
 	lockSendMagicLink             sync.RWMutex
@@ -1419,42 +1431,73 @@ func (mock *ServiceMock) PostCalls() []struct {
 	return calls
 }
 
+// PostStream calls PostStreamFunc.
+func (mock *ServiceMock) PostStream(ctx context.Context) (<-chan nakama.Post, error) {
+	if mock.PostStreamFunc == nil {
+		panic("ServiceMock.PostStreamFunc: method is nil but Service.PostStream was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockPostStream.Lock()
+	mock.calls.PostStream = append(mock.calls.PostStream, callInfo)
+	mock.lockPostStream.Unlock()
+	return mock.PostStreamFunc(ctx)
+}
+
+// PostStreamCalls gets all the calls that were made to PostStream.
+// Check the length with:
+//     len(mockedService.PostStreamCalls())
+func (mock *ServiceMock) PostStreamCalls() []struct {
+	Ctx context.Context
+} {
+	var calls []struct {
+		Ctx context.Context
+	}
+	mock.lockPostStream.RLock()
+	calls = mock.calls.PostStream
+	mock.lockPostStream.RUnlock()
+	return calls
+}
+
 // Posts calls PostsFunc.
-func (mock *ServiceMock) Posts(ctx context.Context, username string, last uint64, before *string) (nakama.Posts, error) {
+func (mock *ServiceMock) Posts(ctx context.Context, last uint64, before *string, opts ...nakama.PostsOpt) (nakama.Posts, error) {
 	if mock.PostsFunc == nil {
 		panic("ServiceMock.PostsFunc: method is nil but Service.Posts was just called")
 	}
 	callInfo := struct {
-		Ctx      context.Context
-		Username string
-		Last     uint64
-		Before   *string
+		Ctx    context.Context
+		Last   uint64
+		Before *string
+		Opts   []nakama.PostsOpt
 	}{
-		Ctx:      ctx,
-		Username: username,
-		Last:     last,
-		Before:   before,
+		Ctx:    ctx,
+		Last:   last,
+		Before: before,
+		Opts:   opts,
 	}
 	mock.lockPosts.Lock()
 	mock.calls.Posts = append(mock.calls.Posts, callInfo)
 	mock.lockPosts.Unlock()
-	return mock.PostsFunc(ctx, username, last, before)
+	return mock.PostsFunc(ctx, last, before, opts...)
 }
 
 // PostsCalls gets all the calls that were made to Posts.
 // Check the length with:
 //     len(mockedService.PostsCalls())
 func (mock *ServiceMock) PostsCalls() []struct {
-	Ctx      context.Context
-	Username string
-	Last     uint64
-	Before   *string
+	Ctx    context.Context
+	Last   uint64
+	Before *string
+	Opts   []nakama.PostsOpt
 } {
 	var calls []struct {
-		Ctx      context.Context
-		Username string
-		Last     uint64
-		Before   *string
+		Ctx    context.Context
+		Last   uint64
+		Before *string
+		Opts   []nakama.PostsOpt
 	}
 	mock.lockPosts.RLock()
 	calls = mock.calls.Posts

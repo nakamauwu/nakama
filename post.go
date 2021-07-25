@@ -1,10 +1,13 @@
 package nakama
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
+	"encoding/gob"
 	"encoding/json"
 	"fmt"
+	"io"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -78,11 +81,32 @@ func (pp Posts) EndCursor() *string {
 	return strPtr(encodeCursor(last.ID, last.CreatedAt))
 }
 
-// Posts from a user in descending order and with backward pagination.
-func (s *Service) Posts(ctx context.Context, username string, last uint64, before *string) (Posts, error) {
-	username = strings.TrimSpace(username)
-	if !ValidUsername(username) {
-		return nil, ErrInvalidUsername
+type PostsOpts struct {
+	Username *string
+}
+
+type PostsOpt func(*PostsOpts)
+
+func PostsFromUser(username string) PostsOpt {
+	return func(opts *PostsOpts) {
+		opts.Username = &username
+	}
+}
+
+// Posts in descending order and with backward pagination.
+// They can be filtered from a speific user by using `PostsFromUser` option
+// in this late case, user field won't be populated.
+func (s *Service) Posts(ctx context.Context, last uint64, before *string, opts ...PostsOpt) (Posts, error) {
+	var options PostsOpts
+	for _, o := range opts {
+		o(&options)
+	}
+
+	if options.Username != nil {
+		*options.Username = strings.TrimSpace(*options.Username)
+		if !ValidUsername(*options.Username) {
+			return nil, ErrInvalidUsername
+		}
 	}
 
 	var beforePostID string
@@ -111,6 +135,10 @@ func (s *Service) Posts(ctx context.Context, username string, last uint64, befor
 		, reactions.user_reactions
 		, subscriptions.user_id IS NOT NULL AS post_subscribed
 		{{ end }}
+		{{ if not .username }}
+		, users.username
+		, users.avatar
+		{{ end }}
 		FROM posts
 		{{ if .auth }}
 		LEFT JOIN (
@@ -123,9 +151,20 @@ func (s *Service) Posts(ctx context.Context, username string, last uint64, befor
 		LEFT JOIN post_subscriptions AS subscriptions
 			ON subscriptions.user_id = @uid AND subscriptions.post_id = posts.id
 		{{ end }}
-		WHERE posts.user_id = (SELECT id FROM users WHERE username = @username)
+		{{ if not .username }}
+		INNER JOIN users ON posts.user_id = users.id
+		{{ end }}
+		{{ if or .username (and .beforePostID .beforeCreatedAt) }}
+		WHERE
+		{{ end }}
+		{{ if .username }}
+			posts.user_id = (SELECT id FROM users WHERE username = @username)
+		{{ end }}
 		{{ if and .beforePostID .beforeCreatedAt }}
-			AND posts.created_at <= @beforeCreatedAt
+			{{ if .username }}
+			AND
+			{{ end }}
+			posts.created_at <= @beforeCreatedAt
 			AND (
 				posts.id < @beforePostID
 					OR posts.created_at < @beforeCreatedAt
@@ -135,7 +174,7 @@ func (s *Service) Posts(ctx context.Context, username string, last uint64, befor
 		LIMIT @last`, map[string]interface{}{
 		"auth":            auth,
 		"uid":             uid,
-		"username":        username,
+		"username":        options.Username,
 		"last":            last,
 		"beforePostID":    beforePostID,
 		"beforeCreatedAt": beforeCreatedAt,
@@ -154,6 +193,8 @@ func (s *Service) Posts(ctx context.Context, username string, last uint64, befor
 	var pp Posts
 	for rows.Next() {
 		var p Post
+		var u User
+		var avatar sql.NullString
 		var rawReactions []byte
 		var rawUserReactions []byte
 		dest := []interface{}{
@@ -167,6 +208,9 @@ func (s *Service) Posts(ctx context.Context, username string, last uint64, befor
 		}
 		if auth {
 			dest = append(dest, &p.Mine, &rawUserReactions, &p.Subscribed)
+		}
+		if options.Username == nil {
+			dest = append(dest, &u.Username, &avatar)
 		}
 
 		if err = rows.Scan(dest...); err != nil {
@@ -199,12 +243,49 @@ func (s *Service) Posts(ctx context.Context, username string, last uint64, befor
 			}
 		}
 
+		if options.Username == nil {
+			u.AvatarURL = s.avatarURL(avatar)
+			p.User = &u
+		}
+
 		pp = append(pp, p)
 	}
 
 	if err = rows.Err(); err != nil {
 		return nil, fmt.Errorf("could not iterate posts rows: %w", err)
 	}
+
+	return pp, nil
+}
+
+// PostStream to receive posts in realtime.
+func (s *Service) PostStream(ctx context.Context) (<-chan Post, error) {
+	pp := make(chan Post)
+	unsub, err := s.PubSub.Sub(postsTopic, func(data []byte) {
+		go func(r io.Reader) {
+			var p Post
+			err := gob.NewDecoder(r).Decode(&p)
+			if err != nil {
+				_ = s.Logger.Log("error", fmt.Errorf("could not gob decode post: %w", err))
+				return
+			}
+
+			pp <- p
+		}(bytes.NewReader(data))
+	})
+	if err != nil {
+		return nil, fmt.Errorf("could not subscribe to posts: %w", err)
+	}
+
+	go func() {
+		<-ctx.Done()
+		if err := unsub(); err != nil {
+			_ = s.Logger.Log("error", fmt.Errorf("could not unsubcribe from posts: %w", err))
+			// don't return
+		}
+
+		close(pp)
+	}()
 
 	return pp, nil
 }
@@ -631,4 +712,21 @@ func (s *Service) TogglePostSubscription(ctx context.Context, postID string) (To
 	out.Subscribed = !out.Subscribed
 
 	return out, nil
+}
+
+const postsTopic = "posts"
+
+func (s *Service) broadcastPost(p Post) {
+	var b bytes.Buffer
+	err := gob.NewEncoder(&b).Encode(p)
+	if err != nil {
+		_ = s.Logger.Log("error", fmt.Errorf("could not gob encode post: %w", err))
+		return
+	}
+
+	err = s.PubSub.Pub(postsTopic, b.Bytes())
+	if err != nil {
+		_ = s.Logger.Log("error", fmt.Errorf("could not publish post: %w", err))
+		return
+	}
 }

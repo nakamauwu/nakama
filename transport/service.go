@@ -43,7 +43,8 @@ type Service interface {
 	MarkNotificationAsRead(ctx context.Context, notificationID string) error
 	MarkNotificationsAsRead(ctx context.Context) error
 
-	Posts(ctx context.Context, username string, last uint64, before *string) (nakama.Posts, error)
+	Posts(ctx context.Context, last uint64, before *string, opts ...nakama.PostsOpt) (nakama.Posts, error)
+	PostStream(ctx context.Context) (<-chan nakama.Post, error)
 	Post(ctx context.Context, postID string) (nakama.Post, error)
 	DeletePost(ctx context.Context, postID string) error
 	TogglePostReaction(ctx context.Context, postID string, in nakama.ReactionInput) ([]nakama.Reaction, error)
