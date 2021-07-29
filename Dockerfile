@@ -1,5 +1,8 @@
 FROM golang:alpine AS build
 
+ARG VAPID_PUBLIC_KEY
+ENV VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY}
+
 RUN apk add --update --no-cache nodejs ca-certificates && apk add --no-cache npm && update-ca-certificates
 
 WORKDIR /go/src/github.com/nicolasparada/nakama

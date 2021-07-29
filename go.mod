@@ -3,6 +3,7 @@ module github.com/nicolasparada/nakama
 go 1.16
 
 require (
+	github.com/SherClockHolmes/webpush-go v1.1.2 // indirect
 	github.com/cockroachdb/cockroach-go v2.0.1+incompatible
 	github.com/disintegration/imaging v1.6.2
 	github.com/duo-labs/webauthn v0.0.0-20200714211715-1daaee874e43

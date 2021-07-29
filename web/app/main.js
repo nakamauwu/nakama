@@ -180,6 +180,21 @@ function detectLang() {
 
 if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("/sw.js")
+    navigator.serviceWorker.addEventListener("message", ev => {
+        if (typeof ev.data !== "object"
+            || ev.data === null
+            || ev.data.type !== "notificationclick"
+            || typeof ev.data.detail !== "object"
+            || ev.data.detail === null
+            || typeof ev.data.detail.id !== "string") {
+            return
+        }
+
+        const n = ev.data.detail
+        markNotificationAsRead(n.id).then(() => {
+            dispatchEvent(new CustomEvent("notification-read", { bubbles: true, detail: n }))
+        })
+    })
 }
 
 addEventListener("error", onError)
@@ -213,4 +228,9 @@ function onUnHandledRejection(ev) {
 
 function pushLog(err) {
     return request("POST", "/api/logs", { body: { error: err } })
+}
+
+function markNotificationAsRead(notificationID) {
+    return request("POST", `/api/notifications/${encodeURIComponent(notificationID)}/mark_as_read`)
+        .then(() => void 0)
 }

@@ -73,6 +73,7 @@ func New(svc transport.Service, oauthProviders []OauthProvider, origin *url.URL,
 	api.HandleFunc("GET", "/api/has_unread_notifications", h.hasUnreadNotifications)
 	api.HandleFunc("POST", "/api/notifications/:notification_id/mark_as_read", h.markNotificationAsRead)
 	api.HandleFunc("POST", "/api/mark_notifications_as_read", h.markNotificationsAsRead)
+	api.HandleFunc("POST", "/api/web_push_subscriptions", h.addWebPushSubscription)
 
 	proxy := withCacheControl(proxyCacheControl)(h.proxy)
 	api.HandleFunc("HEAD", "/api/proxy", proxy)

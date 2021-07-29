@@ -78,6 +78,8 @@ func run(ctx context.Context, logger log.Logger, args []string) error {
 		googleClientSecret  = os.Getenv("GOOGLE_CLIENT_SECRET")
 		disabledDevLogin, _ = strconv.ParseBool(os.Getenv("DISABLE_DEV_LOGIN"))
 		allowedOrigins      = os.Getenv("ALLOWED_ORIGINS")
+		vapidPrivateKey     = os.Getenv("VAPID_PRIVATE_KEY")
+		vapidPublicKey      = os.Getenv("VAPID_PUBLIC_KEY")
 	)
 
 	fs := flag.NewFlagSet("nakama", flag.ExitOnError)
@@ -219,6 +221,8 @@ func run(ctx context.Context, logger log.Logger, args []string) error {
 		WebAuthn:         webauthn,
 		DisabledDevLogin: disabledDevLogin,
 		AllowedOrigins:   strings.Split(allowedOrigins, ","),
+		VAPIDPrivateKey:  vapidPrivateKey,
+		VAPIDPublicKey:   vapidPublicKey,
 	}
 
 	var oauthProviders []httptransport.OauthProvider

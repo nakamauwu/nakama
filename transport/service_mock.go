@@ -5,6 +5,7 @@ package transport
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/duo-labs/webauthn/protocol"
 	"github.com/duo-labs/webauthn/webauthn"
 	"github.com/nicolasparada/nakama"
@@ -23,6 +24,9 @@ var _ Service = &ServiceMock{}
 //
 // 		// make and configure a mocked Service
 // 		mockedService := &ServiceMock{
+// 			AddWebPushSubscriptionFunc: func(ctx context.Context, sub json.RawMessage) error {
+// 				panic("mock out the AddWebPushSubscription method")
+// 			},
 // 			AuthUserFunc: func(ctx context.Context) (nakama.User, error) {
 // 				panic("mock out the AuthUser method")
 // 			},
@@ -153,6 +157,9 @@ var _ Service = &ServiceMock{}
 //
 // 	}
 type ServiceMock struct {
+	// AddWebPushSubscriptionFunc mocks the AddWebPushSubscription method.
+	AddWebPushSubscriptionFunc func(ctx context.Context, sub json.RawMessage) error
+
 	// AuthUserFunc mocks the AuthUser method.
 	AuthUserFunc func(ctx context.Context) (nakama.User, error)
 
@@ -278,6 +285,13 @@ type ServiceMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// AddWebPushSubscription holds details about calls to the AddWebPushSubscription method.
+		AddWebPushSubscription []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Sub is the sub argument value.
+			Sub json.RawMessage
+		}
 		// AuthUser holds details about calls to the AuthUser method.
 		AuthUser []struct {
 			// Ctx is the ctx argument value.
@@ -598,6 +612,7 @@ type ServiceMock struct {
 			Reply *protocol.ParsedCredentialAssertionData
 		}
 	}
+	lockAddWebPushSubscription    sync.RWMutex
 	lockAuthUser                  sync.RWMutex
 	lockAuthUserIDFromToken       sync.RWMutex
 	lockCommentStream             sync.RWMutex
@@ -639,6 +654,41 @@ type ServiceMock struct {
 	lockUsers                     sync.RWMutex
 	lockVerifyMagicLink           sync.RWMutex
 	lockWebAuthnLogin             sync.RWMutex
+}
+
+// AddWebPushSubscription calls AddWebPushSubscriptionFunc.
+func (mock *ServiceMock) AddWebPushSubscription(ctx context.Context, sub json.RawMessage) error {
+	if mock.AddWebPushSubscriptionFunc == nil {
+		panic("ServiceMock.AddWebPushSubscriptionFunc: method is nil but Service.AddWebPushSubscription was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+		Sub json.RawMessage
+	}{
+		Ctx: ctx,
+		Sub: sub,
+	}
+	mock.lockAddWebPushSubscription.Lock()
+	mock.calls.AddWebPushSubscription = append(mock.calls.AddWebPushSubscription, callInfo)
+	mock.lockAddWebPushSubscription.Unlock()
+	return mock.AddWebPushSubscriptionFunc(ctx, sub)
+}
+
+// AddWebPushSubscriptionCalls gets all the calls that were made to AddWebPushSubscription.
+// Check the length with:
+//     len(mockedService.AddWebPushSubscriptionCalls())
+func (mock *ServiceMock) AddWebPushSubscriptionCalls() []struct {
+	Ctx context.Context
+	Sub json.RawMessage
+} {
+	var calls []struct {
+		Ctx context.Context
+		Sub json.RawMessage
+	}
+	mock.lockAddWebPushSubscription.RLock()
+	calls = mock.calls.AddWebPushSubscription
+	mock.lockAddWebPushSubscription.RUnlock()
+	return calls
 }
 
 // AuthUser calls AuthUserFunc.

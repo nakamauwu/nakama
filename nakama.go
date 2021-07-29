@@ -33,6 +33,8 @@ type Service struct {
 	WebAuthn         *webauthn.WebAuthn
 	DisabledDevLogin bool
 	AllowedOrigins   []string
+	VAPIDPrivateKey  string
+	VAPIDPublicKey   string
 
 	magicLinkTmplOncer sync.Once
 	magicLinkTmpl      *template.Template

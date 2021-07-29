@@ -423,6 +423,8 @@ func (s *Service) broadcastNotification(n Notification) {
 		_ = s.Logger.Log("error", fmt.Errorf("could not publish notification: %w", err))
 		return
 	}
+
+	go s.sendWebPushNotifications(n)
 }
 
 func notificationTopic(userID string) string { return "notification_" + userID }

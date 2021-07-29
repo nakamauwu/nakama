@@ -4,6 +4,7 @@ package transport
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"net/url"
 
@@ -64,4 +65,6 @@ type Service interface {
 	ToggleFollow(ctx context.Context, username string) (nakama.ToggleFollowOutput, error)
 	Followers(ctx context.Context, username string, first uint64, after *string) (nakama.UserProfiles, error)
 	Followees(ctx context.Context, username string, first uint64, after *string) (nakama.UserProfiles, error)
+
+	AddWebPushSubscription(ctx context.Context, sub json.RawMessage) error
 }

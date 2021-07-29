@@ -29,29 +29,7 @@ function NotificationsPage() {
 
     const onNotifyInputChange = useCallback(ev => {
         ev.currentTarget.checked = false
-        setNotificationsEnabled(v => {
-            const checked = !v
-            if (checked && Notification.permission === "denied") {
-                setToast({ type: "error", content: "notification permissions denied" })
-                setLocalNotificationsEnabled(false)
-                return false
-            } else if (checked && Notification.permission === "default") {
-                Notification.requestPermission().then(perm => {
-                    const val = perm === "granted"
-                    setLocalNotificationsEnabled(val)
-                    setNotificationsEnabled(() => val)
-                }).catch(err => {
-                    const msg = "could not request notification permissions: " + err.message
-                    console.error(msg)
-                    setToast({ type: "error", content: msg })
-                    setLocalNotificationsEnabled(() => false)
-                    return false
-                })
-                return checked
-            }
-            setLocalNotificationsEnabled(checked)
-            return checked
-        })
+        setNotificationsEnabled(v => !v)
     }, [])
 
     const onNewNotificationArrive = useCallback(n => {
@@ -113,6 +91,74 @@ function NotificationsPage() {
         })
     }, [])
 
+    const onNotificationRead = useCallback(ev => {
+        const { id: notificationID } = ev.detail
+        setNotifications(nn => nn.map(n => n.id === notificationID ? ({ ...n, read: true }) : n))
+    }, [])
+
+    useEffect(() => {
+        if (notificationsEnabled && typeof window.Notification === "undefined") {
+            setToast({ type: "error", content: "no notifications support" })
+            setLocalNotificationsEnabled(false)
+            setNotificationsEnabled(false)
+            return
+        }
+
+        if (notificationsEnabled && Notification.permission === "denied") {
+            setToast({ type: "error", content: "notification permissions denied" })
+            setLocalNotificationsEnabled(false)
+            setNotificationsEnabled(false)
+            return
+        }
+
+        if (notificationsEnabled && Notification.permission === "default") {
+            Notification.requestPermission().then(perm => {
+                const val = perm === "granted"
+                setLocalNotificationsEnabled(val)
+                setNotificationsEnabled(val)
+            }).catch(err => {
+                const msg = "could not request notification permissions: " + err.message
+                console.error(msg)
+                setToast({ type: "error", content: msg })
+                setLocalNotificationsEnabled(false)
+                setNotificationsEnabled(false)
+            })
+            return
+        }
+
+        setLocalNotificationsEnabled(notificationsEnabled)
+    }, [notificationsEnabled])
+
+    const addWebPushSubscriptionErrorHandler = err => {
+        const msg = "could not save web push subscription: " + err.message
+        console.error(msg)
+        setToast({ type: "error", content: msg })
+    }
+
+    useEffect(() => {
+        if (!notificationsEnabled || typeof window.Notification === "undefined" || Notification.permission !== "granted") {
+            return
+        }
+
+        navigator.serviceWorker.ready.then(reg => {
+            reg.pushManager.getSubscription().then(sub => {
+                if (sub === null) {
+                    reg.pushManager.subscribe({
+                        // vapidPublicKey defined at index.html head.
+                        applicationServerKey: window["vapidPubKey"],
+                        userVisibleOnly: true,
+                    }).then(sub => {
+                        addWebPushSubscription(sub).catch(addWebPushSubscriptionErrorHandler)
+                    })
+                    return
+                }
+
+                addWebPushSubscription(sub).catch(addWebPushSubscriptionErrorHandler)
+            })
+        })
+    }, [notificationsEnabled])
+
+
     useEffect(() => {
         setFething(true)
         fetchNotifications().then(({ items: notifications, endCursor }) => {
@@ -128,6 +174,13 @@ function NotificationsPage() {
         }).finally(() => {
             setFething(false)
         })
+    }, [])
+
+    useEffect(() => {
+        addEventListener("notification-read", onNotificationRead)
+        return () => {
+            removeEventListener("notification-read", onNotificationRead)
+        }
     }, [])
 
     useEffect(() => subscribeToNotifications(onNewNotificationArrive), [])
@@ -330,4 +383,11 @@ function fetchHasUnreadNotifications() {
     return request("GET", "/api/has_unread_notifications")
         .then(resp => resp.body)
         .then(v => Boolean(v))
+}
+
+/**
+ * @param {PushSubscription} sub
+ */
+function addWebPushSubscription(sub) {
+    return request("POST", "/api/web_push_subscriptions", { body: sub.toJSON() })
 }
