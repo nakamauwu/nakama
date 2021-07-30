@@ -80,6 +80,15 @@ async function openNotificationsPage(n) {
             }
         }
 
+        for (const client of clientList) {
+            if ("focused" in client && client.focused) {
+                return client.navigate(pathname).then(client => "focus" in client ? client.focus() : client)
+            }
+            if ("visibilityState" in client && client.visibilityState === "visible") {
+                return client.navigate(pathname).then(client => "focus" in client ? client.focus() : client)
+            }
+        }
+
         if ("openWindow" in clients) {
             return clients.openWindow(pathname)
         }
