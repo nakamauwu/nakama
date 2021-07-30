@@ -113,7 +113,7 @@ function AppHeader() {
                     </li>
                     ${auth !== null ? html`
                     <li>
-                        <a href="/notifications" class="btn${hasUnreadNotifications ? " has-unread-notifications" : ""}"
+                        <a href="/notifications" class="btn${hasUnreadNotifications ? " has-unread-notifications" : "" }"
                             title="Notifications" aria-current="${isCurrentPage("/notifications")}" @click=${onLinkClick}>
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                                 <g data-name="Layer 2">
@@ -165,7 +165,7 @@ function showNotification(n) {
         tag: n.id,
         timestamp: n.issuedAt,
         data: n,
-        icon: location.origin + "/icons/logo-circle.svg",
+        icon: location.origin + "/icons/logo-circle-512.png",
     })
     const onSysnClick = ev => {
         ev.preventDefault()
