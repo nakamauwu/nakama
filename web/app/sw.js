@@ -55,6 +55,10 @@ async function showNotification(n) {
         tag: n.id,
         timestamp: n.issuedAt,
         data: n,
+    }).then(() => {
+        if ("setAppBadge" in navigator) {
+            return navigator.setAppBadge()
+        }
     })
 }
 
@@ -81,6 +85,10 @@ async function openNotificationsPage(n) {
     }).then(client => client.postMessage({
         type: "notificationclick",
         detail: n,
+    }).then(() => {
+        if ("clearAppBadge" in navigator) {
+            return navigator.clearAppBadge()
+        }
     }))
 }
 

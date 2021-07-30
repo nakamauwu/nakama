@@ -65,6 +65,19 @@ function AppHeader() {
     }, [])
 
     useEffect(() => {
+        if (!("setAppBadge" in navigator && "clearAppBadge" in navigator)) {
+            return
+        }
+
+        if (hasUnreadNotifications) {
+            navigator.setAppBadge()
+            return
+        }
+
+        navigator.clearAppBadge()
+    }, [hasUnreadNotifications])
+
+    useEffect(() => {
         addEventListener("notification-read", onNotificationRead)
         addEventListener("popstate", onNavigation)
         addEventListener("pushstate", onNavigation)
@@ -100,7 +113,7 @@ function AppHeader() {
                     </li>
                     ${auth !== null ? html`
                     <li>
-                        <a href="/notifications" class="btn${hasUnreadNotifications ? " has-unread-notifications" : ""}"
+                        <a href="/notifications" class="btn${hasUnreadNotifications ? " has-unread-notifications" : "" }"
                             title="Notifications" aria-current="${isCurrentPage("/notifications")}" @click=${onLinkClick}>
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                                 <g data-name="Layer 2">
