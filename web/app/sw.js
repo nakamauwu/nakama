@@ -55,6 +55,7 @@ async function showNotification(n) {
         tag: n.id,
         timestamp: n.issuedAt,
         data: n,
+        icon: location.origin + "/icons/logo-circle.svg",
     }).then(() => {
         if ("setAppBadge" in navigator) {
             return navigator.setAppBadge()

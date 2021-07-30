@@ -28,7 +28,7 @@ function AppHeader() {
         dispatchNewNotificationArrived(n)
 
         if (notificationsEnabled) {
-            sysNotify(n)
+            showNotification(n)
         }
     }, [notificationsEnabled])
 
@@ -113,7 +113,7 @@ function AppHeader() {
                     </li>
                     ${auth !== null ? html`
                     <li>
-                        <a href="/notifications" class="btn${hasUnreadNotifications ? " has-unread-notifications" : "" }"
+                        <a href="/notifications" class="btn${hasUnreadNotifications ? " has-unread-notifications" : ""}"
                             title="Notifications" aria-current="${isCurrentPage("/notifications")}" @click=${onLinkClick}>
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                                 <g data-name="Layer 2">
@@ -157,12 +157,15 @@ function AppHeader() {
 
 customElements.define("app-header", component(AppHeader, { useShadowDOM: false }))
 
-function sysNotify(n) {
-    const sysn = new Notification(notificationTitle(n), {
-        body: notificationContent(n),
+function showNotification(n) {
+    const title = notificationTitle(n)
+    const body = notificationBody(n)
+    const sysn = new Notification(title, {
+        body,
         tag: n.id,
         timestamp: n.issuedAt,
         data: n,
+        icon: location.origin + "/icons/logo-circle.svg",
     })
     const onSysnClick = ev => {
         ev.preventDefault()
@@ -192,7 +195,7 @@ function notificationTitle(n) {
     }
 }
 
-function notificationContent(n) {
+function notificationBody(n) {
     const getActors = () => {
         const aa = n.actors
         switch (aa.length) {
