@@ -1,9 +1,10 @@
 {
-    "defaultErr": "algo salió mal",
     "InternalServerError": "error inesperado en los servidores de nakama, trata más tarde",
     "InvalidEmailError": "correo inválido",
     "InvalidRedirectURIError": "URI de redireccionamiento inválida",
     "UntrustedRedirectURIError": "URI de redireccionamiento no confiable",
+    "UserNotFoundError": "usuario no encontrado",
+    "UserGoneError": "usuario ya no existe",
     "accessPage": {
         "title": "Acceso",
         "welcome": "Bienvenido a Nakama, la nueva red social para fans de anime 🤗"

@@ -45,7 +45,7 @@ function LoginForm() {
                 timeout: 60000 * 120, // 2m
             })
         }, err => {
-            const msg = (inLocalhost ? getTranslation("loginForm.errLogin") : getTranslation("loginForm.errSendMagicLink")) + (getTranslation(err.name) || getTranslation("defaultErr"))
+            const msg = (inLocalhost ? getTranslation("loginForm.errLogin") : getTranslation("loginForm.errSendMagicLink")) + getTranslation(err.name)
             console.error(msg)
             setToast({ type: "error", content: msg })
         }).finally(() => {
@@ -59,8 +59,15 @@ function LoginForm() {
 
     return html`
         <form class="access-form" @submit=${onSubmit}>
-            <input id="email-input" type="email" name="email" placeholder="${translate(" loginForm.placeholder")}"
-                autocomplete="email" required .value=${email} .disabled=${fetching} @input=${onEmailInput}>
+            <input id="email-input"
+                type="email"
+                name="email"
+                autocomplete="email"
+                required
+                placeholder="${translate("loginForm.placeholder")}"
+                .value=${email}
+                .disabled=${fetching}
+                @input=${onEmailInput}>
             <button .disabled=${fetching}>${translate("loginForm.btn")}</button>
         </form>
         <h3>${translate("loginForm.subheading")}</h3>

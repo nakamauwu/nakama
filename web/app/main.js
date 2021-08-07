@@ -134,7 +134,7 @@ function NakamaApp() {
 customElements.define("nakama-app", component(NakamaApp, { useShadowDOM: false }))
 
 registerTranslateConfig({
-    loader: lang => fetch(`/i18n/${lang}.json`).then(res => res.json())
+    loader: lang => fetch(`/i18n/${lang}.json`).then(res => res.json()),
 })
 
 useLang(detectLang()).then(() => {
