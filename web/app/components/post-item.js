@@ -202,6 +202,9 @@ function PostItem({ post: initialPost, type }) {
     `
 }
 
+// @ts-ignore
+customElements.define("post-item", component(PostItem, { useShadowDOM: false }))
+
 function ReactionBtn({ postID, reaction: initialReaction, type }) {
     const [reaction, setReaction] = useState(initialReaction)
     const [fetching, setFetching] = useState(false)
@@ -260,9 +263,6 @@ const emojiPickerStyles = `
         padding: var(--emoji-picker-input-padding);
     }
 `
-
-// @ts-ignore
-customElements.define("post-item", component(PostItem, { useShadowDOM: false }))
 
 function AddReactionBtn({ postID, type }) {
     const emojiPickerRef = useRef(null)
@@ -375,6 +375,16 @@ function collectMediaURLs(s) {
     return out
 }
 
+const trustedOrigins = ["https://i.imgur.com"]
+const imageExts = ["jpg", "jpeg", "gif", "png", "webp", "avif"].map(ext => "." + ext)
+const audioExts = ["wav", "mp3", "flac"].map(ext => "." + ext)
+const videoExts = ["mp4", "webm", "mov", "3gp", "ogg"].map(ext => "." + ext)
+
+/**
+ *
+ * @param {{urls:URL[]}} props
+ * @returns
+ */
 function MediaScroller({ urls }) {
     const [items, setItems] = useState([])
 
@@ -408,8 +418,27 @@ function MediaScroller({ urls }) {
                     }
                 }
 
+                {
+                    if (trustedOrigins.includes(url.origin)) {
+                        if (imageExts.some(ext => url.pathname.endsWith(ext))) {
+                            items.push(html`<zoomable-img .src=${url.toString()}></zoomable-img>`)
+                            continue
+                        }
+
+                        if (audioExts.some(ext => url.pathname.endsWith(ext))) {
+                            items.push(html`<audio src="${url.toString()}" preload="metadata" controls loop></audio>`)
+                            continue
+                        }
+
+                        if (videoExts.some(ext => url.pathname.endsWith(ext))) {
+                            items.push(html`<video src="${url.toString()}" preload="metadata" controls loop></video>`)
+                            continue
+                        }
+                    }
+                }
+
                 try {
-                    const endpoint = "/api/proxy?target=" + encodeURIComponent(url)
+                    const endpoint = "/api/proxy?target=" + encodeURIComponent(url.toString())
                     const resp = await fetch(endpoint, {
                         method: "HEAD",
                         headers: {
