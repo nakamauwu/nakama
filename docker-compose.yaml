@@ -51,7 +51,7 @@ services:
       - "traefik.http.middlewares.nextredirectregex.redirectregex.replacement=https://nakama.social$${1}"
       - "traefik.http.middlewares.nextredirectregex.redirectregex.permanent=true"
 
-      - "traefik.http.middlewares.floc.headers.customresponseheaders.interest-cohort=()
+      - "traefik.http.middlewares.floc.headers.customresponseheaders.interest-cohort=()"
 
       - "traefik.http.routers.nakama.rule=Host(`nakama.social`) || PathPrefix(`/`)"
       - "traefik.http.routers.nakama.entrypoints=websecure"
