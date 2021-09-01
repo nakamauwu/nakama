@@ -28,6 +28,11 @@
       "purpose": "any maskable"
     }
   ],
+  "url_handlers": [
+    {
+      "origin": "https://nakama.social"
+    }
+  ],
   "share_target": {
     "action": "/",
     "method": "GET",
