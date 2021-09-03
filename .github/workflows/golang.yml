@@ -80,7 +80,8 @@ jobs:
           username: ${{ secrets.REMOTE_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            echo "SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY }}" >| .env \
+            echo "TOKEN_KEY=${{ secrets.TOKEN_KEY }}" >| .env \
+            && echo "SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY }}" >> .env \
             && echo "TRAEFIK_PILOT_TOKEN=${{ secrets.TRAEFIK_PILOT_TOKEN }}" >> .env \
             && echo "S3_ENDPOINT=${{ secrets.S3_ENDPOINT }}" >> .env \
             && echo "S3_REGION=${{ secrets.S3_REGION }}" >> .env \
