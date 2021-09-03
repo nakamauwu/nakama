@@ -3,6 +3,7 @@ import { TextareaEditor } from "@textcomplete/textarea"
 import { component, html, useCallback, useEffect, useRef, useState } from "haunted"
 import { nothing } from "lit-html"
 import { repeat } from "lit-html/directives/repeat.js"
+import { setLocalAuth } from "../auth.js"
 import { authStore, useStore } from "../ctx.js"
 import { ref } from "../directives/ref.js"
 import { request, subscribe } from "../http.js"
@@ -17,6 +18,7 @@ export default function () {
 }
 
 function HomePage() {
+    const [_, setAuth] = useStore(authStore)
     const [mode, setMode] = useState("timeline")
     const [posts, setPosts] = useState([])
     const [endCursor, setEndCursor] = useState(null)
@@ -107,6 +109,11 @@ function HomePage() {
             }
         }, err => {
             console.error(mode === "timeline" ? "could not fetch timeline:" : "could not fetch posts:", err)
+            if (err.name === "UnauthenticatedError") {
+                setAuth(null)
+                setLocalAuth(null)
+            }
+
             setErr(err)
         }).finally(() => {
             setFetching(false)
@@ -250,7 +257,7 @@ function PostForm() {
     }, [spoilerOfDialogRef])
 
     useEffect(() => {
-        if (spoilerOfDialogRef.current !== null && !(window.HTMLDialogElement || spoilerOfDialogRef.current.showModal)) {
+        if (spoilerOfDialogRef.current !== null && !("HTMLDialogElement" in window || "showModal" in spoilerOfDialogRef.current)) {
             import("dialog-polyfill").then(m => m.default).then(dialogPolyfill => {
                 dialogPolyfill.registerDialog(spoilerOfDialogRef.current)
             }).catch(err => {

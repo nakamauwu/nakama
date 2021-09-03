@@ -322,13 +322,19 @@ func (s *Service) DevLogin(ctx context.Context, email string) (AuthOutput, error
 func (s *Service) AuthUserIDFromToken(token string) (string, error) {
 	uid, err := s.codec().DecodeToString(token)
 	if err != nil {
-		// We check error string because branca doesn't export errors.
 		if errors.Is(err, branca.ErrInvalidToken) || errors.Is(err, branca.ErrInvalidTokenVersion) {
 			return "", ErrInvalidToken
 		}
+
 		if _, ok := err.(*branca.ErrExpiredToken); ok {
 			return "", ErrExpiredToken
 		}
+
+		// check branca unexported/internal chacha20poly1305 error for invalid key.
+		if strings.HasSuffix(err.Error(), "authentication failed") {
+			return "", ErrUnauthenticated
+		}
+
 		return "", fmt.Errorf("could not decode token: %w", err)
 	}
 

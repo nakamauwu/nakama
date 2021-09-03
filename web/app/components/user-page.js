@@ -120,6 +120,12 @@ function UserPage({ username }) {
             }
         }, err => {
             console.error("could not fetch user and posts:", err)
+            if (err.name === "UnauthenticatedError") {
+                setAuth(null)
+                setLocalAuth(null)
+                navigate("/")
+            }
+
             setErr(err)
         }).finally(() => {
             setFetching(false)
@@ -402,7 +408,7 @@ function UserProfile({ user: initialUser }) {
     }, [user])
 
     useEffect(() => {
-        if (settingsDialogRef.current !== null && !(window.HTMLDialogElement || settingsDialogRef.current.showModal)) {
+        if (settingsDialogRef.current !== null && !("HTMLDialogElement" in window || "showModal" in settingsDialogRef.current)) {
             import("dialog-polyfill").then(m => m.default).then(dialogPolyfill => {
                 dialogPolyfill.registerDialog(settingsDialogRef.current)
             })

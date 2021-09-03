@@ -1,8 +1,10 @@
 import { component, useCallback, useEffect, useState } from "haunted"
 import { html, nothing } from "lit-html"
 import { repeat } from "lit-html/directives/repeat.js"
-import { hasUnreadNotificationsStore, notificationsEnabledStore, setLocalNotificationsEnabled, useStore } from "../ctx.js"
+import { setLocalAuth } from "../auth.js"
+import { authStore, hasUnreadNotificationsStore, notificationsEnabledStore, setLocalNotificationsEnabled, useStore } from "../ctx.js"
 import { request } from "../http.js"
+import { navigate } from "../router.js"
 import "./intersectable-comp.js"
 import "./relative-datetime.js"
 import "./toast-item.js"
@@ -14,6 +16,7 @@ export default function () {
 }
 
 function NotificationsPage() {
+    const [_, setAuth] = useStore(authStore)
     const [notificationsEnabled, setNotificationsEnabled] = useStore(notificationsEnabledStore)
     const [notifications, setNotifications] = useState([])
     const [notificationsEndCursor, setNotificationsEndCursor] = useState(null)
@@ -24,7 +27,7 @@ function NotificationsPage() {
     const [endReached, setEndReached] = useState(false)
     const [queue, setQueue] = useState([])
     const [markingAllAsRead, setMarkingAllAsRead] = useState(false)
-    const [_, setHasUnreadNotifications] = useStore(hasUnreadNotificationsStore)
+    const [__, setHasUnreadNotifications] = useStore(hasUnreadNotificationsStore)
     const [toast, setToast] = useState(null)
 
     const onNotifyInputChange = useCallback(ev => {
@@ -170,6 +173,12 @@ function NotificationsPage() {
             }
         }, err => {
             console.error("could not fetch notifications:", err)
+            if (err.name === "UnauthenticatedError") {
+                setAuth(null)
+                setLocalAuth(null)
+                navigate("/")
+            }
+
             setErr(err)
         }).finally(() => {
             setFething(false)
