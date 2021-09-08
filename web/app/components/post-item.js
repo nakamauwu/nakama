@@ -265,7 +265,7 @@ const emojiPickerStyles = `
 `
 
 function AddReactionBtn({ postID, type }) {
-    const emojiPickerRef = useRef(null)
+    const emojiPickerRef = useRef(/** @type {import("emoji-picker-element").Picker|null} */(null))
     const [showEmojiPicker, setShowEmojiPicker] = useState(false)
     const [fetching, setFetching] = useState(false)
     const [toast, setToast] = useState(null)
@@ -319,7 +319,7 @@ function AddReactionBtn({ postID, type }) {
         } else {
             styleEmojiPicker()
         }
-    }, [emojiPickerRef])
+    }, [emojiPickerRef.current])
 
     return html`
         <div class="emoji-picker-wrapper">

@@ -264,7 +264,7 @@ function PostForm() {
                 console.error("could not import dialog polyfill:", err)
             })
         }
-    }, [spoilerOfDialogRef])
+    }, [spoilerOfDialogRef.current])
 
     useEffect(() => {
         if (textAreaRef.current === null) {

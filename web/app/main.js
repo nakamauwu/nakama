@@ -22,7 +22,14 @@ router.route(/.*/, view("not-found"))
 addEventListener("click", hijackClicks)
 
 function view(name) {
-    return params => html`${until(import(`/components/${name}-page.js`).then(m => m.default({ params })), PageLoader())}`
+    return params => html`${until(import(`/components/${name}-page.js`).then(m => m.default({ params }), err => {
+        console.error("could not import page:", err)
+        return html`
+            <div class="container">
+                <p class="error">Something went wrong while loading the page.</p>
+            </div>
+        `
+    }), PageLoader())}`
 }
 
 function GuardedView({ args, component, fallback }) {

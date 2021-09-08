@@ -2,12 +2,6 @@ const proxy = require("http2-proxy")
 
 /** @type {import("snowpack").SnowpackUserConfig } */
 module.exports = {
-	packageOptions: {
-		knownEntrypoints: [
-			"emoji-picker-element/picker",
-			"emoji-picker-element/database",
-		],
-	},
 	plugins: [
 		["@snowpack/plugin-optimize", { preloadModules: true }],
 	],
