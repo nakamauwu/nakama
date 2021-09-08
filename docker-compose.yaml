@@ -59,7 +59,7 @@ services:
       - "traefik.http.routers.nakama.middlewares=nextredirectregex@docker"
 
   cockroach:
-    image: "cockroachdb/cockroach:latest"
+    image: "cockroachdb/cockroach:v21.1.8"
     command: "start-single-node --insecure --listen-addr=0.0.0.0"
     volumes:
       - "./cockroach-data:/cockroach/cockroach-data"
