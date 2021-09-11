@@ -95,5 +95,43 @@
             "ok": "OK",
             "cancel": "Cancel"
         }
+    },
+    "postItem": {
+        "errToggleSubscription": "could not toggle post subscription:",
+        "errRemove": "could not remove timeline item:",
+        "errDelete": {
+            "fmt": "could not delete {{ type }}",
+            "types": {
+                "timeline_item": "timeline item",
+                "post": "post",
+                "comment": "comment"
+            }
+        },
+        "menu": {
+            "title": "More",
+            "unsusbcribe": "Silence notifications",
+            "susbcribe": "Subscribe to notifications",
+            "remove": "Remove from timeline",
+            "delete": "Delete"
+        },
+        "spoiler": {
+            "warning": "This post contains spoilers of:",
+            "show": "Show it anyway"
+        },
+        "nsfw": {
+            "warning": "This post has content not safe for work",
+            "show": "Show it anyway"
+        },
+        "comments": "Comments"
+    },
+    "relativeDateTime": {
+        "now": "Just now"
+    },
+    "reactionBtn": {
+        "err": "could not toggle reaction:"
+    },
+    "addReactionBtn": {
+        "err": "could not add reaction:",
+        "title": "Add reaction"
     }
 }

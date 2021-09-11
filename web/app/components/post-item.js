@@ -2,6 +2,7 @@ import { component, html, useCallback, useEffect, useRef, useState } from "haunt
 import { nothing } from "lit-html"
 import { ifDefined } from "lit-html/directives/if-defined.js"
 import { unsafeHTML } from "lit-html/directives/unsafe-html.js"
+import { get as getTranslation, translate } from "lit-translate"
 import mediumZoom from "medium-zoom"
 import { authStore, useStore } from "../ctx.js"
 import { ref } from "../directives/ref.js"
@@ -10,6 +11,11 @@ import { Avatar } from "./avatar.js"
 import "./relative-datetime.js"
 import "./toast-item.js"
 
+/**
+ * @param {object} props
+ * @param {import("../types.js").Post|import("../types.js").Comment|import("../types.js").TimelineItem} props.post
+ * @param {"timeline_item"|"post"|"comment"} props.type
+ */
 function PostItem({ post: initialPost, type }) {
     const [auth] = useStore(authStore)
     const [post, setPost] = useState(initialPost)
@@ -40,7 +46,7 @@ function PostItem({ post: initialPost, type }) {
                 ...payload,
             }))
         }, err => {
-            const msg = "could not toggle post subscription: " + err.message
+            const msg = getTranslation("postItem.errToggleSubscription") + " " + getTranslation(err.name)
             console.error(msg)
             setToast({ type: "error", content: msg })
         }).finally(() => {
@@ -61,7 +67,7 @@ function PostItem({ post: initialPost, type }) {
         removeTimelineItem(post.timelineItemID).then(() => {
             dispatchRemovedFromTimeline({ timelineItemID: post.timelineItemID })
         }, err => {
-            const msg = "could not remove timeline item: " + err.message
+            const msg = getTranslation("postItem.errRemove") + " " + getTranslation(err.name)
             console.error(msg)
             setToast({ type: "error", content: msg })
         }).finally(() => {
@@ -78,7 +84,7 @@ function PostItem({ post: initialPost, type }) {
         deleteResource(type, post.id).then(() => {
             dispatchResourceDeleted({ id: post.id })
         }, err => {
-            const msg = `could not delete ${type}: ${err.message}`
+            const msg = getTranslation("postItem.errDelete.fmt", { type: getTranslation("postItem.errDelete.types." + type) })
             console.error(msg)
             setToast({ type: "error", content: msg })
         }).finally(() => {
@@ -123,19 +129,36 @@ function PostItem({ post: initialPost, type }) {
                     </a>
                     ${auth !== null && !(type === "comment" && !post.mine) ? html`
                         <div class="post-menu-wrapper">
-                            <button class="post-menu-wrapper-btn" id="${post.id}-more-menu-btn" aria-haspopup="true" aria-controls="${post.id}-more-menu" title="More" aria-expanded="${ifDefined(showMenu ? "true" : undefined)}" @click=${onMenuBtnClick} @blur=${onMenuWrapperBlur}>
+                            <button class="post-menu-wrapper-btn"
+                                id="${post.id}-more-menu-btn"
+                                aria-haspopup="true"
+                                aria-controls="${post.id}-more-menu"
+                                title="${translate("postItem.menu.title")}"
+                                aria-expanded="${ifDefined(showMenu ? "true" : undefined)}"
+                                @click=${onMenuBtnClick}
+                                @blur=${onMenuWrapperBlur}>
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g data-name="Layer 2"><g data-name="more-vertical"><rect width="24" height="24" transform="rotate(-90 12 12)" opacity="0"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="12" cy="19" r="2"/></g></g></svg>
                             </button>
-                            <ul class="post-menu" id="${post.id}-more-menu" role="menu" aria-labelledby="${post.id}-more-menu-btn" tabindex="-1" @blur=${onMenuWrapperBlur}>
+                            <ul class="post-menu"
+                                id="${post.id}-more-menu"
+                                role="menu"
+                                aria-labelledby="${post.id}-more-menu-btn"
+                                tabindex="-1"
+                                @blur=${onMenuWrapperBlur}>
                                 ${type === "timeline_item" || type === "post" ? html`
                                     <li class="post-menu-item" role="none">
-                                        <button class="post-menu-btn" role="menuitem" tabindex="-1" .disabled=${togglingPostSubscription} @click=${onPostSubscriptionToggleBtnClick} @blur=${onMenuWrapperBlur}>
+                                        <button class="post-menu-btn"
+                                            role="menuitem"
+                                            tabindex="-1"
+                                            .disabled=${togglingPostSubscription}
+                                            @click=${onPostSubscriptionToggleBtnClick}
+                                            @blur=${onMenuWrapperBlur}>
                                             ${post.subscribed ? html`
                                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g data-name="Layer 2"><g data-name="bell-off"><rect width="24" height="24" opacity="0"/><path d="M8.9 5.17A4.67 4.67 0 0 1 12.64 4a4.86 4.86 0 0 1 4.08 4.9v4.5a1.92 1.92 0 0 0 .1.59l3.6 3.6a1.58 1.58 0 0 0 .45-.6 1.62 1.62 0 0 0-.35-1.78l-1.8-1.81V8.94a6.86 6.86 0 0 0-5.82-6.88 6.71 6.71 0 0 0-5.32 1.61 6.88 6.88 0 0 0-.58.54l1.47 1.43a4.79 4.79 0 0 1 .43-.47z"/><path d="M14 16.86l-.83-.86H5.51l1.18-1.18a2 2 0 0 0 .59-1.42v-3.29l-2-2a5.68 5.68 0 0 0 0 .59v4.7l-1.8 1.81A1.63 1.63 0 0 0 4.64 18H8v.34A3.84 3.84 0 0 0 12 22a3.88 3.88 0 0 0 4-3.22l-.83-.78zM12 20a1.88 1.88 0 0 1-2-1.66V18h4v.34A1.88 1.88 0 0 1 12 20z"/><path d="M20.71 19.29L19.41 18l-2-2-9.52-9.53L6.42 5 4.71 3.29a1 1 0 0 0-1.42 1.42L5.53 7l1.75 1.7 7.31 7.3.07.07L16 17.41l.59.59 2.7 2.71a1 1 0 0 0 1.42 0 1 1 0 0 0 0-1.42z"/></g></g></svg>
-                                                <span>Silence notifications</span>
+                                                <span>${translate("postItem.menu.unsusbcribe")}</span>
                                             ` : html`
                                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g data-name="Layer 2"><g data-name="bell"><rect width="24" height="24" opacity="0"/><path d="M20.52 15.21l-1.8-1.81V8.94a6.86 6.86 0 0 0-5.82-6.88 6.74 6.74 0 0 0-7.62 6.67v4.67l-1.8 1.81A1.64 1.64 0 0 0 4.64 18H8v.34A3.84 3.84 0 0 0 12 22a3.84 3.84 0 0 0 4-3.66V18h3.36a1.64 1.64 0 0 0 1.16-2.79zM14 18.34A1.88 1.88 0 0 1 12 20a1.88 1.88 0 0 1-2-1.66V18h4zM5.51 16l1.18-1.18a2 2 0 0 0 .59-1.42V8.73A4.73 4.73 0 0 1 8.9 5.17 4.67 4.67 0 0 1 12.64 4a4.86 4.86 0 0 1 4.08 4.9v4.5a2 2 0 0 0 .58 1.42L18.49 16z"/></g></g></svg>
-                                                <span>Subscribe to notifications</span>
+                                                <span>${translate("postItem.menu.susbcribe")}</span>
                                             `}
                                         </button>
                                     </li>
@@ -144,7 +167,7 @@ function PostItem({ post: initialPost, type }) {
                                     <li class="post-menu-item" role="none">
                                         <button class="post-menu-btn" role="menuitem" tabindex="-1" .disabled=${removingFromTimeline} @click=${onRemoveFromTimelineBtnClick} @blur=${onMenuWrapperBlur}>
                                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g data-name="Layer 2"><g data-name="eye-off"><rect width="24" height="24" opacity="0"/><path d="M4.71 3.29a1 1 0 0 0-1.42 1.42l5.63 5.63a3.5 3.5 0 0 0 4.74 4.74l5.63 5.63a1 1 0 0 0 1.42 0 1 1 0 0 0 0-1.42zM12 13.5a1.5 1.5 0 0 1-1.5-1.5v-.07l1.56 1.56z"/><path d="M12.22 17c-4.3.1-7.12-3.59-8-5a13.7 13.7 0 0 1 2.24-2.72L5 7.87a15.89 15.89 0 0 0-2.87 3.63 1 1 0 0 0 0 1c.63 1.09 4 6.5 9.89 6.5h.25a9.48 9.48 0 0 0 3.23-.67l-1.58-1.58a7.74 7.74 0 0 1-1.7.25z"/><path d="M21.87 11.5c-.64-1.11-4.17-6.68-10.14-6.5a9.48 9.48 0 0 0-3.23.67l1.58 1.58a7.74 7.74 0 0 1 1.7-.25c4.29-.11 7.11 3.59 8 5a13.7 13.7 0 0 1-2.29 2.72L19 16.13a15.89 15.89 0 0 0 2.91-3.63 1 1 0 0 0-.04-1z"/></g></g></svg>
-                                            <span>Remove from timeline</span>
+                                            <span>${translate("postItem.menu.remove")}</span>
                                         </button>
                                     </li>
                                 ` : nothing}
@@ -152,7 +175,7 @@ function PostItem({ post: initialPost, type }) {
                                     <li class="post-menu-item" role="none">
                                         <button class="post-menu-btn" role="menuitem" tabindex="-1" .disabled=${deleting} @click=${onDeleteBtnClick} @blur=${onMenuWrapperBlur}>
                                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g data-name="Layer 2"><g data-name="trash-2"><rect width="24" height="24" opacity="0"/><path d="M21 6h-5V4.33A2.42 2.42 0 0 0 13.5 2h-3A2.42 2.42 0 0 0 8 4.33V6H3a1 1 0 0 0 0 2h1v11a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V8h1a1 1 0 0 0 0-2zM10 4.33c0-.16.21-.33.5-.33h3c.29 0 .5.17.5.33V6h-4zM18 19a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V8h12z"/><path d="M9 17a1 1 0 0 0 1-1v-4a1 1 0 0 0-2 0v4a1 1 0 0 0 1 1z"/><path d="M15 17a1 1 0 0 0 1-1v-4a1 1 0 0 0-2 0v4a1 1 0 0 0 1 1z"/></g></g></svg>
-                                            <span>Delete</span>
+                                            <span>${translate("postItem.menu.delete")}</span>
                                         </button>
                                     </li>
                                 ` : nothing}
@@ -164,15 +187,15 @@ function PostItem({ post: initialPost, type }) {
             <div class="post-content">
                 ${type !== "comment" && post.spoilerOf !== null && !displaySpoiler ? html`
                     <div class="post-warning">
-                        <p>This post contains spoilers of: ${post.spoilerOf}</p>
-                        <button @click=${onDisplaySpoilerBtnClick}>Show it anyway</button>
+                        <p>${translate("postItem.spoiler.warning")} ${post.spoilerOf}</p>
+                        <button @click=${onDisplaySpoilerBtnClick}>${translate("postItem.spoiler.show")}</button>
                     </div>
                 ` : html`
                     <p>${unsafeHTML(linkify(escapeHTML(post.content)))}</p>
                     ${type !== "comment" && post.nsfw && !displayNSFW ? html`
                         <div class="post-warning">
-                            <p>This post has content not safe for work</p>
-                            <button @click=${onDisplayNSFWBtnClick}>Show it anyway</button>
+                            <p>${translate("postItem.nsfw.warning")}</p>
+                            <button @click=${onDisplayNSFWBtnClick}>${translate("postItem.nsfw.show")}</button>
                         </div>
                     ` : html`
                         <media-scroller .urls=${mediaURLs}></media-scroller>
@@ -191,7 +214,7 @@ function PostItem({ post: initialPost, type }) {
                     </div>
                 ` : nothing}
                 ${typeof post.commentsCount === "number" ? html`
-                    <a class="post-replies-link btn" href="/posts/${post.id}" title="Comments">
+                    <a class="post-replies-link btn" href="/posts/${post.id}" title="${translate("postItem.comments")}">
                         <span>${post.commentsCount}</span>
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g data-name="Layer 2"><g data-name="message-square"><rect width="24" height="24" opacity="0"/><circle cx="12" cy="11" r="1"/><circle cx="16" cy="11" r="1"/><circle cx="8" cy="11" r="1"/><path d="M19 3H5a3 3 0 0 0-3 3v15a1 1 0 0 0 .51.87A1 1 0 0 0 3 22a1 1 0 0 0 .51-.14L8 19.14a1 1 0 0 1 .55-.14H19a3 3 0 0 0 3-3V6a3 3 0 0 0-3-3zm1 13a1 1 0 0 1-1 1H8.55a3 3 0 0 0-1.55.43l-3 1.8V6a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1z"/></g></g></svg>
                     </a>
@@ -219,7 +242,7 @@ function ReactionBtn({ postID, reaction: initialReaction, type }) {
         toggleReaction(type, postID, reaction).then(reactions => {
             dispatchNewReactionCounts({ reactions })
         }, err => {
-            const msg = "could not toggle post reaction: " + err.message
+            const msg = getTranslation("reactionBtn.err") + " " + getTranslation(err.name)
             console.error(msg)
             setToast({ type: "error", content: msg })
         }).finally(() => {
@@ -291,7 +314,7 @@ function AddReactionBtn({ postID, type }) {
             setShowEmojiPicker(false)
             dispatchNewReactionCounts({ reactions })
         }, err => {
-            const msg = "could not toggle post reaction: " + err.message
+            const msg = getTranslation("addReactionBtn.err") + " " + getTranslation(err.name)
             console.error(msg)
             setToast({ type: "error", content: msg })
         }).finally(() => {
@@ -323,10 +346,25 @@ function AddReactionBtn({ postID, type }) {
 
     return html`
         <div class="emoji-picker-wrapper">
-            <button class="post-add-reaction-btn" id="${postID}-reactions-menu-btn" aria-haspopup="true" aria-controls="${postID}-reactions-menu" aria-expanded="${ifDefined(showEmojiPicker ? "true" : undefined)}" title="Add reaction" .disabled=${fetching} @click=${onAddReactionBtnClick} @blur=${onEmojiPickerWrapperBlur}>
+            <button class="post-add-reaction-btn"
+                id="${postID}-reactions-menu-btn"
+                aria-haspopup="true"
+                aria-controls="${postID}-reactions-menu"
+                aria-expanded="${ifDefined(showEmojiPicker ? "true" : undefined)}"
+                title="${translate("addReactionBtn.title")}"
+                .disabled=${fetching}
+                @click=${onAddReactionBtnClick}
+                @blur=${onEmojiPickerWrapperBlur}>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><defs><style></style></defs><g id="Layer_2" data-name="Layer 2"><g id="smiling-face"><g id="smiling-face" data-name="smiling-face"><rect width="24" height="24" opacity="0"/><path d="M12 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2zm0 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16zm5 9a5 5 0 0 1-10 0z" id="🎨-Icon-Сolor"/></g></g></g></svg>
             </button>
-            <emoji-picker .ref=${ref(emojiPickerRef)} class="dark${fetching ? " disabled" : ""}" id="${postID}-reactions-menu" role="menu" aria-labelledby="${postID}-more-menu-btn" tabindex="-1" @emoji-click=${onEmojiClick} @blur=${onEmojiPickerWrapperBlur}></emoji-picker>
+            <emoji-picker .ref=${ref(emojiPickerRef)}
+                class="dark${fetching ? " disabled" : ""}"
+                id="${postID}-reactions-menu"
+                role="menu"
+                aria-labelledby="${postID}-more-menu-btn"
+                tabindex="-1"
+                @emoji-click=${onEmojiClick}
+                @blur=${onEmojiPickerWrapperBlur}></emoji-picker>
         </div>
         ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : nothing}
     `

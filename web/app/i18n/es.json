@@ -95,5 +95,43 @@
             "ok": "OK",
             "cancel": "Cancelar"
         }
+    },
+    "postItem": {
+        "errToggleSubscription": "No se pudo alternar subscripción:",
+        "errRemove": "no se pudo remover el ítem:",
+        "errDelete": {
+            "fmt": "no se pudo eliminar {{ type }}",
+            "types": {
+                "timeline_item": "el ítem",
+                "post": "la publicación",
+                "comment": "el comentario"
+            }
+        },
+        "menu": {
+            "title": "Más",
+            "unsusbcribe": "Silenciar notificaciones",
+            "susbcribe": "Subscribirse a notificaciones",
+            "remove": "Remover de la línea de tiempo",
+            "delete": "Eliminar"
+        },
+        "spoiler": {
+            "warning": "Esta publicación tiene spoilers de:",
+            "show": "Mostrar de todas formas"
+        },
+        "nsfw": {
+            "warning": "Esta publicación tiene contenido NSFW",
+            "show": "Mostrar de todas formas"
+        },
+        "comments": "Comentarios"
+    },
+    "relativeDateTime": {
+        "now": "Justo ahora"
+    },
+    "reactionBtn": {
+        "err": "no se pudo alternar reacción:"
+    },
+    "addReactionBtn": {
+        "err": "no se pudo añadir reacción:",
+        "title": "Añadir reacción"
     }
 }

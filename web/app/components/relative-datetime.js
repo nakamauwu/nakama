@@ -1,4 +1,5 @@
 import { component, html, useEffect, useState } from "haunted"
+import { get as getTranslation } from "lit-translate"
 
 function RelativeDateTime({ datetime }) {
     const [ago, setAgo] = useState(shortHumanDuration(datetime))
@@ -27,7 +28,7 @@ customElements.define("relative-datetime", component(RelativeDateTime, { useShad
  * @param {Date} now
  */
 function shortHumanDuration(t, now = new Date()) {
-    const rtf = new Intl.RelativeTimeFormat("en", {
+    const rtf = new Intl.RelativeTimeFormat(document.documentElement.lang, {
         numeric: "auto",
         style: "short",
     })
@@ -35,8 +36,7 @@ function shortHumanDuration(t, now = new Date()) {
     const secs = (now.valueOf() - t.valueOf()) / 1000
 
     if (secs <= 1) {
-        // TODO: translate this.
-        return "Just now"
+        return getTranslation("relativeDateTime.now")
     }
 
     const mins = is(60, secs)
