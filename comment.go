@@ -17,8 +17,8 @@ import (
 const commentContentMaxLength = 2048
 
 var (
-	// ErrInvalidCommentID denotes an invalid comment id; that is not uuid.
-	ErrInvalidCommentID = InvalidArgumentError("invalid comment id")
+	// ErrInvalidCommentID denotes an invalid comment ID; that is not uuid.
+	ErrInvalidCommentID = InvalidArgumentError("invalid comment ID")
 	// ErrCommentNotFound denotes a not found comment.
 	ErrCommentNotFound = NotFoundError("comment not found")
 )

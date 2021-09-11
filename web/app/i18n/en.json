@@ -25,6 +25,8 @@
     "InvalidUpdatePostParamsError": "invalid update post params",
     "InvalidCursorError": "invalid cursor",
     "InvalidReactionError": "invalid reaction",
+    "InvalidCommentIDError": "invalid comment ID",
+    "CommentNotFoundError": "comment not found",
     "accessPage": {
         "title": "Access",
         "welcome": "Welcome to Nakama, the next social network for anime fans 🤗"

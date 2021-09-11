@@ -25,6 +25,8 @@
     "InvalidUpdatePostParamsError": "parámetros para actualizar publicación inválidos",
     "InvalidCursorError": "marcador de página inválido",
     "InvalidReactionError": "reacción inválida",
+    "InvalidCommentIDError": "ID de comentario inválida",
+    "CommentNotFoundError": "Comentario no encontrado",
     "accessPage": {
         "title": "Acceso",
         "welcome": "Bienvenido a Nakama, la nueva red social para fans de anime 🤗"
