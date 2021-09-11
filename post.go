@@ -21,8 +21,8 @@ const (
 )
 
 var (
-	// ErrInvalidPostID denotes an invalid post id; that is not uuid.
-	ErrInvalidPostID = InvalidArgumentError("invalid post id")
+	// ErrInvalidPostID denotes an invalid post ID; that is not uuid.
+	ErrInvalidPostID = InvalidArgumentError("invalid post ID")
 	// ErrInvalidContent denotes an invalid content.
 	ErrInvalidContent = InvalidArgumentError("invalid content")
 	// ErrInvalidSpoiler denotes an invalid spoiler title.
