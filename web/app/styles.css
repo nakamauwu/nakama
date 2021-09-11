@@ -45,6 +45,11 @@ dialog *,
     --surface-2: hsl(var(--hue), 12%, 14%);
 }
 
+::backdrop {
+    --hue: 220;
+    --surface-backdrop: hsla(var(--hue), 10%, 0%, .95);
+}
+
 @media (prefers-color-scheme: light) {
     :root {
         color-scheme: light;
@@ -81,6 +86,11 @@ dialog *,
         --surface-0: hsl(var(--hue), 12%, 90%);
         --surface-1: hsl(var(--hue), 12%, 88%);
         --surface-2: hsl(var(--hue), 12%, 86%);
+    }
+
+    ::backdrop {
+        --hue: 220;
+        --surface-backdrop:  hsl(var(--hue), 10%, 100%, .95);
     }
 }
 
@@ -121,6 +131,11 @@ dialog *,
     --surface-2: hsl(var(--hue), 12%, 14%);
 }
 
+[color-scheme=dark] ::backdrop {
+    --hue: 220;
+    --surface-backdrop: hsla(var(--hue), 10%, 0%, .95);
+}
+
 [color-scheme=light] {
     color-scheme: light;
 
@@ -156,6 +171,11 @@ dialog *,
     --surface-0: hsl(var(--hue), 12%, 90%);
     --surface-1: hsl(var(--hue), 12%, 88%);
     --surface-2: hsl(var(--hue), 12%, 86%);
+}
+
+[color-scheme=light] ::backdrop {
+    --hue: 220;
+    --surface-backdrop:  hsl(var(--hue), 10%, 100%, .95);
 }
 
 *,
