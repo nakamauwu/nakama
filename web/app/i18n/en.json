@@ -1,10 +1,20 @@
 {
     "InternalServerError": "unexpected error at nakama's servers. Try again later",
+    "BadRequestError": "bad request",
+    "IAMATeapotError": "I am a teapot",
     "InvalidEmailError": "invalid email",
+    "OauthTimeoutError": "oauth timeout",
+    "EmailNotVerifiedError": "email not verified",
+    "EmailNotProvidedError": "email not provided",
     "InvalidRedirectURIError": "invalid redirect URI",
     "UntrustedRedirectURIError": "untrusted redirect URI",
     "UserNotFoundError": "user not found",
     "UserGoneError": "user gone",
+    "InvalidTokenError": "invalid token",
+    "ExpiredTokenError": "expired token",
+    "InvalidVerificationCodeError": "invalid verification code",
+    "VerificationCodeNotFoundError": "verification code not found",
+    "MissingAuthDataError": "missing auth data",
     "accessPage": {
         "title": "Access",
         "welcome": "Welcome to Nakama, the next social network for anime fans 🤗"
@@ -24,5 +34,12 @@
             "heading": "Back again?",
             "summary": "If you already have an account then just enter the email adress you used the first time here. Nakama will send you an email with an access link."
         }
+    },
+    "accessCallbackPage": {
+        "title": "Authenticating you",
+        "err": "Error:",
+        "goHome": "Go home",
+        "usernamePlaceholder": "Username",
+        "createAccountBtn": "Create account"
     }
 }

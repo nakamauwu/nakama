@@ -144,7 +144,9 @@ registerTranslateConfig({
     loader: lang => fetch(`/i18n/${lang}.json`).then(res => res.json()),
 })
 
-useLang(detectLang()).then(() => {
+const lang = detectLang()
+document.documentElement.lang = lang
+useLang(lang).then(() => {
     render(html`<nakama-app></nakama-app>`, document.body)
 })
 
