@@ -1,9 +1,11 @@
 {
     "InternalServerError": "unexpected error at nakama's servers. Try again later",
     "BadRequestError": "bad request",
+    "StreamingUnsupportedError": "streaming unsupported",
     "IAMATeapotError": "I am a teapot",
     "InvalidEmailError": "invalid email",
     "OauthTimeoutError": "oauth timeout",
+    "ServiceUnavailableError": "service unavailable",
     "EmailNotVerifiedError": "email not verified",
     "EmailNotProvidedError": "email not provided",
     "InvalidRedirectURIError": "invalid redirect URI",
@@ -15,6 +17,14 @@
     "InvalidVerificationCodeError": "invalid verification code",
     "VerificationCodeNotFoundError": "verification code not found",
     "MissingAuthDataError": "missing auth data",
+    "InvalidTimelineItemIDError": "invalid timeline item ID",
+    "InvalidPostIDError": "invalid post ID",
+    "InvalidContentError": "invalid content",
+    "InvalidSpoilerError": "invalid spoiler",
+    "PostNotFoundError": "post not found",
+    "InvalidUpdatePostParamsError": "invalid update post params",
+    "InvalidCursorError": "invalid cursor",
+    "InvalidReactionError": "invalid reaction",
     "accessPage": {
         "title": "Access",
         "welcome": "Welcome to Nakama, the next social network for anime fans 🤗"
@@ -41,5 +51,49 @@
         "goHome": "Go home",
         "usernamePlaceholder": "Username",
         "createAccountBtn": "Create account"
+    },
+    "homePage": {
+        "title": {
+            "timeline": "Timeline",
+            "posts": "Posts"
+        },
+        "queueBtn": {
+            "newTimelineItem": "1 new timeline item",
+            "newTimelineItems": "{{ length }} new timeline items",
+            "newPost": "1 new post",
+            "newPosts": "{{ length }} new posts"
+        },
+        "tabs": {
+            "timeline": "Following",
+            "posts": "Global"
+        },
+        "err": {
+            "timeline": "Could not fetch timeline:",
+            "posts": "Could not fetch posts:"
+        },
+        "loading": {
+            "timeline": "Loading timeline... please wait",
+            "posts": "Loading posts... please wait"
+        },
+        "empty": {
+            "timeline": "0 timeline items",
+            "posts": "0 posts"
+        },
+        "end": "End reached."
+    },
+    "postForm": {
+        "err": "could not create post:",
+        "placeholder": "Write something...",
+        "textAreaLabel": "Content",
+        "nsfwLabel": "NSFW",
+        "spoilerLabel": "Spoiler",
+        "spoilerOfLabel": "Spoiler of {{ value }}",
+        "submit": "Publish",
+        "dialog": {
+            "spoilerOfLabel": "Spoiler of:",
+            "spoilerOfPlaceholder": "Spoiler of...",
+            "ok": "OK",
+            "cancel": "Cancel"
+        }
     }
 }

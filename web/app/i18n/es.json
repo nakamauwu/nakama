@@ -1,10 +1,30 @@
 {
     "InternalServerError": "error inesperado en los servidores de nakama, trata más tarde",
+    "BadRequestError": "solicitud inválida",
+    "StreamingUnsupportedError": "streaming np soportado",
+    "IAMATeapotError": "Soy una tetera ;p",
     "InvalidEmailError": "correo inválido",
+    "OauthTimeoutError": "proceso the oauth fuera de tiempo",
+    "ServiceUnavailableError": "servicio no disponible",
+    "EmailNotVerifiedError": "correo no verificado",
+    "EmailNotProvidedError": "correo no previsto",
     "InvalidRedirectURIError": "URI de redireccionamiento inválida",
     "UntrustedRedirectURIError": "URI de redireccionamiento no confiable",
     "UserNotFoundError": "usuario no encontrado",
     "UserGoneError": "usuario ya no existe",
+    "InvalidTokenError": "token invalido",
+    "ExpiredTokenError": "token expirado",
+    "InvalidVerificationCodeError": "código de verificación inválido",
+    "VerificationCodeNotFoundError": "código de verificación no encontrado",
+    "MissingAuthDataError": "falta información para autentificación",
+    "InvalidTimelineItemIDError": "ID de ítem de línea de tiempo inválida",
+    "InvalidPostIDError": "ID de publicación invalida",
+    "InvalidContentError": "contenido inválido",
+    "InvalidSpoilerError": "spoiler inválido",
+    "PostNotFoundError": "publicación no encontrada",
+    "InvalidUpdatePostParamsError": "parámetros para actualizar publicación inválidos",
+    "InvalidCursorError": "marcador de página inválido",
+    "InvalidReactionError": "reacción inválida",
     "accessPage": {
         "title": "Acceso",
         "welcome": "Bienvenido a Nakama, la nueva red social para fans de anime 🤗"
@@ -23,6 +43,57 @@
         "signinHelp": {
             "heading": "De vuelta?",
             "summary": "Si ya tienes una cuenta entonces solo ingresa el mismo correo que utilizaste la primera vez aquí. Nakama te enviará un correo con un enlace de acceso."
+        }
+    },
+    "accessCallbackPage": {
+        "title": "Autentificándote",
+        "err": "Error:",
+        "goHome": "Ir a inicio",
+        "usernamePlaceholder": "Nombre de usuario",
+        "createAccountBtn": "Crear cuenta"
+    },
+    "homePage": {
+        "title": {
+            "timeline": "Línea de Tiempo",
+            "posts": "Publicaciones"
+        },
+        "queueBtn": {
+            "newTimelineItem": "1 nuevo ítem",
+            "newTimelineItems": "{{ length }} nuevos ítems",
+            "newPost": "1 nueva publicación",
+            "newPosts": "{{ length }} nuevas publicaciones"
+        },
+        "tabs": {
+            "timeline": "Siguiendo",
+            "posts": "Global"
+        },
+        "err": {
+            "timeline": "No se pudo obtener línea de tiempo:",
+            "posts": "No se pudo obtener publicaciones:"
+        },
+        "loading": {
+            "timeline": "Cargando línea de tiempo... espera por favor",
+            "posts": "Cargando publicaciones... espera por favor"
+        },
+        "empty": {
+            "timeline": "0 ítems",
+            "posts": "0 publicaciones"
+        },
+        "end": "Fin alcanzado."
+    },
+    "postForm": {
+        "err": "No se pudo crear publicación:",
+        "placeholder": "Escribe algo...",
+        "textAreaLabel": "Contenido",
+        "nsfwLabel": "NSFW",
+        "spoilerLabel": "Spoiler",
+        "spoilerOfLabel": "Spoiler de {{ value }}",
+        "submit": "Publicar",
+        "dialog": {
+            "spoilerOfLabel": "Spoiler de:",
+            "spoilerOfPlaceholder": "Spoiler de...",
+            "ok": "OK",
+            "cancel": "Cancelar"
         }
     }
 }

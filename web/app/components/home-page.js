@@ -3,6 +3,7 @@ import { TextareaEditor } from "@textcomplete/textarea"
 import { component, html, useCallback, useEffect, useRef, useState } from "haunted"
 import { nothing } from "lit-html"
 import { repeat } from "lit-html/directives/repeat.js"
+import { get as getTranslation, translate } from "lit-translate"
 import { setLocalAuth } from "../auth.js"
 import { authStore, useStore } from "../ctx.js"
 import { ref } from "../directives/ref.js"
@@ -128,27 +129,44 @@ function HomePage() {
 
     return html`
         <main class="container home-page">
-            <h1>${mode === "timeline" ? "Timeline" : "Posts"}</h1>
+            <h1>${mode === "timeline" ? translate("homePage.title.timeline") : translate("homePage.title.posts")}</h1>
             <post-form @timeline-item-created=${onTimelineItemCreated}></post-form>
             ${queue.length !== 0 ? html`
-                <button class="queue-btn" @click=${onQueueBtnClick}>${queue.length} new ${mode === "timeline" ? "timeline items" : "posts"}</button>
+                <button class="queue-btn" @click=${onQueueBtnClick}>${mode === "timeline"
+                ? (queue.length === 1
+                    ? translate("homePage.queueBtn.newTimelineItem")
+                    : translate("homePage.queueBtn.newTimelineItems", { length: queue.length }))
+                : (queue.length === 1
+                    ? translate("homePage.queueBtn.newPost")
+                    : translate("homePage.queueBtn.newPosts", { length: queue.length }))}
+                </button>
             ` : nothing}
             <div role="tablist">
                 <button role="tab" id="${mode}-tab" aria-controls="${mode}-tabpanel" aria-selected=${String(mode === "timeline")} @click=${onTimelineModeClick}>
-                    Following
+                    ${translate("homePage.tabs.timeline")}
                 </button>
                 <button role="tab" id="${mode}-tab" aria-controls="${mode}-tabpanel" aria-selected=${String(mode === "posts")} @click=${onPostsModeClick}>
-                    Global
+                    ${translate("homePage.tabs.posts")}
                 </button>
             </div>
             ${err !== null ? html`
-                <p class="error" role="alert">Could not fetch ${mode === "timeline" ? "timeline" : "posts"}: ${err.message}</p>
+                <p class="error" role="alert">${mode === "timeline"
+                ? translate("homePage.err.timeline")
+                : translate("homePage.err.posts")}
+                    ${translate(err.name)}
+                </p>
             ` : fetching ? html`
-                <p class="loader" aria-busy="true" aria-live="polite">Loading ${mode === "timeline" ? "timeline" : "posts"}... please wait.<p>
+                <p class="loader" aria-busy="true" aria-live="polite">${mode === "timeline"
+                ? translate("homePage.loading.timeline")
+                : translate("homePage.loading.posts")}
+                <p>
             ` : html`
                 <div role="tabpanel" id="${mode}-tabpanel" aria-labelledby="${mode}-tab">
                 ${posts.length === 0 ? html`
-                    <p>0 ${mode === "timeline" ? "timeline items" : "posts"}</p>
+                    <p>${mode === "timeline"
+                    ? translate("homePage.empty.timeline")
+                    : translate("homePage.empty.posts")}
+                    </p>
                 ` : html`
                     <div class="posts" role="feed">
                         ${repeat(posts, p => p.id, p => html`<post-item .post=${p} .type=${mode === "timeline" ? "timeline_item" : "post"}
@@ -157,9 +175,12 @@ function HomePage() {
                     </div>
                     ${!noMore ? html`
                         <intersectable-comp @is-intersecting=${loadMore}></intersectable-comp>
-                        <p class="loader" aria-busy="true" aria-live="polite">Loading ${mode === "timeline" ? "timeline" : "posts"}... please wait.<p>
+                        <p class="loader" aria-busy="true" aria-live="polite">${mode === "timeline"
+                        ? translate("homePage.loading.timeline")
+                        : translate("homePage.loading.posts")}
+                        <p>
                     ` : endReached ? html`
-                        <p>End reached.</p>
+                        <p>${translate("homePage.end")}</p>
                     ` : nothing}
                 `}
             `}
@@ -207,7 +228,7 @@ function PostForm() {
 
             dispatchTimelineItemCreated(ti)
         }, err => {
-            const msg = "could not create post: " + err.message
+            const msg = getTranslation("postForm.err") + " " + translate(err.name)
             console.error(msg)
             setToast({ type: "error", content: msg })
         }).finally(() => {
@@ -335,18 +356,28 @@ function PostForm() {
 
     return html`
         <form class="post-form${content !== "" ? " has-content" : ""}" name="post-form" @submit=${onSubmit}>
-            <textarea name="content" placeholder="Write something..." maxlenght="2048" aria-label="Content" required
-                .value=${content} .disabled=${fetching} .ref=${ref(textAreaRef)} @input=${onTextAreaInput}></textarea>
+            <textarea name="content"
+                placeholder="${translate("postForm.placeholder")}"
+                maxlenght="2048"
+                aria-label="${translate("postForm.textAreaLabel")}"
+                required
+                .value=${content}
+                .disabled=${fetching}
+                .ref=${ref(textAreaRef)}
+                @input=${onTextAreaInput}></textarea>
             ${content !== "" ? html`
             <div class="post-form-controls">
                 <div class="post-form-options">
                     <label class="switch-wrapper">
                         <input type="checkbox" role="switch" name="nsfw" .disabled=${fetching} .checked=${nsfw} @change=${onNSFWInputChange}>
-                        <span>NSFW</span>
+                        <span>${translate("postForm.nsfwLabel")}</span>
                     </label>
                     <label class="switch-wrapper">
                         <input type="checkbox" role="switch" name="is_spoiler" .disabled=${fetching} .checked=${isSpoiler} @change=${onIsSpoilerInputChange}>
-                        <span>Spoiler${spoilerOf.trim() !== "" ? ` of ${spoilerOf}` : ""}</span>
+                        <span>${spoilerOf.trim() === ""
+                ? translate("postForm.spoilerLabel")
+                : translate("postForm.spoilerOfLabel", { value: spoilerOf.trim() })}
+                        </span>
                     </label>
                 </div>
                 <button class="submit-btn" .disabled=${fetching}>
@@ -359,19 +390,26 @@ function PostForm() {
                             </g>
                         </g>
                     </svg>
-                    <span>Publish</button>
+                    <span>${translate("postForm.submit")}</button>
                 </button>
             </div>
             ` : nothing}
         </form>
         <dialog .ref=${ref(spoilerOfDialogRef)} @close=${onSpoilerOfDialogClose}>
             <form method="dialog" class="spoiler-of-form" @submit=${onSpoilerOfFormSubmit}>
-                <label for="spoiler-of-input">Spoiler of:</label>
-                <input type="text" id="spoiler-of-input" name="spoiler_of" placeholder="Spoiler of..." maxlenght="64"
-                    autocomplete="off" .value=${spoilerOf} ?required=${isSpoiler} @input=${onSpoilerOfInput}>
+                <label for="spoiler-of-input">${translate("postForm.dialog.spoilerOfLabel")}</label>
+                <input type="text"
+                    id="spoiler-of-input"
+                    name="spoiler_of"
+                    placeholder="${translate("postForm.dialog.spoilerOfPlaceholder")}"
+                    maxlenght="64"
+                    autocomplete="off"
+                    .value=${spoilerOf}
+                    ?required=${isSpoiler}
+                    @input=${onSpoilerOfInput}>
                 <div class="spoiler-of-controls">
-                    <button>OK</button>
-                    <button type="reset" @click=${onSpoilerOfCancelBtnClick}>Cancel</button>
+                    <button>${translate("postForm.dialog.ok")}</button>
+                    <button type="reset" @click=${onSpoilerOfCancelBtnClick}>${translate("postForm.dialog.cancel")}</button>
                 </div>
             </form>
         </dialog>
