@@ -16,11 +16,10 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR NOT NULL UNIQUE,
     username VARCHAR NOT NULL UNIQUE,
     avatar VARCHAR,
+    cover VARCHAR,
     followers_count INT NOT NULL DEFAULT 0 CHECK (followers_count >= 0),
     followees_count INT NOT NULL DEFAULT 0 CHECK (followees_count >= 0)
 );
-
-ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS cover VARCHAR;
 
 CREATE TABLE IF NOT EXISTS webauthn_authenticators (
     id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -59,8 +58,6 @@ CREATE TABLE IF NOT EXISTS posts (
     INDEX sorted_posts (created_at DESC, id)
 );
 
-ALTER TABLE posts DROP COLUMN IF EXISTS likes_count;
-
 CREATE TABLE IF NOT EXISTS post_reactions (
     user_id UUID NOT NULL REFERENCES users ON DELETE CASCADE,
     post_id UUID NOT NULL REFERENCES posts ON DELETE CASCADE,
@@ -91,8 +88,6 @@ CREATE TABLE IF NOT EXISTS comments (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     INDEX sorted_comments (created_at DESC, id)
 );
-
-ALTER TABLE comments DROP COLUMN IF EXISTS likes_count;
 
 CREATE TABLE IF NOT EXISTS comment_reactions (
     user_id UUID NOT NULL REFERENCES users ON DELETE CASCADE,
