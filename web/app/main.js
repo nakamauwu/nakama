@@ -1,6 +1,6 @@
 import { component, html, render, useCallback, useEffect, useState } from "haunted"
 import { until } from "lit-html/directives/until.js"
-import { registerTranslateConfig, use as useLang } from "lit-translate"
+import { registerTranslateConfig, translate, use as useLang } from "lit-translate"
 import { setLocalAuth } from "./auth.js"
 import "./components/app-header.js"
 import { authStore, useStore } from "./ctx.js"
@@ -26,7 +26,7 @@ function view(name) {
         console.error("could not import page:", err)
         return html`
             <div class="container">
-                <p class="error">Something went wrong while loading the page.</p>
+                <p class="error">${translate("errView")}</p>
             </div>
         `
     }), PageLoader())}`
@@ -53,7 +53,7 @@ function guardView(component, fallback = view("access")) {
 function PageLoader() {
     return html`
         <main class="container loader" aria-busy="true" aria-live="polite">
-            <p>Loading page... please wait.</p>
+            <p>${translate("pageLoader")}</p>
         </main>
     `
 }

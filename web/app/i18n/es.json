@@ -27,6 +27,8 @@
     "InvalidReactionError": "reacción inválida",
     "InvalidCommentIDError": "ID de comentario inválida",
     "CommentNotFoundError": "Comentario no encontrado",
+    "errView": "Algo salió mal al cargar la página.",
+    "pageLoader": "Cargando página... por favor espera.",
     "accessPage": {
         "title": "Acceso",
         "welcome": "Bienvenido a Nakama, la nueva red social para fans de anime 🤗"
