@@ -17,7 +17,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/cockroachdb/cockroach-go/crdb"
 	"github.com/duo-labs/webauthn/protocol"
 	"github.com/duo-labs/webauthn/webauthn"
 	"github.com/go-kit/kit/log"
@@ -138,11 +137,6 @@ func run(ctx context.Context, logger log.Logger, args []string) error {
 		_, err := db.ExecContext(ctx, nakama.Schema)
 		if err != nil {
 			return fmt.Errorf("could not run schema: %w", err)
-		}
-
-		err = addCreatedAtToUsers(ctx, db)
-		if err != nil {
-			return fmt.Errorf("could not fill users created_at: %w", err)
 		}
 	}
 
@@ -308,96 +302,4 @@ func env(key, fallbackValue string) string {
 		return fallbackValue
 	}
 	return s
-}
-
-func addCreatedAtToUsers(ctx context.Context, db *sql.DB) error {
-	type result struct {
-		UserID    string
-		CreatedAt time.Time
-	}
-
-	results, err := func() ([]result, error) {
-		query := `SELECT user_id, min(created_at) AS first_post_created_at FROM posts GROUP BY user_id`
-		rows, err := db.QueryContext(ctx, query)
-		if err != nil {
-			return nil, err
-		}
-
-		defer rows.Close()
-
-		var results []result
-		for rows.Next() {
-			var result result
-			err := rows.Scan(&result.UserID, &result.CreatedAt)
-			if err != nil {
-				return nil, err
-			}
-
-			results = append(results, result)
-		}
-
-		if err := rows.Err(); err != nil {
-			return nil, err
-		}
-
-		return results, nil
-	}()
-	if err != nil {
-		return fmt.Errorf("could not query first_post_created_at: %w", err)
-	}
-
-	updateUsers := func(results []result) error {
-		return crdb.ExecuteTx(ctx, db, nil, func(tx *sql.Tx) error {
-			for _, result := range results {
-				query := `UPDATE users SET created_at = $1 WHERE id = $2 AND (created_at IS NULL OR created_at > $1)`
-				_, err := tx.ExecContext(ctx, query, result.CreatedAt, result.UserID)
-				if err != nil {
-					return err
-				}
-			}
-			return nil
-		})
-	}
-
-	err = updateUsers(results)
-	if err != nil {
-		return fmt.Errorf("could not update users: %w", err)
-	}
-
-	results, err = func() ([]result, error) {
-		query := `SELECT user_id, min(created_at) AS first_comment_created_at FROM comments GROUP BY user_id`
-		rows, err := db.QueryContext(ctx, query)
-		if err != nil {
-			return nil, err
-		}
-
-		defer rows.Close()
-
-		var results []result
-		for rows.Next() {
-			var result result
-			err := rows.Scan(&result.UserID, &result.CreatedAt)
-			if err != nil {
-				return nil, err
-			}
-
-			results = append(results, result)
-		}
-
-		if err := rows.Err(); err != nil {
-			return nil, err
-		}
-
-		return results, nil
-	}()
-	if err != nil {
-		return fmt.Errorf("could not query first_comment_created_at: %w", err)
-	}
-
-	err = updateUsers(results)
-	if err != nil {
-		return fmt.Errorf("could not update users: %w", err)
-	}
-
-	return nil
 }
