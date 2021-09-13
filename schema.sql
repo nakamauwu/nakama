@@ -22,7 +22,9 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMPTZ
 );
 
+UPDATE users SET created_at = now() WHERE created_at IS NULL;
 ALTER TABLE users ALTER COLUMN created_at SET DEFAULT now();
+ALTER TABLE users ALTER COLUMN created_at SET NOT NULL;
 
 CREATE TABLE IF NOT EXISTS webauthn_authenticators (
     id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
