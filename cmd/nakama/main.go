@@ -134,15 +134,15 @@ func run(ctx context.Context, logger log.Logger, args []string) error {
 		return fmt.Errorf("could not ping to db: %w", err)
 	}
 
-	err = addCreatedAtToUsers(ctx, db)
-	if err != nil {
-		return fmt.Errorf("could not fill users created_at: %w", err)
-	}
-
 	if execSchema {
 		_, err := db.ExecContext(ctx, nakama.Schema)
 		if err != nil {
 			return fmt.Errorf("could not run schema: %w", err)
+		}
+
+		err = addCreatedAtToUsers(ctx, db)
+		if err != nil {
+			return fmt.Errorf("could not fill users created_at: %w", err)
 		}
 	}
 
