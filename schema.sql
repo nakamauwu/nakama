@@ -19,12 +19,8 @@ CREATE TABLE IF NOT EXISTS users (
     cover VARCHAR,
     followers_count INT NOT NULL DEFAULT 0 CHECK (followers_count >= 0),
     followees_count INT NOT NULL DEFAULT 0 CHECK (followees_count >= 0),
-    created_at TIMESTAMPTZ
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
-UPDATE users SET created_at = now() WHERE created_at IS NULL;
-ALTER TABLE users ALTER COLUMN created_at SET DEFAULT now();
-ALTER TABLE users ALTER COLUMN created_at SET NOT NULL;
 
 CREATE TABLE IF NOT EXISTS webauthn_authenticators (
     id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
