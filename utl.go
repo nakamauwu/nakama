@@ -26,7 +26,8 @@ var (
 	reUUID                = regexp.MustCompile("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 	reMultiSpace          = regexp.MustCompile(`(\s)+`)
 	reMoreThan2Linebreaks = regexp.MustCompile(`(\n){2,}`)
-	reMentions            = regexp.MustCompile(`\B@([a-zA-Z][a-zA-Z0-9_-]{0,17})`)
+	reMentions            = regexp.MustCompile(`\B@([a-zA-Z][a-zA-Z0-9_-]{0,17})(?:\b[^@]|$)`)
+	reTags                = regexp.MustCompile(`\B#((?:\p{L}|\p{N})+)(?:\b[^#]|$)`)
 )
 
 func isUniqueViolation(err error) bool {
@@ -99,8 +100,21 @@ func smartTrim(s string) string {
 
 func collectMentions(s string) []string {
 	m := map[string]struct{}{}
-	u := []string{}
+	var u []string
 	for _, submatch := range reMentions.FindAllStringSubmatch(s, -1) {
+		val := submatch[1]
+		if _, ok := m[val]; !ok {
+			m[val] = struct{}{}
+			u = append(u, val)
+		}
+	}
+	return u
+}
+
+func collectTags(s string) []string {
+	m := map[string]struct{}{}
+	var u []string
+	for _, submatch := range reTags.FindAllStringSubmatch(s, -1) {
 		val := submatch[1]
 		if _, ok := m[val]; !ok {
 			m[val] = struct{}{}

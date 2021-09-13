@@ -21,7 +21,7 @@ func testMain(m *testing.M) int {
 	flag.BoolVar(&skipIntegration, "skip-integration", false, "Skip integration tests docker setup")
 	flag.Parse()
 
-	if skipIntegration {
+	if skipIntegration || testing.Short() {
 		return m.Run()
 	}
 

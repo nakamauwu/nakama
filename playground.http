@@ -61,8 +61,8 @@ GET {{host}}/api/users/shinji/followees?first=&after=
 Authorization: Bearer {{login.response.body.token}}
 
 ###
-# @name createPost
-POST {{host}}/api/posts
+# @name createTimelineItem
+POST {{host}}/api/timeline
 Authorization: Bearer {{login.response.body.token}}
 Content-Type: application/json
 
@@ -84,6 +84,10 @@ Authorization: Bearer {{login.response.body.token}}
 
 ###
 GET {{host}}/api/timeline?last=&before=
+Authorization: Bearer {{login.response.body.token}}
+
+###
+GET {{host}}/api/posts?last=&before=&tag=test
 Authorization: Bearer {{login.response.body.token}}
 
 ###

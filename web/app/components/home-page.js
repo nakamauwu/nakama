@@ -228,7 +228,7 @@ function PostForm() {
 
             dispatchTimelineItemCreated(ti)
         }, err => {
-            const msg = getTranslation("postForm.err") + " " + translate(err.name)
+            const msg = getTranslation("postForm.err") + " " + getTranslation(err.name)
             console.error(msg)
             setToast({ type: "error", content: msg })
         }).finally(() => {

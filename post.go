@@ -83,6 +83,7 @@ func (pp Posts) EndCursor() *string {
 
 type PostsOpts struct {
 	Username *string
+	Tag      *string
 }
 
 type PostsOpt func(*PostsOpts)
@@ -93,9 +94,16 @@ func PostsFromUser(username string) PostsOpt {
 	}
 }
 
+func PostsTagged(tag string) PostsOpt {
+	return func(opts *PostsOpts) {
+		opts.Tag = &tag
+	}
+}
+
 // Posts in descending order and with backward pagination.
-// They can be filtered from a speific user by using `PostsFromUser` option
+// They can be filtered from a specific user by using `PostsFromUser` option
 // in this late case, user field won't be populated.
+// They can also be filtered by tag using `PostsTagged`.
 func (s *Service) Posts(ctx context.Context, last uint64, before *string, opts ...PostsOpt) (Posts, error) {
 	var options PostsOpts
 	for _, o := range opts {
@@ -154,6 +162,9 @@ func (s *Service) Posts(ctx context.Context, last uint64, before *string, opts .
 		{{ if not .username }}
 		INNER JOIN users ON posts.user_id = users.id
 		{{ end }}
+		{{ if .tag }}
+		INNER JOIN post_tags ON post_tags.post_id = posts.id AND post_tags.tag = @tag
+		{{ end }}
 		{{ if or .username (and .beforePostID .beforeCreatedAt) }}
 		WHERE
 		{{ end }}
@@ -175,6 +186,7 @@ func (s *Service) Posts(ctx context.Context, last uint64, before *string, opts .
 		"auth":            auth,
 		"uid":             uid,
 		"username":        options.Username,
+		"tag":             options.Tag,
 		"last":            last,
 		"beforePostID":    beforePostID,
 		"beforeCreatedAt": beforeCreatedAt,

@@ -5,6 +5,7 @@ import (
 	"mime"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/matryer/way"
 	"github.com/nicolasparada/nakama"
@@ -12,10 +13,11 @@ import (
 
 func (h *handler) userPosts(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	username := way.Param(ctx, "username")
 	q := r.URL.Query()
 	last, _ := strconv.ParseUint(q.Get("last"), 10, 64)
 	before := emptyStrPtr(q.Get("before"))
-	pp, err := h.svc.Posts(ctx, last, before, nakama.PostsFromUser(way.Param(ctx, "username")))
+	pp, err := h.svc.Posts(ctx, last, before, nakama.PostsFromUser(username))
 	if err != nil {
 		h.respondErr(w, err)
 		return
@@ -47,7 +49,12 @@ func (h *handler) posts(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	last, _ := strconv.ParseUint(q.Get("last"), 10, 64)
 	before := emptyStrPtr(q.Get("before"))
-	pp, err := h.svc.Posts(ctx, last, before)
+
+	var opts []nakama.PostsOpt
+	if tag := strings.TrimSpace(q.Get("tag")); tag != "" {
+		opts = append(opts, nakama.PostsTagged(tag))
+	}
+	pp, err := h.svc.Posts(ctx, last, before, opts...)
 	if err != nil {
 		h.respondErr(w, err)
 		return

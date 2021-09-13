@@ -77,7 +77,9 @@ export function handleResponse(resp) {
                 .split(" ")
                 .map(word => word.charAt(0).toUpperCase() + word.slice(1))
                 .join("")
-                + "Error"
+            if (!err.name.endsWith("Error")) {
+                err.name = err.name + "Error"
+            }
             err["headers"] = resp.headers
             err["statusCode"] = resp.status
             throw err

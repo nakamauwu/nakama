@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 	"unicode/utf8"
 
@@ -45,6 +46,8 @@ func (s *Service) CreateTimelineItem(ctx context.Context, content string, spoile
 		}
 	}
 
+	tags := collectTags(content)
+
 	var p Post
 	err := crdb.ExecuteTx(ctx, s.DB, nil, func(tx *sql.Tx) error {
 		query := `
@@ -72,6 +75,21 @@ func (s *Service) CreateTimelineItem(ctx context.Context, content string, spoile
 		}
 
 		p.Subscribed = true
+
+		if len(tags) != 0 {
+			var values []string
+			args := []interface{}{p.ID}
+			for i := 0; i < len(tags); i++ {
+				values = append(values, fmt.Sprintf("($1, $%d)", i+2))
+				args = append(args, tags[i])
+			}
+
+			query := `INSERT INTO post_tags (post_id, tag) VALUES ` + strings.Join(values, ", ")
+			_, err := tx.ExecContext(ctx, query, args...)
+			if err != nil {
+				return fmt.Errorf("could not sql insert post tags: %w", err)
+			}
+		}
 
 		query = "INSERT INTO timeline (user_id, post_id) VALUES ($1, $2) RETURNING id"
 		err = tx.QueryRowContext(ctx, query, uid, p.ID).Scan(&ti.ID)

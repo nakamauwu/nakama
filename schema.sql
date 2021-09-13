@@ -98,6 +98,13 @@ CREATE TABLE IF NOT EXISTS comment_reactions (
     PRIMARY KEY (user_id, comment_id, reaction)
 );
 
+CREATE TABLE IF NOT EXISTS post_tags (
+    id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
+    post_id UUID NOT NULL REFERENCES posts ON DELETE CASCADE,
+    comment_id UUID REFERENCES comments ON DELETE CASCADE,
+    tag VARCHAR NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS notifications (
     id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users ON DELETE CASCADE,
