@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 	"unicode/utf8"
 
@@ -52,6 +53,8 @@ func (s *Service) CreateComment(ctx context.Context, postID string, content stri
 		return c, ErrInvalidContent
 	}
 
+	tags := collectTags(content)
+
 	err := crdb.ExecuteTx(ctx, s.DB, nil, func(tx *sql.Tx) error {
 		query := `
 			INSERT INTO comments (user_id, post_id, content) VALUES ($1, $2, $3)
@@ -75,6 +78,21 @@ func (s *Service) CreateComment(ctx context.Context, postID string, content stri
 			ON CONFLICT (user_id, post_id) DO NOTHING`
 		if _, err = tx.ExecContext(ctx, query, uid, postID); err != nil {
 			return fmt.Errorf("could not insert post subcription after commenting: %w", err)
+		}
+
+		if len(tags) != 0 {
+			var values []string
+			args := []interface{}{postID, c.ID}
+			for i := 0; i < len(tags); i++ {
+				values = append(values, fmt.Sprintf("($1, $2, $%d)", i+3))
+				args = append(args, tags[i])
+			}
+
+			query := `INSERT INTO post_tags (post_id, comment_id, tag) VALUES ` + strings.Join(values, ", ")
+			_, err := tx.ExecContext(ctx, query, args...)
+			if err != nil {
+				return fmt.Errorf("could not sql insert post (comment) tags: %w", err)
+			}
 		}
 
 		query = "UPDATE posts SET comments_count = comments_count + 1 WHERE id = $1"
