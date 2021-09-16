@@ -27,7 +27,7 @@ var (
 	reMultiSpace          = regexp.MustCompile(`(\s)+`)
 	reMoreThan2Linebreaks = regexp.MustCompile(`(\n){2,}`)
 	reMentions            = regexp.MustCompile(`\B@([a-zA-Z][a-zA-Z0-9_-]{0,17})(?:\b[^@]|$)`)
-	reTags                = regexp.MustCompile(`\B#((?:\p{L}|\p{N})+)(?:\b[^#]|$)`)
+	reTags                = regexp.MustCompile(`\B#((?:\p{L}|\p{N}|_)+)(?:\b[^#]|$)`)
 )
 
 func isUniqueViolation(err error) bool {

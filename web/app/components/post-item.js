@@ -374,7 +374,7 @@ function AddReactionBtn({ postID, type }) {
 customElements.define("add-reaction-btn", component(AddReactionBtn, { useShadowDOM: false }))
 
 const mentionsRegExp = /\B@([a-zA-Z][a-zA-Z0-9_-]{0,17})(\b[^@]|$)/g
-const tagsRegExp = /\B#((?:\p{L}|\p{N})+)(\b[^#]|$)/gu
+const tagsRegExp = /\B#((?:\p{L}|\p{N}|_)+)(\b[^#]|$)/gu
 const urlsRegExp = /\b(https?:\/\/[\-A-Za-z0-9+&@#\/%?=~_|!:,\.;]*[\-A-Za-z0-9+&@#\/%=~_|])/gi
 
 /**
