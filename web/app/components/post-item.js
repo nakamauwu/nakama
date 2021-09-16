@@ -373,8 +373,8 @@ function AddReactionBtn({ postID, type }) {
 // @ts-ignore
 customElements.define("add-reaction-btn", component(AddReactionBtn, { useShadowDOM: false }))
 
-const mentionsRegExp = /\B@([a-zA-Z][a-zA-Z0-9_-]{0,17})/g
-const tagsRegExp = /\B#((?:\p{L}|\p{N})+)(?:\b[^#]|$)/gu
+const mentionsRegExp = /\B@([a-zA-Z][a-zA-Z0-9_-]{0,17})(\b[^@]|$)/g
+const tagsRegExp = /\B#((?:\p{L}|\p{N})+)(\b[^#]|$)/gu
 const urlsRegExp = /\b(https?:\/\/[\-A-Za-z0-9+&@#\/%?=~_|!:,\.;]*[\-A-Za-z0-9+&@#\/%=~_|])/gi
 
 /**
@@ -394,8 +394,8 @@ function escapeHTML(s) {
  */
 function linkify(s) {
     return s
-        .replace(mentionsRegExp, '<a href="/users/$1">@$1</a>')
-        .replace(tagsRegExp, '<a href="/tagged-posts/$1">#$1</a>')
+        .replace(mentionsRegExp, '<a href="/users/$1">@$1</a>$2')
+        .replace(tagsRegExp, '<a href="/tagged-posts/$1">#$1</a>$2')
         .replace(urlsRegExp, '<a href="$1" target="_blank" rel="noopener">$1</a>')
 }
 
