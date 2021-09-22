@@ -1,5 +1,5 @@
-import { component, useCallback, useEffect, useState } from "haunted"
-import { html, nothing } from "lit-html"
+import { component, html, useCallback, useEffect, useState } from "haunted"
+import { nothing } from "lit-html"
 import { repeat } from "lit-html/directives/repeat.js"
 import { setLocalAuth } from "../auth.js"
 import { authStore, hasUnreadNotificationsStore, notificationsEnabledStore, setLocalNotificationsEnabled, useStore } from "../ctx.js"

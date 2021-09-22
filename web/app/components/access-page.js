@@ -1,5 +1,5 @@
-import { component, useCallback, useState } from "haunted"
-import { html, nothing } from "lit-html"
+import { component, html, useCallback, useState } from "haunted"
+import { nothing } from "lit-html"
 import { get as getTranslation, translate } from "lit-translate"
 import { setLocalAuth } from "../auth.js"
 import { authStore, useStore } from "../ctx.js"

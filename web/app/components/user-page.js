@@ -1,5 +1,5 @@
-import { component, useCallback, useEffect, useRef, useState } from "haunted"
-import { html, nothing } from "lit-html"
+import { component, html, useCallback, useEffect, useRef, useState } from "haunted"
+import { nothing } from "lit-html"
 import { ifDefined } from "lit-html/directives/if-defined.js"
 import { repeat } from "lit-html/directives/repeat.js"
 import { setLocalAuth } from "../auth.js"
