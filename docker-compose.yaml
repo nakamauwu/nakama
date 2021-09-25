@@ -90,7 +90,7 @@ services:
     deploy:
       replicas: 1
     restart: "always"
-    user: "root"
+    user: "root" # fix prometheus permissions.
 
   grafana:
     image: grafana/grafana:latest
