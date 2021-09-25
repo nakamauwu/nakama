@@ -1,4 +1,6 @@
 /cockroach-data/**
+/grafana-data/**
+/prometheus-data/**
 /letsencrypt
 /web/app/node_modules/**
 /web/static/**
