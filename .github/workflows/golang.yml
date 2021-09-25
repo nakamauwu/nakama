@@ -64,6 +64,15 @@ jobs:
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
 
+      - name: Secure copy prometheus.yml
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: prometheus.yml
+          target: ./
+
       - name: Secure copy docker-compose.yaml
         uses: appleboy/scp-action@master
         with:
