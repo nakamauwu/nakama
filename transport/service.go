@@ -32,7 +32,7 @@ type Service interface {
 	AuthUser(ctx context.Context) (nakama.User, error)
 	Token(ctx context.Context) (nakama.TokenOutput, error)
 
-	CreateComment(ctx context.Context, postID string, content string) (nakama.Comment, error)
+	CreateComment(ctx context.Context, postID, content string) (nakama.Comment, error)
 	Comments(ctx context.Context, postID string, last uint64, before *string) (nakama.Comments, error)
 	CommentStream(ctx context.Context, postID string) (<-chan nakama.Comment, error)
 	DeleteComment(ctx context.Context, commentID string) error

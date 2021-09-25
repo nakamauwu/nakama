@@ -19,7 +19,7 @@ import (
 
 	"github.com/duo-labs/webauthn/protocol"
 	"github.com/duo-labs/webauthn/webauthn"
-	"github.com/go-kit/kit/log"
+	"github.com/go-kit/log"
 	"github.com/gorilla/securecookie"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -30,7 +30,9 @@ import (
 	"github.com/nicolasparada/nakama/storage"
 	fsstorage "github.com/nicolasparada/nakama/storage/fs"
 	s3storage "github.com/nicolasparada/nakama/storage/s3"
+	"github.com/nicolasparada/nakama/transport"
 	httptransport "github.com/nicolasparada/nakama/transport/http"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/endpoints"
 )
@@ -208,7 +210,7 @@ func run(ctx context.Context, logger log.Logger, args []string) error {
 		return fmt.Errorf("could not create webauth config: %w", err)
 	}
 
-	svc := &nakama.Service{
+	var svc transport.Service = &nakama.Service{
 		Logger:           logger,
 		DB:               db,
 		Sender:           sender,
@@ -223,6 +225,14 @@ func run(ctx context.Context, logger log.Logger, args []string) error {
 		AllowedOrigins:   strings.Split(allowedOrigins, ","),
 		VAPIDPrivateKey:  vapidPrivateKey,
 		VAPIDPublicKey:   vapidPublicKey,
+	}
+
+	var promHandler http.Handler
+	{
+		promHandler = promhttp.Handler()
+		svc = &transport.ServiceWithInstrumentation{
+			Next: svc,
+		}
 	}
 
 	var oauthProviders []httptransport.OauthProvider
@@ -260,7 +270,7 @@ func run(ctx context.Context, logger log.Logger, args []string) error {
 		[]byte(cookieHashKey),
 		[]byte(cookieBlockKey),
 	)
-	h := httptransport.New(svc, oauthProviders, origin, log.With(logger, "component", "http"), store, cookieCodec, embedStaticFiles)
+	h := httptransport.New(svc, oauthProviders, origin, log.With(logger, "component", "http"), store, cookieCodec, promHandler, embedStaticFiles)
 	server := &http.Server{
 		Addr:              fmt.Sprintf(":%d", port),
 		Handler:           h,

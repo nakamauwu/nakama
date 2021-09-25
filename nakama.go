@@ -8,7 +8,7 @@ import (
 	"sync"
 
 	"github.com/duo-labs/webauthn/webauthn"
-	"github.com/go-kit/kit/log"
+	"github.com/go-kit/log"
 	"github.com/nicolasparada/nakama/mailing"
 	"github.com/nicolasparada/nakama/pubsub"
 	"github.com/nicolasparada/nakama/storage"

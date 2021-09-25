@@ -3,7 +3,7 @@ package mailing
 import (
 	"net/mail"
 
-	"github.com/go-kit/kit/log"
+	"github.com/go-kit/log"
 )
 
 // LogSender log emails.

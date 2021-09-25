@@ -9,7 +9,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/go-kit/kit/log"
+	"github.com/go-kit/log"
 	"github.com/nicolasparada/nakama"
 	"github.com/nicolasparada/nakama/testutil"
 	"github.com/nicolasparada/nakama/transport"
@@ -116,7 +116,7 @@ func Test_handler_sendMagicLink(t *testing.T) {
 	for _, tc := range tt {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			h := New(tc.svc, nil, nil, log.NewNopLogger(), nil, nil, true)
+			h := New(tc.svc, nil, nil, log.NewNopLogger(), nil, nil, nil, true)
 			srv := httptest.NewServer(h)
 			defer srv.Close()
 

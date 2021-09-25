@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/go-kit/kit/log"
+	"github.com/go-kit/log"
 	"github.com/gorilla/securecookie"
 	"github.com/matryer/way"
 	"github.com/nicolasparada/nakama/storage"
@@ -21,7 +21,7 @@ type handler struct {
 }
 
 // New makes use of the service to provide an http.Handler with predefined routing.
-func New(svc transport.Service, oauthProviders []OauthProvider, origin *url.URL, logger log.Logger, store storage.Store, cdc *securecookie.SecureCookie, embedStaticFiles bool) http.Handler {
+func New(svc transport.Service, oauthProviders []OauthProvider, origin *url.URL, logger log.Logger, store storage.Store, cdc *securecookie.SecureCookie, promHandler http.Handler, embedStaticFiles bool) http.Handler {
 	h := &handler{
 		svc:              svc,
 		origin:           origin,
@@ -80,6 +80,7 @@ func New(svc transport.Service, oauthProviders []OauthProvider, origin *url.URL,
 	api.HandleFunc("GET", "/api/proxy", proxy)
 
 	api.HandleFunc("POST", "/api/logs", h.pushLog)
+	api.Handle("GET", "/api/prom", promHandler)
 
 	r := way.NewRouter()
 	r.Handle("*", "/api/...", h.withAuth(api))
