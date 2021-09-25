@@ -77,11 +77,27 @@ services:
       replicas: 1
     restart: "always"
 
+  node-exporter:
+    image: prom/node-exporter:latest
+    restart: "always"
+    volumes:
+      - "/proc:/host/proc:ro"
+      - "/sys:/host/sys:ro"
+      - "/:/rootfs:ro"
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.rootfs=/rootfs"
+      - "--path.sysfs=/host/sys"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
+    expose:
+      - 9100
+
   prometheus:
     image: prom/prometheus:latest
+    depends_on: [node-exporter]
     command:
-      - --config.file=/etc/prometheus/prometheus.yml
-      - --storage.tsdb.path=/data
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/data"
     volumes:
       - "./prometheus.yml:/etc/prometheus/prometheus.yml"
       - "./prometheus-data:/data"
