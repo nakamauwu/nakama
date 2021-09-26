@@ -57,6 +57,10 @@ services:
       - "traefik.http.routers.nakama.entrypoints=websecure"
       - "traefik.http.routers.nakama.tls.certresolver=tls-resolver"
       - "traefik.http.routers.nakama.middlewares=nextredirectregex@docker"
+    logging:
+      driver: loki
+      options:
+        loki-url: http://loki:3100/loki/api/v1/push
 
   cockroach:
     image: "cockroachdb/cockroach:v21.1.8"
@@ -108,11 +112,22 @@ services:
     restart: "always"
     user: "root" # fix prometheus permissions.
 
+  loki:
+    image: grafana/loki:latest
+    volumes:
+      - "./loki.yml:/etc/config/loki.yml"
+    command: "-config.file=/etc/config/loki.yml"
+    expose:
+      - 3100
+    deploy:
+      replicas: 1
+    restart: "always"
+
   grafana:
     image: grafana/grafana:latest
     depends_on: [prometheus]
-    ports:
-      - "3001:3000"
+    expose:
+      - 3000
     volumes:
       - "grafana-data:/var/lib/grafana"
     environment:
@@ -120,6 +135,12 @@ services:
     deploy:
       replicas: 1
     restart: "always"
+    labels:
+      - "traefik.enable=true"
+
+      - "traefik.http.routers.grafana.rule=Host(`grafana.nakama.social`)"
+      - "traefik.http.routers.grafana.entrypoints=websecure"
+      - "traefik.http.routers.grafana.tls.certresolver=tls-resolver"
 
 volumes:
   grafana-data: # fix grafana volume permissions.
