@@ -26,6 +26,7 @@ services:
     restart: "always"
     depends_on:
       - nakama
+
   nakama:
     # build: .
     image: "nicolasparada/nakama:latest"
@@ -35,12 +36,11 @@ services:
       NATS_URL: "nats://nats:4222"
     env_file:
       - ./.env
-    deploy:
-      replicas: 1
-    expose:
-      - 3000
+    # expose:
+    #   - 3000
     restart: "always"
     depends_on:
+      - loki
       - cockroach
       - nats
     labels:
@@ -63,36 +63,30 @@ services:
         loki-url: http://loki:3100/loki/api/v1/push
 
   cockroach:
-    image: "cockroachdb/cockroach:v21.1.8"
+    image: "cockroachdb/cockroach:latest"
     command: "start-single-node --insecure --listen-addr=0.0.0.0"
     volumes:
       - "./cockroach-data:/cockroach/cockroach-data"
     expose:
       - 26257
       - 8080
-    deploy:
-      replicas: 1
     restart: "always"
+
   nats:
     image: "nats:latest"
     expose:
       - 4222
-    deploy:
-      replicas: 1
     restart: "always"
 
   node-exporter:
     image: prom/node-exporter:latest
     restart: "always"
     volumes:
-      - "/proc:/host/proc:ro"
-      - "/sys:/host/sys:ro"
-      - "/:/rootfs:ro"
+      - "/:/host:ro,rslave"
     command:
-      - "--path.procfs=/host/proc"
-      - "--path.rootfs=/rootfs"
-      - "--path.sysfs=/host/sys"
-      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
+      - "--path.rootfs=/host"
+    network_mode: host
+    pid: host
     expose:
       - 9100
 
@@ -107,10 +101,7 @@ services:
       - "./prometheus-data:/data"
     expose:
       - 9090
-    deploy:
-      replicas: 1
     restart: "always"
-    user: "root" # fix prometheus permissions.
 
   loki:
     image: grafana/loki:latest
@@ -119,28 +110,22 @@ services:
     command: "-config.file=/etc/config/loki.yml"
     expose:
       - 3100
-    deploy:
-      replicas: 1
     restart: "always"
 
   grafana:
     image: grafana/grafana:latest
-    depends_on: [prometheus]
-    expose:
-      - 3000
+    depends_on:
+      - prometheus
+      - loki
     volumes:
-      - "grafana-data:/var/lib/grafana"
+      - "./grafana-data:/var/lib/grafana"
     environment:
-      - "GF_SECURITY_ADMIN_PASSWORD=admin"
-    deploy:
-      replicas: 1
+      - "GF_SECURITY_ADMIN_PASSWORD=admin" # initial password
+    # expose:
+    #   - 3000
     restart: "always"
     labels:
       - "traefik.enable=true"
-
-      - "traefik.http.routers.grafana.rule=Host(`grafana.nakama.social`)"
+      - "traefik.http.routers.grafana.rule=Host(`grafana.nakama.social`) || Path(`/`)"
       - "traefik.http.routers.grafana.entrypoints=websecure"
       - "traefik.http.routers.grafana.tls.certresolver=tls-resolver"
-
-volumes:
-  grafana-data: # fix grafana volume permissions.
