@@ -126,6 +126,6 @@ services:
     restart: "always"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.grafana.rule=Host(`grafana.nakama.social`) || Path(`/`)"
+      - "traefik.http.routers.grafana.rule=Host(`grafana.nakama.social`)"
       - "traefik.http.routers.grafana.entrypoints=websecure"
       - "traefik.http.routers.grafana.tls.certresolver=tls-resolver"
