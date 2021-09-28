@@ -10,3 +10,6 @@ scrape_configs:
   - job_name: node
     static_configs:
       - targets: ["194.62.97.55:9100"] # node-exporter is using host network.
+  - job_name: cadvisor
+    static_configs:
+      - targets: ["cadvisor:8080"]

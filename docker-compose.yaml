@@ -90,9 +90,23 @@ services:
     expose:
       - 9100
 
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    restart: "always"
+    volumes:
+      - "/:/rootfs:ro"
+      - "/var/run:/var/run:ro"
+      - "/sys:/sys:ro"
+      - "/var/lib/docker/:/var/lib/docker:ro"
+      - "/dev/disk/:/dev/disk:ro"
+    exposes:
+      - 8080
+
   prometheus:
     image: prom/prometheus:latest
-    depends_on: [node-exporter]
+    depends_on:
+      - node-exporter
+      - cadvisor
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/data"
