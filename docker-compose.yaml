@@ -85,8 +85,8 @@ services:
       - "/:/host:ro,rslave"
     command:
       - "--path.rootfs=/host"
-    network_mode: host
-    pid: host
+    # network_mode: host
+    # pid: host
     expose:
       - 9100
 
@@ -119,8 +119,8 @@ services:
 
   loki:
     image: grafana/loki:latest
-    volumes:
-      - "./loki.yml:/etc/config/loki.yml"
+    # volumes:
+    #   - "./loki.yml:/etc/config/loki.yml"
     command: "-config.file=/etc/config/loki.yml"
     expose:
       - 3100
@@ -133,8 +133,8 @@ services:
       - loki
     volumes:
       - "./grafana-data:/var/lib/grafana"
-    environment:
-      - "GF_SECURITY_ADMIN_PASSWORD=admin" # initial password
+    # environment:
+    #   - "GF_SECURITY_ADMIN_PASSWORD=admin" # initial password
     # expose:
     #   - 3000
     restart: "always"
