@@ -60,7 +60,7 @@ services:
     logging:
       driver: loki
       options:
-        loki-url: http://loki:3100/loki/api/v1/push
+        loki-url: http://localhost:3100/loki/api/v1/push
 
   cockroach:
     image: "cockroachdb/cockroach:latest"
@@ -122,8 +122,8 @@ services:
     # volumes:
     #   - "./loki.yml:/etc/config/loki.yml"
     command: "-config.file=/etc/loki/local-config.yaml"
-    expose:
-      - 3100
+    ports:
+      - "3100:3100"
     restart: "always"
 
   grafana:
