@@ -121,7 +121,7 @@ services:
     image: grafana/loki:latest
     # volumes:
     #   - "./loki.yml:/etc/config/loki.yml"
-    command: "-config.file=/etc/config/loki.yml"
+    command: "-config.file=/etc/loki/local-config.yaml
     expose:
       - 3100
     restart: "always"
