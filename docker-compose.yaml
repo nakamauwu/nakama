@@ -108,6 +108,7 @@ services:
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/data"
+      - "--storage.tsdb.retention.time=7d"
     volumes:
       - "./prometheus.yml:/etc/prometheus/prometheus.yml"
       - "./prometheus-data:/data"
@@ -121,6 +122,8 @@ services:
     ports:
       - "3100:3100"
     restart: "always"
+    volumes:
+      - "./loki-data:/loki"
 
   grafana:
     image: grafana/grafana:latest
