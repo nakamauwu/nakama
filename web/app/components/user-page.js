@@ -224,21 +224,21 @@ function UserProfile({ user: initialUser }) {
         ev.preventDefault()
 
         setUpdatingUsername(true)
-        updateUser({ username }).then(payload => {
+        updateUser({ username }).then(() => {
             setAuth(auth => ({
                 ...auth,
                 user: {
                     ...auth.user,
-                    ...payload,
+                    username,
                 },
             }))
             setUser(u => ({
                 ...u,
-                ...payload,
+                username,
             }))
             setToast({ type: "success", content: "username updated" })
-            history.replaceState(history.state, document.title, "/@" + encodeURIComponent(payload.username))
-            dispatchUsernameUpdated(payload)
+            history.replaceState(history.state, document.title, "/@" + encodeURIComponent(username))
+            dispatchUsernameUpdated({ username })
         }, err => {
             const msg = "could not update username: " + err.message
             setToast({ type: "error", content: msg })
@@ -571,9 +571,11 @@ function fetchPosts(username, before = "", last = pageSize) {
         })
 }
 
-function updateUser({ username }) {
-    return request("PATCH", "/api/auth_user", { body: { username } })
-        .then(resp => resp.body)
+/**
+ * @param {{username?:string,bio?:string,waifu?:string,husbando?:string}} payload
+ */
+function updateUser({ username, bio, waifu, husbando }) {
+    return request("PATCH", "/api/auth_user", { body: { username, bio, waifu, husbando } })
 }
 
 /**

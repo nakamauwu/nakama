@@ -59,7 +59,7 @@ type Service interface {
 	Users(ctx context.Context, search string, first uint64, after *string) (nakama.UserProfiles, error)
 	Usernames(ctx context.Context, startingWith string, first uint64, after *string) (nakama.Usernames, error)
 	User(ctx context.Context, username string) (nakama.UserProfile, error)
-	UpdateUser(ctx context.Context, params nakama.UpdateUserParams) (nakama.UpdatedUserFields, error)
+	UpdateUser(ctx context.Context, params nakama.UpdateUserParams) error
 	UpdateAvatar(ctx context.Context, r io.Reader) (string, error)
 	UpdateCover(ctx context.Context, r io.Reader) (string, error)
 	ToggleFollow(ctx context.Context, username string) (nakama.ToggleFollowOutput, error)

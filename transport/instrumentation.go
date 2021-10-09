@@ -308,7 +308,7 @@ func (mw *ServiceWithInstrumentation) User(ctx context.Context, username string)
 	return mw.Next.User(ctx, username)
 }
 
-func (mw *ServiceWithInstrumentation) UpdateUser(ctx context.Context, params nakama.UpdateUserParams) (nakama.UpdatedUserFields, error) {
+func (mw *ServiceWithInstrumentation) UpdateUser(ctx context.Context, params nakama.UpdateUserParams) error {
 	defer func(begin time.Time) {
 		reqDur_UpdateUser.Observe(float64(time.Since(begin)) / float64(time.Millisecond))
 	}(time.Now())

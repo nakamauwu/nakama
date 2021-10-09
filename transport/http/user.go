@@ -77,13 +77,13 @@ func (h *handler) updateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	updated, err := h.svc.UpdateUser(ctx, nakama.UpdateUserParams(reqBody))
+	err = h.svc.UpdateUser(ctx, nakama.UpdateUserParams(reqBody))
 	if err != nil {
 		h.respondErr(w, err)
 		return
 	}
 
-	h.respond(w, updated, http.StatusOK)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *handler) updateAvatar(w http.ResponseWriter, r *http.Request) {

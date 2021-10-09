@@ -125,6 +125,11 @@ CREATE TABLE IF NOT EXISTS user_web_push_subscriptions (
     UNIQUE INDEX unique_user_web_push_subscriptions (user_id, sub)
 );
 
+ALTER TABLE IF EXISTS users
+    ADD COLUMN IF NOT EXISTS bio VARCHAR,
+    ADD COLUMN IF NOT EXISTS waifu VARCHAR,
+    ADD COLUMN IF NOT EXISTS husbando VARCHAR;
+
 -- INSERT INTO users (id, email, username) VALUES
 --     ('24ca6ce6-b3e9-4276-a99a-45c77115cc9f', 'shinji@example.org', 'shinji'),
 --     ('93dfcef9-0b45-46ae-933c-ea52fbf80edb', 'rei@example.org', 'rei');

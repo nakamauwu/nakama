@@ -11,6 +11,7 @@ import (
 	"io"
 	"regexp"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/cockroachdb/cockroach-go/crdb"
 	"github.com/disintegration/imaging"
@@ -56,6 +57,12 @@ var (
 	ErrUserGone = GoneError("user gone")
 	// ErrInvalidUpdateUserParams denotes invalid params to update a user, that is no params altogether.
 	ErrInvalidUpdateUserParams = InvalidArgumentError("invalid update user params")
+	// ErrInvalidUserBio denotes an invalid user bio. That is empty or it exceeds the max allowed characters (480).
+	ErrInvalidUserBio = InvalidArgumentError("invalid user bio")
+	// ErrInvalidUserWaifu denotes an invalid waifu name for an user.
+	ErrInvalidUserWaifu = InvalidArgumentError("invalid user waifu")
+	// ErrInvalidUserHusbando denotes an invalid husbando name for an user.
+	ErrInvalidUserHusbando = InvalidArgumentError("invalid user husbando")
 )
 
 // User model.
@@ -329,44 +336,70 @@ func (s *Service) User(ctx context.Context, username string) (UserProfile, error
 
 type UpdateUserParams struct {
 	Username *string `json:"username"`
+	Bio      *string `json:"bio"`
+	Waifu    *string `json:"waifu"`
+	Husbando *string `json:"husbando"`
 }
 
 func (params UpdateUserParams) Empty() bool {
-	return params.Username == nil
+	return params.Username == nil && params.Bio == nil && params.Waifu == nil && params.Husbando == nil
 }
 
-type UpdatedUserFields struct {
-	Username string `json:"username"`
-}
-
-func (s *Service) UpdateUser(ctx context.Context, params UpdateUserParams) (UpdatedUserFields, error) {
-	var updated UpdatedUserFields
+func (s *Service) UpdateUser(ctx context.Context, params UpdateUserParams) error {
 	uid, ok := ctx.Value(KeyAuthUserID).(string)
 	if !ok {
-		return updated, ErrUnauthenticated
+		return ErrUnauthenticated
 	}
 
 	if params.Empty() {
-		return updated, ErrInvalidUpdateUserParams
+		return ErrInvalidUpdateUserParams
 	}
 
-	if params.Username != nil && !ValidUsername(*params.Username) {
-		return updated, ErrInvalidUsername
+	if params.Username != nil {
+		*params.Username = strings.TrimSpace(*params.Username)
+		if !ValidUsername(*params.Username) {
+			return ErrInvalidUsername
+		}
 	}
 
-	query := "UPDATE users SET username = $1 WHERE id = $2"
-	_, err := s.DB.ExecContext(ctx, query, *params.Username, uid)
+	if params.Bio != nil {
+		*params.Bio = strings.TrimSpace(*params.Bio)
+		if !validUserBio(*params.Bio) {
+			return ErrInvalidUserBio
+		}
+	}
+
+	if params.Waifu != nil {
+		*params.Waifu = strings.TrimSpace(*params.Waifu)
+		if !validAnimeCharName(*params.Waifu) {
+			return ErrInvalidUserWaifu
+		}
+	}
+
+	if params.Husbando != nil {
+		*params.Husbando = strings.TrimSpace(*params.Husbando)
+		if !validAnimeCharName(*params.Husbando) {
+			return ErrInvalidUserHusbando
+		}
+	}
+
+	query := `
+		UPDATE users SET
+			username = COALESCE($1, username)
+			, bio = COALESCE($2, bio)
+			, waifu = COALESCE($3, waifu)
+			, husbando = COALESCE($4, husbando)
+		WHERE id = $5`
+	_, err := s.DB.ExecContext(ctx, query, params.Username, params.Bio, params.Waifu, params.Husbando, uid)
 	if isUniqueViolation(err) {
-		return updated, ErrUsernameTaken
+		return ErrUsernameTaken
 	}
 
 	if err != nil {
-		return updated, fmt.Errorf("could not sql update user: %w", err)
+		return fmt.Errorf("could not sql update user: %w", err)
 	}
 
-	updated.Username = *params.Username
-
-	return updated, nil
+	return nil
 }
 
 // UpdateAvatar of the authenticated user returning the new avatar URL.
@@ -833,4 +866,12 @@ func (s *Service) coverURL(cover sql.NullString) *string {
 
 func ValidUsername(s string) bool {
 	return reUsername.MatchString(s)
+}
+
+func validUserBio(s string) bool {
+	return s != "" && utf8.RuneCountInString(s) <= 480
+}
+
+func validAnimeCharName(s string) bool {
+	return s != "" && utf8.RuneCountInString(s) <= 32
 }

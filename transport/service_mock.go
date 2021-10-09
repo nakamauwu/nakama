@@ -132,7 +132,7 @@ var _ Service = &ServiceMock{}
 // 			UpdateCoverFunc: func(ctx context.Context, r io.Reader) (string, error) {
 // 				panic("mock out the UpdateCover method")
 // 			},
-// 			UpdateUserFunc: func(ctx context.Context, params nakama.UpdateUserParams) (nakama.UpdatedUserFields, error) {
+// 			UpdateUserFunc: func(ctx context.Context, params nakama.UpdateUserParams) error {
 // 				panic("mock out the UpdateUser method")
 // 			},
 // 			UserFunc: func(ctx context.Context, username string) (nakama.UserProfile, error) {
@@ -266,7 +266,7 @@ type ServiceMock struct {
 	UpdateCoverFunc func(ctx context.Context, r io.Reader) (string, error)
 
 	// UpdateUserFunc mocks the UpdateUser method.
-	UpdateUserFunc func(ctx context.Context, params nakama.UpdateUserParams) (nakama.UpdatedUserFields, error)
+	UpdateUserFunc func(ctx context.Context, params nakama.UpdateUserParams) error
 
 	// UserFunc mocks the User method.
 	UserFunc func(ctx context.Context, username string) (nakama.UserProfile, error)
@@ -1953,7 +1953,7 @@ func (mock *ServiceMock) UpdateCoverCalls() []struct {
 }
 
 // UpdateUser calls UpdateUserFunc.
-func (mock *ServiceMock) UpdateUser(ctx context.Context, params nakama.UpdateUserParams) (nakama.UpdatedUserFields, error) {
+func (mock *ServiceMock) UpdateUser(ctx context.Context, params nakama.UpdateUserParams) error {
 	if mock.UpdateUserFunc == nil {
 		panic("ServiceMock.UpdateUserFunc: method is nil but Service.UpdateUser was just called")
 	}
