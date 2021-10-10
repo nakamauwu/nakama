@@ -36,7 +36,7 @@ var (
 
 var (
 	// ErrInvalidUserID denotes an invalid user id; that is not uuid.
-	ErrInvalidUserID = InvalidArgumentError("invalid user id")
+	ErrInvalidUserID = InvalidArgumentError("invalid user ID")
 	// ErrInvalidEmail denotes an invalid email address.
 	ErrInvalidEmail = InvalidArgumentError("invalid email")
 	// ErrInvalidUsername denotes an invalid username.

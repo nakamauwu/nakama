@@ -14,7 +14,7 @@ import (
 )
 
 // ErrInvalidNotificationID denotes an invalid notification id; that is not uuid.
-var ErrInvalidNotificationID = InvalidArgumentError("invalid notification id")
+var ErrInvalidNotificationID = InvalidArgumentError("invalid notification ID")
 
 // Notification model.
 type Notification struct {
