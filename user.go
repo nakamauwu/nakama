@@ -77,6 +77,9 @@ type UserProfile struct {
 	User
 	Email          string  `json:"email,omitempty"`
 	CoverURL       *string `json:"coverURL"`
+	Bio            *string `json:"bio"`
+	Waifu          *string `json:"waifu"`
+	Husbando       *string `json:"husbando"`
 	FollowersCount int     `json:"followersCount"`
 	FolloweesCount int     `json:"followeesCount"`
 	Me             bool    `json:"me"`
@@ -117,7 +120,7 @@ func (s *Service) Users(ctx context.Context, search string, first uint64, after 
 
 	uid, auth := ctx.Value(KeyAuthUserID).(string)
 	query, args, err := buildQuery(`
-		SELECT id, email, username, avatar, cover, followers_count, followees_count
+		SELECT id, email, username, avatar, cover, bio, waifu, husbando, followers_count, followees_count
 		{{ if .auth }}
 		, followers.follower_id IS NOT NULL AS following
 		, followees.followee_id IS NOT NULL AS followeed
@@ -161,6 +164,9 @@ func (s *Service) Users(ctx context.Context, search string, first uint64, after 
 			&u.Username,
 			&avatar,
 			&cover,
+			&u.Bio,
+			&u.Waifu,
+			&u.Husbando,
 			&u.FollowersCount,
 			&u.FolloweesCount,
 		}
@@ -288,7 +294,7 @@ func (s *Service) User(ctx context.Context, username string) (UserProfile, error
 
 	uid, auth := ctx.Value(KeyAuthUserID).(string)
 	query, args, err := buildQuery(`
-		SELECT id, email, avatar, cover, followers_count, followees_count
+		SELECT id, email, avatar, cover, bio, waifu, husbando, followers_count, followees_count
 		{{if .auth}}
 		, followers.follower_id IS NOT NULL AS following
 		, followees.followee_id IS NOT NULL AS followeed
@@ -310,7 +316,7 @@ func (s *Service) User(ctx context.Context, username string) (UserProfile, error
 	}
 
 	var avatar, cover sql.NullString
-	dest := []interface{}{&u.ID, &u.Email, &avatar, &cover, &u.FollowersCount, &u.FolloweesCount}
+	dest := []interface{}{&u.ID, &u.Email, &avatar, &cover, &u.Bio, &u.Waifu, &u.Husbando, &u.FollowersCount, &u.FolloweesCount}
 	if auth {
 		dest = append(dest, &u.Following, &u.Followeed)
 	}

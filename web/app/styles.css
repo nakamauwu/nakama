@@ -1487,7 +1487,6 @@ notification-item {
     font-size: 1.75rem;
 }
 
-.username-fieldset,
 .avatar-fieldset,
 .cover-fieldset,
 .theme-fieldset {
@@ -1527,22 +1526,17 @@ legend {
     line-height: 0;
 }
 
-.username-grp {
+.update-user-form {
     display: grid;
-    grid-auto-flow: column;
-    justify-content: left;
-    gap: .5rem;
+    grid-auto-flow: row;
+    justify-content: flex-start;
+    gap: 1rem;
 }
 
-.username-grp input {
-    width: 100%;
-}
-
-@media screen and (max-width: 414px) {
-    .username-grp {
-        grid-auto-flow: row;
-        justify-content: left;
-    }
+.input-grp label {
+    display: block;
+    font-size: .875rem;
+    margin-bottom: .25rem;
 }
 
 .avatar-grp,

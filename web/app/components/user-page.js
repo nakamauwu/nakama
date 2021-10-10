@@ -180,10 +180,13 @@ function UserProfile({ user: initialUser }) {
     const [auth, setAuth] = useStore(authStore)
     const [user, setUser] = useState(initialUser)
     const [username, setUsername] = useState(user.username)
+    const [bio, setBio] = useState(user.bio ?? "")
+    const [waifu, setWaifu] = useState(user.waifu ?? "")
+    const [husbando, setHusbando] = useState(user.husbando ?? "")
     const settingsDialogRef = useRef(null)
     const avatarInputRef = useRef(null)
     const coverInputRef = useRef(null)
-    const [updatingUsername, setUpdatingUsername] = useState(false)
+    const [updatingUser, setUpdatingUser] = useState(false)
     const [updatingAvatar, setUpdatingAvatar] = useState(false)
     const [updatingCover, setUpdatingCover] = useState(false)
     const [theme, setTheme] = useState(() => {
@@ -220,32 +223,45 @@ function UserProfile({ user: initialUser }) {
         setUsername(ev.currentTarget.value)
     }, [])
 
-    const onUsernameFormSubmit = useCallback(ev => {
+    const onUserBioInput = useCallback(ev => {
+        setBio(ev.currentTarget.value)
+    }, [])
+
+    const onUserWaifuInput = useCallback(ev => {
+        setWaifu(ev.currentTarget.value)
+    }, [])
+
+    const onUserHusbandoInput = useCallback(ev => {
+        setHusbando(ev.currentTarget.value)
+    }, [])
+
+    const onUserFormSubmit = useCallback(ev => {
         ev.preventDefault()
 
-        setUpdatingUsername(true)
-        updateUser({ username }).then(() => {
+        setUpdatingUser(true)
+        const payload = { username, bio, waifu, husbando }
+        updateUser(payload).then(() => {
             setAuth(auth => ({
                 ...auth,
                 user: {
                     ...auth.user,
-                    username,
+                    ...payload,
                 },
             }))
             setUser(u => ({
                 ...u,
-                username,
+                ...payload,
             }))
-            setToast({ type: "success", content: "username updated" })
+            setToast({ type: "success", content: "user updated" })
             history.replaceState(history.state, document.title, "/@" + encodeURIComponent(username))
             dispatchUsernameUpdated({ username })
         }, err => {
-            const msg = "could not update username: " + err.message
+            const msg = "could not update user: " + err.message
             setToast({ type: "error", content: msg })
         }).finally(() => {
-            setUpdatingUsername(false)
+            setUpdatingUser(false)
         })
-    }, [username])
+    }, [username, bio, waifu, husbando])
 
     const onAvatarInputChange = useCallback(ev => {
         const files = ev.currentTarget.files
@@ -464,15 +480,34 @@ function UserProfile({ user: initialUser }) {
                         </svg>
                     </button>
                 </div>
-                <form @submit=${onUsernameFormSubmit}>
-                    <fieldset class="username-fieldset">
-                        <legend>Username</legend>
-                        <div class="username-grp">
-                            <input type="text" name="username" placeholder="Username" required .value=${username}
-                                .disabled=${updatingUsername} @input=${onUsernameInput}>
-                            <button .disabled=${updatingUsername}>Update</button>
-                        </div>
-                    </fieldset>
+                <form class="update-user-form" @submit=${onUserFormSubmit}>
+                    <div class="input-grp">
+                        <label for="update-username-input">Username:</label>
+                        <input id="update-username-input" type="text" name="username" placeholder="Username" pattern="^[a-zA-Z][a-zA-Z0-9_-]{0,17}$" autocomplete="off" required
+                            .value=${username}
+                            .disabled=${updatingUser}
+                            @input=${onUsernameInput}>
+                    </div>
+                    <div class="input-grp">
+                        <label for="update-user-bio-input">Bio:</label>
+                        <textarea id="update-user-bio-input" name="bio" placeholder="Bio" autocomplete="off" maxlength="480" required
+                            .value=${bio}
+                            .disabled=${updatingUser}
+                            @input=${onUserBioInput}></textarea>
+                    </div>
+                    <div class="input-grp">
+                        <label for="update-user-waifu-input">Waifu:</label>
+                        <input id="update-user-waifu-input" type="text" name="waifu" placeholder="Waifu" autocomplete="off" maxlength="32" required
+                            .value=${waifu}
+                            .disabled=${updatingUser}
+                            @input=${onUserWaifuInput}>
+                    </div>
+                    <div class="input-grp">
+                        <label for="update-user-husbando-input">Husbando:</label>
+                        <input id="update-user-husbando-input" type="text" name="husbando" placeholder="Husbando" autocomplete="off" maxlength="32" required .value=${husbando}
+                            .disabled=${updatingUser} @input=${onUserHusbandoInput}>
+                    </div>
+                    <button .disabled=${updatingUser}>Update</button>
                 </form>
                 <fieldset class="avatar-fieldset" @drop=${onAvatarDrop} @dragover=${onAvatarDragOver}>
                     <legend>Avatar</legend>
