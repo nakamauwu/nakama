@@ -7,6 +7,7 @@ import mediumZoom from "medium-zoom"
 import { authStore, useStore } from "../ctx.js"
 import { ref } from "../directives/ref.js"
 import { request } from "../http.js"
+import { collectMediaURLs, escapeHTML, linkify } from "../utils.js"
 import { Avatar } from "./avatar.js"
 import "./relative-datetime.js"
 import "./toast-item.js"
@@ -372,48 +373,6 @@ function AddReactionBtn({ postID, type }) {
 
 // @ts-ignore
 customElements.define("add-reaction-btn", component(AddReactionBtn, { useShadowDOM: false }))
-
-const mentionsRegExp = /\B@([a-zA-Z][a-zA-Z0-9_-]{0,17})(\b[^@]|$)/g
-const tagsRegExp = /\B#((?:\p{L}|\p{N}|_)+)(\b[^#]|$)/gu
-const urlsRegExp = /\b(https?:\/\/[\-A-Za-z0-9+&@#\/%?=~_|!:,\.;]*[\-A-Za-z0-9+&@#\/%=~_|])/gi
-
-/**
- * @param {string} s
- */
-function escapeHTML(s) {
-    return s
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/"/g, "&#039;")
-}
-
-/**
- * @param {string} s
- */
-function linkify(s) {
-    return s
-        .replace(mentionsRegExp, '<a href="/users/$1">@$1</a>$2')
-        .replace(tagsRegExp, '<a href="/tagged-posts/$1">#$1</a>$2')
-        .replace(urlsRegExp, '<a href="$1" target="_blank" rel="noopener">$1</a>')
-}
-
-/**
- * @param {string} s
- */
-function collectMediaURLs(s) {
-    const out = []
-    for (const match of s.matchAll(urlsRegExp)) {
-        if (match !== null && match.length >= 2) {
-            try {
-                const url = new URL(match[1])
-                out.push(url)
-            } catch (_) { }
-        }
-    }
-    return out
-}
 
 const trustedOrigins = ["https://i.imgur.com", "https://puu.sh"]
 const imageExts = ["jpg", "jpeg", "gif", "png", "webp", "avif"].map(ext => "." + ext)

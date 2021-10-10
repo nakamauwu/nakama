@@ -2,11 +2,13 @@ import { component, html, useCallback, useEffect, useRef, useState } from "haunt
 import { nothing } from "lit-html"
 import { ifDefined } from "lit-html/directives/if-defined.js"
 import { repeat } from "lit-html/directives/repeat.js"
+import { unsafeHTML } from "lit-html/directives/unsafe-html"
 import { setLocalAuth } from "../auth.js"
 import { authStore, useStore } from "../ctx.js"
 import { ref } from "../directives/ref.js"
 import { request } from "../http.js"
 import { navigate } from "../router.js"
+import { escapeHTML, linkify } from "../utils.js"
 import { Avatar } from "./avatar.js"
 import "./intersectable-comp.js"
 import "./post-item.js"
@@ -37,7 +39,7 @@ function UserPage({ username }) {
         setPosts(pp => pp.filter(p => p.id !== payload.id))
     }, [])
 
-    const onUsernameUpdated = useCallback(ev => {
+    const onUserUpdated = useCallback(ev => {
         updateUser(ev.detail)
     }, [])
 
@@ -141,7 +143,7 @@ function UserPage({ username }) {
                     ` : fetching ? html`
                     <p class="loader" aria-busy="true" aria-live="polite">Loading user... please wait.<p>
                             ` : html`
-                            <user-profile .user=${user} @username-updated=${onUsernameUpdated} @avatar-updated=${onAvatarUpdated} @cover-updated=${onCoverUpdated}></user-profile>
+                            <user-profile .user=${user} @user-updated=${onUserUpdated} @avatar-updated=${onAvatarUpdated} @cover-updated=${onCoverUpdated}></user-profile>
                             `}
                 </div>
             </div>
@@ -195,8 +197,8 @@ function UserProfile({ user: initialUser }) {
     })
     const [toast, setToast] = useState(null)
 
-    const dispatchUsernameUpdated = payload => {
-        this.dispatchEvent(new CustomEvent("username-updated", { bubbles: true, detail: payload }))
+    const dispatchUserUpdated = payload => {
+        this.dispatchEvent(new CustomEvent("user-updated", { bubbles: true, detail: payload }))
     }
 
     const dispatchAvatarUpdated = payload => {
@@ -238,8 +240,14 @@ function UserProfile({ user: initialUser }) {
     const onUserFormSubmit = useCallback(ev => {
         ev.preventDefault()
 
-        setUpdatingUser(true)
         const payload = { username, bio, waifu, husbando }
+        for (const [k, v] of Object.entries(payload)) {
+            if (v === "") {
+                payload[k] = null
+            }
+        }
+
+        setUpdatingUser(true)
         updateUser(payload).then(() => {
             setAuth(auth => ({
                 ...auth,
@@ -254,7 +262,7 @@ function UserProfile({ user: initialUser }) {
             }))
             setToast({ type: "success", content: "user updated" })
             history.replaceState(history.state, document.title, "/@" + encodeURIComponent(username))
-            dispatchUsernameUpdated({ username })
+            dispatchUserUpdated(payload)
         }, err => {
             const msg = "could not update user: " + err.message
             setToast({ type: "error", content: msg })
@@ -438,8 +446,27 @@ function UserProfile({ user: initialUser }) {
 
     return html`
         <div class="user-profile">
-            <h1>${user.username}</h1>
-            <user-follow-counts .user=${user}></user-follow-counts>
+            <div class="user-details-wrapper">
+                <div>
+                    <h1>${user.username}</h1>
+                    <user-follow-counts .user=${user}></user-follow-counts>
+                </div>
+                <div class="user-details">
+                    ${user.bio !== null && user.bio !== "" ? html`
+                        <p>${unsafeHTML(linkify(escapeHTML(user.bio)))}</p>
+                    ` : nothing}
+                    ${(user.waifu !== null && user.waifu !== "") || (user.husbando !== null && user.husbando !== "") ? html`
+                        <dl>
+                            ${user.waifu !== null && user.waifu !== "" ? html`
+                                <dt>Waifu:</dt><dd>${user.waifu}</dd>
+                            ` : nothing}
+                            ${user.husbando !== null && user.husbando !== "" ? html`
+                                <dt>Husbando:</dt><dd>${user.husbando}</dd>
+                            ` : nothing}
+                        </dl>
+                    ` : nothing}
+                </div>
+            </div>
             ${Avatar(user)}
             <div class="user-controls">
                 ${user.me ? html`
@@ -483,29 +510,31 @@ function UserProfile({ user: initialUser }) {
                 <form class="update-user-form" @submit=${onUserFormSubmit}>
                     <div class="input-grp">
                         <label for="update-username-input">Username:</label>
-                        <input id="update-username-input" type="text" name="username" placeholder="Username" pattern="^[a-zA-Z][a-zA-Z0-9_-]{0,17}$" autocomplete="off" required
+                        <input id="update-username-input" type="text" name="username" placeholder="Username" pattern="^[a-zA-Z][a-zA-Z0-9_-]{0,17}$" autocomplete="off"
                             .value=${username}
                             .disabled=${updatingUser}
                             @input=${onUsernameInput}>
                     </div>
                     <div class="input-grp">
                         <label for="update-user-bio-input">Bio:</label>
-                        <textarea id="update-user-bio-input" name="bio" placeholder="Bio" autocomplete="off" maxlength="480" required
+                        <textarea id="update-user-bio-input" name="bio" placeholder="Bio" autocomplete="off" maxlength="480"
                             .value=${bio}
                             .disabled=${updatingUser}
                             @input=${onUserBioInput}></textarea>
                     </div>
                     <div class="input-grp">
                         <label for="update-user-waifu-input">Waifu:</label>
-                        <input id="update-user-waifu-input" type="text" name="waifu" placeholder="Waifu" autocomplete="off" maxlength="32" required
+                        <input id="update-user-waifu-input" type="text" name="waifu" placeholder="Waifu" autocomplete="off" maxlength="32"
                             .value=${waifu}
                             .disabled=${updatingUser}
                             @input=${onUserWaifuInput}>
                     </div>
                     <div class="input-grp">
                         <label for="update-user-husbando-input">Husbando:</label>
-                        <input id="update-user-husbando-input" type="text" name="husbando" placeholder="Husbando" autocomplete="off" maxlength="32" required .value=${husbando}
-                            .disabled=${updatingUser} @input=${onUserHusbandoInput}>
+                        <input id="update-user-husbando-input" type="text" name="husbando" placeholder="Husbando" autocomplete="off" maxlength="32"
+                            .value=${husbando}
+                            .disabled=${updatingUser}
+                            @input=${onUserHusbandoInput}>
                     </div>
                     <button .disabled=${updatingUser}>Update</button>
                 </form>
