@@ -19,7 +19,7 @@ export function escapeHTML(s) {
  */
 export function linkify(s) {
     return s
-        .replace(mentionsRegExp, '<a href="/users/$1">@$1</a>$2')
+        .replace(mentionsRegExp, '<a href="/@$1">@$1</a>$2')
         .replace(tagsRegExp, '<a href="/tagged-posts/$1">#$1</a>$2')
         .replace(urlsRegExp, '<a href="$1" target="_blank" rel="noopener">$1</a>')
 }
