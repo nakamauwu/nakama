@@ -347,18 +347,10 @@ type UpdateUserParams struct {
 	Husbando *string `json:"husbando"`
 }
 
-func (params UpdateUserParams) Empty() bool {
-	return params.Username == nil && params.Bio == nil && params.Waifu == nil && params.Husbando == nil
-}
-
 func (s *Service) UpdateUser(ctx context.Context, params UpdateUserParams) error {
 	uid, ok := ctx.Value(KeyAuthUserID).(string)
 	if !ok {
 		return ErrUnauthenticated
-	}
-
-	if params.Empty() {
-		return ErrInvalidUpdateUserParams
 	}
 
 	if params.Username != nil {
@@ -391,10 +383,10 @@ func (s *Service) UpdateUser(ctx context.Context, params UpdateUserParams) error
 
 	query := `
 		UPDATE users SET
-			username = COALESCE($1, username)
-			, bio = COALESCE($2, bio)
-			, waifu = COALESCE($3, waifu)
-			, husbando = COALESCE($4, husbando)
+			username = $1
+			, bio = $2
+			, waifu = $3
+			, husbando = $4
 		WHERE id = $5`
 	_, err := s.DB.ExecContext(ctx, query, params.Username, params.Bio, params.Waifu, params.Husbando, uid)
 	if isUniqueViolation(err) {
