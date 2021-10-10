@@ -383,7 +383,7 @@ func (s *Service) UpdateUser(ctx context.Context, params UpdateUserParams) error
 
 	query := `
 		UPDATE users SET
-			username = $1
+			username = COALESCE($1, username)
 			, bio = $2
 			, waifu = $3
 			, husbando = $4
