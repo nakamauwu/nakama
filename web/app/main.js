@@ -244,3 +244,10 @@ function markNotificationAsRead(notificationID) {
     return request("POST", `/api/notifications/${encodeURIComponent(notificationID)}/mark_as_read`)
         .then(() => void 0)
 }
+
+const now = new Date()
+const isHalloween = now.getMonth() === 9 && now.getDate() === 31
+console.log({ isHalloween })
+if (isHalloween) {
+    document.documentElement.classList.add("halloween")
+}

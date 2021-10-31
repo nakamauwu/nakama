@@ -1630,3 +1630,23 @@ legend {
 .privacy-policy-page {
   font-family: serif;
 }
+
+@media (min-width: 1000px) and (max-width: 1500px) {
+  .halloween body {
+    background-image: url("https://i.imgur.com/exx3AA2.png");
+    background-repeat: no-repeat;
+    background-position: bottom right;
+    background-attachment: fixed;
+    background-size: calc(calc(100% - 65ch) / 2);
+  }
+}
+
+@media (min-width: 1500px) {
+  .halloween body {
+    background-image: url("https://i.imgur.com/exx3AA2.png");
+    background-repeat: no-repeat;
+    background-position: bottom right;
+    background-attachment: fixed;
+    background-size: 52ch;
+  }
+}
