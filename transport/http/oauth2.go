@@ -1,22 +1,28 @@
 package http
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html/template"
 	"net/http"
 	"net/url"
 	"time"
 
+	"github.com/go-kit/log/level"
 	"github.com/hybridtheory/samesite-cookie-support"
 	"github.com/nicolasparada/nakama"
+	webtemplate "github.com/nicolasparada/nakama/web"
 	"golang.org/x/oauth2"
 )
 
-var oauth2Timeout = time.Minute * 2
+const oauth2Timeout = time.Minute * 2
+
+var refreshTmpl = template.Must(template.ParseFS(webtemplate.TemplateFiles, "template/refresh.html.tmpl"))
 
 type OauthProvider struct {
 	Name       string
@@ -191,6 +197,33 @@ func (h *handler) oauth2CallbackHandler(provider OauthProvider) http.HandlerFunc
 	return func(w http.ResponseWriter, r *http.Request) {
 		redirectURICookie, err := r.Cookie("oauth2_redirect_uri")
 		if err == http.ErrNoCookie {
+			// Try client side page refresh to reset lost cookies.
+			if !r.URL.Query().Has("did_refresh") { // prevent infinite loop.
+				u, err := url.Parse(r.RequestURI)
+				if err != nil {
+					h.respondErr(w, fmt.Errorf("could not parse request uri: %w", err))
+					return
+				}
+
+				q := u.Query()
+				q.Set("did_refresh", "true")
+				u.RawQuery = q.Encode()
+
+				var buff bytes.Buffer
+				err = refreshTmpl.Execute(&buff, u)
+				if err != nil {
+					h.respondErr(w, fmt.Errorf("could not render refresh template: %w", err))
+					return
+				}
+
+				r.Header.Set("Refresh", "0; url="+url.QueryEscape(u.String()))
+				w.Header().Set("Content-Type", "text/html; charset=utf-u")
+				_, err = w.Write(buff.Bytes())
+				if err != nil && !errors.Is(err, context.Canceled) {
+					_ = level.Error(h.logger).Log("msg", "could not write http response", "err", err)
+				}
+			}
+
 			h.respondErr(w, errOauthTimeout)
 			return
 		}
