@@ -497,25 +497,19 @@ customElements.define("media-scroller", component(MediaScroller, { useShadowDOM:
 function findYouTubeID(url) {
     let id = null
     let seconds = null
-    if (url.hostname === "www.youtube.com" || url.hostname === "youtube.com" || url.hostname === "m.youtube.com") {
+    if (url.hostname === "www.youtube.com" || url.hostname === "youtube.com" || url.hostname === "youtu.be" || url.hostname === "m.youtube.com" || url.hostname === "music.youtube.com") {
         if (url.pathname === "/watch" && url.searchParams.has("v")) {
             id = decodeURIComponent(url.searchParams.get("v"))
         }
+
         const parts = url.pathname.split("/")
-        if (parts.length === 3 && parts[0] === "" && parts[1] === "embed" && parts[2] !== "") {
+        if (parts.length === 3 && parts[0] === "" && (parts[1] === "shorts" || parts[1] === "embed") && parts[2] !== "") {
             id = decodeURIComponent(parts[2])
         }
-    }
 
-    if (url.hostname === "youtu.be") {
-        const parts = url.pathname.split("/")
         if (parts.length === 2 && parts[0] === "" && parts[1] !== "") {
             id = decodeURIComponent(parts[1])
         }
-    }
-
-    if (url.hostname === "music.youtube.com" && url.pathname === "/watch" && url.searchParams.has("v")) {
-        id = decodeURIComponent(url.searchParams.get("v"))
     }
 
     if (url.searchParams.has("t")) {
