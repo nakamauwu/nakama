@@ -502,13 +502,15 @@ function findYouTubeID(url) {
             id = decodeURIComponent(url.searchParams.get("v"))
         }
 
-        const parts = url.pathname.split("/")
-        if (parts.length === 3 && parts[0] === "" && (parts[1] === "shorts" || parts[1] === "embed") && parts[2] !== "") {
-            id = decodeURIComponent(parts[2])
-        }
+        if (id === null) {
+            const parts = url.pathname.split("/")
+            if (parts.length === 3 && parts[0] === "" && (parts[1] === "shorts" || parts[1] === "embed") && parts[2] !== "") {
+                id = decodeURIComponent(parts[2])
+            }
 
-        if (parts.length === 2 && parts[0] === "" && parts[1] !== "") {
-            id = decodeURIComponent(parts[1])
+            if (id === null && parts.length === 2 && parts[0] === "" && parts[1] !== "") {
+                id = decodeURIComponent(parts[1])
+            }
         }
     }
 
