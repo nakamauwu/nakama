@@ -46,17 +46,11 @@ services:
     labels:
       - "traefik.enable=true"
 
-      # Redirect next.nakama.social to nakama.social
-      - "traefik.http.middlewares.nextredirectregex.redirectregex.regex=^https?://next.nakama.social(.*)"
-      - "traefik.http.middlewares.nextredirectregex.redirectregex.replacement=https://nakama.social$${1}"
-      - "traefik.http.middlewares.nextredirectregex.redirectregex.permanent=true"
-
       - "traefik.http.middlewares.floc.headers.customresponseheaders.interest-cohort=()"
 
-      - "traefik.http.routers.nakama.rule=Host(`nakama.social`) || Host(`next.nakama.social`)"
+      - "traefik.http.routers.nakama.rule=Host(`nakama.social`) || Host(`www.nakama.social`)"
       - "traefik.http.routers.nakama.entrypoints=websecure"
       - "traefik.http.routers.nakama.tls.certresolver=tls-resolver"
-      - "traefik.http.routers.nakama.middlewares=nextredirectregex@docker"
     logging:
       driver: loki
       options:
