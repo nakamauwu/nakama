@@ -976,11 +976,11 @@ header .profile-link {
 .media-scroller iframe {
   flex: 0 0 auto;
   display: block;
-  height: min-content;
   max-height: calc(100vh - 8rem);
   background-color: var(--background);
   border-radius: 1rem;
   overflow: hidden;
+  max-height: min-content;
 }
 
 .media-scroller[data-length="1"] img,
