@@ -974,13 +974,23 @@ header .profile-link {
 .media-scroller audio,
 .media-scroller video,
 .media-scroller iframe {
-  flex: 0 0 auto;
   display: block;
+  flex: 0 0 auto;
+  height: min-content;
   max-height: calc(100vh - 8rem);
   background-color: var(--background);
   border-radius: 1rem;
   overflow: hidden;
-  max-height: min-content;
+}
+
+/* Safari issue */
+@supports (height: intrinsic) {
+  .media-scroller img,
+  .media-scroller audio,
+  .media-scroller video,
+  .media-scroller iframe {
+    height: intrinsic
+  }
 }
 
 .media-scroller[data-length="1"] img,
