@@ -86,6 +86,7 @@ func New(svc transport.Service, oauthProviders []OauthProvider, origin *url.URL,
 	r.Handle("*", "/api/...", h.withAuth(api))
 	r.HandleFunc("GET", "/img/avatars/:name", h.avatar)
 	r.HandleFunc("GET", "/img/covers/:name", h.cover)
+	r.HandleFunc("GET", "/img/media/:name", h.media)
 	r.Handle("GET", "/...", h.staticHandler())
 
 	return r

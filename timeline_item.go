@@ -23,7 +23,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-const mediaBucket = "media"
+const MediaBucket = "media"
 
 const (
 	MaxMediaItemBytes = 5 << 20  // 5MB
@@ -141,7 +141,7 @@ func (s *Service) CreateTimelineItem(ctx context.Context, content string, spoile
 			fileName := fileName
 			data := data
 			g.Go(func() error {
-				err := s.Store.Store(gctx, mediaBucket, fileName, data.contents, storage.StoreWithContentType("image/"+data.format))
+				err := s.Store.Store(gctx, MediaBucket, fileName, data.contents, storage.StoreWithContentType("image/"+data.format))
 				if err != nil {
 					return fmt.Errorf("could not store post media item: %w", err)
 				}
@@ -216,7 +216,7 @@ func (s *Service) CreateTimelineItem(ctx context.Context, content string, spoile
 				for _, fileName := range fileNames {
 					fileName := fileName
 					g.Go(func() error {
-						err := s.Store.Delete(gctx, mediaBucket, fileName)
+						err := s.Store.Delete(gctx, MediaBucket, fileName)
 						if err != nil {
 							return fmt.Errorf("could not delete post media item: %w", err)
 						}
