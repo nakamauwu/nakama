@@ -381,7 +381,7 @@ function AddReactionBtn({ postID, type }) {
 // @ts-ignore
 customElements.define("add-reaction-btn", component(AddReactionBtn, { useShadowDOM: false }))
 
-const trustedOrigins = ["https://i.imgur.com", "https://puu.sh", "http://localhost:3000"]
+const trustedOrigins = ["https://i.imgur.com", "https://puu.sh", location.origin]
 const imageExts = ["jpg", "jpeg", "gif", "png", "webp", "avif"].map(ext => "." + ext)
 const audioExts = ["wav", "mp3", "flac"].map(ext => "." + ext)
 const videoExts = ["mp4", "webm", "mov", "3gp", "ogg"].map(ext => "." + ext)
