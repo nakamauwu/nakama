@@ -1,5 +1,5 @@
 /cockroach-data/
-# /web/static/
+/web/static/
 /letsencrypt/
 
 /nakama
