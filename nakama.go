@@ -30,6 +30,7 @@ type Service struct {
 	Store            storage.Store
 	AvatarURLPrefix  string
 	CoverURLPrefix   string
+	MediaURLPrefix   string
 	WebAuthn         *webauthn.WebAuthn
 	DisabledDevLogin bool
 	AllowedOrigins   []string

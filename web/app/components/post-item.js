@@ -110,7 +110,14 @@ function PostItem({ post: initialPost, type }) {
     }, [])
 
     useEffect(() => {
-        setMediaURLs(collectMediaURLs(post.content))
+        const urls = []
+        if ("mediaURLs" in post) {
+            for (const mediaURL of post.mediaURLs) {
+                urls.push(new URL(mediaURL, location.origin))
+            }
+        }
+        urls.push(...collectMediaURLs(post.content))
+        setMediaURLs(urls)
     }, [post])
 
     useEffect(() => {
@@ -374,7 +381,7 @@ function AddReactionBtn({ postID, type }) {
 // @ts-ignore
 customElements.define("add-reaction-btn", component(AddReactionBtn, { useShadowDOM: false }))
 
-const trustedOrigins = ["https://i.imgur.com", "https://puu.sh"]
+const trustedOrigins = ["https://i.imgur.com", "https://puu.sh", "http://localhost:3000"]
 const imageExts = ["jpg", "jpeg", "gif", "png", "webp", "avif"].map(ext => "." + ext)
 const audioExts = ["wav", "mp3", "flac"].map(ext => "." + ext)
 const videoExts = ["mp4", "webm", "mov", "3gp", "ogg"].map(ext => "." + ext)

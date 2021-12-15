@@ -259,11 +259,11 @@ func (mw *ServiceWithInstrumentation) TogglePostSubscription(ctx context.Context
 	return mw.Next.TogglePostSubscription(ctx, postID)
 }
 
-func (mw *ServiceWithInstrumentation) CreateTimelineItem(ctx context.Context, content string, spoilerOf *string, nsfw bool) (nakama.TimelineItem, error) {
+func (mw *ServiceWithInstrumentation) CreateTimelineItem(ctx context.Context, content string, spoilerOf *string, nsfw bool, media []io.Reader) (nakama.TimelineItem, error) {
 	defer func(begin time.Time) {
 		reqDur_CreateTimelineItem.Observe(float64(time.Since(begin)) / float64(time.Millisecond))
 	}(time.Now())
-	return mw.Next.CreateTimelineItem(ctx, content, spoilerOf, nsfw)
+	return mw.Next.CreateTimelineItem(ctx, content, spoilerOf, nsfw, media)
 }
 
 func (mw *ServiceWithInstrumentation) Timeline(ctx context.Context, last uint64, before *string) (nakama.Timeline, error) {

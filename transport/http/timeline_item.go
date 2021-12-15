@@ -2,30 +2,63 @@ package http
 
 import (
 	"encoding/json"
+	"io"
 	"mime"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/matryer/way"
 	"github.com/nicolasparada/nakama"
 )
 
 type createTimelineItemInput struct {
-	Content   string  `json:"content"`
-	SpoilerOf *string `json:"spoilerOf"`
-	NSFW      bool    `json:"nsfw"`
+	Content   string      `json:"content"`
+	SpoilerOf *string     `json:"spoilerOf"`
+	NSFW      bool        `json:"nsfw"`
+	Media     []io.Reader `json:"-"`
 }
 
 func (h *handler) createTimelineItem(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	var in createTimelineItemInput
-	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-		h.respondErr(w, errBadRequest)
-		return
+
+	mediatype, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
+	if err == nil && strings.Contains(strings.ToLower(mediatype), "multipart/form-data") {
+		in.Content = r.FormValue("content")
+		if s := strings.TrimSpace(r.FormValue("spoiler_of")); s != "" {
+			in.SpoilerOf = &s
+		}
+		if v, err := strconv.ParseBool(r.FormValue("nsfw")); err == nil {
+			in.NSFW = v
+		}
+		if files, ok := r.MultipartForm.File["media"]; ok {
+			for _, header := range files {
+				if header.Size > nakama.MaxMediaItemBytes {
+					h.respondErr(w, nakama.ErrMediaItemTooLarge)
+					return
+				}
+
+				f, err := header.Open()
+				if err != nil {
+					h.respondErr(w, errBadRequest)
+					return
+				}
+
+				defer f.Close()
+
+				in.Media = append(in.Media, f)
+			}
+		}
+	} else {
+		if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+			h.respondErr(w, errBadRequest)
+			return
+		}
 	}
 
-	ti, err := h.svc.CreateTimelineItem(r.Context(), in.Content, in.SpoilerOf, in.NSFW)
+	ti, err := h.svc.CreateTimelineItem(r.Context(), in.Content, in.SpoilerOf, in.NSFW, in.Media)
 	if err != nil {
 		h.respondErr(w, err)
 		return
@@ -33,6 +66,10 @@ func (h *handler) createTimelineItem(w http.ResponseWriter, r *http.Request) {
 
 	if ti.Post.Reactions == nil {
 		ti.Post.Reactions = []nakama.Reaction{} // non null array
+	}
+
+	if ti.Post.MediaURLs == nil {
+		ti.Post.MediaURLs = []string{} // non null array
 	}
 
 	h.respond(w, ti, http.StatusCreated)
@@ -61,6 +98,9 @@ func (h *handler) timeline(w http.ResponseWriter, r *http.Request) {
 	for i := range tt {
 		if tt[i].Post.Reactions == nil {
 			tt[i].Post.Reactions = []nakama.Reaction{} // non null array
+		}
+		if tt[i].Post.MediaURLs == nil {
+			tt[i].Post.MediaURLs = []string{} // non null array
 		}
 	}
 
@@ -93,6 +133,9 @@ func (h *handler) timelineItemStream(w http.ResponseWriter, r *http.Request) {
 	case ti := <-tt:
 		if ti.Post.Reactions == nil {
 			ti.Post.Reactions = []nakama.Reaction{} // non null array
+		}
+		if ti.Post.MediaURLs == nil {
+			ti.Post.MediaURLs = []string{} // non null array
 		}
 
 		h.writeSSE(w, ti)

@@ -51,7 +51,7 @@ type Service interface {
 	TogglePostReaction(ctx context.Context, postID string, in nakama.ReactionInput) ([]nakama.Reaction, error)
 	TogglePostSubscription(ctx context.Context, postID string) (nakama.ToggleSubscriptionOutput, error)
 
-	CreateTimelineItem(ctx context.Context, content string, spoilerOf *string, nsfw bool) (nakama.TimelineItem, error)
+	CreateTimelineItem(ctx context.Context, content string, spoilerOf *string, nsfw bool, media []io.Reader) (nakama.TimelineItem, error)
 	Timeline(ctx context.Context, last uint64, before *string) (nakama.Timeline, error)
 	TimelineItemStream(ctx context.Context) (<-chan nakama.TimelineItem, error)
 	DeleteTimelineItem(ctx context.Context, timelineItemID string) error

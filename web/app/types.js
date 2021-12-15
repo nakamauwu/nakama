@@ -38,6 +38,7 @@
  * @prop {string=} spoilerOf
  * @prop {ReactionCount[]} reactions
  * @prop {number} commentsCount
+ * @prop {string[]} mediaURLs
  * @prop {string|Date} createdAt
  * @prop {User=} user
  * @prop {boolean} mine

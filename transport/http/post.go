@@ -31,6 +31,9 @@ func (h *handler) userPosts(w http.ResponseWriter, r *http.Request) {
 		if pp[i].Reactions == nil {
 			pp[i].Reactions = []nakama.Reaction{} // non null array
 		}
+		if pp[i].MediaURLs == nil {
+			pp[i].MediaURLs = []string{} // non null array
+		}
 	}
 
 	h.respond(w, paginatedRespBody{
@@ -68,6 +71,9 @@ func (h *handler) posts(w http.ResponseWriter, r *http.Request) {
 		if pp[i].Reactions == nil {
 			pp[i].Reactions = []nakama.Reaction{} // non null array
 		}
+		if pp[i].MediaURLs == nil {
+			pp[i].MediaURLs = []string{} // non null array
+		}
 	}
 
 	h.respond(w, paginatedRespBody{
@@ -100,6 +106,9 @@ func (h *handler) postStream(w http.ResponseWriter, r *http.Request) {
 		if p.Reactions == nil {
 			p.Reactions = []nakama.Reaction{} // non null array
 		}
+		if p.MediaURLs == nil {
+			p.MediaURLs = []string{} // non null array
+		}
 
 		h.writeSSE(w, p)
 		f.Flush()
@@ -119,6 +128,9 @@ func (h *handler) post(w http.ResponseWriter, r *http.Request) {
 
 	if p.Reactions == nil {
 		p.Reactions = []nakama.Reaction{} // non null array
+	}
+	if p.MediaURLs == nil {
+		p.MediaURLs = []string{} // non null array
 	}
 
 	h.respond(w, p, http.StatusOK)

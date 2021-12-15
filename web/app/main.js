@@ -247,7 +247,6 @@ function markNotificationAsRead(notificationID) {
 
 const now = new Date()
 const isHalloween = now.getMonth() === 9 && now.getDate() === 31
-console.log({ isHalloween })
 if (isHalloween) {
     document.documentElement.classList.add("halloween")
 }

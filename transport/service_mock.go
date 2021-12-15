@@ -42,7 +42,7 @@ var _ Service = &ServiceMock{}
 // 			CreateCommentFunc: func(ctx context.Context, postID string, content string) (nakama.Comment, error) {
 // 				panic("mock out the CreateComment method")
 // 			},
-// 			CreateTimelineItemFunc: func(ctx context.Context, content string, spoilerOf *string, nsfw bool) (nakama.TimelineItem, error) {
+// 			CreateTimelineItemFunc: func(ctx context.Context, content string, spoilerOf *string, nsfw bool, media []io.Reader) (nakama.TimelineItem, error) {
 // 				panic("mock out the CreateTimelineItem method")
 // 			},
 // 			CredentialCreationOptionsFunc: func(ctx context.Context) (*protocol.CredentialCreation, *webauthn.SessionData, error) {
@@ -176,7 +176,7 @@ type ServiceMock struct {
 	CreateCommentFunc func(ctx context.Context, postID string, content string) (nakama.Comment, error)
 
 	// CreateTimelineItemFunc mocks the CreateTimelineItem method.
-	CreateTimelineItemFunc func(ctx context.Context, content string, spoilerOf *string, nsfw bool) (nakama.TimelineItem, error)
+	CreateTimelineItemFunc func(ctx context.Context, content string, spoilerOf *string, nsfw bool, media []io.Reader) (nakama.TimelineItem, error)
 
 	// CredentialCreationOptionsFunc mocks the CredentialCreationOptions method.
 	CredentialCreationOptionsFunc func(ctx context.Context) (*protocol.CredentialCreation, *webauthn.SessionData, error)
@@ -339,6 +339,8 @@ type ServiceMock struct {
 			SpoilerOf *string
 			// Nsfw is the nsfw argument value.
 			Nsfw bool
+			// Media is the media argument value.
+			Media []io.Reader
 		}
 		// CredentialCreationOptions holds details about calls to the CredentialCreationOptions method.
 		CredentialCreationOptions []struct {
@@ -871,7 +873,7 @@ func (mock *ServiceMock) CreateCommentCalls() []struct {
 }
 
 // CreateTimelineItem calls CreateTimelineItemFunc.
-func (mock *ServiceMock) CreateTimelineItem(ctx context.Context, content string, spoilerOf *string, nsfw bool) (nakama.TimelineItem, error) {
+func (mock *ServiceMock) CreateTimelineItem(ctx context.Context, content string, spoilerOf *string, nsfw bool, media []io.Reader) (nakama.TimelineItem, error) {
 	if mock.CreateTimelineItemFunc == nil {
 		panic("ServiceMock.CreateTimelineItemFunc: method is nil but Service.CreateTimelineItem was just called")
 	}
@@ -880,16 +882,18 @@ func (mock *ServiceMock) CreateTimelineItem(ctx context.Context, content string,
 		Content   string
 		SpoilerOf *string
 		Nsfw      bool
+		Media     []io.Reader
 	}{
 		Ctx:       ctx,
 		Content:   content,
 		SpoilerOf: spoilerOf,
 		Nsfw:      nsfw,
+		Media:     media,
 	}
 	mock.lockCreateTimelineItem.Lock()
 	mock.calls.CreateTimelineItem = append(mock.calls.CreateTimelineItem, callInfo)
 	mock.lockCreateTimelineItem.Unlock()
-	return mock.CreateTimelineItemFunc(ctx, content, spoilerOf, nsfw)
+	return mock.CreateTimelineItemFunc(ctx, content, spoilerOf, nsfw, media)
 }
 
 // CreateTimelineItemCalls gets all the calls that were made to CreateTimelineItem.
@@ -900,12 +904,14 @@ func (mock *ServiceMock) CreateTimelineItemCalls() []struct {
 	Content   string
 	SpoilerOf *string
 	Nsfw      bool
+	Media     []io.Reader
 } {
 	var calls []struct {
 		Ctx       context.Context
 		Content   string
 		SpoilerOf *string
 		Nsfw      bool
+		Media     []io.Reader
 	}
 	mock.lockCreateTimelineItem.RLock()
 	calls = mock.calls.CreateTimelineItem

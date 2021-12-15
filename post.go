@@ -13,6 +13,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/cockroachdb/cockroach-go/crdb"
+	"github.com/lib/pq"
 )
 
 const (
@@ -47,6 +48,7 @@ type Post struct {
 	NSFW          bool       `json:"nsfw"`
 	Reactions     []Reaction `json:"reactions"`
 	CommentsCount int        `json:"commentsCount"`
+	MediaURLs     []string   `json:"mediaURLs"`
 	CreatedAt     time.Time  `json:"createdAt"`
 	User          *User      `json:"user,omitempty"`
 	Mine          bool       `json:"mine"`
@@ -137,6 +139,7 @@ func (s *Service) Posts(ctx context.Context, last uint64, before *string, opts .
 		, posts.nsfw
 		, posts.reactions
 		, posts.comments_count
+		, posts.media
 		, posts.created_at
 		{{ if .auth }}
 		, posts.user_id = @uid AS post_mine
@@ -209,6 +212,7 @@ func (s *Service) Posts(ctx context.Context, last uint64, before *string, opts .
 		var avatar sql.NullString
 		var rawReactions []byte
 		var rawUserReactions []byte
+		var media []string
 		dest := []interface{}{
 			&p.ID,
 			&p.Content,
@@ -216,6 +220,7 @@ func (s *Service) Posts(ctx context.Context, last uint64, before *string, opts .
 			&p.NSFW,
 			&rawReactions,
 			&p.CommentsCount,
+			pq.Array(&media),
 			&p.CreatedAt,
 		}
 		if auth {
@@ -260,6 +265,7 @@ func (s *Service) Posts(ctx context.Context, last uint64, before *string, opts .
 			p.User = &u
 		}
 
+		p.MediaURLs = s.mediaURLs(media)
 		pp = append(pp, p)
 	}
 
@@ -317,6 +323,7 @@ func (s *Service) Post(ctx context.Context, postID string) (Post, error) {
 			, posts.nsfw
 			, posts.reactions
 			, posts.comments_count
+			, posts.media
 			, posts.created_at
 			, users.username
 			, users.avatar
@@ -351,6 +358,7 @@ func (s *Service) Post(ctx context.Context, postID string) (Post, error) {
 	var rawUserReactions []byte
 	var u User
 	var avatar sql.NullString
+	var media []string
 	dest := []interface{}{
 		&p.ID,
 		&p.Content,
@@ -358,6 +366,7 @@ func (s *Service) Post(ctx context.Context, postID string) (Post, error) {
 		&p.NSFW,
 		&rawReactions,
 		&p.CommentsCount,
+		pq.Array(&media),
 		&p.CreatedAt,
 		&u.Username,
 		&avatar,
@@ -400,6 +409,7 @@ func (s *Service) Post(ctx context.Context, postID string) (Post, error) {
 		}
 	}
 
+	p.MediaURLs = s.mediaURLs(media)
 	u.AvatarURL = s.avatarURL(avatar)
 	p.User = &u
 

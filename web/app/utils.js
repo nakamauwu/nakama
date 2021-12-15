@@ -32,7 +32,7 @@ export function collectMediaURLs(s) {
     for (const match of s.matchAll(urlsRegExp)) {
         if (match !== null && match.length >= 2) {
             try {
-                const url = new URL(match[1])
+                const url = new URL(match[1], location.origin)
                 out.push(url)
             } catch (_) { }
         }

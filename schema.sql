@@ -17,6 +17,9 @@ CREATE TABLE IF NOT EXISTS users (
     username VARCHAR NOT NULL UNIQUE,
     avatar VARCHAR,
     cover VARCHAR,
+    bio VARCHAR,
+    waifu VARCHAR,
+    husbando VARCHAR,
     followers_count INT NOT NULL DEFAULT 0 CHECK (followers_count >= 0),
     followees_count INT NOT NULL DEFAULT 0 CHECK (followees_count >= 0),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -125,10 +128,7 @@ CREATE TABLE IF NOT EXISTS user_web_push_subscriptions (
     UNIQUE INDEX unique_user_web_push_subscriptions (user_id, sub)
 );
 
-ALTER TABLE IF EXISTS users
-    ADD COLUMN IF NOT EXISTS bio VARCHAR,
-    ADD COLUMN IF NOT EXISTS waifu VARCHAR,
-    ADD COLUMN IF NOT EXISTS husbando VARCHAR;
+ALTER TABLE IF EXISTS posts ADD COLUMN IF NOT EXISTS media VARCHAR[];
 
 -- INSERT INTO users (id, email, username) VALUES
 --     ('24ca6ce6-b3e9-4276-a99a-45c77115cc9f', 'shinji@example.org', 'shinji'),

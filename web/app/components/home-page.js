@@ -202,39 +202,68 @@ function PostForm() {
     const [spoilerOf, setSpoilerOf] = useState("")
     const spoilerOfDialogRef = useRef(null)
     const [initialTextAreaHeight, setInitialTextAreaHeight] = useState(0)
+    const mediaInputRef = useRef(/** @type {HTMLInputElement|null} */(null))
     const textAreaRef = useRef(null)
     const textcompleteRef = useRef(null)
     const [toast, setToast] = useState(null)
 
-    const dispatchTimelineItemCreated = post => {
-        this.dispatchEvent(new CustomEvent("timeline-item-created", { bubbles: true, detail: post }))
+    /**
+     * @param {import("./../types.js").TimelineItem} timelineItem
+     */
+    const dispatchTimelineItemCreated = timelineItem => {
+        this.dispatchEvent(new CustomEvent("timeline-item-created", { bubbles: true, detail: timelineItem }))
     }
 
-    const onSubmit = useCallback(ev => {
-        ev.preventDefault()
+    const onSubmit = useCallback(
+        /**
+         * @param {import("react").FormEvent<HTMLFormElement>} e
+         */
+        ev => {
+            ev.preventDefault()
 
-        setFetching(true)
-        createTimelineItem({
-            content,
-            spoilerOf: spoilerOf.trim() === "" ? null : spoilerOf.trim(),
-            nsfw,
-        }).then(ti => {
-            ti.user = auth.user
-            setContent("")
-            setNSFW(false)
-            setIsSpoiler(false)
-            setSpoilerOf("")
-            textcompleteRef.current.hide()
+            if (mediaInputRef.current === null) {
+                return
+            }
 
-            dispatchTimelineItemCreated(ti)
-        }, err => {
-            const msg = getTranslation("postForm.err") + " " + getTranslation(err.name)
-            console.error(msg)
-            setToast({ type: "error", content: msg })
-        }).finally(() => {
-            setFetching(false)
-        })
-    }, [content, nsfw, spoilerOf, auth, textAreaRef, initialTextAreaHeight])
+            let body
+
+            if (mediaInputRef.current.files.length !== 0) {
+                body = new FormData()
+                body.set("content", content)
+                if (spoilerOf.trim() !== "") {
+                    body.set("spoiler_of", spoilerOf.trim())
+                }
+                body.set("nsfw", JSON.stringify(nsfw))
+                for (const file of mediaInputRef.current.files) {
+                    body.append("media", file)
+                }
+            } else {
+                body = {
+                    content,
+                    spoilerOf: spoilerOf.trim() === "" ? null : spoilerOf.trim(),
+                    nsfw,
+                }
+            }
+
+            setFetching(true)
+            createTimelineItem(body).then(ti => {
+                ti.user = auth.user
+                setContent("")
+                setNSFW(false)
+                setIsSpoiler(false)
+                setSpoilerOf("")
+                textcompleteRef.current.hide()
+                mediaInputRef.current.value = ""
+
+                dispatchTimelineItemCreated(ti)
+            }, err => {
+                const msg = getTranslation("postForm.err") + " " + getTranslation(err.name)
+                console.error(msg)
+                setToast({ type: "error", content: msg })
+            }).finally(() => {
+                setFetching(false)
+            })
+        }, [mediaInputRef, content, nsfw, spoilerOf, auth, textAreaRef, initialTextAreaHeight])
 
     const onTextAreaInput = useCallback(() => {
         setContent(textAreaRef.current.value)
@@ -276,6 +305,14 @@ function PostForm() {
         setIsSpoiler(false)
         spoilerOfDialogRef.current.close()
     }, [spoilerOfDialogRef])
+
+    const onMediaBtnClick = useCallback(() => {
+        if (mediaInputRef.current === null || fetching) {
+            return
+        }
+
+        mediaInputRef.current.click()
+    }, [fetching, mediaInputRef])
 
     useEffect(() => {
         if (spoilerOfDialogRef.current !== null && !("HTMLDialogElement" in window || "showModal" in spoilerOfDialogRef.current)) {
@@ -367,6 +404,12 @@ function PostForm() {
                 @input=${onTextAreaInput}></textarea>
             ${content !== "" ? html`
             <div class="post-form-controls">
+                <div class="post-form-media">
+                    <input type="file" name="media" accept="image/png,image/jpeg" multiple hidden .disabled=${fetching} .ref=${ref(mediaInputRef)}>
+                    <button type="button" .disabled=${fetching} @click=${onMediaBtnClick} title="Add media">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g data-name="Layer 2"><g data-name="image"><rect width="24" height="24" opacity="0"/><path d="M18 3H6a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3V6a3 3 0 0 0-3-3zM6 5h12a1 1 0 0 1 1 1v8.36l-3.2-2.73a2.77 2.77 0 0 0-3.52 0L5 17.7V6a1 1 0 0 1 1-1zm12 14H6.56l7-5.84a.78.78 0 0 1 .93 0L19 17v1a1 1 0 0 1-1 1z"/><circle cx="8" cy="8.5" r="1.5"/></g></g></svg>
+                    </button>
+                </div>
                 <div class="post-form-options">
                     <label class="switch-wrapper">
                         <input type="checkbox" role="switch" name="nsfw" .disabled=${fetching} .checked=${nsfw} @change=${onNSFWInputChange}>
@@ -419,8 +462,11 @@ function PostForm() {
 
 customElements.define("post-form", component(PostForm, { useShadowDOM: false }))
 
-function createTimelineItem({ content, spoilerOf, nsfw }) {
-    return request("POST", "/api/timeline", { body: { content, spoilerOf, nsfw } })
+/**
+ * @param {FormData|{content:string,spoilerOf?:string,nsfw?:boolean}} body
+ */
+function createTimelineItem(body) {
+    return request("POST", "/api/timeline", { body })
         .then(resp => resp.body)
         .then(ti => {
             ti.createdAt = new Date(ti.createdAt)

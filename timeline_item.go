@@ -7,16 +7,37 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"fmt"
+	"image"
+	"image/jpeg"
+	"image/png"
 	"io"
 	"strings"
 	"time"
 	"unicode/utf8"
 
 	"github.com/cockroachdb/cockroach-go/crdb"
+	"github.com/go-kit/log/level"
+	"github.com/lib/pq"
+	gonanoid "github.com/matoous/go-nanoid"
+	"github.com/nicolasparada/nakama/storage"
+	"golang.org/x/sync/errgroup"
 )
 
-// ErrInvalidTimelineItemID denotes an invalid timeline item id; that is not uuid.
-var ErrInvalidTimelineItemID = InvalidArgumentError("invalid timeline item ID")
+const mediaBucket = "media"
+
+const (
+	MaxMediaItemBytes = 5 << 20  // 5MB
+	MaxMediaBytes     = 15 << 20 // 15MB
+)
+
+var (
+	// ErrInvalidTimelineItemID denotes an invalid timeline item id; that is not uuid.
+	ErrInvalidTimelineItemID = InvalidArgumentError("invalid timeline item ID")
+	// ErrUnsupportedMediaItemFormat denotes an unsupported media item format.
+	ErrUnsupportedMediaItemFormat = InvalidArgumentError("unsupported media item format")
+	ErrMediaItemTooLarge          = InvalidArgumentError("media item too large")
+	ErrMediaTooLarge              = InvalidArgumentError("media too large")
+)
 
 // TimelineItem model.
 type TimelineItem struct {
@@ -27,7 +48,7 @@ type TimelineItem struct {
 }
 
 // CreateTimelineItem publishes a post to the user timeline and fan-outs it to his followers.
-func (s *Service) CreateTimelineItem(ctx context.Context, content string, spoilerOf *string, nsfw bool) (TimelineItem, error) {
+func (s *Service) CreateTimelineItem(ctx context.Context, content string, spoilerOf *string, nsfw bool, media []io.Reader) (TimelineItem, error) {
 	var ti TimelineItem
 	uid, ok := ctx.Value(KeyAuthUserID).(string)
 	if !ok {
@@ -48,12 +69,96 @@ func (s *Service) CreateTimelineItem(ctx context.Context, content string, spoile
 
 	tags := collectTags(content)
 
+	var files map[string]struct {
+		format   string
+		contents []byte
+	}
+
+	if len(media) != 0 {
+		files = map[string]struct {
+			format   string
+			contents []byte
+		}{}
+		for _, mediaItem := range media {
+			img, format, err := image.Decode(io.LimitReader(mediaItem, MaxMediaItemBytes))
+			if err == image.ErrFormat {
+				return ti, ErrUnsupportedMediaItemFormat
+			}
+
+			if err != nil {
+				return ti, fmt.Errorf("could not image decode post media item: %w", err)
+			}
+
+			if format != "png" && format != "jpeg" {
+				return ti, ErrUnsupportedMediaItemFormat
+			}
+
+			buf := &bytes.Buffer{}
+			if format == "png" {
+				err = png.Encode(buf, img)
+			} else {
+				err = jpeg.Encode(buf, img, nil)
+			}
+			if err != nil {
+				return ti, fmt.Errorf("could not encode post media item: %w", err)
+			}
+
+			fileName, err := gonanoid.Nanoid()
+			if err != nil {
+				return ti, fmt.Errorf("could not generate media item filename: %w", err)
+			}
+
+			if format == "png" {
+				fileName += ".png"
+			} else {
+				fileName += ".jpg"
+			}
+
+			files[fileName] = struct {
+				format   string
+				contents []byte
+			}{
+				format:   format,
+				contents: buf.Bytes(),
+			}
+		}
+	}
+
+	var mediaItemsBytes int64
+	var fileNames []string
+	for fileName, data := range files {
+		mediaItemsBytes += int64(len(data.contents))
+		fileNames = append(fileNames, fileName)
+	}
+
+	if mediaItemsBytes > MaxMediaBytes {
+		return ti, ErrMediaTooLarge
+	}
+
+	if len(files) != 0 {
+		g, gctx := errgroup.WithContext(ctx)
+		for fileName, data := range files {
+			fileName := fileName
+			data := data
+			g.Go(func() error {
+				err := s.Store.Store(gctx, mediaBucket, fileName, data.contents, storage.StoreWithContentType("image/"+data.format))
+				if err != nil {
+					return fmt.Errorf("could not store post media item: %w", err)
+				}
+				return nil
+			})
+		}
+		if err := g.Wait(); err != nil {
+			return ti, err
+		}
+	}
+
 	var p Post
 	err := crdb.ExecuteTx(ctx, s.DB, nil, func(tx *sql.Tx) error {
 		query := `
-			INSERT INTO posts (user_id, content, spoiler_of, nsfw) VALUES ($1, $2, $3, $4)
+			INSERT INTO posts (user_id, content, spoiler_of, nsfw, media) VALUES ($1, $2, $3, $4, $5)
 			RETURNING id, created_at`
-		row := tx.QueryRowContext(ctx, query, uid, content, spoilerOf, nsfw)
+		row := tx.QueryRowContext(ctx, query, uid, content, spoilerOf, nsfw, pq.Array(fileNames))
 		err := row.Scan(&p.ID, &p.CreatedAt)
 		if isForeignKeyViolation(err) {
 			return ErrUserGone
@@ -68,6 +173,7 @@ func (s *Service) CreateTimelineItem(ctx context.Context, content string, spoile
 		p.SpoilerOf = spoilerOf
 		p.NSFW = nsfw
 		p.Mine = true
+		p.MediaURLs = s.mediaURLs(fileNames)
 
 		query = "INSERT INTO post_subscriptions (user_id, post_id) VALUES ($1, $2)"
 		if _, err = tx.ExecContext(ctx, query, uid, p.ID); err != nil {
@@ -104,6 +210,25 @@ func (s *Service) CreateTimelineItem(ctx context.Context, content string, spoile
 		return nil
 	})
 	if err != nil {
+		if len(files) != 0 {
+			go func() {
+				g, gctx := errgroup.WithContext(ctx)
+				for _, fileName := range fileNames {
+					fileName := fileName
+					g.Go(func() error {
+						err := s.Store.Delete(gctx, mediaBucket, fileName)
+						if err != nil {
+							return fmt.Errorf("could not delete post media item: %w", err)
+						}
+						return nil
+					})
+				}
+				if err := g.Wait(); err != nil {
+					_ = level.Error(s.Logger).Log("msg", "could not delete post media items", "err", err)
+				}
+			}()
+		}
+
 		return ti, err
 	}
 
@@ -171,6 +296,7 @@ func (s *Service) Timeline(ctx context.Context, last uint64, before *string) (Ti
 		, posts.reactions
 		, reactions.user_reactions
 		, posts.comments_count
+		, posts.media
 		, posts.created_at
 		, posts.user_id = @uid AS post_mine
 		, subscriptions.user_id IS NOT NULL AS post_subscribed
@@ -222,6 +348,7 @@ func (s *Service) Timeline(ctx context.Context, last uint64, before *string) (Ti
 		var rawUserReactions []byte
 		var u User
 		var avatar sql.NullString
+		var media []string
 		if err = rows.Scan(
 			&ti.ID,
 			&p.ID,
@@ -231,6 +358,7 @@ func (s *Service) Timeline(ctx context.Context, last uint64, before *string) (Ti
 			&rawReactions,
 			&rawUserReactions,
 			&p.CommentsCount,
+			pq.Array(&media),
 			&p.CreatedAt,
 			&p.Mine,
 			&p.Subscribed,
@@ -266,6 +394,7 @@ func (s *Service) Timeline(ctx context.Context, last uint64, before *string) (Ti
 			}
 		}
 
+		p.MediaURLs = s.mediaURLs(media)
 		u.AvatarURL = s.avatarURL(avatar)
 		p.User = &u
 		ti.Post = &p
@@ -384,3 +513,14 @@ func (s *Service) broadcastTimelineItem(ti TimelineItem) {
 }
 
 func timelineTopic(userID string) string { return "timeline_item_" + userID }
+
+func (s *Service) mediaURL(mediaItem string) string {
+	return s.MediaURLPrefix + mediaItem
+}
+
+func (s *Service) mediaURLs(media []string) []string {
+	for i, item := range media {
+		media[i] = s.mediaURL(item)
+	}
+	return media
+}
