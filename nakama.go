@@ -9,9 +9,9 @@ import (
 
 	"github.com/duo-labs/webauthn/webauthn"
 	"github.com/go-kit/log"
-	"github.com/nicolasparada/nakama/mailing"
-	"github.com/nicolasparada/nakama/pubsub"
-	"github.com/nicolasparada/nakama/storage"
+	"github.com/nakamauwu/nakama/mailing"
+	"github.com/nakamauwu/nakama/pubsub"
+	"github.com/nakamauwu/nakama/storage"
 )
 
 //go:embed schema.sql

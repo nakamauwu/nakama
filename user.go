@@ -16,7 +16,7 @@ import (
 	"github.com/cockroachdb/cockroach-go/crdb"
 	"github.com/disintegration/imaging"
 	gonanoid "github.com/matoous/go-nanoid"
-	"github.com/nicolasparada/nakama/storage"
+	"github.com/nakamauwu/nakama/storage"
 )
 
 const (

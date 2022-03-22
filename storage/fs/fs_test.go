@@ -3,7 +3,7 @@ package fs
 import (
 	"testing"
 
-	"github.com/nicolasparada/nakama/storage/tests"
+	"github.com/nakamauwu/nakama/storage/tests"
 )
 
 func TestStore(t *testing.T) {

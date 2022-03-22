@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nicolasparada/nakama"
+	"github.com/nakamauwu/nakama"
 )
 
 type loginInput struct {

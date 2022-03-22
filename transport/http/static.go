@@ -15,8 +15,8 @@ import (
 	"syscall"
 
 	"github.com/matryer/way"
-	"github.com/nicolasparada/nakama"
-	"github.com/nicolasparada/nakama/web"
+	"github.com/nakamauwu/nakama"
+	"github.com/nakamauwu/nakama/web"
 )
 
 func (h *handler) staticHandler() http.Handler {

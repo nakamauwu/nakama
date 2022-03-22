@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/nicolasparada/nakama/storage"
-	"github.com/nicolasparada/nakama/testutil"
+	"github.com/nakamauwu/nakama/storage"
+	"github.com/nakamauwu/nakama/testutil"
 )
 
 func RunStoreTests(t *testing.T, store storage.Store, bucket string) {

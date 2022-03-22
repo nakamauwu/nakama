@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/nicolasparada/nakama/storage"
+	"github.com/nakamauwu/nakama/storage"
 )
 
 type Store struct {

@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/matryer/way"
-	"github.com/nicolasparada/nakama"
+	"github.com/nakamauwu/nakama"
 )
 
 type createTimelineItemInput struct {

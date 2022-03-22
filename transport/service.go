@@ -10,7 +10,7 @@ import (
 
 	"github.com/duo-labs/webauthn/protocol"
 	"github.com/duo-labs/webauthn/webauthn"
-	"github.com/nicolasparada/nakama"
+	"github.com/nakamauwu/nakama"
 )
 
 // Service interface.

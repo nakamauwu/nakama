@@ -13,8 +13,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/nicolasparada/nakama"
-	"github.com/nicolasparada/nakama/storage"
+	"github.com/nakamauwu/nakama"
+	"github.com/nakamauwu/nakama/storage"
 )
 
 const proxyCacheControl = time.Hour * 24 * 14

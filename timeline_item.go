@@ -19,7 +19,7 @@ import (
 	"github.com/go-kit/log/level"
 	"github.com/lib/pq"
 	gonanoid "github.com/matoous/go-nanoid"
-	"github.com/nicolasparada/nakama/storage"
+	"github.com/nakamauwu/nakama/storage"
 	"golang.org/x/sync/errgroup"
 )
 

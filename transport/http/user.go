@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"github.com/matryer/way"
-	"github.com/nicolasparada/nakama"
+	"github.com/nakamauwu/nakama"
 )
 
 func (h *handler) users(w http.ResponseWriter, r *http.Request) {

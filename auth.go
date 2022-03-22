@@ -14,7 +14,7 @@ import (
 	"github.com/cockroachdb/cockroach-go/crdb"
 	"github.com/hako/branca"
 	"github.com/hako/durafmt"
-	"github.com/nicolasparada/nakama/web"
+	"github.com/nakamauwu/nakama/web"
 )
 
 // KeyAuthUserID to use in context.

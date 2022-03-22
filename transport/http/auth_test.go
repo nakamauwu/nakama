@@ -10,9 +10,9 @@ import (
 	"testing"
 
 	"github.com/go-kit/log"
-	"github.com/nicolasparada/nakama"
-	"github.com/nicolasparada/nakama/testutil"
-	"github.com/nicolasparada/nakama/transport"
+	"github.com/nakamauwu/nakama"
+	"github.com/nakamauwu/nakama/testutil"
+	"github.com/nakamauwu/nakama/transport"
 )
 
 func Test_handler_sendMagicLink(t *testing.T) {

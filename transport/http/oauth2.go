@@ -15,8 +15,8 @@ import (
 
 	"github.com/go-kit/log/level"
 	"github.com/hybridtheory/samesite-cookie-support"
-	"github.com/nicolasparada/nakama"
-	webtemplate "github.com/nicolasparada/nakama/web"
+	"github.com/nakamauwu/nakama"
+	webtemplate "github.com/nakamauwu/nakama/web"
 	"golang.org/x/oauth2"
 )
 

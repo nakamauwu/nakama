@@ -1,4 +1,4 @@
-module github.com/nicolasparada/nakama
+module github.com/nakamauwu/nakama
 
 go 1.17
 

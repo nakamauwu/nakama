@@ -11,7 +11,7 @@ import (
 	"github.com/duo-labs/webauthn/protocol"
 	"github.com/duo-labs/webauthn/webauthn"
 	"github.com/hybridtheory/samesite-cookie-support"
-	"github.com/nicolasparada/nakama"
+	"github.com/nakamauwu/nakama"
 )
 
 const WebAuthnTimeout = time.Minute * 2

@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/matryer/way"
-	"github.com/nicolasparada/nakama"
+	"github.com/nakamauwu/nakama"
 )
 
 func (h *handler) userPosts(w http.ResponseWriter, r *http.Request) {

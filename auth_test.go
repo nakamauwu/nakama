@@ -8,8 +8,8 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/nicolasparada/nakama/mailing"
-	"github.com/nicolasparada/nakama/testutil"
+	"github.com/nakamauwu/nakama/mailing"
+	"github.com/nakamauwu/nakama/testutil"
 )
 
 func TestService_SendMagicLink(t *testing.T) {
