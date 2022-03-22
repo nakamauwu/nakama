@@ -3,18 +3,19 @@ FROM golang:alpine AS build
 ARG VAPID_PUBLIC_KEY
 ENV VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY}
 
-RUN apk add --update --no-cache nodejs ca-certificates
-RUN apk add --no-cache npm
+RUN apk add --update --no-cache git python3 make g++ nodejs npm ca-certificates
 RUN update-ca-certificates
 
 WORKDIR /go/src/github.com/nakamauwu/nakama
 
 COPY . .
 
-RUN cd web/app
+WORKDIR /go/src/github.com/nakamauwu/nakama/web/app
 RUN npm i
 RUN npm run build
-RUN cd ../..
+
+WORKDIR /go/src/github.com/nakamauwu/nakama
+
 RUN rm -rf web/static/node_modules/
 
 RUN go mod download
