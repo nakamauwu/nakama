@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"sync"
 
-	"github.com/duo-labs/webauthn/webauthn"
 	"github.com/go-kit/log"
 	"github.com/nakamauwu/nakama/mailing"
 	"github.com/nakamauwu/nakama/pubsub"
@@ -31,7 +30,6 @@ type Service struct {
 	AvatarURLPrefix  string
 	CoverURLPrefix   string
 	MediaURLPrefix   string
-	WebAuthn         *webauthn.WebAuthn
 	DisabledDevLogin bool
 	AllowedOrigins   []string
 	VAPIDPrivateKey  string

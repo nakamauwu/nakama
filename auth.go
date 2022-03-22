@@ -19,7 +19,6 @@ import (
 
 // KeyAuthUserID to use in context.
 const KeyAuthUserID = ctxkey("auth_user_id")
-const WebAuthnTimeout = time.Minute * 2
 
 const (
 	emailVerificationCodeTTL = time.Hour * 2
@@ -40,16 +39,6 @@ var (
 	ErrInvalidVerificationCode = InvalidArgumentError("invalid verification code")
 	// ErrVerificationCodeNotFound denotes a not found verification code.
 	ErrVerificationCodeNotFound = NotFoundError("verification code not found")
-	// ErrWebAuthnCredentialExists denotes that the webauthn credential ID already exists for the given user.
-	ErrWebAuthnCredentialExists = AlreadyExistsError("webAuthn credential exists")
-	// ErrNoWebAuthnCredentials denotes that the user has no registered webauthn credentials yet.
-	ErrNoWebAuthnCredentials = NotFoundError("no webAuthn credentials")
-	// ErrInvalidWebAuthnCredentialID denotes an invalid webauthn credential ID.
-	ErrInvalidWebAuthnCredentialID = InvalidArgumentError("invalid webAuthn credential ID")
-	// ErrInvalidWebAuthnCredentials denotes invalid webauthn credentials.
-	ErrInvalidWebAuthnCredentials = InvalidArgumentError("invalid webAuthn credentials")
-	// ErrWebAuthnCredentialCloned denotes that the webauthn credential may be cloned.
-	ErrWebAuthnCredentialCloned = AlreadyExistsError("webAuthn credential cloned")
 )
 
 type ctxkey string

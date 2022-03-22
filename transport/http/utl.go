@@ -24,7 +24,6 @@ var (
 	errStreamingUnsupported = errors.New("streaming unsupported")
 	errTeaPot               = errors.New("i am a teapot")
 	errInvalidTargetURL     = nakama.InvalidArgumentError("invalid target URL")
-	errWebAuthnTimeout      = errors.New("webAuthn timeout")
 	errOauthTimeout         = errors.New("oauth timeout")
 	errEmailNotVerified     = errors.New("email not verified")
 	errEmailNotProvided     = errors.New("email not provided")
@@ -72,7 +71,6 @@ func err2code(err error) int {
 
 	switch {
 	case err == errBadRequest ||
-		err == errWebAuthnTimeout ||
 		err == errOauthTimeout ||
 		err == errEmailNotVerified ||
 		err == errEmailNotProvided:

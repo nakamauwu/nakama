@@ -6,8 +6,6 @@ package transport
 import (
 	"context"
 	"encoding/json"
-	"github.com/duo-labs/webauthn/protocol"
-	"github.com/duo-labs/webauthn/webauthn"
 	"github.com/nakamauwu/nakama"
 	"io"
 	"net/url"
@@ -44,12 +42,6 @@ var _ Service = &ServiceMock{}
 // 			},
 // 			CreateTimelineItemFunc: func(ctx context.Context, content string, spoilerOf *string, nsfw bool, media []io.Reader) (nakama.TimelineItem, error) {
 // 				panic("mock out the CreateTimelineItem method")
-// 			},
-// 			CredentialCreationOptionsFunc: func(ctx context.Context) (*protocol.CredentialCreation, *webauthn.SessionData, error) {
-// 				panic("mock out the CredentialCreationOptions method")
-// 			},
-// 			CredentialRequestOptionsFunc: func(ctx context.Context, email string, opts ...nakama.CredentialRequestOptionsOpt) (*protocol.CredentialAssertion, *webauthn.SessionData, error) {
-// 				panic("mock out the CredentialRequestOptions method")
 // 			},
 // 			DeleteCommentFunc: func(ctx context.Context, commentID string) error {
 // 				panic("mock out the DeleteComment method")
@@ -99,9 +91,6 @@ var _ Service = &ServiceMock{}
 // 			PostsFunc: func(ctx context.Context, last uint64, before *string, opts ...nakama.PostsOpt) (nakama.Posts, error) {
 // 				panic("mock out the Posts method")
 // 			},
-// 			RegisterCredentialFunc: func(ctx context.Context, data webauthn.SessionData, parsedReply *protocol.ParsedCredentialCreationData) error {
-// 				panic("mock out the RegisterCredential method")
-// 			},
 // 			SendMagicLinkFunc: func(ctx context.Context, email string, redirectURI string) error {
 // 				panic("mock out the SendMagicLink method")
 // 			},
@@ -147,9 +136,6 @@ var _ Service = &ServiceMock{}
 // 			VerifyMagicLinkFunc: func(ctx context.Context, email string, code string, username *string) (nakama.AuthOutput, error) {
 // 				panic("mock out the VerifyMagicLink method")
 // 			},
-// 			WebAuthnLoginFunc: func(ctx context.Context, data webauthn.SessionData, reply *protocol.ParsedCredentialAssertionData) (nakama.AuthOutput, error) {
-// 				panic("mock out the WebAuthnLogin method")
-// 			},
 // 		}
 //
 // 		// use mockedService in code that requires Service
@@ -177,12 +163,6 @@ type ServiceMock struct {
 
 	// CreateTimelineItemFunc mocks the CreateTimelineItem method.
 	CreateTimelineItemFunc func(ctx context.Context, content string, spoilerOf *string, nsfw bool, media []io.Reader) (nakama.TimelineItem, error)
-
-	// CredentialCreationOptionsFunc mocks the CredentialCreationOptions method.
-	CredentialCreationOptionsFunc func(ctx context.Context) (*protocol.CredentialCreation, *webauthn.SessionData, error)
-
-	// CredentialRequestOptionsFunc mocks the CredentialRequestOptions method.
-	CredentialRequestOptionsFunc func(ctx context.Context, email string, opts ...nakama.CredentialRequestOptionsOpt) (*protocol.CredentialAssertion, *webauthn.SessionData, error)
 
 	// DeleteCommentFunc mocks the DeleteComment method.
 	DeleteCommentFunc func(ctx context.Context, commentID string) error
@@ -232,9 +212,6 @@ type ServiceMock struct {
 	// PostsFunc mocks the Posts method.
 	PostsFunc func(ctx context.Context, last uint64, before *string, opts ...nakama.PostsOpt) (nakama.Posts, error)
 
-	// RegisterCredentialFunc mocks the RegisterCredential method.
-	RegisterCredentialFunc func(ctx context.Context, data webauthn.SessionData, parsedReply *protocol.ParsedCredentialCreationData) error
-
 	// SendMagicLinkFunc mocks the SendMagicLink method.
 	SendMagicLinkFunc func(ctx context.Context, email string, redirectURI string) error
 
@@ -279,9 +256,6 @@ type ServiceMock struct {
 
 	// VerifyMagicLinkFunc mocks the VerifyMagicLink method.
 	VerifyMagicLinkFunc func(ctx context.Context, email string, code string, username *string) (nakama.AuthOutput, error)
-
-	// WebAuthnLoginFunc mocks the WebAuthnLogin method.
-	WebAuthnLoginFunc func(ctx context.Context, data webauthn.SessionData, reply *protocol.ParsedCredentialAssertionData) (nakama.AuthOutput, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -341,20 +315,6 @@ type ServiceMock struct {
 			Nsfw bool
 			// Media is the media argument value.
 			Media []io.Reader
-		}
-		// CredentialCreationOptions holds details about calls to the CredentialCreationOptions method.
-		CredentialCreationOptions []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-		}
-		// CredentialRequestOptions holds details about calls to the CredentialRequestOptions method.
-		CredentialRequestOptions []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-			// Email is the email argument value.
-			Email string
-			// Opts is the opts argument value.
-			Opts []nakama.CredentialRequestOptionsOpt
 		}
 		// DeleteComment holds details about calls to the DeleteComment method.
 		DeleteComment []struct {
@@ -473,15 +433,6 @@ type ServiceMock struct {
 			Before *string
 			// Opts is the opts argument value.
 			Opts []nakama.PostsOpt
-		}
-		// RegisterCredential holds details about calls to the RegisterCredential method.
-		RegisterCredential []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-			// Data is the data argument value.
-			Data webauthn.SessionData
-			// ParsedReply is the parsedReply argument value.
-			ParsedReply *protocol.ParsedCredentialCreationData
 		}
 		// SendMagicLink holds details about calls to the SendMagicLink method.
 		SendMagicLink []struct {
@@ -604,58 +555,45 @@ type ServiceMock struct {
 			// Username is the username argument value.
 			Username *string
 		}
-		// WebAuthnLogin holds details about calls to the WebAuthnLogin method.
-		WebAuthnLogin []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-			// Data is the data argument value.
-			Data webauthn.SessionData
-			// Reply is the reply argument value.
-			Reply *protocol.ParsedCredentialAssertionData
-		}
 	}
-	lockAddWebPushSubscription    sync.RWMutex
-	lockAuthUser                  sync.RWMutex
-	lockAuthUserIDFromToken       sync.RWMutex
-	lockCommentStream             sync.RWMutex
-	lockComments                  sync.RWMutex
-	lockCreateComment             sync.RWMutex
-	lockCreateTimelineItem        sync.RWMutex
-	lockCredentialCreationOptions sync.RWMutex
-	lockCredentialRequestOptions  sync.RWMutex
-	lockDeleteComment             sync.RWMutex
-	lockDeletePost                sync.RWMutex
-	lockDeleteTimelineItem        sync.RWMutex
-	lockDevLogin                  sync.RWMutex
-	lockEnsureUser                sync.RWMutex
-	lockFollowees                 sync.RWMutex
-	lockFollowers                 sync.RWMutex
-	lockHasUnreadNotifications    sync.RWMutex
-	lockMarkNotificationAsRead    sync.RWMutex
-	lockMarkNotificationsAsRead   sync.RWMutex
-	lockNotificationStream        sync.RWMutex
-	lockNotifications             sync.RWMutex
-	lockParseRedirectURI          sync.RWMutex
-	lockPost                      sync.RWMutex
-	lockPostStream                sync.RWMutex
-	lockPosts                     sync.RWMutex
-	lockRegisterCredential        sync.RWMutex
-	lockSendMagicLink             sync.RWMutex
-	lockTimeline                  sync.RWMutex
-	lockTimelineItemStream        sync.RWMutex
-	lockToggleCommentReaction     sync.RWMutex
-	lockToggleFollow              sync.RWMutex
-	lockTogglePostReaction        sync.RWMutex
-	lockTogglePostSubscription    sync.RWMutex
-	lockToken                     sync.RWMutex
-	lockUpdateAvatar              sync.RWMutex
-	lockUpdateCover               sync.RWMutex
-	lockUpdateUser                sync.RWMutex
-	lockUser                      sync.RWMutex
-	lockUsernames                 sync.RWMutex
-	lockUsers                     sync.RWMutex
-	lockVerifyMagicLink           sync.RWMutex
-	lockWebAuthnLogin             sync.RWMutex
+	lockAddWebPushSubscription  sync.RWMutex
+	lockAuthUser                sync.RWMutex
+	lockAuthUserIDFromToken     sync.RWMutex
+	lockCommentStream           sync.RWMutex
+	lockComments                sync.RWMutex
+	lockCreateComment           sync.RWMutex
+	lockCreateTimelineItem      sync.RWMutex
+	lockDeleteComment           sync.RWMutex
+	lockDeletePost              sync.RWMutex
+	lockDeleteTimelineItem      sync.RWMutex
+	lockDevLogin                sync.RWMutex
+	lockEnsureUser              sync.RWMutex
+	lockFollowees               sync.RWMutex
+	lockFollowers               sync.RWMutex
+	lockHasUnreadNotifications  sync.RWMutex
+	lockMarkNotificationAsRead  sync.RWMutex
+	lockMarkNotificationsAsRead sync.RWMutex
+	lockNotificationStream      sync.RWMutex
+	lockNotifications           sync.RWMutex
+	lockParseRedirectURI        sync.RWMutex
+	lockPost                    sync.RWMutex
+	lockPostStream              sync.RWMutex
+	lockPosts                   sync.RWMutex
+	lockSendMagicLink           sync.RWMutex
+	lockTimeline                sync.RWMutex
+	lockTimelineItemStream      sync.RWMutex
+	lockToggleCommentReaction   sync.RWMutex
+	lockToggleFollow            sync.RWMutex
+	lockTogglePostReaction      sync.RWMutex
+	lockTogglePostSubscription  sync.RWMutex
+	lockToken                   sync.RWMutex
+	lockUpdateAvatar            sync.RWMutex
+	lockUpdateCover             sync.RWMutex
+	lockUpdateUser              sync.RWMutex
+	lockUser                    sync.RWMutex
+	lockUsernames               sync.RWMutex
+	lockUsers                   sync.RWMutex
+	lockVerifyMagicLink         sync.RWMutex
 }
 
 // AddWebPushSubscription calls AddWebPushSubscriptionFunc.
@@ -916,76 +854,6 @@ func (mock *ServiceMock) CreateTimelineItemCalls() []struct {
 	mock.lockCreateTimelineItem.RLock()
 	calls = mock.calls.CreateTimelineItem
 	mock.lockCreateTimelineItem.RUnlock()
-	return calls
-}
-
-// CredentialCreationOptions calls CredentialCreationOptionsFunc.
-func (mock *ServiceMock) CredentialCreationOptions(ctx context.Context) (*protocol.CredentialCreation, *webauthn.SessionData, error) {
-	if mock.CredentialCreationOptionsFunc == nil {
-		panic("ServiceMock.CredentialCreationOptionsFunc: method is nil but Service.CredentialCreationOptions was just called")
-	}
-	callInfo := struct {
-		Ctx context.Context
-	}{
-		Ctx: ctx,
-	}
-	mock.lockCredentialCreationOptions.Lock()
-	mock.calls.CredentialCreationOptions = append(mock.calls.CredentialCreationOptions, callInfo)
-	mock.lockCredentialCreationOptions.Unlock()
-	return mock.CredentialCreationOptionsFunc(ctx)
-}
-
-// CredentialCreationOptionsCalls gets all the calls that were made to CredentialCreationOptions.
-// Check the length with:
-//     len(mockedService.CredentialCreationOptionsCalls())
-func (mock *ServiceMock) CredentialCreationOptionsCalls() []struct {
-	Ctx context.Context
-} {
-	var calls []struct {
-		Ctx context.Context
-	}
-	mock.lockCredentialCreationOptions.RLock()
-	calls = mock.calls.CredentialCreationOptions
-	mock.lockCredentialCreationOptions.RUnlock()
-	return calls
-}
-
-// CredentialRequestOptions calls CredentialRequestOptionsFunc.
-func (mock *ServiceMock) CredentialRequestOptions(ctx context.Context, email string, opts ...nakama.CredentialRequestOptionsOpt) (*protocol.CredentialAssertion, *webauthn.SessionData, error) {
-	if mock.CredentialRequestOptionsFunc == nil {
-		panic("ServiceMock.CredentialRequestOptionsFunc: method is nil but Service.CredentialRequestOptions was just called")
-	}
-	callInfo := struct {
-		Ctx   context.Context
-		Email string
-		Opts  []nakama.CredentialRequestOptionsOpt
-	}{
-		Ctx:   ctx,
-		Email: email,
-		Opts:  opts,
-	}
-	mock.lockCredentialRequestOptions.Lock()
-	mock.calls.CredentialRequestOptions = append(mock.calls.CredentialRequestOptions, callInfo)
-	mock.lockCredentialRequestOptions.Unlock()
-	return mock.CredentialRequestOptionsFunc(ctx, email, opts...)
-}
-
-// CredentialRequestOptionsCalls gets all the calls that were made to CredentialRequestOptions.
-// Check the length with:
-//     len(mockedService.CredentialRequestOptionsCalls())
-func (mock *ServiceMock) CredentialRequestOptionsCalls() []struct {
-	Ctx   context.Context
-	Email string
-	Opts  []nakama.CredentialRequestOptionsOpt
-} {
-	var calls []struct {
-		Ctx   context.Context
-		Email string
-		Opts  []nakama.CredentialRequestOptionsOpt
-	}
-	mock.lockCredentialRequestOptions.RLock()
-	calls = mock.calls.CredentialRequestOptions
-	mock.lockCredentialRequestOptions.RUnlock()
 	return calls
 }
 
@@ -1561,45 +1429,6 @@ func (mock *ServiceMock) PostsCalls() []struct {
 	return calls
 }
 
-// RegisterCredential calls RegisterCredentialFunc.
-func (mock *ServiceMock) RegisterCredential(ctx context.Context, data webauthn.SessionData, parsedReply *protocol.ParsedCredentialCreationData) error {
-	if mock.RegisterCredentialFunc == nil {
-		panic("ServiceMock.RegisterCredentialFunc: method is nil but Service.RegisterCredential was just called")
-	}
-	callInfo := struct {
-		Ctx         context.Context
-		Data        webauthn.SessionData
-		ParsedReply *protocol.ParsedCredentialCreationData
-	}{
-		Ctx:         ctx,
-		Data:        data,
-		ParsedReply: parsedReply,
-	}
-	mock.lockRegisterCredential.Lock()
-	mock.calls.RegisterCredential = append(mock.calls.RegisterCredential, callInfo)
-	mock.lockRegisterCredential.Unlock()
-	return mock.RegisterCredentialFunc(ctx, data, parsedReply)
-}
-
-// RegisterCredentialCalls gets all the calls that were made to RegisterCredential.
-// Check the length with:
-//     len(mockedService.RegisterCredentialCalls())
-func (mock *ServiceMock) RegisterCredentialCalls() []struct {
-	Ctx         context.Context
-	Data        webauthn.SessionData
-	ParsedReply *protocol.ParsedCredentialCreationData
-} {
-	var calls []struct {
-		Ctx         context.Context
-		Data        webauthn.SessionData
-		ParsedReply *protocol.ParsedCredentialCreationData
-	}
-	mock.lockRegisterCredential.RLock()
-	calls = mock.calls.RegisterCredential
-	mock.lockRegisterCredential.RUnlock()
-	return calls
-}
-
 // SendMagicLink calls SendMagicLinkFunc.
 func (mock *ServiceMock) SendMagicLink(ctx context.Context, email string, redirectURI string) error {
 	if mock.SendMagicLinkFunc == nil {
@@ -2154,44 +1983,5 @@ func (mock *ServiceMock) VerifyMagicLinkCalls() []struct {
 	mock.lockVerifyMagicLink.RLock()
 	calls = mock.calls.VerifyMagicLink
 	mock.lockVerifyMagicLink.RUnlock()
-	return calls
-}
-
-// WebAuthnLogin calls WebAuthnLoginFunc.
-func (mock *ServiceMock) WebAuthnLogin(ctx context.Context, data webauthn.SessionData, reply *protocol.ParsedCredentialAssertionData) (nakama.AuthOutput, error) {
-	if mock.WebAuthnLoginFunc == nil {
-		panic("ServiceMock.WebAuthnLoginFunc: method is nil but Service.WebAuthnLogin was just called")
-	}
-	callInfo := struct {
-		Ctx   context.Context
-		Data  webauthn.SessionData
-		Reply *protocol.ParsedCredentialAssertionData
-	}{
-		Ctx:   ctx,
-		Data:  data,
-		Reply: reply,
-	}
-	mock.lockWebAuthnLogin.Lock()
-	mock.calls.WebAuthnLogin = append(mock.calls.WebAuthnLogin, callInfo)
-	mock.lockWebAuthnLogin.Unlock()
-	return mock.WebAuthnLoginFunc(ctx, data, reply)
-}
-
-// WebAuthnLoginCalls gets all the calls that were made to WebAuthnLogin.
-// Check the length with:
-//     len(mockedService.WebAuthnLoginCalls())
-func (mock *ServiceMock) WebAuthnLoginCalls() []struct {
-	Ctx   context.Context
-	Data  webauthn.SessionData
-	Reply *protocol.ParsedCredentialAssertionData
-} {
-	var calls []struct {
-		Ctx   context.Context
-		Data  webauthn.SessionData
-		Reply *protocol.ParsedCredentialAssertionData
-	}
-	mock.lockWebAuthnLogin.RLock()
-	calls = mock.calls.WebAuthnLogin
-	mock.lockWebAuthnLogin.RUnlock()
 	return calls
 }

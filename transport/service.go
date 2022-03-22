@@ -8,8 +8,6 @@ import (
 	"io"
 	"net/url"
 
-	"github.com/duo-labs/webauthn/protocol"
-	"github.com/duo-labs/webauthn/webauthn"
 	"github.com/nakamauwu/nakama"
 )
 
@@ -20,11 +18,6 @@ type Service interface {
 	VerifyMagicLink(ctx context.Context, email, code string, username *string) (nakama.AuthOutput, error)
 
 	EnsureUser(ctx context.Context, email string, username *string) (nakama.User, error)
-
-	CredentialCreationOptions(ctx context.Context) (*protocol.CredentialCreation, *webauthn.SessionData, error)
-	RegisterCredential(ctx context.Context, data webauthn.SessionData, parsedReply *protocol.ParsedCredentialCreationData) error
-	CredentialRequestOptions(ctx context.Context, email string, opts ...nakama.CredentialRequestOptionsOpt) (*protocol.CredentialAssertion, *webauthn.SessionData, error)
-	WebAuthnLogin(ctx context.Context, data webauthn.SessionData, reply *protocol.ParsedCredentialAssertionData) (nakama.AuthOutput, error)
 
 	DevLogin(ctx context.Context, email string) (nakama.AuthOutput, error)
 

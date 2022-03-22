@@ -17,8 +17,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/duo-labs/webauthn/protocol"
-	"github.com/duo-labs/webauthn/webauthn"
 	"github.com/go-kit/log"
 	"github.com/gorilla/securecookie"
 	"github.com/joho/godotenv"
@@ -194,24 +192,6 @@ func run(ctx context.Context, logger log.Logger, args []string) error {
 		store = &fsstorage.Store{Root: filepath.Join(wd, "web", "static", "img")}
 	}
 
-	webauthn, err := webauthn.New(&webauthn.Config{
-		RPDisplayName:         "nakama",
-		RPID:                  origin.Hostname(),
-		RPOrigin:              origin.String(),
-		RPIcon:                "",
-		AttestationPreference: protocol.PreferNoAttestation,
-		AuthenticatorSelection: protocol.AuthenticatorSelection{
-			AuthenticatorAttachment: protocol.Platform,
-			RequireResidentKey:      nil,
-			UserVerification:        protocol.VerificationRequired,
-		},
-		Timeout: int(httptransport.WebAuthnTimeout.Milliseconds()),
-		Debug:   false,
-	})
-	if err != nil {
-		return fmt.Errorf("could not create webauth config: %w", err)
-	}
-
 	var svc transport.Service = &nakama.Service{
 		Logger:           logger,
 		DB:               db,
@@ -223,7 +203,6 @@ func run(ctx context.Context, logger log.Logger, args []string) error {
 		AvatarURLPrefix:  avatarURLPrefix,
 		CoverURLPrefix:   coverURLPrefix,
 		MediaURLPrefix:   mediaURLPrefix,
-		WebAuthn:         webauthn,
 		DisabledDevLogin: disabledDevLogin,
 		AllowedOrigins:   strings.Split(allowedOrigins, ","),
 		VAPIDPrivateKey:  vapidPrivateKey,

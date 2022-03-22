@@ -7,8 +7,6 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/duo-labs/webauthn/protocol"
-	"github.com/duo-labs/webauthn/webauthn"
 	"github.com/nakamauwu/nakama"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -22,7 +20,6 @@ var (
 	reqDur_CredentialCreationOptions = promauto.NewHistogram(prometheus.HistogramOpts{Name: "credential_creation_options_request_duration_ms"})
 	reqDur_RegisterCredential        = promauto.NewHistogram(prometheus.HistogramOpts{Name: "register_credential_request_duration_ms"})
 	reqDur_CredentialRequestOptions  = promauto.NewHistogram(prometheus.HistogramOpts{Name: "credential_request_options_request_duration_ms"})
-	reqDur_WebAuthnLogin             = promauto.NewHistogram(prometheus.HistogramOpts{Name: "web_authn_login_request_duration_ms"})
 	reqDur_DevLogin                  = promauto.NewHistogram(prometheus.HistogramOpts{Name: "dev_login_request_duration_ms"})
 	reqDur_AuthUserIDFromToken       = promauto.NewHistogram(prometheus.HistogramOpts{Name: "auth_user_id_from_token_request_duration_ms"})
 	reqDur_AuthUser                  = promauto.NewHistogram(prometheus.HistogramOpts{Name: "auth_user_request_duration_ms"})
@@ -89,34 +86,6 @@ func (mw *ServiceWithInstrumentation) EnsureUser(ctx context.Context, email stri
 		reqDur_EnsureUser.Observe(float64(time.Since(begin)) / float64(time.Millisecond))
 	}(time.Now())
 	return mw.Next.EnsureUser(ctx, email, username)
-}
-
-func (mw *ServiceWithInstrumentation) CredentialCreationOptions(ctx context.Context) (*protocol.CredentialCreation, *webauthn.SessionData, error) {
-	defer func(begin time.Time) {
-		reqDur_CredentialCreationOptions.Observe(float64(time.Since(begin)) / float64(time.Millisecond))
-	}(time.Now())
-	return mw.Next.CredentialCreationOptions(ctx)
-}
-
-func (mw *ServiceWithInstrumentation) RegisterCredential(ctx context.Context, data webauthn.SessionData, parsedReply *protocol.ParsedCredentialCreationData) error {
-	defer func(begin time.Time) {
-		reqDur_RegisterCredential.Observe(float64(time.Since(begin)) / float64(time.Millisecond))
-	}(time.Now())
-	return mw.Next.RegisterCredential(ctx, data, parsedReply)
-}
-
-func (mw *ServiceWithInstrumentation) CredentialRequestOptions(ctx context.Context, email string, opts ...nakama.CredentialRequestOptionsOpt) (*protocol.CredentialAssertion, *webauthn.SessionData, error) {
-	defer func(begin time.Time) {
-		reqDur_CredentialRequestOptions.Observe(float64(time.Since(begin)) / float64(time.Millisecond))
-	}(time.Now())
-	return mw.Next.CredentialRequestOptions(ctx, email, opts...)
-}
-
-func (mw *ServiceWithInstrumentation) WebAuthnLogin(ctx context.Context, data webauthn.SessionData, reply *protocol.ParsedCredentialAssertionData) (nakama.AuthOutput, error) {
-	defer func(begin time.Time) {
-		reqDur_WebAuthnLogin.Observe(float64(time.Since(begin)) / float64(time.Millisecond))
-	}(time.Now())
-	return mw.Next.WebAuthnLogin(ctx, data, reply)
 }
 
 func (mw *ServiceWithInstrumentation) DevLogin(ctx context.Context, email string) (nakama.AuthOutput, error) {

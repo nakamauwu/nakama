@@ -40,10 +40,6 @@ func New(svc transport.Service, oauthProviders []OauthProvider, origin *url.URL,
 		api.HandleFunc("GET", "/api/"+provider.Name+"_auth/callback", h.oauth2CallbackHandler(provider))
 	}
 
-	api.HandleFunc("GET", "/api/credential_creation_options", h.credentialCreationOptions)
-	api.HandleFunc("POST", "/api/credentials", h.registerCredential)
-	api.HandleFunc("GET", "/api/credential_request_options", h.credentialRequestOptions)
-	api.HandleFunc("POST", "/api/webauthn_login", h.webAuthnLogin)
 	api.HandleFunc("POST", "/api/dev_login", h.devLogin)
 	api.HandleFunc("GET", "/api/auth_user", h.authUser)
 	api.HandleFunc("GET", "/api/token", h.token)

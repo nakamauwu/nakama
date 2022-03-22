@@ -25,25 +25,6 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS webauthn_authenticators (
-    id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
-    aaguid BYTES NOT NULL,
-    sign_count INT NOT NULL,
-    clone_warning BOOLEAN NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-CREATE TABLE IF NOT EXISTS webauthn_credentials (
-    id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
-    webauthn_authenticator_id UUID NOT NULL REFERENCES webauthn_authenticators ON DELETE CASCADE,
-    user_id UUID NOT NULL REFERENCES users ON DELETE CASCADE,
-    credential_id VARCHAR NOT NULL,
-    public_key BYTES NOT NULL,
-    attestation_type VARCHAR NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    UNIQUE INDEX unique_webauthn_credentials (user_id, credential_id)
-);
-
 CREATE TABLE IF NOT EXISTS follows (
     follower_id UUID NOT NULL REFERENCES users ON DELETE CASCADE,
     followee_id UUID NOT NULL REFERENCES users ON DELETE CASCADE,
@@ -54,6 +35,7 @@ CREATE TABLE IF NOT EXISTS posts (
     id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users ON DELETE CASCADE,
     content VARCHAR NOT NULL,
+    media VARCHAR[],
     spoiler_of VARCHAR,
     nsfw BOOLEAN NOT NULL DEFAULT false,
     reactions JSONB,
@@ -128,7 +110,9 @@ CREATE TABLE IF NOT EXISTS user_web_push_subscriptions (
     UNIQUE INDEX unique_user_web_push_subscriptions (user_id, sub)
 );
 
-ALTER TABLE IF EXISTS posts ADD COLUMN IF NOT EXISTS media VARCHAR[];
+DROP TABLE IF EXISTS webauthn_credentials;
+DROP TABLE IF EXISTS webauthn_authenticators;
+
 
 -- INSERT INTO users (id, email, username) VALUES
 --     ('24ca6ce6-b3e9-4276-a99a-45c77115cc9f', 'shinji@example.org', 'shinji'),
