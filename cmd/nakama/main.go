@@ -64,6 +64,7 @@ func run(ctx context.Context, logger log.Logger, args []string) error {
 		smtpUsername        = os.Getenv("SMTP_USERNAME")
 		smtpPassword        = os.Getenv("SMTP_PASSWORD")
 		embedStaticFiles, _ = strconv.ParseBool(env("EMBED_STATIC", "false"))
+		s3Secure, _         = strconv.ParseBool(env("S3_SECURE", "true"))
 		s3Endpoint          = os.Getenv("S3_ENDPOINT")
 		s3Region            = os.Getenv("S3_REGION")
 		s3AccessKey         = os.Getenv("S3_ACCESS_KEY")
@@ -176,6 +177,7 @@ func run(ctx context.Context, logger log.Logger, args []string) error {
 	if s3Enabled {
 		_ = logger.Log("storage_implementation", "s3")
 		s3 := &s3storage.Store{
+			Secure:     s3Secure,
 			Endpoint:   s3Endpoint,
 			Region:     s3Region,
 			AccessKey:  s3AccessKey,

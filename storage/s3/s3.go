@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -15,6 +14,7 @@ import (
 type Store struct {
 	client *minio.Client
 
+	Secure     bool
 	Endpoint   string
 	Region     string
 	AccessKey  string
@@ -26,7 +26,7 @@ func (s *Store) Setup(ctx context.Context) error {
 	var err error
 	s.client, err = minio.New(s.Endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(s.AccessKey, s.SecretKey, ""),
-		Secure: strings.HasPrefix(s.Endpoint, "https:"),
+		Secure: s.Secure,
 		Region: s.Region,
 	})
 	if err != nil {

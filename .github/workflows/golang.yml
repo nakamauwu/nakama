@@ -83,6 +83,7 @@ jobs:
             echo "TOKEN_KEY=${{ secrets.TOKEN_KEY }}" >| .env \
             && echo "SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY }}" >> .env \
             && echo "TRAEFIK_PILOT_TOKEN=${{ secrets.TRAEFIK_PILOT_TOKEN }}" >> .env \
+            && echo "S3_SECURE=true" >> .env \
             && echo "S3_ENDPOINT=${{ secrets.S3_ENDPOINT }}" >> .env \
             && echo "S3_REGION=${{ secrets.S3_REGION }}" >> .env \
             && echo "S3_ACCESS_KEY=${{ secrets.S3_ACCESS_KEY }}" >> .env \
