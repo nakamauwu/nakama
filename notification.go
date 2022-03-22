@@ -35,7 +35,7 @@ func (pp Notifications) EndCursor() *string {
 	}
 
 	last := pp[len(pp)-1]
-	return strPtr(encodeCursor(last.ID, last.IssuedAt))
+	return ptr(encodeCursor(last.ID, last.IssuedAt))
 }
 
 // Notifications from the authenticated user in descending order with backward pagination.

@@ -265,7 +265,7 @@ func (tt Timeline) EndCursor() *string {
 		return nil
 	}
 
-	return strPtr(encodeCursor(last.Post.ID, last.Post.CreatedAt))
+	return ptr(encodeCursor(last.Post.ID, last.Post.CreatedAt))
 }
 
 // Timeline of the authenticated user in descending order and with backward pagination.

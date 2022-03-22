@@ -80,7 +80,7 @@ func (pp Posts) EndCursor() *string {
 	}
 
 	last := pp[len(pp)-1]
-	return strPtr(encodeCursor(last.ID, last.CreatedAt))
+	return ptr(encodeCursor(last.ID, last.CreatedAt))
 }
 
 type PostsOpts struct {

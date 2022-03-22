@@ -32,16 +32,16 @@ func Test_handler_sendMagicLink(t *testing.T) {
 		{
 			name: "empty_request_body",
 			testResp: func(t *testing.T, resp *http.Response) {
-				testutil.AssertEqual(t, http.StatusBadRequest, resp.StatusCode, "status code")
-				testutil.AssertEqual(t, "bad request", string(readAllAndTrim(t, resp.Body)), "body")
+				testutil.WantEq(t, http.StatusBadRequest, resp.StatusCode, "status code")
+				testutil.WantEq(t, "bad request", string(readAllAndTrim(t, resp.Body)), "body")
 			},
 		},
 		{
 			name: "malformed_request_body",
 			body: []byte(`nope`),
 			testResp: func(t *testing.T, resp *http.Response) {
-				testutil.AssertEqual(t, http.StatusBadRequest, resp.StatusCode, "status code")
-				testutil.AssertEqual(t, "bad request", string(readAllAndTrim(t, resp.Body)), "body")
+				testutil.WantEq(t, http.StatusBadRequest, resp.StatusCode, "status code")
+				testutil.WantEq(t, "bad request", string(readAllAndTrim(t, resp.Body)), "body")
 			},
 		},
 		{
@@ -53,8 +53,8 @@ func Test_handler_sendMagicLink(t *testing.T) {
 				},
 			},
 			testResp: func(t *testing.T, resp *http.Response) {
-				testutil.AssertEqual(t, http.StatusUnprocessableEntity, resp.StatusCode, "status code")
-				testutil.AssertEqual(t, "invalid email", string(readAllAndTrim(t, resp.Body)), "body")
+				testutil.WantEq(t, http.StatusUnprocessableEntity, resp.StatusCode, "status code")
+				testutil.WantEq(t, "invalid email", string(readAllAndTrim(t, resp.Body)), "body")
 			},
 		},
 		{
@@ -66,8 +66,8 @@ func Test_handler_sendMagicLink(t *testing.T) {
 				},
 			},
 			testResp: func(t *testing.T, resp *http.Response) {
-				testutil.AssertEqual(t, http.StatusUnprocessableEntity, resp.StatusCode, "status code")
-				testutil.AssertEqual(t, "invalid redirect URI", string(readAllAndTrim(t, resp.Body)), "body")
+				testutil.WantEq(t, http.StatusUnprocessableEntity, resp.StatusCode, "status code")
+				testutil.WantEq(t, "invalid redirect URI", string(readAllAndTrim(t, resp.Body)), "body")
 			},
 		},
 		{
@@ -79,8 +79,8 @@ func Test_handler_sendMagicLink(t *testing.T) {
 				},
 			},
 			testResp: func(t *testing.T, resp *http.Response) {
-				testutil.AssertEqual(t, http.StatusForbidden, resp.StatusCode, "status code")
-				testutil.AssertEqual(t, "untrusted redirect URI", string(readAllAndTrim(t, resp.Body)), "body")
+				testutil.WantEq(t, http.StatusForbidden, resp.StatusCode, "status code")
+				testutil.WantEq(t, "untrusted redirect URI", string(readAllAndTrim(t, resp.Body)), "body")
 			},
 		},
 		{
@@ -92,8 +92,8 @@ func Test_handler_sendMagicLink(t *testing.T) {
 				},
 			},
 			testResp: func(t *testing.T, resp *http.Response) {
-				testutil.AssertEqual(t, http.StatusInternalServerError, resp.StatusCode, "status code")
-				testutil.AssertEqual(t, "internal server error", string(readAllAndTrim(t, resp.Body)), "body")
+				testutil.WantEq(t, http.StatusInternalServerError, resp.StatusCode, "status code")
+				testutil.WantEq(t, "internal server error", string(readAllAndTrim(t, resp.Body)), "body")
 			},
 		},
 		{
@@ -105,11 +105,11 @@ func Test_handler_sendMagicLink(t *testing.T) {
 				},
 			},
 			testResp: func(t *testing.T, resp *http.Response) {
-				testutil.AssertEqual(t, http.StatusNoContent, resp.StatusCode, "status code")
+				testutil.WantEq(t, http.StatusNoContent, resp.StatusCode, "status code")
 			},
 			testCall: func(t *testing.T, call call) {
-				testutil.AssertEqual(t, "user@example.org", call.Email, "email")
-				testutil.AssertEqual(t, "https://example.org", call.RedirectURI, "redirect URI")
+				testutil.WantEq(t, "user@example.org", call.Email, "email")
+				testutil.WantEq(t, "https://example.org", call.RedirectURI, "redirect URI")
 			},
 		},
 	}

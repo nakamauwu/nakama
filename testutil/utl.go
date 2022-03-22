@@ -9,8 +9,8 @@ import (
 	gonanoid "github.com/matoous/go-nanoid"
 )
 
-// AssertEqual -
-func AssertEqual(t *testing.T, want, got interface{}, msg string) {
+// WantEq -
+func WantEq[T any](t *testing.T, want, got T, msg string) {
 	t.Helper()
 
 	if !reflect.DeepEqual(want, got) {
@@ -23,7 +23,7 @@ func RandStr(t *testing.T, size int) string {
 	t.Helper()
 
 	s, err := gonanoid.Generate("0123456789abcdefghijklmnopqrstuvwxyz", size)
-	AssertEqual(t, nil, err, "nanoid")
+	WantEq(t, nil, err, "nanoid")
 	return s
 }
 
