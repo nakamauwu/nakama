@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"sync"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -15,57 +14,50 @@ import (
 // Store must call Init.
 type Store struct {
 	client *minio.Client
-	once   sync.Once
 
-	Endpoint  string
-	Region    string
-	AccessKey string
-	SecretKey string
-
+	Endpoint   string
+	Region     string
+	AccessKey  string
+	SecretKey  string
 	BucketList []string
 }
 
-func (s *Store) init(ctx context.Context) (err error) {
+func (s *Store) Setup(ctx context.Context) error {
+	var err error
 	s.client, err = minio.New(s.Endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(s.AccessKey, s.SecretKey, ""),
 		Secure: strings.HasPrefix(s.Endpoint, "https:"),
+		Region: s.Region,
 	})
 	if err != nil {
 		return fmt.Errorf("could not create minio client: %w", err)
 	}
 
 	for _, bucket := range s.BucketList {
-		err = s.client.MakeBucket(ctx, bucket, minio.MakeBucketOptions{
+		err := s.client.MakeBucket(ctx, bucket, minio.MakeBucketOptions{
 			Region: s.Region,
 		})
-		if err != nil {
-			exists, errExists := s.client.BucketExists(ctx, bucket)
-			if errExists != nil {
-				return fmt.Errorf("could not check bucket %q existence: %w", bucket, errExists)
-			}
-
-			if exists {
-				return nil
-			}
+		if err == nil {
+			continue
 		}
 
-		if err != nil {
-			return fmt.Errorf("could not create bucket %q: %w", bucket, err)
+		exists, errExists := s.client.BucketExists(ctx, bucket)
+		if errExists != nil {
+			return fmt.Errorf("could not check bucket %q existence: %w", bucket, errExists)
 		}
+
+		if exists {
+			continue
+		}
+
+		return fmt.Errorf("could not create bucket %q: %w", bucket, err)
 	}
 
 	return nil
 }
 
 // Store a file.
-func (s *Store) Store(ctx context.Context, bucket, name string, data []byte, opts ...func(*storage.StoreOpts)) (err error) {
-	s.once.Do(func() {
-		err = s.init(ctx)
-	})
-	if err != nil {
-		return fmt.Errorf("could not init minio client: %w", err)
-	}
-
+func (s *Store) Store(ctx context.Context, bucket, name string, data []byte, opts ...func(*storage.StoreOpts)) error {
 	var options storage.StoreOpts
 	for _, o := range opts {
 		o(&options)
@@ -73,7 +65,7 @@ func (s *Store) Store(ctx context.Context, bucket, name string, data []byte, opt
 
 	r := bytes.NewReader(data)
 	size := int64(len(data))
-	_, err = s.client.PutObject(ctx, bucket, name, r, size, minio.PutObjectOptions{
+	_, err := s.client.PutObject(ctx, bucket, name, r, size, minio.PutObjectOptions{
 		ContentType:     options.ContentType,
 		ContentEncoding: options.ContentEncoding,
 		CacheControl:    options.CacheControl,
@@ -86,14 +78,7 @@ func (s *Store) Store(ctx context.Context, bucket, name string, data []byte, opt
 }
 
 // Open a file.
-func (s *Store) Open(ctx context.Context, bucket, name string) (f *storage.File, err error) {
-	s.once.Do(func() {
-		err = s.init(ctx)
-	})
-	if err != nil {
-		return nil, fmt.Errorf("could not init minio client: %w", err)
-	}
-
+func (s *Store) Open(ctx context.Context, bucket, name string) (*storage.File, error) {
 	obj, err := s.client.GetObject(ctx, bucket, name, minio.GetObjectOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("could not get object: %w", err)
@@ -118,15 +103,8 @@ func (s *Store) Open(ctx context.Context, bucket, name string) (f *storage.File,
 }
 
 // Delete a file.
-func (s *Store) Delete(ctx context.Context, bucket, name string) (err error) {
-	s.once.Do(func() {
-		err = s.init(ctx)
-	})
-	if err != nil {
-		return fmt.Errorf("could not init minio client: %w", err)
-	}
-
-	err = s.client.RemoveObject(ctx, bucket, name, minio.RemoveObjectOptions{})
+func (s *Store) Delete(ctx context.Context, bucket, name string) error {
+	err := s.client.RemoveObject(ctx, bucket, name, minio.RemoveObjectOptions{})
 	if err != nil {
 		return fmt.Errorf("could not delete object: %w", err)
 	}

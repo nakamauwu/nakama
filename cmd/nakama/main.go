@@ -175,13 +175,18 @@ func run(ctx context.Context, logger log.Logger, args []string) error {
 	s3Enabled := s3Endpoint != "" && s3AccessKey != "" && s3SecretKey != ""
 	if s3Enabled {
 		_ = logger.Log("storage_implementation", "s3")
-		store = &s3storage.Store{
+		s3 := &s3storage.Store{
 			Endpoint:   s3Endpoint,
 			Region:     s3Region,
 			AccessKey:  s3AccessKey,
 			SecretKey:  s3SecretKey,
-			BucketList: []string{nakama.AvatarsBucket, nakama.CoversBucket},
+			BucketList: []string{nakama.AvatarsBucket, nakama.CoversBucket, nakama.MediaBucket},
 		}
+		if err := s3.Setup(ctx); err != nil {
+			return fmt.Errorf("could not setup S3 storage: %w", err)
+		}
+
+		store = s3
 	} else {
 		_ = logger.Log("storage_implementation", "os file system")
 		wd, err := os.Getwd()

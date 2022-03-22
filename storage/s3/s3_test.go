@@ -1,17 +1,22 @@
 package s3
 
 import (
+	"context"
 	"testing"
 
 	"github.com/nakamauwu/nakama/storage/tests"
 )
 
 func TestStore(t *testing.T) {
-	tests.RunStoreTests(t, &Store{
+	s := &Store{
 		Endpoint:   testEndpoint,
 		Region:     testRegion,
 		AccessKey:  testAccessKey,
 		SecretKey:  testSecretKey,
 		BucketList: []string{testBucket},
-	}, testBucket)
+	}
+	if err := s.Setup(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	tests.RunStoreTests(t, s, testBucket)
 }
