@@ -10,7 +10,7 @@ import (
 )
 
 // WantEq -
-func WantEq[T any](t *testing.T, want, got T, msg string) {
+func WantEq(t *testing.T, want, got any, msg string) {
 	t.Helper()
 
 	if !reflect.DeepEqual(want, got) {

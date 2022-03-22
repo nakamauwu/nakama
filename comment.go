@@ -134,7 +134,7 @@ func (cc Comments) EndCursor() *string {
 	}
 
 	last := cc[len(cc)-1]
-	return ptr(encodeCursor(last.ID, last.CreatedAt))
+	return ptrString(encodeCursor(last.ID, last.CreatedAt))
 }
 
 // Comments from a post in descending order with backward pagination.

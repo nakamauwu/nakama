@@ -175,6 +175,6 @@ func decodeSimpleCursor(s string) (string, error) {
 	return string(b), nil
 }
 
-func ptr[T any](v T) *T {
+func ptrString(v string) *string {
 	return &v
 }

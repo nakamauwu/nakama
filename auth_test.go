@@ -17,13 +17,13 @@ func TestService_SendMagicLink(t *testing.T) {
 	t.Run("empty_email", func(t *testing.T) {
 		svc := &Service{}
 		err := svc.SendMagicLink(ctx, "", "")
-		testutil.WantEq[error](t, ErrInvalidEmail, err, "error")
+		testutil.WantEq(t, ErrInvalidEmail, err, "error")
 	})
 
 	t.Run("invalid_email", func(t *testing.T) {
 		svc := &Service{}
 		err := svc.SendMagicLink(ctx, "nope", "")
-		testutil.WantEq[error](t, ErrInvalidEmail, err, "error")
+		testutil.WantEq(t, ErrInvalidEmail, err, "error")
 	})
 
 	email := testutil.RandStr(t, 10) + "@example.org"
@@ -31,13 +31,13 @@ func TestService_SendMagicLink(t *testing.T) {
 	t.Run("empty_redirect_uri", func(t *testing.T) {
 		svc := &Service{}
 		err := svc.SendMagicLink(ctx, email, "")
-		testutil.WantEq[error](t, ErrInvalidRedirectURI, err, "error")
+		testutil.WantEq(t, ErrInvalidRedirectURI, err, "error")
 	})
 
 	t.Run("non_absolute_redirect_uri", func(t *testing.T) {
 		svc := &Service{}
 		err := svc.SendMagicLink(ctx, email, "/nope")
-		testutil.WantEq[error](t, ErrInvalidRedirectURI, err, "error")
+		testutil.WantEq(t, ErrInvalidRedirectURI, err, "error")
 	})
 
 	t.Run("untrusted_redirect_uri", func(t *testing.T) {
@@ -48,7 +48,7 @@ func TestService_SendMagicLink(t *testing.T) {
 			},
 		}
 		err := svc.SendMagicLink(ctx, email, "https://example.org/login-callback")
-		testutil.WantEq[error](t, ErrUntrustedRedirectURI, err, "error")
+		testutil.WantEq(t, ErrUntrustedRedirectURI, err, "error")
 	})
 
 	redirectURI := "http://localhost:3000/login-callback"

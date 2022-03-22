@@ -101,7 +101,7 @@ func (uu UserProfiles) EndCursor() *string {
 	}
 
 	last := uu[len(uu)-1]
-	return ptr(encodeSimpleCursor(last.Username))
+	return ptrString(encodeSimpleCursor(last.Username))
 }
 
 // Users in ascending order with forward pagination and filtered by username.
@@ -202,7 +202,7 @@ func (uu Usernames) EndCursor() *string {
 	}
 
 	last := uu[len(uu)-1]
-	return ptr(encodeSimpleCursor(last))
+	return ptrString(encodeSimpleCursor(last))
 }
 
 // Usernames to autocomplete a mention box or something.
