@@ -3,15 +3,22 @@ FROM golang:alpine AS build
 ARG VAPID_PUBLIC_KEY
 ENV VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY}
 
-RUN apk add --update --no-cache nodejs ca-certificates && apk add --no-cache npm && update-ca-certificates
+RUN apk add --update --no-cache nodejs ca-certificates
+RUN apk add --no-cache npm
+RUN update-ca-certificates
 
 WORKDIR /go/src/github.com/nakamauwu/nakama
 
 COPY . .
 
-RUN cd web/app && npm i && npm run build && cd ../.. && rm -rf web/static/node_modules/
+RUN cd web/app
+RUN npm i
+RUN npm run build
+RUN cd ../..
+RUN rm -rf web/static/node_modules/
 
-RUN go mod download && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o /go/bin/nakama ./cmd/nakama
+RUN go mod download
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o /go/bin/nakama ./cmd/nakama
 
 FROM scratch
 
