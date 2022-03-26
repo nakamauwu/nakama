@@ -10,7 +10,7 @@ import (
 	"github.com/nakamauwu/nakama/storage"
 )
 
-// Store must call Init.
+// Store must call Setup.
 type Store struct {
 	client *minio.Client
 
