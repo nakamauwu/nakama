@@ -49,9 +49,6 @@ type SenderMock struct {
 
 // Send calls SendFunc.
 func (mock *SenderMock) Send(to string, subject string, html string, text string) error {
-	if mock.SendFunc == nil {
-		panic("SenderMock.SendFunc: method is nil but Sender.Send was just called")
-	}
 	callInfo := struct {
 		To      string
 		Subject string
@@ -66,6 +63,12 @@ func (mock *SenderMock) Send(to string, subject string, html string, text string
 	mock.lockSend.Lock()
 	mock.calls.Send = append(mock.calls.Send, callInfo)
 	mock.lockSend.Unlock()
+	if mock.SendFunc == nil {
+		var (
+			errOut error
+		)
+		return errOut
+	}
 	return mock.SendFunc(to, subject, html, text)
 }
 

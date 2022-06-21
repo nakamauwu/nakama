@@ -1,4 +1,4 @@
-//go:generate moq -rm -out service_mock.go . Service
+//go:generate go run -mod mod github.com/matryer/moq -rm -stub -out service_mock.go . Service
 
 package transport
 

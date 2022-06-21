@@ -598,9 +598,6 @@ type ServiceMock struct {
 
 // AddWebPushSubscription calls AddWebPushSubscriptionFunc.
 func (mock *ServiceMock) AddWebPushSubscription(ctx context.Context, sub json.RawMessage) error {
-	if mock.AddWebPushSubscriptionFunc == nil {
-		panic("ServiceMock.AddWebPushSubscriptionFunc: method is nil but Service.AddWebPushSubscription was just called")
-	}
 	callInfo := struct {
 		Ctx context.Context
 		Sub json.RawMessage
@@ -611,6 +608,12 @@ func (mock *ServiceMock) AddWebPushSubscription(ctx context.Context, sub json.Ra
 	mock.lockAddWebPushSubscription.Lock()
 	mock.calls.AddWebPushSubscription = append(mock.calls.AddWebPushSubscription, callInfo)
 	mock.lockAddWebPushSubscription.Unlock()
+	if mock.AddWebPushSubscriptionFunc == nil {
+		var (
+			errOut error
+		)
+		return errOut
+	}
 	return mock.AddWebPushSubscriptionFunc(ctx, sub)
 }
 
@@ -633,9 +636,6 @@ func (mock *ServiceMock) AddWebPushSubscriptionCalls() []struct {
 
 // AuthUser calls AuthUserFunc.
 func (mock *ServiceMock) AuthUser(ctx context.Context) (nakama.User, error) {
-	if mock.AuthUserFunc == nil {
-		panic("ServiceMock.AuthUserFunc: method is nil but Service.AuthUser was just called")
-	}
 	callInfo := struct {
 		Ctx context.Context
 	}{
@@ -644,6 +644,13 @@ func (mock *ServiceMock) AuthUser(ctx context.Context) (nakama.User, error) {
 	mock.lockAuthUser.Lock()
 	mock.calls.AuthUser = append(mock.calls.AuthUser, callInfo)
 	mock.lockAuthUser.Unlock()
+	if mock.AuthUserFunc == nil {
+		var (
+			userOut nakama.User
+			errOut  error
+		)
+		return userOut, errOut
+	}
 	return mock.AuthUserFunc(ctx)
 }
 
@@ -664,9 +671,6 @@ func (mock *ServiceMock) AuthUserCalls() []struct {
 
 // AuthUserIDFromToken calls AuthUserIDFromTokenFunc.
 func (mock *ServiceMock) AuthUserIDFromToken(token string) (string, error) {
-	if mock.AuthUserIDFromTokenFunc == nil {
-		panic("ServiceMock.AuthUserIDFromTokenFunc: method is nil but Service.AuthUserIDFromToken was just called")
-	}
 	callInfo := struct {
 		Token string
 	}{
@@ -675,6 +679,13 @@ func (mock *ServiceMock) AuthUserIDFromToken(token string) (string, error) {
 	mock.lockAuthUserIDFromToken.Lock()
 	mock.calls.AuthUserIDFromToken = append(mock.calls.AuthUserIDFromToken, callInfo)
 	mock.lockAuthUserIDFromToken.Unlock()
+	if mock.AuthUserIDFromTokenFunc == nil {
+		var (
+			sOut   string
+			errOut error
+		)
+		return sOut, errOut
+	}
 	return mock.AuthUserIDFromTokenFunc(token)
 }
 
@@ -695,9 +706,6 @@ func (mock *ServiceMock) AuthUserIDFromTokenCalls() []struct {
 
 // CommentStream calls CommentStreamFunc.
 func (mock *ServiceMock) CommentStream(ctx context.Context, postID string) (<-chan nakama.Comment, error) {
-	if mock.CommentStreamFunc == nil {
-		panic("ServiceMock.CommentStreamFunc: method is nil but Service.CommentStream was just called")
-	}
 	callInfo := struct {
 		Ctx    context.Context
 		PostID string
@@ -708,6 +716,13 @@ func (mock *ServiceMock) CommentStream(ctx context.Context, postID string) (<-ch
 	mock.lockCommentStream.Lock()
 	mock.calls.CommentStream = append(mock.calls.CommentStream, callInfo)
 	mock.lockCommentStream.Unlock()
+	if mock.CommentStreamFunc == nil {
+		var (
+			commentChOut <-chan nakama.Comment
+			errOut       error
+		)
+		return commentChOut, errOut
+	}
 	return mock.CommentStreamFunc(ctx, postID)
 }
 
@@ -730,9 +745,6 @@ func (mock *ServiceMock) CommentStreamCalls() []struct {
 
 // Comments calls CommentsFunc.
 func (mock *ServiceMock) Comments(ctx context.Context, postID string, last uint64, before *string) (nakama.Comments, error) {
-	if mock.CommentsFunc == nil {
-		panic("ServiceMock.CommentsFunc: method is nil but Service.Comments was just called")
-	}
 	callInfo := struct {
 		Ctx    context.Context
 		PostID string
@@ -747,6 +759,13 @@ func (mock *ServiceMock) Comments(ctx context.Context, postID string, last uint6
 	mock.lockComments.Lock()
 	mock.calls.Comments = append(mock.calls.Comments, callInfo)
 	mock.lockComments.Unlock()
+	if mock.CommentsFunc == nil {
+		var (
+			commentsOut nakama.Comments
+			errOut      error
+		)
+		return commentsOut, errOut
+	}
 	return mock.CommentsFunc(ctx, postID, last, before)
 }
 
@@ -773,9 +792,6 @@ func (mock *ServiceMock) CommentsCalls() []struct {
 
 // CreateComment calls CreateCommentFunc.
 func (mock *ServiceMock) CreateComment(ctx context.Context, postID string, content string) (nakama.Comment, error) {
-	if mock.CreateCommentFunc == nil {
-		panic("ServiceMock.CreateCommentFunc: method is nil but Service.CreateComment was just called")
-	}
 	callInfo := struct {
 		Ctx     context.Context
 		PostID  string
@@ -788,6 +804,13 @@ func (mock *ServiceMock) CreateComment(ctx context.Context, postID string, conte
 	mock.lockCreateComment.Lock()
 	mock.calls.CreateComment = append(mock.calls.CreateComment, callInfo)
 	mock.lockCreateComment.Unlock()
+	if mock.CreateCommentFunc == nil {
+		var (
+			commentOut nakama.Comment
+			errOut     error
+		)
+		return commentOut, errOut
+	}
 	return mock.CreateCommentFunc(ctx, postID, content)
 }
 
@@ -812,9 +835,6 @@ func (mock *ServiceMock) CreateCommentCalls() []struct {
 
 // CreateTimelineItem calls CreateTimelineItemFunc.
 func (mock *ServiceMock) CreateTimelineItem(ctx context.Context, content string, spoilerOf *string, nsfw bool, media []io.Reader) (nakama.TimelineItem, error) {
-	if mock.CreateTimelineItemFunc == nil {
-		panic("ServiceMock.CreateTimelineItemFunc: method is nil but Service.CreateTimelineItem was just called")
-	}
 	callInfo := struct {
 		Ctx       context.Context
 		Content   string
@@ -831,6 +851,13 @@ func (mock *ServiceMock) CreateTimelineItem(ctx context.Context, content string,
 	mock.lockCreateTimelineItem.Lock()
 	mock.calls.CreateTimelineItem = append(mock.calls.CreateTimelineItem, callInfo)
 	mock.lockCreateTimelineItem.Unlock()
+	if mock.CreateTimelineItemFunc == nil {
+		var (
+			timelineItemOut nakama.TimelineItem
+			errOut          error
+		)
+		return timelineItemOut, errOut
+	}
 	return mock.CreateTimelineItemFunc(ctx, content, spoilerOf, nsfw, media)
 }
 
@@ -859,9 +886,6 @@ func (mock *ServiceMock) CreateTimelineItemCalls() []struct {
 
 // DeleteComment calls DeleteCommentFunc.
 func (mock *ServiceMock) DeleteComment(ctx context.Context, commentID string) error {
-	if mock.DeleteCommentFunc == nil {
-		panic("ServiceMock.DeleteCommentFunc: method is nil but Service.DeleteComment was just called")
-	}
 	callInfo := struct {
 		Ctx       context.Context
 		CommentID string
@@ -872,6 +896,12 @@ func (mock *ServiceMock) DeleteComment(ctx context.Context, commentID string) er
 	mock.lockDeleteComment.Lock()
 	mock.calls.DeleteComment = append(mock.calls.DeleteComment, callInfo)
 	mock.lockDeleteComment.Unlock()
+	if mock.DeleteCommentFunc == nil {
+		var (
+			errOut error
+		)
+		return errOut
+	}
 	return mock.DeleteCommentFunc(ctx, commentID)
 }
 
@@ -894,9 +924,6 @@ func (mock *ServiceMock) DeleteCommentCalls() []struct {
 
 // DeletePost calls DeletePostFunc.
 func (mock *ServiceMock) DeletePost(ctx context.Context, postID string) error {
-	if mock.DeletePostFunc == nil {
-		panic("ServiceMock.DeletePostFunc: method is nil but Service.DeletePost was just called")
-	}
 	callInfo := struct {
 		Ctx    context.Context
 		PostID string
@@ -907,6 +934,12 @@ func (mock *ServiceMock) DeletePost(ctx context.Context, postID string) error {
 	mock.lockDeletePost.Lock()
 	mock.calls.DeletePost = append(mock.calls.DeletePost, callInfo)
 	mock.lockDeletePost.Unlock()
+	if mock.DeletePostFunc == nil {
+		var (
+			errOut error
+		)
+		return errOut
+	}
 	return mock.DeletePostFunc(ctx, postID)
 }
 
@@ -929,9 +962,6 @@ func (mock *ServiceMock) DeletePostCalls() []struct {
 
 // DeleteTimelineItem calls DeleteTimelineItemFunc.
 func (mock *ServiceMock) DeleteTimelineItem(ctx context.Context, timelineItemID string) error {
-	if mock.DeleteTimelineItemFunc == nil {
-		panic("ServiceMock.DeleteTimelineItemFunc: method is nil but Service.DeleteTimelineItem was just called")
-	}
 	callInfo := struct {
 		Ctx            context.Context
 		TimelineItemID string
@@ -942,6 +972,12 @@ func (mock *ServiceMock) DeleteTimelineItem(ctx context.Context, timelineItemID 
 	mock.lockDeleteTimelineItem.Lock()
 	mock.calls.DeleteTimelineItem = append(mock.calls.DeleteTimelineItem, callInfo)
 	mock.lockDeleteTimelineItem.Unlock()
+	if mock.DeleteTimelineItemFunc == nil {
+		var (
+			errOut error
+		)
+		return errOut
+	}
 	return mock.DeleteTimelineItemFunc(ctx, timelineItemID)
 }
 
@@ -964,9 +1000,6 @@ func (mock *ServiceMock) DeleteTimelineItemCalls() []struct {
 
 // DevLogin calls DevLoginFunc.
 func (mock *ServiceMock) DevLogin(ctx context.Context, email string) (nakama.AuthOutput, error) {
-	if mock.DevLoginFunc == nil {
-		panic("ServiceMock.DevLoginFunc: method is nil but Service.DevLogin was just called")
-	}
 	callInfo := struct {
 		Ctx   context.Context
 		Email string
@@ -977,6 +1010,13 @@ func (mock *ServiceMock) DevLogin(ctx context.Context, email string) (nakama.Aut
 	mock.lockDevLogin.Lock()
 	mock.calls.DevLogin = append(mock.calls.DevLogin, callInfo)
 	mock.lockDevLogin.Unlock()
+	if mock.DevLoginFunc == nil {
+		var (
+			authOutputOut nakama.AuthOutput
+			errOut        error
+		)
+		return authOutputOut, errOut
+	}
 	return mock.DevLoginFunc(ctx, email)
 }
 
@@ -999,9 +1039,6 @@ func (mock *ServiceMock) DevLoginCalls() []struct {
 
 // EnsureUser calls EnsureUserFunc.
 func (mock *ServiceMock) EnsureUser(ctx context.Context, email string, username *string) (nakama.User, error) {
-	if mock.EnsureUserFunc == nil {
-		panic("ServiceMock.EnsureUserFunc: method is nil but Service.EnsureUser was just called")
-	}
 	callInfo := struct {
 		Ctx      context.Context
 		Email    string
@@ -1014,6 +1051,13 @@ func (mock *ServiceMock) EnsureUser(ctx context.Context, email string, username 
 	mock.lockEnsureUser.Lock()
 	mock.calls.EnsureUser = append(mock.calls.EnsureUser, callInfo)
 	mock.lockEnsureUser.Unlock()
+	if mock.EnsureUserFunc == nil {
+		var (
+			userOut nakama.User
+			errOut  error
+		)
+		return userOut, errOut
+	}
 	return mock.EnsureUserFunc(ctx, email, username)
 }
 
@@ -1038,9 +1082,6 @@ func (mock *ServiceMock) EnsureUserCalls() []struct {
 
 // Followees calls FolloweesFunc.
 func (mock *ServiceMock) Followees(ctx context.Context, username string, first uint64, after *string) (nakama.UserProfiles, error) {
-	if mock.FolloweesFunc == nil {
-		panic("ServiceMock.FolloweesFunc: method is nil but Service.Followees was just called")
-	}
 	callInfo := struct {
 		Ctx      context.Context
 		Username string
@@ -1055,6 +1096,13 @@ func (mock *ServiceMock) Followees(ctx context.Context, username string, first u
 	mock.lockFollowees.Lock()
 	mock.calls.Followees = append(mock.calls.Followees, callInfo)
 	mock.lockFollowees.Unlock()
+	if mock.FolloweesFunc == nil {
+		var (
+			userProfilesOut nakama.UserProfiles
+			errOut          error
+		)
+		return userProfilesOut, errOut
+	}
 	return mock.FolloweesFunc(ctx, username, first, after)
 }
 
@@ -1081,9 +1129,6 @@ func (mock *ServiceMock) FolloweesCalls() []struct {
 
 // Followers calls FollowersFunc.
 func (mock *ServiceMock) Followers(ctx context.Context, username string, first uint64, after *string) (nakama.UserProfiles, error) {
-	if mock.FollowersFunc == nil {
-		panic("ServiceMock.FollowersFunc: method is nil but Service.Followers was just called")
-	}
 	callInfo := struct {
 		Ctx      context.Context
 		Username string
@@ -1098,6 +1143,13 @@ func (mock *ServiceMock) Followers(ctx context.Context, username string, first u
 	mock.lockFollowers.Lock()
 	mock.calls.Followers = append(mock.calls.Followers, callInfo)
 	mock.lockFollowers.Unlock()
+	if mock.FollowersFunc == nil {
+		var (
+			userProfilesOut nakama.UserProfiles
+			errOut          error
+		)
+		return userProfilesOut, errOut
+	}
 	return mock.FollowersFunc(ctx, username, first, after)
 }
 
@@ -1124,9 +1176,6 @@ func (mock *ServiceMock) FollowersCalls() []struct {
 
 // HasUnreadNotifications calls HasUnreadNotificationsFunc.
 func (mock *ServiceMock) HasUnreadNotifications(ctx context.Context) (bool, error) {
-	if mock.HasUnreadNotificationsFunc == nil {
-		panic("ServiceMock.HasUnreadNotificationsFunc: method is nil but Service.HasUnreadNotifications was just called")
-	}
 	callInfo := struct {
 		Ctx context.Context
 	}{
@@ -1135,6 +1184,13 @@ func (mock *ServiceMock) HasUnreadNotifications(ctx context.Context) (bool, erro
 	mock.lockHasUnreadNotifications.Lock()
 	mock.calls.HasUnreadNotifications = append(mock.calls.HasUnreadNotifications, callInfo)
 	mock.lockHasUnreadNotifications.Unlock()
+	if mock.HasUnreadNotificationsFunc == nil {
+		var (
+			bOut   bool
+			errOut error
+		)
+		return bOut, errOut
+	}
 	return mock.HasUnreadNotificationsFunc(ctx)
 }
 
@@ -1155,9 +1211,6 @@ func (mock *ServiceMock) HasUnreadNotificationsCalls() []struct {
 
 // MarkNotificationAsRead calls MarkNotificationAsReadFunc.
 func (mock *ServiceMock) MarkNotificationAsRead(ctx context.Context, notificationID string) error {
-	if mock.MarkNotificationAsReadFunc == nil {
-		panic("ServiceMock.MarkNotificationAsReadFunc: method is nil but Service.MarkNotificationAsRead was just called")
-	}
 	callInfo := struct {
 		Ctx            context.Context
 		NotificationID string
@@ -1168,6 +1221,12 @@ func (mock *ServiceMock) MarkNotificationAsRead(ctx context.Context, notificatio
 	mock.lockMarkNotificationAsRead.Lock()
 	mock.calls.MarkNotificationAsRead = append(mock.calls.MarkNotificationAsRead, callInfo)
 	mock.lockMarkNotificationAsRead.Unlock()
+	if mock.MarkNotificationAsReadFunc == nil {
+		var (
+			errOut error
+		)
+		return errOut
+	}
 	return mock.MarkNotificationAsReadFunc(ctx, notificationID)
 }
 
@@ -1190,9 +1249,6 @@ func (mock *ServiceMock) MarkNotificationAsReadCalls() []struct {
 
 // MarkNotificationsAsRead calls MarkNotificationsAsReadFunc.
 func (mock *ServiceMock) MarkNotificationsAsRead(ctx context.Context) error {
-	if mock.MarkNotificationsAsReadFunc == nil {
-		panic("ServiceMock.MarkNotificationsAsReadFunc: method is nil but Service.MarkNotificationsAsRead was just called")
-	}
 	callInfo := struct {
 		Ctx context.Context
 	}{
@@ -1201,6 +1257,12 @@ func (mock *ServiceMock) MarkNotificationsAsRead(ctx context.Context) error {
 	mock.lockMarkNotificationsAsRead.Lock()
 	mock.calls.MarkNotificationsAsRead = append(mock.calls.MarkNotificationsAsRead, callInfo)
 	mock.lockMarkNotificationsAsRead.Unlock()
+	if mock.MarkNotificationsAsReadFunc == nil {
+		var (
+			errOut error
+		)
+		return errOut
+	}
 	return mock.MarkNotificationsAsReadFunc(ctx)
 }
 
@@ -1221,9 +1283,6 @@ func (mock *ServiceMock) MarkNotificationsAsReadCalls() []struct {
 
 // NotificationStream calls NotificationStreamFunc.
 func (mock *ServiceMock) NotificationStream(ctx context.Context) (<-chan nakama.Notification, error) {
-	if mock.NotificationStreamFunc == nil {
-		panic("ServiceMock.NotificationStreamFunc: method is nil but Service.NotificationStream was just called")
-	}
 	callInfo := struct {
 		Ctx context.Context
 	}{
@@ -1232,6 +1291,13 @@ func (mock *ServiceMock) NotificationStream(ctx context.Context) (<-chan nakama.
 	mock.lockNotificationStream.Lock()
 	mock.calls.NotificationStream = append(mock.calls.NotificationStream, callInfo)
 	mock.lockNotificationStream.Unlock()
+	if mock.NotificationStreamFunc == nil {
+		var (
+			notificationChOut <-chan nakama.Notification
+			errOut            error
+		)
+		return notificationChOut, errOut
+	}
 	return mock.NotificationStreamFunc(ctx)
 }
 
@@ -1252,9 +1318,6 @@ func (mock *ServiceMock) NotificationStreamCalls() []struct {
 
 // Notifications calls NotificationsFunc.
 func (mock *ServiceMock) Notifications(ctx context.Context, last uint64, before *string) (nakama.Notifications, error) {
-	if mock.NotificationsFunc == nil {
-		panic("ServiceMock.NotificationsFunc: method is nil but Service.Notifications was just called")
-	}
 	callInfo := struct {
 		Ctx    context.Context
 		Last   uint64
@@ -1267,6 +1330,13 @@ func (mock *ServiceMock) Notifications(ctx context.Context, last uint64, before 
 	mock.lockNotifications.Lock()
 	mock.calls.Notifications = append(mock.calls.Notifications, callInfo)
 	mock.lockNotifications.Unlock()
+	if mock.NotificationsFunc == nil {
+		var (
+			notificationsOut nakama.Notifications
+			errOut           error
+		)
+		return notificationsOut, errOut
+	}
 	return mock.NotificationsFunc(ctx, last, before)
 }
 
@@ -1291,9 +1361,6 @@ func (mock *ServiceMock) NotificationsCalls() []struct {
 
 // ParseRedirectURI calls ParseRedirectURIFunc.
 func (mock *ServiceMock) ParseRedirectURI(rawurl string) (*url.URL, error) {
-	if mock.ParseRedirectURIFunc == nil {
-		panic("ServiceMock.ParseRedirectURIFunc: method is nil but Service.ParseRedirectURI was just called")
-	}
 	callInfo := struct {
 		Rawurl string
 	}{
@@ -1302,6 +1369,13 @@ func (mock *ServiceMock) ParseRedirectURI(rawurl string) (*url.URL, error) {
 	mock.lockParseRedirectURI.Lock()
 	mock.calls.ParseRedirectURI = append(mock.calls.ParseRedirectURI, callInfo)
 	mock.lockParseRedirectURI.Unlock()
+	if mock.ParseRedirectURIFunc == nil {
+		var (
+			uRLOut *url.URL
+			errOut error
+		)
+		return uRLOut, errOut
+	}
 	return mock.ParseRedirectURIFunc(rawurl)
 }
 
@@ -1322,9 +1396,6 @@ func (mock *ServiceMock) ParseRedirectURICalls() []struct {
 
 // Post calls PostFunc.
 func (mock *ServiceMock) Post(ctx context.Context, postID string) (nakama.Post, error) {
-	if mock.PostFunc == nil {
-		panic("ServiceMock.PostFunc: method is nil but Service.Post was just called")
-	}
 	callInfo := struct {
 		Ctx    context.Context
 		PostID string
@@ -1335,6 +1406,13 @@ func (mock *ServiceMock) Post(ctx context.Context, postID string) (nakama.Post, 
 	mock.lockPost.Lock()
 	mock.calls.Post = append(mock.calls.Post, callInfo)
 	mock.lockPost.Unlock()
+	if mock.PostFunc == nil {
+		var (
+			postOut nakama.Post
+			errOut  error
+		)
+		return postOut, errOut
+	}
 	return mock.PostFunc(ctx, postID)
 }
 
@@ -1357,9 +1435,6 @@ func (mock *ServiceMock) PostCalls() []struct {
 
 // PostStream calls PostStreamFunc.
 func (mock *ServiceMock) PostStream(ctx context.Context) (<-chan nakama.Post, error) {
-	if mock.PostStreamFunc == nil {
-		panic("ServiceMock.PostStreamFunc: method is nil but Service.PostStream was just called")
-	}
 	callInfo := struct {
 		Ctx context.Context
 	}{
@@ -1368,6 +1443,13 @@ func (mock *ServiceMock) PostStream(ctx context.Context) (<-chan nakama.Post, er
 	mock.lockPostStream.Lock()
 	mock.calls.PostStream = append(mock.calls.PostStream, callInfo)
 	mock.lockPostStream.Unlock()
+	if mock.PostStreamFunc == nil {
+		var (
+			postChOut <-chan nakama.Post
+			errOut    error
+		)
+		return postChOut, errOut
+	}
 	return mock.PostStreamFunc(ctx)
 }
 
@@ -1388,9 +1470,6 @@ func (mock *ServiceMock) PostStreamCalls() []struct {
 
 // Posts calls PostsFunc.
 func (mock *ServiceMock) Posts(ctx context.Context, last uint64, before *string, opts ...nakama.PostsOpt) (nakama.Posts, error) {
-	if mock.PostsFunc == nil {
-		panic("ServiceMock.PostsFunc: method is nil but Service.Posts was just called")
-	}
 	callInfo := struct {
 		Ctx    context.Context
 		Last   uint64
@@ -1405,6 +1484,13 @@ func (mock *ServiceMock) Posts(ctx context.Context, last uint64, before *string,
 	mock.lockPosts.Lock()
 	mock.calls.Posts = append(mock.calls.Posts, callInfo)
 	mock.lockPosts.Unlock()
+	if mock.PostsFunc == nil {
+		var (
+			postsOut nakama.Posts
+			errOut   error
+		)
+		return postsOut, errOut
+	}
 	return mock.PostsFunc(ctx, last, before, opts...)
 }
 
@@ -1431,9 +1517,6 @@ func (mock *ServiceMock) PostsCalls() []struct {
 
 // SendMagicLink calls SendMagicLinkFunc.
 func (mock *ServiceMock) SendMagicLink(ctx context.Context, email string, redirectURI string) error {
-	if mock.SendMagicLinkFunc == nil {
-		panic("ServiceMock.SendMagicLinkFunc: method is nil but Service.SendMagicLink was just called")
-	}
 	callInfo := struct {
 		Ctx         context.Context
 		Email       string
@@ -1446,6 +1529,12 @@ func (mock *ServiceMock) SendMagicLink(ctx context.Context, email string, redire
 	mock.lockSendMagicLink.Lock()
 	mock.calls.SendMagicLink = append(mock.calls.SendMagicLink, callInfo)
 	mock.lockSendMagicLink.Unlock()
+	if mock.SendMagicLinkFunc == nil {
+		var (
+			errOut error
+		)
+		return errOut
+	}
 	return mock.SendMagicLinkFunc(ctx, email, redirectURI)
 }
 
@@ -1470,9 +1559,6 @@ func (mock *ServiceMock) SendMagicLinkCalls() []struct {
 
 // Timeline calls TimelineFunc.
 func (mock *ServiceMock) Timeline(ctx context.Context, last uint64, before *string) (nakama.Timeline, error) {
-	if mock.TimelineFunc == nil {
-		panic("ServiceMock.TimelineFunc: method is nil but Service.Timeline was just called")
-	}
 	callInfo := struct {
 		Ctx    context.Context
 		Last   uint64
@@ -1485,6 +1571,13 @@ func (mock *ServiceMock) Timeline(ctx context.Context, last uint64, before *stri
 	mock.lockTimeline.Lock()
 	mock.calls.Timeline = append(mock.calls.Timeline, callInfo)
 	mock.lockTimeline.Unlock()
+	if mock.TimelineFunc == nil {
+		var (
+			timelineOut nakama.Timeline
+			errOut      error
+		)
+		return timelineOut, errOut
+	}
 	return mock.TimelineFunc(ctx, last, before)
 }
 
@@ -1509,9 +1602,6 @@ func (mock *ServiceMock) TimelineCalls() []struct {
 
 // TimelineItemStream calls TimelineItemStreamFunc.
 func (mock *ServiceMock) TimelineItemStream(ctx context.Context) (<-chan nakama.TimelineItem, error) {
-	if mock.TimelineItemStreamFunc == nil {
-		panic("ServiceMock.TimelineItemStreamFunc: method is nil but Service.TimelineItemStream was just called")
-	}
 	callInfo := struct {
 		Ctx context.Context
 	}{
@@ -1520,6 +1610,13 @@ func (mock *ServiceMock) TimelineItemStream(ctx context.Context) (<-chan nakama.
 	mock.lockTimelineItemStream.Lock()
 	mock.calls.TimelineItemStream = append(mock.calls.TimelineItemStream, callInfo)
 	mock.lockTimelineItemStream.Unlock()
+	if mock.TimelineItemStreamFunc == nil {
+		var (
+			timelineItemChOut <-chan nakama.TimelineItem
+			errOut            error
+		)
+		return timelineItemChOut, errOut
+	}
 	return mock.TimelineItemStreamFunc(ctx)
 }
 
@@ -1540,9 +1637,6 @@ func (mock *ServiceMock) TimelineItemStreamCalls() []struct {
 
 // ToggleCommentReaction calls ToggleCommentReactionFunc.
 func (mock *ServiceMock) ToggleCommentReaction(ctx context.Context, commentID string, in nakama.ReactionInput) ([]nakama.Reaction, error) {
-	if mock.ToggleCommentReactionFunc == nil {
-		panic("ServiceMock.ToggleCommentReactionFunc: method is nil but Service.ToggleCommentReaction was just called")
-	}
 	callInfo := struct {
 		Ctx       context.Context
 		CommentID string
@@ -1555,6 +1649,13 @@ func (mock *ServiceMock) ToggleCommentReaction(ctx context.Context, commentID st
 	mock.lockToggleCommentReaction.Lock()
 	mock.calls.ToggleCommentReaction = append(mock.calls.ToggleCommentReaction, callInfo)
 	mock.lockToggleCommentReaction.Unlock()
+	if mock.ToggleCommentReactionFunc == nil {
+		var (
+			reactionsOut []nakama.Reaction
+			errOut       error
+		)
+		return reactionsOut, errOut
+	}
 	return mock.ToggleCommentReactionFunc(ctx, commentID, in)
 }
 
@@ -1579,9 +1680,6 @@ func (mock *ServiceMock) ToggleCommentReactionCalls() []struct {
 
 // ToggleFollow calls ToggleFollowFunc.
 func (mock *ServiceMock) ToggleFollow(ctx context.Context, username string) (nakama.ToggleFollowOutput, error) {
-	if mock.ToggleFollowFunc == nil {
-		panic("ServiceMock.ToggleFollowFunc: method is nil but Service.ToggleFollow was just called")
-	}
 	callInfo := struct {
 		Ctx      context.Context
 		Username string
@@ -1592,6 +1690,13 @@ func (mock *ServiceMock) ToggleFollow(ctx context.Context, username string) (nak
 	mock.lockToggleFollow.Lock()
 	mock.calls.ToggleFollow = append(mock.calls.ToggleFollow, callInfo)
 	mock.lockToggleFollow.Unlock()
+	if mock.ToggleFollowFunc == nil {
+		var (
+			toggleFollowOutputOut nakama.ToggleFollowOutput
+			errOut                error
+		)
+		return toggleFollowOutputOut, errOut
+	}
 	return mock.ToggleFollowFunc(ctx, username)
 }
 
@@ -1614,9 +1719,6 @@ func (mock *ServiceMock) ToggleFollowCalls() []struct {
 
 // TogglePostReaction calls TogglePostReactionFunc.
 func (mock *ServiceMock) TogglePostReaction(ctx context.Context, postID string, in nakama.ReactionInput) ([]nakama.Reaction, error) {
-	if mock.TogglePostReactionFunc == nil {
-		panic("ServiceMock.TogglePostReactionFunc: method is nil but Service.TogglePostReaction was just called")
-	}
 	callInfo := struct {
 		Ctx    context.Context
 		PostID string
@@ -1629,6 +1731,13 @@ func (mock *ServiceMock) TogglePostReaction(ctx context.Context, postID string, 
 	mock.lockTogglePostReaction.Lock()
 	mock.calls.TogglePostReaction = append(mock.calls.TogglePostReaction, callInfo)
 	mock.lockTogglePostReaction.Unlock()
+	if mock.TogglePostReactionFunc == nil {
+		var (
+			reactionsOut []nakama.Reaction
+			errOut       error
+		)
+		return reactionsOut, errOut
+	}
 	return mock.TogglePostReactionFunc(ctx, postID, in)
 }
 
@@ -1653,9 +1762,6 @@ func (mock *ServiceMock) TogglePostReactionCalls() []struct {
 
 // TogglePostSubscription calls TogglePostSubscriptionFunc.
 func (mock *ServiceMock) TogglePostSubscription(ctx context.Context, postID string) (nakama.ToggleSubscriptionOutput, error) {
-	if mock.TogglePostSubscriptionFunc == nil {
-		panic("ServiceMock.TogglePostSubscriptionFunc: method is nil but Service.TogglePostSubscription was just called")
-	}
 	callInfo := struct {
 		Ctx    context.Context
 		PostID string
@@ -1666,6 +1772,13 @@ func (mock *ServiceMock) TogglePostSubscription(ctx context.Context, postID stri
 	mock.lockTogglePostSubscription.Lock()
 	mock.calls.TogglePostSubscription = append(mock.calls.TogglePostSubscription, callInfo)
 	mock.lockTogglePostSubscription.Unlock()
+	if mock.TogglePostSubscriptionFunc == nil {
+		var (
+			toggleSubscriptionOutputOut nakama.ToggleSubscriptionOutput
+			errOut                      error
+		)
+		return toggleSubscriptionOutputOut, errOut
+	}
 	return mock.TogglePostSubscriptionFunc(ctx, postID)
 }
 
@@ -1688,9 +1801,6 @@ func (mock *ServiceMock) TogglePostSubscriptionCalls() []struct {
 
 // Token calls TokenFunc.
 func (mock *ServiceMock) Token(ctx context.Context) (nakama.TokenOutput, error) {
-	if mock.TokenFunc == nil {
-		panic("ServiceMock.TokenFunc: method is nil but Service.Token was just called")
-	}
 	callInfo := struct {
 		Ctx context.Context
 	}{
@@ -1699,6 +1809,13 @@ func (mock *ServiceMock) Token(ctx context.Context) (nakama.TokenOutput, error) 
 	mock.lockToken.Lock()
 	mock.calls.Token = append(mock.calls.Token, callInfo)
 	mock.lockToken.Unlock()
+	if mock.TokenFunc == nil {
+		var (
+			tokenOutputOut nakama.TokenOutput
+			errOut         error
+		)
+		return tokenOutputOut, errOut
+	}
 	return mock.TokenFunc(ctx)
 }
 
@@ -1719,9 +1836,6 @@ func (mock *ServiceMock) TokenCalls() []struct {
 
 // UpdateAvatar calls UpdateAvatarFunc.
 func (mock *ServiceMock) UpdateAvatar(ctx context.Context, r io.Reader) (string, error) {
-	if mock.UpdateAvatarFunc == nil {
-		panic("ServiceMock.UpdateAvatarFunc: method is nil but Service.UpdateAvatar was just called")
-	}
 	callInfo := struct {
 		Ctx context.Context
 		R   io.Reader
@@ -1732,6 +1846,13 @@ func (mock *ServiceMock) UpdateAvatar(ctx context.Context, r io.Reader) (string,
 	mock.lockUpdateAvatar.Lock()
 	mock.calls.UpdateAvatar = append(mock.calls.UpdateAvatar, callInfo)
 	mock.lockUpdateAvatar.Unlock()
+	if mock.UpdateAvatarFunc == nil {
+		var (
+			sOut   string
+			errOut error
+		)
+		return sOut, errOut
+	}
 	return mock.UpdateAvatarFunc(ctx, r)
 }
 
@@ -1754,9 +1875,6 @@ func (mock *ServiceMock) UpdateAvatarCalls() []struct {
 
 // UpdateCover calls UpdateCoverFunc.
 func (mock *ServiceMock) UpdateCover(ctx context.Context, r io.Reader) (string, error) {
-	if mock.UpdateCoverFunc == nil {
-		panic("ServiceMock.UpdateCoverFunc: method is nil but Service.UpdateCover was just called")
-	}
 	callInfo := struct {
 		Ctx context.Context
 		R   io.Reader
@@ -1767,6 +1885,13 @@ func (mock *ServiceMock) UpdateCover(ctx context.Context, r io.Reader) (string, 
 	mock.lockUpdateCover.Lock()
 	mock.calls.UpdateCover = append(mock.calls.UpdateCover, callInfo)
 	mock.lockUpdateCover.Unlock()
+	if mock.UpdateCoverFunc == nil {
+		var (
+			sOut   string
+			errOut error
+		)
+		return sOut, errOut
+	}
 	return mock.UpdateCoverFunc(ctx, r)
 }
 
@@ -1789,9 +1914,6 @@ func (mock *ServiceMock) UpdateCoverCalls() []struct {
 
 // UpdateUser calls UpdateUserFunc.
 func (mock *ServiceMock) UpdateUser(ctx context.Context, params nakama.UpdateUserParams) error {
-	if mock.UpdateUserFunc == nil {
-		panic("ServiceMock.UpdateUserFunc: method is nil but Service.UpdateUser was just called")
-	}
 	callInfo := struct {
 		Ctx    context.Context
 		Params nakama.UpdateUserParams
@@ -1802,6 +1924,12 @@ func (mock *ServiceMock) UpdateUser(ctx context.Context, params nakama.UpdateUse
 	mock.lockUpdateUser.Lock()
 	mock.calls.UpdateUser = append(mock.calls.UpdateUser, callInfo)
 	mock.lockUpdateUser.Unlock()
+	if mock.UpdateUserFunc == nil {
+		var (
+			errOut error
+		)
+		return errOut
+	}
 	return mock.UpdateUserFunc(ctx, params)
 }
 
@@ -1824,9 +1952,6 @@ func (mock *ServiceMock) UpdateUserCalls() []struct {
 
 // User calls UserFunc.
 func (mock *ServiceMock) User(ctx context.Context, username string) (nakama.UserProfile, error) {
-	if mock.UserFunc == nil {
-		panic("ServiceMock.UserFunc: method is nil but Service.User was just called")
-	}
 	callInfo := struct {
 		Ctx      context.Context
 		Username string
@@ -1837,6 +1962,13 @@ func (mock *ServiceMock) User(ctx context.Context, username string) (nakama.User
 	mock.lockUser.Lock()
 	mock.calls.User = append(mock.calls.User, callInfo)
 	mock.lockUser.Unlock()
+	if mock.UserFunc == nil {
+		var (
+			userProfileOut nakama.UserProfile
+			errOut         error
+		)
+		return userProfileOut, errOut
+	}
 	return mock.UserFunc(ctx, username)
 }
 
@@ -1859,9 +1991,6 @@ func (mock *ServiceMock) UserCalls() []struct {
 
 // Usernames calls UsernamesFunc.
 func (mock *ServiceMock) Usernames(ctx context.Context, startingWith string, first uint64, after *string) (nakama.Usernames, error) {
-	if mock.UsernamesFunc == nil {
-		panic("ServiceMock.UsernamesFunc: method is nil but Service.Usernames was just called")
-	}
 	callInfo := struct {
 		Ctx          context.Context
 		StartingWith string
@@ -1876,6 +2005,13 @@ func (mock *ServiceMock) Usernames(ctx context.Context, startingWith string, fir
 	mock.lockUsernames.Lock()
 	mock.calls.Usernames = append(mock.calls.Usernames, callInfo)
 	mock.lockUsernames.Unlock()
+	if mock.UsernamesFunc == nil {
+		var (
+			usernamesOut nakama.Usernames
+			errOut       error
+		)
+		return usernamesOut, errOut
+	}
 	return mock.UsernamesFunc(ctx, startingWith, first, after)
 }
 
@@ -1902,9 +2038,6 @@ func (mock *ServiceMock) UsernamesCalls() []struct {
 
 // Users calls UsersFunc.
 func (mock *ServiceMock) Users(ctx context.Context, search string, first uint64, after *string) (nakama.UserProfiles, error) {
-	if mock.UsersFunc == nil {
-		panic("ServiceMock.UsersFunc: method is nil but Service.Users was just called")
-	}
 	callInfo := struct {
 		Ctx    context.Context
 		Search string
@@ -1919,6 +2052,13 @@ func (mock *ServiceMock) Users(ctx context.Context, search string, first uint64,
 	mock.lockUsers.Lock()
 	mock.calls.Users = append(mock.calls.Users, callInfo)
 	mock.lockUsers.Unlock()
+	if mock.UsersFunc == nil {
+		var (
+			userProfilesOut nakama.UserProfiles
+			errOut          error
+		)
+		return userProfilesOut, errOut
+	}
 	return mock.UsersFunc(ctx, search, first, after)
 }
 
@@ -1945,9 +2085,6 @@ func (mock *ServiceMock) UsersCalls() []struct {
 
 // VerifyMagicLink calls VerifyMagicLinkFunc.
 func (mock *ServiceMock) VerifyMagicLink(ctx context.Context, email string, code string, username *string) (nakama.AuthOutput, error) {
-	if mock.VerifyMagicLinkFunc == nil {
-		panic("ServiceMock.VerifyMagicLinkFunc: method is nil but Service.VerifyMagicLink was just called")
-	}
 	callInfo := struct {
 		Ctx      context.Context
 		Email    string
@@ -1962,6 +2099,13 @@ func (mock *ServiceMock) VerifyMagicLink(ctx context.Context, email string, code
 	mock.lockVerifyMagicLink.Lock()
 	mock.calls.VerifyMagicLink = append(mock.calls.VerifyMagicLink, callInfo)
 	mock.lockVerifyMagicLink.Unlock()
+	if mock.VerifyMagicLinkFunc == nil {
+		var (
+			authOutputOut nakama.AuthOutput
+			errOut        error
+		)
+		return authOutputOut, errOut
+	}
 	return mock.VerifyMagicLinkFunc(ctx, email, code, username)
 }
 
