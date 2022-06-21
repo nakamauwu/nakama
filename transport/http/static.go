@@ -15,6 +15,7 @@ import (
 	"syscall"
 
 	"github.com/matryer/way"
+
 	"github.com/nakamauwu/nakama"
 	"github.com/nakamauwu/nakama/web"
 )

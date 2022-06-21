@@ -21,6 +21,11 @@ import (
 	"github.com/gorilla/securecookie"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	"github.com/nats-io/nats.go"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/endpoints"
+
 	"github.com/nakamauwu/nakama"
 	"github.com/nakamauwu/nakama/mailing"
 	natspubsub "github.com/nakamauwu/nakama/pubsub/nats"
@@ -29,10 +34,6 @@ import (
 	s3storage "github.com/nakamauwu/nakama/storage/s3"
 	"github.com/nakamauwu/nakama/transport"
 	httptransport "github.com/nakamauwu/nakama/transport/http"
-	"github.com/nats-io/nats.go"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/endpoints"
 )
 
 func main() {

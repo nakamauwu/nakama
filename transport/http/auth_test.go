@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/go-kit/log"
+
 	"github.com/nakamauwu/nakama"
 	"github.com/nakamauwu/nakama/testutil"
 	"github.com/nakamauwu/nakama/transport"

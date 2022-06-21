@@ -7,9 +7,10 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/nakamauwu/nakama"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
+	"github.com/nakamauwu/nakama"
 )
 
 var (

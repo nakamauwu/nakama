@@ -7,6 +7,7 @@ import (
 	"github.com/go-kit/log"
 	"github.com/gorilla/securecookie"
 	"github.com/matryer/way"
+
 	"github.com/nakamauwu/nakama/storage"
 	"github.com/nakamauwu/nakama/transport"
 )

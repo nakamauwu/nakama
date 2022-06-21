@@ -15,9 +15,10 @@ import (
 
 	"github.com/go-kit/log/level"
 	"github.com/hybridtheory/samesite-cookie-support"
+	"golang.org/x/oauth2"
+
 	"github.com/nakamauwu/nakama"
 	webtemplate "github.com/nakamauwu/nakama/web"
-	"golang.org/x/oauth2"
 )
 
 const oauth2Timeout = time.Minute * 2

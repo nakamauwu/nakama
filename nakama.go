@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/go-kit/log"
+
 	"github.com/nakamauwu/nakama/mailing"
 	"github.com/nakamauwu/nakama/pubsub"
 	"github.com/nakamauwu/nakama/storage"

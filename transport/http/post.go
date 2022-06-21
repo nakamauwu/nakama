@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/matryer/way"
+
 	"github.com/nakamauwu/nakama"
 )
 
