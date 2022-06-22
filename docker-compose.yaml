@@ -58,7 +58,7 @@ services:
 
   cockroach:
     image: "cockroachdb/cockroach:latest"
-    command: "start-single-node --insecure --listen-addr=0.0.0.0 --log-file-verbosity=NONE --logtostderr=ERROR"
+    command: "start-single-node --insecure --listen-addr=127.0.0.1 --log-file-verbosity=NONE --logtostderr=ERROR"
     volumes:
       - "./cockroach-data:/cockroach/cockroach-data"
     expose:
