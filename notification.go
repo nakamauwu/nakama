@@ -203,6 +203,8 @@ func (s *Service) MarkNotificationsAsRead(ctx context.Context) error {
 func (s *Service) notifyFollow(followerID, followeeID string) {
 	ctx := context.Background()
 	var n Notification
+	var notified bool
+
 	err := crdb.ExecuteTx(ctx, s.DB, nil, func(tx *sql.Tx) error {
 		var actor string
 		query := "SELECT username FROM users WHERE id = $1"
@@ -211,7 +213,6 @@ func (s *Service) notifyFollow(followerID, followeeID string) {
 			return fmt.Errorf("could not query select follow notification actor: %w", err)
 		}
 
-		var notified bool
 		query = `SELECT EXISTS (
 			SELECT 1 FROM notifications
 			WHERE user_id = $1
@@ -272,7 +273,9 @@ func (s *Service) notifyFollow(followerID, followeeID string) {
 		return
 	}
 
-	go s.broadcastNotification(n)
+	if !notified {
+		go s.broadcastNotification(n)
+	}
 }
 
 func (s *Service) notifyComment(c Comment) {
