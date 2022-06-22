@@ -1,6 +1,6 @@
-import { component, html, useCallback, useEffect, useState } from "haunted"
-import { nothing } from "lit-html"
-import { ifDefined } from "lit-html/directives/if-defined.js"
+import { component, useEffect, useState } from "haunted"
+import { html } from "lit"
+import { ifDefined } from "lit/directives/if-defined.js"
 import { request } from "../http.js"
 import "./toast-item.js"
 
@@ -16,7 +16,7 @@ function UserFollowBtn({ user: initialUser }) {
         }))
     }
 
-    const onClick = useCallback(() => {
+    const onClick = () => {
         setFetching(true)
         toggleFollow(user.username).then(payload => {
             setUser(u => ({ ...u, ...payload }))
@@ -28,14 +28,14 @@ function UserFollowBtn({ user: initialUser }) {
         }).finally(() => {
             setFetching(false)
         })
-    }, [user])
+    }
 
     useEffect(() => {
         setUser(initialUser)
     }, [initialUser])
 
     if (user.me) {
-        return nothing
+        return null
     }
 
     return html`
@@ -47,7 +47,7 @@ function UserFollowBtn({ user: initialUser }) {
             `}
             <span>${user.following ? "Following" : "Follow"}</span>
         </button>
-        ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : nothing}
+        ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : null}
     `
 }
 

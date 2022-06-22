@@ -1,10 +1,10 @@
 import { Textcomplete } from "@textcomplete/core"
 import { TextareaEditor } from "@textcomplete/textarea"
-import { component, html, useCallback, useEffect, useRef, useState } from "haunted"
-import { nothing } from "lit-html"
-import { repeat } from "lit-html/directives/repeat.js"
+import { component, useEffect, useState } from "haunted"
+import { html } from "lit"
+import { createRef, ref } from "lit/directives/ref.js"
+import { repeat } from "lit/directives/repeat.js"
 import { authStore, useStore } from "../ctx.js"
-import { ref } from "../directives/ref.js"
 import { request, subscribe } from "../http.js"
 import { navigate } from "../router.js"
 import "./post-item.js"
@@ -29,7 +29,7 @@ function PostPage({ postID }) {
     const [queue, setQueue] = useState([])
     const [toast, setToast] = useState(null)
 
-    const onCommentCreated = useCallback(ev => {
+    const onCommentCreated = ev => {
         const payload = ev.detail
         setPost(p => ({
             ...p,
@@ -37,36 +37,36 @@ function PostPage({ postID }) {
         }))
         setComments(cc => [payload, ...queue, ...cc])
         setQueue([])
-    }, [queue])
+    }
 
-    const onNewCommentArrive = useCallback(c => {
+    const onNewCommentArrive = c => {
         setQueue(cc => [c, ...cc])
         setPost(p => ({
             ...p,
             commentsCount: p.commentsCount + 1,
         }))
-    }, [])
+    }
 
-    const onPostDeleted = useCallback(() => {
+    const onPostDeleted = () => {
         navigate("/", true)
         setToast({ type: "success", content: "post deleted" })
-    }, [])
+    }
 
-    const onCommentDeleted = useCallback(ev => {
+    const onCommentDeleted = ev => {
         const payload = ev.detail
         setComments(cc => cc.filter(c => c.id !== payload.id))
         setPost(p => ({
             ...p,
             commentsCount: p.commentsCount - 1,
         }))
-    }, [])
+    }
 
-    const onQueueBtnClick = useCallback(() => {
+    const onQueueBtnClick = () => {
         setComments(cc => [...queue, ...cc])
         setQueue([])
-    }, [queue])
+    }
 
-    const onLoadMoreBtnClick = useCallback(() => {
+    const onLoadMoreBtnClick = () => {
         if (loadingMore || noMoreComments) {
             return
         }
@@ -86,7 +86,7 @@ function PostPage({ postID }) {
         }).finally(() => {
             setLoadingMore(false)
         })
-    }, [loadingMore, noMoreComments, postID, commentsEndCursor])
+    }
 
     useEffect(() => {
         setFetching(true)
@@ -135,21 +135,21 @@ function PostPage({ postID }) {
                             <button class="load-more-comments-btn" .disabled=${loadingMore} @click=${onLoadMoreBtnClick}>
                                 ${loadingMore ? "Loading previous..." : "Load previous"}
                             </button>
-                        ` : nothing}
+                        ` : null}
                         <div class="comments" role="feed">
                             ${repeat(comments.slice().reverse(), c => c.id, c => html`<post-item .post=${c} .type=${"comment"} @resource-deleted=${onCommentDeleted}></post-item>`)}
                         </div>
                     `}
                     ${auth !== null ? html`
                         <comment-form .postID=${postID} @comment-created=${onCommentCreated}></comment-form>
-                    ` : nothing}
+                    ` : null}
                     ${queue.length !== 0 ? html`
                         <button class="queue-btn" @click=${onQueueBtnClick}>${queue.length} new comments</button>
-                ` : nothing}
+                ` : null}
                 `}
             </div>
         </main>
-        ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : nothing}
+        ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : null}
     `
 }
 
@@ -163,14 +163,14 @@ function CommentForm({ postID }) {
     const [content, setContent] = useState("")
     const [fetching, setFetching] = useState(false)
     const [initialTextAreaHeight, setInitialTextAreaHeight] = useState(0)
-    const textAreaRef = useRef(null)
+    const textAreaRef = /** @type {import("lit/directives/ref.js").Ref<HTMLTextAreaElement>} */(createRef())
     const [toast, setToast] = useState(null)
 
     const dispatchCommentCreated = payload => {
         this.dispatchEvent(new CustomEvent("comment-created", { bubbles: true, detail: payload }))
     }
 
-    const onSubmit = useCallback(ev => {
+    const onSubmit = ev => {
         ev.preventDefault()
 
         setFetching(true)
@@ -178,7 +178,9 @@ function CommentForm({ postID }) {
             comment.user = auth.user
             dispatchCommentCreated(comment)
             setContent("")
-            textAreaRef.current.style.height = initialTextAreaHeight + "px"
+            if (textAreaRef.value !== undefined) {
+                textAreaRef.value.style.height = initialTextAreaHeight + "px"
+            }
         }, err => {
             const msg = "could not create comment: " + err.message
             console.error(msg)
@@ -186,23 +188,30 @@ function CommentForm({ postID }) {
         }).finally(() => {
             setFetching(false)
         })
-    }, [postID, content, initialTextAreaHeight, textAreaRef, auth])
+    }
 
-    const onTextAreaInput = useCallback(() => {
-        setContent(textAreaRef.current.value)
-
-        textAreaRef.current.style.height = initialTextAreaHeight + "px"
-        if (textAreaRef.current.value !== "") {
-            textAreaRef.current.style.height = Math.max(textAreaRef.current.scrollHeight, initialTextAreaHeight) + "px"
-        }
-    }, [content, initialTextAreaHeight, textAreaRef])
-
-    useEffect(() => {
-        if (textAreaRef.current === null) {
+    const onTextAreaInput = () => {
+        if (textAreaRef.value === undefined) {
             return
         }
 
-        const editor = new TextareaEditor(textAreaRef.current)
+        const el = /** @type {HTMLTextAreaElement} */(textAreaRef.value)
+
+        setContent(el.value)
+
+        el.style.height = initialTextAreaHeight + "px"
+        if (el.value !== "") {
+            el.style.height = Math.max(el.scrollHeight, initialTextAreaHeight) + "px"
+        }
+    }
+
+    useEffect(() => {
+        if (textAreaRef.value === undefined) {
+            return
+        }
+
+        const el = /** @type {HTMLTextAreaElement} */(textAreaRef.value)
+        const editor = new TextareaEditor(el)
         const textcomplete = new Textcomplete(editor, [{
             match: reMention,
             search: async (term, cb) => {
@@ -214,24 +223,24 @@ function CommentForm({ postID }) {
             replace: username => `@${username} `,
         }])
 
-        setInitialTextAreaHeight(textAreaRef.current.scrollHeight)
+        setInitialTextAreaHeight(el.scrollHeight)
 
         return () => {
             textcomplete.destroy()
         }
-    }, [])
+    }, [textAreaRef.value])
 
     return html`
         <form class="comment-form${content !== "" ? " has-content" : ""}" name="comment-form" @submit=${onSubmit}>
-            <textarea name="content" placeholder="Say something..." maxlenght="2048" aria-label="Content" required .disabled=${fetching} .value=${content} .ref=${ref(textAreaRef)} @input=${onTextAreaInput}></textarea>
+            <textarea name="content" placeholder="Say something..." maxlenght="2048" aria-label="Content" required .disabled=${fetching} .value=${content} ${ref(textAreaRef)} @input=${onTextAreaInput}></textarea>
             ${content !== "" ? html`
                 <button .disabled=${fetching}>
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g data-name="Layer 2"><g data-name="paper-plane"><rect width="24" height="24" opacity="0"/><path d="M21 4a1.31 1.31 0 0 0-.06-.27v-.09a1 1 0 0 0-.2-.3 1 1 0 0 0-.29-.19h-.09a.86.86 0 0 0-.31-.15H20a1 1 0 0 0-.3 0l-18 6a1 1 0 0 0 0 1.9l8.53 2.84 2.84 8.53a1 1 0 0 0 1.9 0l6-18A1 1 0 0 0 21 4zm-4.7 2.29l-5.57 5.57L5.16 10zM14 18.84l-1.86-5.57 5.57-5.57z"/></g></g></svg>
                     <span>Comment</button>
                 </button>
-            ` : nothing}
+            ` : null}
         </form>
-        ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : nothing}
+        ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : null}
     `
 }
 

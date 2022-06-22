@@ -1,5 +1,5 @@
-import { component, html, useCallback, useEffect, useState } from "haunted"
-import { nothing } from "lit-html"
+import { component, useEffect, useState } from "haunted"
+import { html } from "lit"
 import { translate } from "lit-translate"
 import { setLocalAuth } from "../auth.js"
 import { authStore, useStore } from "../ctx.js"
@@ -15,7 +15,7 @@ function AccessCallbackPage() {
     const [retryEndpoint, setRetryEndpoint] = useState(/** @type {URL|null} */(null))
     const [username, setUsername] = useState("")
 
-    const onUsernameFormSubmit = useCallback(ev => {
+    const onUsernameFormSubmit = ev => {
         ev.preventDefault()
 
         if (retryEndpoint === null) {
@@ -24,11 +24,11 @@ function AccessCallbackPage() {
 
         retryEndpoint.searchParams.set("username", username)
         location.replace(retryEndpoint.toString())
-    }, [retryEndpoint, username])
+    }
 
-    const onUsernameInput = useCallback(ev => {
+    const onUsernameInput = ev => {
         setUsername(ev.currentTarget.value)
-    }, [])
+    }
 
     useEffect(() => {
         const data = new URLSearchParams(location.hash.substr(1))
@@ -79,14 +79,14 @@ function AccessCallbackPage() {
                 <p class="error" role="alert">${translate("accessCallbackPage.err")} ${translate(err.name)}</p>
                 ${!isRetriableError(err) ? html`
                     <a href="/">${translate("accessCallbackPage.goHome")}</a>
-                ` : nothing}
-            ` : nothing}
+                ` : null}
+            ` : null}
             ${retryEndpoint !== null ? html`
                 <form class="username-form" @submit=${onUsernameFormSubmit}>
                     <input type="text" name="username" placeholder="${translate("accessCallbackPage.usernamePlaceholder")}" pattern="^[a-zA-Z][a-zA-Z0-9_-]{0,17}$" autofocus .value=${username} @input=${onUsernameInput}>
                     <button>${translate("accessCallbackPage.createAccountBtn")}</button>
                 </form>
-            ` : nothing}
+            ` : null}
         </main>
     `
 }

@@ -1,15 +1,16 @@
-import { component, html, useEffect, useRef } from "haunted"
-import { ref } from "../directives/ref.js"
+import { component, useEffect } from "haunted"
+import { html } from "lit"
+import { createRef, ref } from "lit/directives/ref.js"
 
 function IntersectableComp() {
-    const nodeRef = useRef(null)
+    const nodeRef = createRef()
 
     const dispatchIsIntersecting = () => {
         this.dispatchEvent(new CustomEvent("is-intersecting", { bubbles: true }))
     }
 
     useEffect(() => {
-        if (nodeRef.current === null) {
+        if (nodeRef.value === undefined) {
             return
         }
 
@@ -21,13 +22,13 @@ function IntersectableComp() {
             dispatchIsIntersecting()
         })
 
-        obs.observe(nodeRef.current)
+        obs.observe(nodeRef.value)
         return () => {
             obs.disconnect()
         }
-    }, [nodeRef])
+    }, [nodeRef.value])
 
-    return html`<div .ref=${ref(nodeRef)}></div>`
+    return html`<div ${ref(nodeRef)}></div>`
 }
 
 customElements.define("intersectable-comp", component(IntersectableComp, { useShadowDOM: false }))

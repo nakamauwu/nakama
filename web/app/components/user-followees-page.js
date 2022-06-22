@@ -1,6 +1,6 @@
-import { component, html, useCallback, useEffect, useState } from "haunted"
-import { nothing } from "lit-html"
-import { repeat } from "lit-html/directives/repeat.js"
+import { component, useEffect, useState } from "haunted"
+import { html } from "lit"
+import { repeat } from "lit/directives/repeat.js"
 import { request } from "../http.js"
 import "./intersectable-comp.js"
 import "./toast-item.js"
@@ -22,7 +22,7 @@ function UserFolloweesPage({ username }) {
     const [endReached, setEndReached] = useState(false)
     const [toast, setToast] = useState(null)
 
-    const loadMore = useCallback(() => {
+    const loadMore = () => {
         if (loadingMore || noMoreUsers) {
             return
         }
@@ -43,7 +43,7 @@ function UserFolloweesPage({ username }) {
         }).finally(() => {
             setLoadingMore(false)
         })
-    }, [loadingMore, noMoreUsers, username, usersEndCursor])
+    }
 
     useEffect(() => {
         setFetching(true)
@@ -81,11 +81,11 @@ function UserFolloweesPage({ username }) {
                         <p class="loader" aria-busy="true" aria-live="polite">Loading users... please wait.<p>
                     ` : endReached ? html`
                         <p>End reached.</p>
-                    ` : nothing}
+                    ` : null}
                 `}
             `}
         </main>
-        ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : nothing}
+        ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : null}
     `
 }
 

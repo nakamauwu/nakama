@@ -1,5 +1,5 @@
-import { component, html, useCallback, useState } from "haunted"
-import { nothing } from "lit-html"
+import { component, useState } from "haunted"
+import { html } from "lit"
 import { get as getTranslation, translate } from "lit-translate"
 import { setLocalAuth } from "../auth.js"
 import { authStore, useStore } from "../ctx.js"
@@ -24,7 +24,7 @@ function LoginForm() {
     const [fetching, setFetching] = useState(false)
     const [toast, setToast] = useState(null)
 
-    const onSubmit = useCallback(ev => {
+    const onSubmit = ev => {
         ev.preventDefault()
 
         setFetching(true)
@@ -51,11 +51,11 @@ function LoginForm() {
         }).finally(() => {
             setFetching(false)
         })
-    }, [email])
+    }
 
-    const onEmailInput = useCallback(ev => {
+    const onEmailInput = ev => {
         setEmail(ev.currentTarget.value)
-    }, [])
+    }
 
     return html`
         <form class="access-form" @submit=${onSubmit}>
@@ -109,7 +109,7 @@ function LoginForm() {
                 <p>${translate("loginForm.signinHelp.summary")}</p>
             </div>
         </div>
-        ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : nothing}
+        ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : null}
     `
 }
 

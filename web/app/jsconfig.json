@@ -1,8 +1,8 @@
 {
     "compilerOptions": {
         "checkJs": true,
-        "module": "esnext",
-        "target": "esnext",
+        "module": "ESNext",
+        "target": "ESNext",
         "moduleResolution": "node"
     },
     "exclude": [

@@ -1,4 +1,5 @@
-import { component, html } from "haunted"
+import { component } from "haunted"
+import { html } from "lit"
 
 function UserFollowCounts({ user }) {
     return html`

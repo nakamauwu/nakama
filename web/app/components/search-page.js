@@ -1,6 +1,6 @@
-import { component, html, useCallback, useEffect, useState } from "haunted"
-import { nothing } from "lit-html"
-import { repeat } from "lit-html/directives/repeat.js"
+import { component, useEffect, useState } from "haunted"
+import { html } from "lit"
+import { repeat } from "lit/directives/repeat.js"
 import { request } from "../http.js"
 import "./intersectable-comp.js"
 import "./toast-item.js"
@@ -22,13 +22,13 @@ function SearchPage() {
     const [endReached, setEndReached] = useState(false)
     const [toast, setToast] = useState(null)
 
-    const onNewResults = useCallback(ev => {
+    const onNewResults = ev => {
         const { items: users, endCursor } = ev.detail
         setUsers(users)
         setUsersEndCursor(endCursor)
-    }, [])
+    }
 
-    const loadMore = useCallback(() => {
+    const loadMore = () => {
         if (loadingMore || noMoreUsers) {
             return
         }
@@ -49,7 +49,7 @@ function SearchPage() {
         }).finally(() => {
             setLoadingMore(false)
         })
-    }, [loadingMore, noMoreUsers, usersEndCursor])
+    }
 
     useEffect(() => {
         setFetching(true)
@@ -88,11 +88,11 @@ function SearchPage() {
                         <p class="loader" aria-busy="true" aria-live="polite">Loading users... please wait.<p>
                     ` : endReached ? html`
                         <p>End reached.</p>
-                    ` : nothing}
+                    ` : null}
                 `}
             `}
         </main>
-        ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : nothing}
+        ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : null}
     `
 }
 
@@ -107,7 +107,7 @@ function SearchForm() {
         this.dispatchEvent(new CustomEvent("new-results", { bubbles: true, detail: payload }))
     }
 
-    const onSubmit = useCallback(ev => {
+    const onSubmit = ev => {
         ev.preventDefault()
         history.pushState(history.state, document.title, "/search?q=" + encodeURIComponent(searchQuery))
         setFetching(true)
@@ -118,17 +118,17 @@ function SearchForm() {
         }).finally(() => {
             setFetching(false)
         })
-    }, [searchQuery])
+    }
 
-    const onInput = useCallback(ev => {
+    const onInput = ev => {
         setSearchQuery(ev.currentTarget.value)
-    }, [])
+    }
 
     return html`
         <form @submit=${onSubmit}>
             <input type="search" name="q" placeholder="Search..." required .value=${searchQuery} .disabled=${fetching} @input=${onInput}>
         </form>
-        ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : nothing}
+        ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : null}
     `
 }
 

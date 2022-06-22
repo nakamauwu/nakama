@@ -1,6 +1,6 @@
-import { component, html, useCallback, useEffect, useState } from "haunted"
-import { nothing } from "lit-html"
-import { ifDefined } from "lit-html/directives/if-defined.js"
+import { component, useEffect, useState } from "haunted"
+import { html } from "lit"
+import { ifDefined } from "lit/directives/if-defined.js"
 import { authStore, hasUnreadNotificationsStore, notificationsEnabledStore, useStore } from "../ctx.js"
 import { request, subscribe } from "../http.js"
 import { Avatar } from "./avatar.js"
@@ -13,7 +13,7 @@ function AppHeader() {
     const [notificationsEnabled] = useStore(notificationsEnabledStore)
     const [activePath, setActivePath] = useState(location.pathname)
 
-    const onNewNotificationArrive = useCallback(n => {
+    const onNewNotificationArrive = n => {
         if (viewingNotificationPage(n)) {
             markNotificationAsRead(n.id).then(() => {
                 n.read = true
@@ -30,17 +30,25 @@ function AppHeader() {
         if (notificationsEnabled) {
             showNotification(n)
         }
-    }, [notificationsEnabled])
+    }
 
-    const onLinkClick = useCallback(ev => {
+    const onLinkClick = ev => {
         if (location.href === ev.currentTarget.href) {
             document.documentElement.scrollTop = 0
         }
-    }, [])
+    }
 
-    const onNavigation = useCallback(() => {
+    const onNavigation = () => {
         setActivePath(location.pathname)
-    }, [])
+    }
+
+    const onNotificationRead = () => {
+        fetchHasUnreadNotifications().then(v => {
+            setHasUnreadNotifications(v)
+        }, err => {
+            console.error("could not fetch has unread notifications:", err)
+        })
+    }
 
     useEffect(() => {
         if (auth === null) {
@@ -56,25 +64,17 @@ function AppHeader() {
         return subscribeToNotifications(onNewNotificationArrive)
     }, [auth])
 
-    const onNotificationRead = useCallback(() => {
-        fetchHasUnreadNotifications().then(v => {
-            setHasUnreadNotifications(v)
-        }, err => {
-            console.error("could not fetch has unread notifications:", err)
-        })
-    }, [])
-
     useEffect(() => {
         if (!("setAppBadge" in navigator && "clearAppBadge" in navigator)) {
             return
         }
 
         if (hasUnreadNotifications) {
-            navigator.setAppBadge()
+            navigator["setAppBadge"]()
             return
         }
 
-        navigator.clearAppBadge()
+        navigator["clearAppBadge"]()
     }, [hasUnreadNotifications])
 
     useEffect(() => {
@@ -113,7 +113,7 @@ function AppHeader() {
                     </li>
                     ${auth !== null ? html`
                     <li>
-                        <a href="/notifications" class="btn${hasUnreadNotifications ? " has-unread-notifications" : "" }"
+                        <a href="/notifications" class="btn${hasUnreadNotifications ? " has-unread-notifications" : ""}"
                             title="Notifications" aria-current="${isCurrentPage("/notifications")}" @click=${onLinkClick}>
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                                 <g data-name="Layer 2">
@@ -126,7 +126,7 @@ function AppHeader() {
                             </svg>
                         </a>
                     </li>
-                    ` : nothing}
+                    ` : null}
                     <li>
                         <a href="/search" class="btn" title="Search" aria-current="${isCurrentPage("/search")}"
                             @click=${onLinkClick}>
@@ -148,7 +148,7 @@ function AppHeader() {
                             ${Avatar(auth.user)}
                         </a>
                     </li>
-                    ` : nothing}
+                    ` : null}
                 </ul>
             </nav>
         </header>

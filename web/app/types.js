@@ -34,7 +34,7 @@
  * @typedef Post
  * @prop {string} id
  * @prop {string} content
- * @prop {boolean} NSFW
+ * @prop {boolean} nsfw
  * @prop {string=} spoilerOf
  * @prop {ReactionCount[]} reactions
  * @prop {number} commentsCount

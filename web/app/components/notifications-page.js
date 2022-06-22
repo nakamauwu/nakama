@@ -1,6 +1,6 @@
-import { component, html, useCallback, useEffect, useState } from "haunted"
-import { nothing } from "lit-html"
-import { repeat } from "lit-html/directives/repeat.js"
+import { component, useEffect, useState } from "haunted"
+import { html } from "lit"
+import { repeat } from "lit/directives/repeat.js"
 import { setLocalAuth } from "../auth.js"
 import { authStore, hasUnreadNotificationsStore, notificationsEnabledStore, setLocalNotificationsEnabled, useStore } from "../ctx.js"
 import { request } from "../http.js"
@@ -30,12 +30,12 @@ function NotificationsPage() {
     const [__, setHasUnreadNotifications] = useStore(hasUnreadNotificationsStore)
     const [toast, setToast] = useState(null)
 
-    const onNotifyInputChange = useCallback(ev => {
+    const onNotifyInputChange = ev => {
         ev.currentTarget.checked = false
         setNotificationsEnabled(v => !v)
-    }, [])
+    }
 
-    const onNewNotificationArrive = useCallback(n => {
+    const onNewNotificationArrive = n => {
         setNotifications(nn => {
             if (nn.findIndex(notif => notif.id === n.id) === -1) {
                 setQueue(nn => [n, ...nn])
@@ -47,14 +47,14 @@ function NotificationsPage() {
                 ...n,
             }) : notif)
         })
-    }, [])
+    }
 
-    const onQueueBtnClick = useCallback(() => {
+    const onQueueBtnClick = () => {
         setNotifications(nn => [...queue, ...nn])
         setQueue([])
-    }, [queue])
+    }
 
-    const loadMore = useCallback(() => {
+    const loadMore = () => {
         if (loadingMore || noMoreNotifications) {
             return
         }
@@ -75,9 +75,9 @@ function NotificationsPage() {
         }).finally(() => {
             setLoadingMore(false)
         })
-    }, [loadingMore, noMoreNotifications, notificationsEndCursor])
+    }
 
-    const onReadAllBtnClick = useCallback(() => {
+    const onReadAllBtnClick = () => {
         setMarkingAllAsRead(true)
         markAllNotificationsAsRead().then(() => {
             setNotifications(nn => nn.map(n => ({
@@ -92,12 +92,12 @@ function NotificationsPage() {
         }).finally(() => {
             setMarkingAllAsRead(false)
         })
-    }, [])
+    }
 
-    const onNotificationRead = useCallback(ev => {
+    const onNotificationRead = ev => {
         const { id: notificationID } = ev.detail
         setNotifications(nn => nn.map(n => n.id === notificationID ? ({ ...n, read: true }) : n))
-    }, [])
+    }
 
     useEffect(() => {
         if (notificationsEnabled && typeof window.Notification === "undefined") {
@@ -152,6 +152,8 @@ function NotificationsPage() {
                         userVisibleOnly: true,
                     }).then(sub => {
                         addWebPushSubscription(sub).catch(addWebPushSubscriptionErrorHandler)
+                    }).catch(() => {
+                        setNotificationsEnabled(false)
                     })
                     return
                 }
@@ -205,7 +207,7 @@ function NotificationsPage() {
                             @change=${onNotifyInputChange}>
                         <span>Notify?</span>
                     </label>
-                    ` : nothing}
+                    ` : null}
                     <button .disabled=${markingAllAsRead} @click=${onReadAllBtnClick}>
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                             <g data-name="Layer 2">
@@ -229,7 +231,7 @@ function NotificationsPage() {
                     ` : html`
                     ${queue.length !== 0 ? html`
                     <button class="queue-btn" @click=${onQueueBtnClick}>${queue.length} new notifications</button>
-                    ` : nothing}
+                    ` : null}
                     ${notifications.length === 0 ? html`
                     <p>0 notifications</p>
                     ` : html`
@@ -242,17 +244,15 @@ function NotificationsPage() {
                     <p class="loader" aria-busy="true" aria-live="polite">Loading notifications... please wait.<p>
                             ` : endReached ? html`
                             <p>End reached.</p>
-                            ` : nothing}
+                            ` : null}
                             `}
                             `}
         </main>
-        ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : nothing}
+        ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : null}
     `
 }
 
 customElements.define("notifications-page", component(NotificationsPage, { useShadowDOM: false }))
-
-
 
 function NotificationItem({ notification: initialNotification }) {
     const [_, setHasUnreadNotifications] = useStore(hasUnreadNotificationsStore)
@@ -292,7 +292,7 @@ function NotificationItem({ notification: initialNotification }) {
         }
     }
 
-    const onClick = useCallback(() => {
+    const onClick = () => {
         setFetching(true)
         markNotificationAsRead(notification.id).then(() => {
             setNotification(n => ({
@@ -310,7 +310,7 @@ function NotificationItem({ notification: initialNotification }) {
                 console.error("could not fetch has unread notifications:", err)
             })
         })
-    }, [notification])
+    }
 
     // For CSS.
     useEffect(() => {
@@ -319,7 +319,7 @@ function NotificationItem({ notification: initialNotification }) {
         } else {
             this.removeAttribute("read")
         }
-    }, [notification])
+    }, [notification.read])
 
     useEffect(() => {
         setNotification(initialNotification)
@@ -346,9 +346,9 @@ function NotificationItem({ notification: initialNotification }) {
                 </svg>
                 <span>Read</span>
             </button>
-            ` : nothing}
+            ` : null}
         </div>
-        ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : nothing}
+        ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : null}
     `
 }
 

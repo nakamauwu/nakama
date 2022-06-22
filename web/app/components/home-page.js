@@ -1,12 +1,12 @@
 import { Textcomplete } from "@textcomplete/core"
 import { TextareaEditor } from "@textcomplete/textarea"
-import { component, html, useCallback, useEffect, useRef, useState } from "haunted"
-import { nothing } from "lit-html"
-import { repeat } from "lit-html/directives/repeat.js"
+import { component, useEffect, useRef, useState } from "haunted"
+import { html } from "lit"
 import { get as getTranslation, translate } from "lit-translate"
+import { createRef, ref } from "lit/directives/ref.js"
+import { repeat } from "lit/directives/repeat.js"
 import { setLocalAuth } from "../auth.js"
 import { authStore, useStore } from "../ctx.js"
-import { ref } from "../directives/ref.js"
 import { request, subscribe } from "../http.js"
 import "./intersectable-comp.js"
 import "./post-item.js"
@@ -31,36 +31,36 @@ function HomePage() {
     const [queue, setQueue] = useState([])
     const [toast, setToast] = useState(null)
 
-    const onTimelineItemCreated = useCallback(ev => {
+    const onTimelineItemCreated = ev => {
         const payload = ev.detail
         setPosts(pp => [payload, ...queue, ...pp])
         setQueue([])
-    }, [queue])
+    }
 
-    const onNewTimelineItemArrive = useCallback(ti => {
+    const onNewTimelineItemArrive = ti => {
         setQueue(pp => [ti, ...pp])
-    }, [])
+    }
 
-    const onNewPostArrive = useCallback(p => {
+    const onNewPostArrive = p => {
         setQueue(pp => [p, ...pp])
-    }, [])
+    }
 
-    const onRemovedFromTimeline = useCallback(ev => {
+    const onRemovedFromTimeline = ev => {
         const payload = ev.detail
         setPosts(pp => pp.filter(p => p.timelineItemID !== payload.timelineItemID))
-    }, [])
+    }
 
-    const onPostDeleted = useCallback(ev => {
+    const onPostDeleted = ev => {
         const payload = ev.detail
         setPosts(pp => pp.filter(p => p.id !== payload.id))
-    }, [])
+    }
 
-    const onQueueBtnClick = useCallback(() => {
+    const onQueueBtnClick = () => {
         setPosts(pp => [...queue, ...pp])
         setQueue([])
-    }, [queue])
+    }
 
-    const loadMore = useCallback(() => {
+    const loadMore = () => {
         if (loadingMore || noMore) {
             return
         }
@@ -82,15 +82,15 @@ function HomePage() {
         }).finally(() => {
             setLoadingMore(false)
         })
-    }, [mode, loadingMore, noMore, endCursor])
+    }
 
-    const onTimelineModeClick = useCallback(() => {
+    const onTimelineModeClick = () => {
         setMode("timeline")
-    }, [])
+    }
 
-    const onPostsModeClick = useCallback(() => {
+    const onPostsModeClick = () => {
         setMode("posts")
-    }, [])
+    }
 
     useEffect(() => {
         setPosts([])
@@ -140,7 +140,7 @@ function HomePage() {
                     ? translate("homePage.queueBtn.newPost")
                     : translate("homePage.queueBtn.newPosts", { length: queue.length }))}
                 </button>
-            ` : nothing}
+            ` : null}
             <div role="tablist">
                 <button role="tab" id="${mode}-tab" aria-controls="${mode}-tabpanel" aria-selected=${String(mode === "timeline")} @click=${onTimelineModeClick}>
                     ${translate("homePage.tabs.timeline")}
@@ -181,11 +181,11 @@ function HomePage() {
                         <p>
                     ` : endReached ? html`
                         <p>${translate("homePage.end")}</p>
-                    ` : nothing}
+                    ` : null}
                 `}
             `}
         </main>
-        ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : nothing}
+        ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : null}
     `
 }
 
@@ -200,11 +200,11 @@ function PostForm() {
     const [nsfw, setNSFW] = useState(false)
     const [isSpoiler, setIsSpoiler] = useState(false)
     const [spoilerOf, setSpoilerOf] = useState("")
-    const spoilerOfDialogRef = useRef(null)
+    const spoilerOfDialogRef = /** @type {import("lit/directives/ref.js").Ref<HTMLDialogElement>} */ (createRef())
     const [initialTextAreaHeight, setInitialTextAreaHeight] = useState(0)
-    const mediaInputRef = useRef(/** @type {HTMLInputElement|null} */(null))
-    const textAreaRef = useRef(null)
-    const textcompleteRef = useRef(null)
+    const mediaInputRef = /** @type {import("lit/directives/ref.js").Ref<HTMLInputElement>} */ (createRef())
+    const textAreaRef = /** @type {import("lit/directives/ref.js").Ref<HTMLTextAreaElement>} */ (createRef())
+    const textcompleteRef = useRef(/** @type {Textcomplete} */(null))
     const [toast, setToast] = useState(null)
 
     /**
@@ -214,122 +214,129 @@ function PostForm() {
         this.dispatchEvent(new CustomEvent("timeline-item-created", { bubbles: true, detail: timelineItem }))
     }
 
-    const onSubmit = useCallback(
-        /**
-         * @param {import("react").FormEvent<HTMLFormElement>} e
-         */
-        ev => {
-            ev.preventDefault()
+    const onSubmit = ev => {
+        ev.preventDefault()
 
-            if (mediaInputRef.current === null) {
-                return
+        if (mediaInputRef.value === undefined) {
+            return
+        }
+
+        const mediaInput = mediaInputRef.value
+
+        let body
+
+        if (mediaInput.files.length !== 0) {
+            body = new FormData()
+            body.set("content", content)
+            if (spoilerOf.trim() !== "") {
+                body.set("spoiler_of", spoilerOf.trim())
             }
-
-            let body
-
-            if (mediaInputRef.current.files.length !== 0) {
-                body = new FormData()
-                body.set("content", content)
-                if (spoilerOf.trim() !== "") {
-                    body.set("spoiler_of", spoilerOf.trim())
-                }
-                body.set("nsfw", JSON.stringify(nsfw))
-                for (const file of mediaInputRef.current.files) {
-                    body.append("media", file)
-                }
-            } else {
-                body = {
-                    content,
-                    spoilerOf: spoilerOf.trim() === "" ? null : spoilerOf.trim(),
-                    nsfw,
-                }
+            body.set("nsfw", JSON.stringify(nsfw))
+            for (const file of mediaInput.files) {
+                body.append("media", file)
             }
+        } else {
+            body = {
+                content,
+                spoilerOf: spoilerOf.trim() === "" ? null : spoilerOf.trim(),
+                nsfw,
+            }
+        }
 
-            setFetching(true)
-            createTimelineItem(body).then(ti => {
-                ti.user = auth.user
-                setContent("")
-                setNSFW(false)
-                setIsSpoiler(false)
-                setSpoilerOf("")
-                textcompleteRef.current.hide()
-                mediaInputRef.current.value = ""
+        setFetching(true)
+        createTimelineItem(body).then(ti => {
+            ti.user = auth.user
+            setContent("")
+            setNSFW(false)
+            setIsSpoiler(false)
+            setSpoilerOf("")
+            textcompleteRef.current.hide()
+            mediaInput.value = ""
 
-                dispatchTimelineItemCreated(ti)
-            }, err => {
-                const msg = getTranslation("postForm.err") + " " + getTranslation(err.name)
-                console.error(msg)
-                setToast({ type: "error", content: msg })
-            }).finally(() => {
-                setFetching(false)
-            })
-        }, [mediaInputRef, content, nsfw, spoilerOf, auth, textAreaRef, initialTextAreaHeight])
+            dispatchTimelineItemCreated(ti)
+        }, err => {
+            const msg = getTranslation("postForm.err") + " " + getTranslation(err.name)
+            console.error(msg)
+            setToast({ type: "error", content: msg })
+        }).finally(() => {
+            setFetching(false)
+        })
+    }
 
-    const onTextAreaInput = useCallback(() => {
-        setContent(textAreaRef.current.value)
-    }, [content, textAreaRef])
+    const onTextAreaInput = ev => {
+        const el = /** @type {HTMLTextAreaElement} */ (ev.target)
+        setContent(el.value)
+    }
 
-    const onNSFWInputChange = useCallback(ev => {
-        const checked = ev.currentTarget.checked
-        setNSFW(checked)
-    }, [])
+    const onNSFWInputChange = ev => {
+        setNSFW(ev.currentTarget.checked)
+    }
 
-    const onIsSpoilerInputChange = useCallback(ev => {
+    const onIsSpoilerInputChange = ev => {
         const checked = ev.currentTarget.checked
         setIsSpoiler(checked)
         if (!checked) {
             setSpoilerOf("")
         } else {
-            spoilerOfDialogRef.current.showModal()
+            spoilerOfDialogRef.value.showModal()
         }
-    }, [spoilerOfDialogRef])
+    }
 
-    const onSpoilerOfInput = useCallback(ev => {
+    const onSpoilerOfInput = ev => {
         setSpoilerOf(ev.currentTarget.value)
-    }, [])
+    }
 
-    const onSpoilerOfDialogClose = useCallback(() => {
+    const onSpoilerOfDialogClose = () => {
         if (spoilerOf.trim() === "") {
             setSpoilerOf("")
             setIsSpoiler(false)
         }
-    }, [spoilerOf])
+    }
 
-    const onSpoilerOfFormSubmit = useCallback(ev => {
+    const onSpoilerOfFormSubmit = ev => {
         ev.preventDefault()
-        spoilerOfDialogRef.current.close()
-    }, [])
+        spoilerOfDialogRef.value.close()
+    }
 
-    const onSpoilerOfCancelBtnClick = useCallback(() => {
+    const onSpoilerOfCancelBtnClick = () => {
         setSpoilerOf("")
         setIsSpoiler(false)
-        spoilerOfDialogRef.current.close()
-    }, [spoilerOfDialogRef])
+        spoilerOfDialogRef.value.close()
+    }
 
-    const onMediaBtnClick = useCallback(() => {
-        if (mediaInputRef.current === null || fetching) {
+    const onMediaBtnClick = () => {
+        if (mediaInputRef.value === null || fetching) {
             return
         }
 
-        mediaInputRef.current.click()
-    }, [fetching, mediaInputRef])
+        mediaInputRef.value.click()
+    }
 
     useEffect(() => {
-        if (spoilerOfDialogRef.current !== null && !("HTMLDialogElement" in window || "showModal" in spoilerOfDialogRef.current)) {
-            import("dialog-polyfill").then(m => m.default).then(dialogPolyfill => {
-                dialogPolyfill.registerDialog(spoilerOfDialogRef.current)
-            }).catch(err => {
-                console.error("could not import dialog polyfill:", err)
-            })
-        }
-    }, [spoilerOfDialogRef.current])
-
-    useEffect(() => {
-        if (textAreaRef.current === null) {
+        if (spoilerOfDialogRef.value === undefined) {
             return
         }
 
-        const editor = new TextareaEditor(textAreaRef.current)
+        const el = /** @type {HTMLDialogElement} */ (spoilerOfDialogRef.value)
+        if ("HTMLDialogElement" in window && typeof el.showModal === "function") {
+            return
+        }
+
+        import("dialog-polyfill").then(m => m.default).then(dialogPolyfill => {
+            dialogPolyfill.registerDialog(el)
+        }).catch(err => {
+            console.error("could not import dialog polyfill:", err)
+        })
+    }, [spoilerOfDialogRef.value])
+
+    useEffect(() => {
+        if (textAreaRef.value === undefined) {
+            return
+        }
+
+        const el = /** @type {HTMLTextAreaElement} */ (textAreaRef.value)
+
+        const editor = new TextareaEditor(el)
         textcompleteRef.current = new Textcomplete(editor, [{
             match: reMention,
             search: async (term, cb) => {
@@ -341,12 +348,12 @@ function PostForm() {
             replace: username => `@${username} `,
         }])
 
-        setInitialTextAreaHeight(textAreaRef.current.scrollHeight)
+        setInitialTextAreaHeight(textAreaRef.value.scrollHeight)
 
         return () => {
             textcompleteRef.current.destroy()
         }
-    }, [textAreaRef, textcompleteRef])
+    }, [textAreaRef.value])
 
     // Share Target.
     useEffect(() => {
@@ -370,26 +377,26 @@ function PostForm() {
 
         if (preContent.length !== 0) {
             setContent(preContent.join(" "))
-            if (textAreaRef.current !== null) {
-                textAreaRef.current.focus()
-            }
+            textAreaRef.value?.focus()
         }
 
         if (cleanup) {
             history.replaceState(history.state, document.title, "/")
         }
-    }, [textAreaRef])
+    }, [])
 
     useEffect(() => {
-        if (textAreaRef.current === null) {
+        if (textAreaRef.value === undefined) {
             return
         }
 
-        textAreaRef.current.style.height = initialTextAreaHeight + "px"
-        if (textAreaRef.current.value !== "") {
-            textAreaRef.current.style.height = Math.max(textAreaRef.current.scrollHeight, initialTextAreaHeight) + "px"
+        const el = /** @type {HTMLTextAreaElement} */ (textAreaRef.value)
+
+        el.style.height = initialTextAreaHeight + "px"
+        if (el.value !== "") {
+            el.style.height = Math.max(el.scrollHeight, initialTextAreaHeight) + "px"
         }
-    }, [content, initialTextAreaHeight, textAreaRef])
+    }, [content])
 
     return html`
         <form class="post-form${content !== "" ? " has-content" : ""}" name="post-form" @submit=${onSubmit}>
@@ -400,7 +407,7 @@ function PostForm() {
                 required
                 .value=${content}
                 .disabled=${fetching}
-                .ref=${ref(textAreaRef)}
+                ${ref(textAreaRef)}
                 @input=${onTextAreaInput}></textarea>
             ${content !== "" ? html`
             <div class="post-form-controls">
@@ -436,7 +443,7 @@ function PostForm() {
                     <span>${translate("postForm.submit")}</button>
                 </button>
             </div>
-            ` : nothing}
+            ` : null}
         </form>
         <dialog .ref=${ref(spoilerOfDialogRef)} @close=${onSpoilerOfDialogClose}>
             <form method="dialog" class="spoiler-of-form" @submit=${onSpoilerOfFormSubmit}>
@@ -456,7 +463,7 @@ function PostForm() {
                 </div>
             </form>
         </dialog>
-        ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : nothing}
+        ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : null}
     `
 }
 

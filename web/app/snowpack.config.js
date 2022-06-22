@@ -10,7 +10,7 @@ module.exports = {
 		metaUrlPath: "snowpack",
 	},
 	devOptions: {
-		port: 5000,
+		port: 4000,
 		open: "none",
 	},
 	routes: [

@@ -1,6 +1,6 @@
-import { component, html, useCallback, useEffect, useState } from "haunted"
-import { nothing } from "lit-html"
-import { repeat } from "lit-html/directives/repeat.js"
+import { component, useEffect, useState } from "haunted"
+import { html } from "lit"
+import { repeat } from "lit/directives/repeat.js"
 import { setLocalAuth } from "../auth.js"
 import { authStore, useStore } from "../ctx.js"
 import { request } from "../http.js"
@@ -34,12 +34,12 @@ function TaggedPostsPage({ tag }) {
     const [endReached, setEndReached] = useState(false)
     const [toast, setToast] = useState(null)
 
-    const onPostDeleted = useCallback(ev => {
+    const onPostDeleted = ev => {
         const payload = ev.detail
         setPosts(pp => pp.filter(p => p.id !== payload.id))
-    }, [])
+    }
 
-    const loadMore = useCallback(() => {
+    const loadMore = () => {
         if (loadingMore || noMore) {
             return
         }
@@ -60,7 +60,7 @@ function TaggedPostsPage({ tag }) {
         }).finally(() => {
             setLoadingMore(false)
         })
-    }, [tag, loadingMore, noMore, endCursor])
+    }
 
     useEffect(() => {
         setPosts([])
@@ -116,11 +116,11 @@ function TaggedPostsPage({ tag }) {
                         <p>
                     ` : endReached ? html`
                         <p>End reached</p>
-                    ` : nothing}
+                    ` : null}
                 `}
             `}
         </main>
-        ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : nothing}
+        ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : null}
     `
 }
 

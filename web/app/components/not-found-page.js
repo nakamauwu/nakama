@@ -1,4 +1,4 @@
-import { html } from "haunted"
+import { html } from "lit"
 
 export default function NotFoundPage() {
     return html`

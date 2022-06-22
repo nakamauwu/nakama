@@ -1,4 +1,4 @@
-import { html } from "haunted"
+import { html } from "lit"
 
 export function Avatar(user) {
     return user.avatarURL !== null ? html`

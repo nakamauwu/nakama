@@ -17,9 +17,9 @@
         "canvas-confetti": "^1.5.0",
         "dialog-polyfill": "~0.5.0",
         "emoji-picker-element": "^1.11.0",
-        "haunted": "^4.8.0",
-        "lit-html": "^1.4.0",
-        "lit-translate": "^1.2.0",
+        "haunted": "^5.0.0",
+        "lit-html": "^2.2.0",
+        "lit-translate": "^2.0.0",
         "medium-zoom": "^1.0.0",
         "zooming": "^2.1.0"
     }

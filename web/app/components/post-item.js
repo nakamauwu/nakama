@@ -1,11 +1,11 @@
-import { component, html, useCallback, useEffect, useRef, useState } from "haunted"
-import { nothing } from "lit-html"
-import { ifDefined } from "lit-html/directives/if-defined.js"
-import { unsafeHTML } from "lit-html/directives/unsafe-html.js"
+import { component, useEffect, useState } from "haunted"
+import { html } from "lit"
 import { get as getTranslation, translate } from "lit-translate"
+import { ifDefined } from "lit/directives/if-defined.js"
+import { createRef, ref } from "lit/directives/ref.js"
+import { unsafeHTML } from "lit/directives/unsafe-html.js"
 import mediumZoom from "medium-zoom"
 import { authStore, useStore } from "../ctx.js"
-import { ref } from "../directives/ref.js"
 import { request } from "../http.js"
 import { collectMediaURLs, escapeHTML, linkify } from "../utils.js"
 import { Avatar } from "./avatar.js"
@@ -29,17 +29,17 @@ function PostItem({ post: initialPost, type }) {
     const [displayNSFW, setDisplayNSFW] = useState(false)
     const [toast, setToast] = useState(null)
 
-    const onMenuBtnClick = useCallback(() => {
+    const onMenuBtnClick = () => {
         setShowMenu(v => !v)
-    }, [])
+    }
 
-    const onMenuWrapperBlur = useCallback(ev => {
+    const onMenuWrapperBlur = ev => {
         if (ev.relatedTarget === null || !ev.currentTarget.closest(".post-menu-wrapper").contains(ev.relatedTarget)) {
             setShowMenu(false)
         }
-    }, [])
+    }
 
-    const onPostSubscriptionToggleBtnClick = useCallback(() => {
+    const onPostSubscriptionToggleBtnClick = () => {
         setTogglingPostSubscription(true)
         togglePostSubscription(post.id).then(payload => {
             setPost(p => ({
@@ -53,20 +53,21 @@ function PostItem({ post: initialPost, type }) {
         }).finally(() => {
             setTogglingPostSubscription(false)
         })
-    }, [post])
+    }
 
     const dispatchRemovedFromTimeline = payload => {
         this.dispatchEvent(new CustomEvent("removed-from-timeline", { bubbles: true, detail: payload }))
     }
 
-    const onRemoveFromTimelineBtnClick = useCallback(() => {
+    const onRemoveFromTimelineBtnClick = () => {
+        const ti = /** @type {import("../types.js").TimelineItem} */ (post)
         if (type !== "timeline_item") {
             return
         }
 
         setRemovingFromTimeline(true)
-        removeTimelineItem(post.timelineItemID).then(() => {
-            dispatchRemovedFromTimeline({ timelineItemID: post.timelineItemID })
+        removeTimelineItem(ti.timelineItemID).then(() => {
+            dispatchRemovedFromTimeline({ timelineItemID: ti.timelineItemID })
         }, err => {
             const msg = getTranslation("postItem.errRemove") + " " + getTranslation(err.name)
             console.error(msg)
@@ -74,13 +75,13 @@ function PostItem({ post: initialPost, type }) {
         }).finally(() => {
             setRemovingFromTimeline(false)
         })
-    }, [type, post])
+    }
 
     const dispatchResourceDeleted = payload => {
         this.dispatchEvent(new CustomEvent("resource-deleted", { bubbles: true, detail: payload }))
     }
 
-    const onDeleteBtnClick = useCallback(() => {
+    const onDeleteBtnClick = () => {
         setDeleting(true)
         deleteResource(type, post.id).then(() => {
             dispatchResourceDeleted({ id: post.id })
@@ -91,23 +92,23 @@ function PostItem({ post: initialPost, type }) {
         }).finally(() => {
             setDeleting(false)
         })
-    }, [post, type])
+    }
 
-    const onDisplaySpoilerBtnClick = useCallback(() => {
+    const onDisplaySpoilerBtnClick = () => {
         setDisplaySpoiler(true)
-    }, [])
+    }
 
-    const onDisplayNSFWBtnClick = useCallback(() => {
+    const onDisplayNSFWBtnClick = () => {
         setDisplayNSFW(true)
-    }, [])
+    }
 
-    const onNewReactionCounts = useCallback(ev => {
+    const onNewReactionCounts = ev => {
         const payload = ev.detail
         setPost(p => ({
             ...p,
             ...payload,
         }))
-    }, [])
+    }
 
     useEffect(() => {
         const urls = []
@@ -118,7 +119,7 @@ function PostItem({ post: initialPost, type }) {
         }
         urls.push(...collectMediaURLs(post.content))
         setMediaURLs(urls)
-    }, [post])
+    }, [post["mediaURLs"], post.content])
 
     useEffect(() => {
         setPost(initialPost)
@@ -161,7 +162,7 @@ function PostItem({ post: initialPost, type }) {
                                             .disabled=${togglingPostSubscription}
                                             @click=${onPostSubscriptionToggleBtnClick}
                                             @blur=${onMenuWrapperBlur}>
-                                            ${post.subscribed ? html`
+                                            ${"subscribed" in post && post.subscribed ? html`
                                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g data-name="Layer 2"><g data-name="bell-off"><rect width="24" height="24" opacity="0"/><path d="M8.9 5.17A4.67 4.67 0 0 1 12.64 4a4.86 4.86 0 0 1 4.08 4.9v4.5a1.92 1.92 0 0 0 .1.59l3.6 3.6a1.58 1.58 0 0 0 .45-.6 1.62 1.62 0 0 0-.35-1.78l-1.8-1.81V8.94a6.86 6.86 0 0 0-5.82-6.88 6.71 6.71 0 0 0-5.32 1.61 6.88 6.88 0 0 0-.58.54l1.47 1.43a4.79 4.79 0 0 1 .43-.47z"/><path d="M14 16.86l-.83-.86H5.51l1.18-1.18a2 2 0 0 0 .59-1.42v-3.29l-2-2a5.68 5.68 0 0 0 0 .59v4.7l-1.8 1.81A1.63 1.63 0 0 0 4.64 18H8v.34A3.84 3.84 0 0 0 12 22a3.88 3.88 0 0 0 4-3.22l-.83-.78zM12 20a1.88 1.88 0 0 1-2-1.66V18h4v.34A1.88 1.88 0 0 1 12 20z"/><path d="M20.71 19.29L19.41 18l-2-2-9.52-9.53L6.42 5 4.71 3.29a1 1 0 0 0-1.42 1.42L5.53 7l1.75 1.7 7.31 7.3.07.07L16 17.41l.59.59 2.7 2.71a1 1 0 0 0 1.42 0 1 1 0 0 0 0-1.42z"/></g></g></svg>
                                                 <span>${translate("postItem.menu.unsusbcribe")}</span>
                                             ` : html`
@@ -170,7 +171,7 @@ function PostItem({ post: initialPost, type }) {
                                             `}
                                         </button>
                                     </li>
-                                ` : nothing}
+                                ` : null}
                                 ${type === "timeline_item" ? html`
                                     <li class="post-menu-item" role="none">
                                         <button class="post-menu-btn" role="menuitem" tabindex="-1" .disabled=${removingFromTimeline} @click=${onRemoveFromTimelineBtnClick} @blur=${onMenuWrapperBlur}>
@@ -178,7 +179,7 @@ function PostItem({ post: initialPost, type }) {
                                             <span>${translate("postItem.menu.remove")}</span>
                                         </button>
                                     </li>
-                                ` : nothing}
+                                ` : null}
                                 ${post.mine ? html`
                                     <li class="post-menu-item" role="none">
                                         <button class="post-menu-btn" role="menuitem" tabindex="-1" .disabled=${deleting} @click=${onDeleteBtnClick} @blur=${onMenuWrapperBlur}>
@@ -186,21 +187,21 @@ function PostItem({ post: initialPost, type }) {
                                             <span>${translate("postItem.menu.delete")}</span>
                                         </button>
                                     </li>
-                                ` : nothing}
+                                ` : null}
                             </ul>
                         </div>
-                    ` : nothing}
+                    ` : null}
                 </div>
             </div>
             <div class="post-content">
-                ${type !== "comment" && post.spoilerOf !== null && !displaySpoiler ? html`
+                ${"spoilerOf" in post && post.spoilerOf !== null && !displaySpoiler ? html`
                     <div class="post-warning">
                         <p>${translate("postItem.spoiler.warning")} ${post.spoilerOf}</p>
                         <button @click=${onDisplaySpoilerBtnClick}>${translate("postItem.spoiler.show")}</button>
                     </div>
                 ` : html`
                     <p>${unsafeHTML(linkify(escapeHTML(post.content)))}</p>
-                    ${type !== "comment" && post.nsfw && !displayNSFW ? html`
+                    ${"nsfw" in post && post.nsfw && !displayNSFW ? html`
                         <div class="post-warning">
                             <p>${translate("postItem.nsfw.warning")}</p>
                             <button @click=${onDisplayNSFWBtnClick}>${translate("postItem.nsfw.show")}</button>
@@ -215,21 +216,21 @@ function PostItem({ post: initialPost, type }) {
                     <div class="post-reactions">
                         ${post.reactions.length !== 0 ? post.reactions.map(r => html`
                             <reaction-btn .postID=${post.id} .reaction=${r} .type=${type} @new-reaction-counts=${onNewReactionCounts}></reaction-btn>
-                        `) : nothing}
+                        `) : null}
                         ${auth !== null ? html`
                             <add-reaction-btn .postID=${post.id} .type=${type} @new-reaction-counts=${onNewReactionCounts}></add-reaction-btn>
-                        ` : nothing}
+                        ` : null}
                     </div>
-                ` : nothing}
-                ${typeof post.commentsCount === "number" ? html`
+                ` : null}
+                ${"commentsCount" in post ? html`
                     <a class="post-replies-link btn" href="/posts/${post.id}" title="${translate("postItem.comments")}">
                         <span>${post.commentsCount}</span>
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g data-name="Layer 2"><g data-name="message-square"><rect width="24" height="24" opacity="0"/><circle cx="12" cy="11" r="1"/><circle cx="16" cy="11" r="1"/><circle cx="8" cy="11" r="1"/><path d="M19 3H5a3 3 0 0 0-3 3v15a1 1 0 0 0 .51.87A1 1 0 0 0 3 22a1 1 0 0 0 .51-.14L8 19.14a1 1 0 0 1 .55-.14H19a3 3 0 0 0 3-3V6a3 3 0 0 0-3-3zm1 13a1 1 0 0 1-1 1H8.55a3 3 0 0 0-1.55.43l-3 1.8V6a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1z"/></g></g></svg>
                     </a>
-                ` : nothing}
+                ` : null}
             </div>
         </article>
-        ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : nothing}
+        ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : null}
     `
 }
 
@@ -245,7 +246,7 @@ function ReactionBtn({ postID, reaction: initialReaction, type }) {
         this.dispatchEvent(new CustomEvent("new-reaction-counts", { bubbles: true, detail: payload }))
     }
 
-    const onClick = useCallback(() => {
+    const onClick = () => {
         setFetching(true)
         toggleReaction(type, postID, reaction).then(reactions => {
             dispatchNewReactionCounts({ reactions })
@@ -256,7 +257,7 @@ function ReactionBtn({ postID, reaction: initialReaction, type }) {
         }).finally(() => {
             setFetching(false)
         })
-    }, [type, postID, reaction])
+    }
 
     useEffect(() => {
         setReaction(initialReaction)
@@ -271,7 +272,7 @@ function ReactionBtn({ postID, reaction: initialReaction, type }) {
                 <img src="${reaction.reaction}">
             `}
         </button>
-        ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : nothing}
+        ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : null}
     `
 }
 
@@ -296,7 +297,7 @@ const emojiPickerStyles = `
 `
 
 function AddReactionBtn({ postID, type }) {
-    const emojiPickerRef = useRef(/** @type {import("emoji-picker-element").Picker|null} */(null))
+    const emojiPickerRef = /** @type {import("lit/directives/ref.js").Ref<import("emoji-picker-element").Picker>} */(createRef())
     const [showEmojiPicker, setShowEmojiPicker] = useState(false)
     const [fetching, setFetching] = useState(false)
     const [toast, setToast] = useState(null)
@@ -305,17 +306,17 @@ function AddReactionBtn({ postID, type }) {
         this.dispatchEvent(new CustomEvent("new-reaction-counts", { bubbles: true, detail: payload }))
     }
 
-    const onAddReactionBtnClick = useCallback(() => {
+    const onAddReactionBtnClick = () => {
         setShowEmojiPicker(hidden => !hidden)
-    }, [])
+    }
 
-    const onEmojiPickerWrapperBlur = useCallback(ev => {
+    const onEmojiPickerWrapperBlur = ev => {
         if (ev.relatedTarget === null || !ev.currentTarget.closest(".emoji-picker-wrapper").contains(ev.relatedTarget)) {
             setShowEmojiPicker(false)
         }
-    }, [])
+    }
 
-    const onEmojiClick = useCallback(ev => {
+    const onEmojiClick = ev => {
         const emoji = ev.detail.unicode
         setFetching(true)
         toggleReaction(type, postID, { type: "emoji", reaction: emoji }).then(reactions => {
@@ -328,19 +329,21 @@ function AddReactionBtn({ postID, type }) {
         }).finally(() => {
             setFetching(false)
         })
-    }, [type, postID])
+    }
 
     useEffect(() => {
-        if (emojiPickerRef.current === null) {
+        if (emojiPickerRef.value === undefined) {
             return
         }
 
+        const el = /** @type {import("emoji-picker-element").Picker} */(emojiPickerRef.value)
+
         const styleEmojiPicker = () => {
             try {
-                if (emojiPickerRef.current !== null && emojiPickerRef.current.shadowRoot !== null) {
+                if (el !== undefined && el.shadowRoot !== null) {
                     const style = document.createElement("style")
                     style.textContent = emojiPickerStyles
-                    emojiPickerRef.current.shadowRoot.appendChild(style)
+                    el.shadowRoot.appendChild(style)
                 }
             } catch (_) { }
         }
@@ -350,7 +353,7 @@ function AddReactionBtn({ postID, type }) {
         } else {
             styleEmojiPicker()
         }
-    }, [emojiPickerRef.current])
+    }, [emojiPickerRef.value])
 
     return html`
         <div class="emoji-picker-wrapper">
@@ -365,7 +368,7 @@ function AddReactionBtn({ postID, type }) {
                 @blur=${onEmojiPickerWrapperBlur}>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><defs><style></style></defs><g id="Layer_2" data-name="Layer 2"><g id="smiling-face"><g id="smiling-face" data-name="smiling-face"><rect width="24" height="24" opacity="0"/><path d="M12 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2zm0 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16zm5 9a5 5 0 0 1-10 0z" id="🎨-Icon-Сolor"/></g></g></g></svg>
             </button>
-            <emoji-picker .ref=${ref(emojiPickerRef)}
+            <emoji-picker ${ref(emojiPickerRef)}
                 class="dark${fetching ? " disabled" : ""}"
                 id="${postID}-reactions-menu"
                 role="menu"
@@ -374,7 +377,7 @@ function AddReactionBtn({ postID, type }) {
                 @emoji-click=${onEmojiClick}
                 @blur=${onEmojiPickerWrapperBlur}></emoji-picker>
         </div>
-        ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : nothing}
+        ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : null}
     `
 }
 
@@ -483,7 +486,7 @@ function MediaScroller({ urls }) {
     }, [urls])
 
     if (items.length === 0) {
-        return nothing
+        return null
     }
 
     return html`
@@ -557,18 +560,21 @@ function findCoubVideoID(url) {
 const zoom = mediumZoom()
 
 function ZoomableImg({ src }) {
-    const imgRef = useRef(null)
+    const imgRef = /** @type {import("lit/directives/ref.js").Ref<HTMLImageElement>} */ (createRef())
 
     useEffect(() => {
-        if (imgRef.current !== null) {
-            zoom.attach(imgRef.current)
+        if (imgRef.value === undefined) {
+            return
         }
-        return () => {
-            zoom.detach(imgRef.current)
-        }
-    }, [imgRef])
 
-    return html`<img src="${src}" alt="" loading="lazy" .ref=${ref(imgRef)}>`
+        const el = /** @type {HTMLImageElement} */ (imgRef.value)
+        zoom.attach(el)
+        return () => {
+            zoom.detach(el)
+        }
+    }, [imgRef.value])
+
+    return html`<img src="${src}" alt="" loading="lazy" ${ref(imgRef)}>`
 }
 
 // @ts-ignore

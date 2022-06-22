@@ -1,6 +1,7 @@
-import { component, html, render, useCallback, useEffect, useState } from "haunted"
-import { until } from "lit-html/directives/until.js"
+import { component, render, useEffect, useState } from "haunted"
+import { html } from "lit"
 import { registerTranslateConfig, translate, use as useLang } from "lit-translate"
+import { until } from "lit/directives/until.js"
 import { setLocalAuth } from "./auth.js"
 import "./components/app-header.js"
 import { authStore, useStore } from "./ctx.js"
@@ -62,9 +63,9 @@ function PageLoader() {
 function RouterView({ router }) {
     const [view, setView] = useState(router.exec())
 
-    const onPopState = useCallback(() => {
+    const onPopState = () => {
         setView(router.exec())
-    }, [router])
+    }
 
     useEffect(() => {
         addEventListener("popstate", onPopState)
@@ -91,7 +92,7 @@ const sevenDaysInMs = 1000 * 60 * 60 * 24
 function NakamaApp() {
     const [auth, setAuth] = useStore(authStore)
 
-    const tryRefreshAuth = useCallback(() => {
+    const tryRefreshAuth = () => {
         if (auth === null) {
             return
         }
@@ -115,7 +116,7 @@ function NakamaApp() {
         }, err => {
             console.error("could not refresh auth:", err)
         })
-    }, [auth])
+    }
 
     useEffect(() => {
         if (auth === null) {

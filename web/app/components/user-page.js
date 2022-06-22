@@ -1,11 +1,11 @@
-import { component, html, useCallback, useEffect, useRef, useState } from "haunted"
-import { nothing } from "lit-html"
-import { ifDefined } from "lit-html/directives/if-defined.js"
-import { repeat } from "lit-html/directives/repeat.js"
-import { unsafeHTML } from "lit-html/directives/unsafe-html"
+import { component, useEffect, useState } from "haunted"
+import { html } from "lit"
+import { ifDefined } from "lit/directives/if-defined.js"
+import { createRef, ref } from "lit/directives/ref.js"
+import { repeat } from "lit/directives/repeat.js"
+import { unsafeHTML } from "lit/directives/unsafe-html.js"
 import { setLocalAuth } from "../auth.js"
 import { authStore, useStore } from "../ctx.js"
-import { ref } from "../directives/ref.js"
 import { request } from "../http.js"
 import { navigate } from "../router.js"
 import { escapeHTML, linkify } from "../utils.js"
@@ -34,24 +34,24 @@ function UserPage({ username }) {
     const [endReached, setEndReached] = useState(false)
     const [toast, setToast] = useState(null)
 
-    const onPostDeleted = useCallback(ev => {
+    const onPostDeleted = ev => {
         const payload = ev.detail
         setPosts(pp => pp.filter(p => p.id !== payload.id))
-    }, [])
+    }
 
-    const onUserUpdated = useCallback(ev => {
+    const onUserUpdated = ev => {
         updateUser(ev.detail)
-    }, [])
+    }
 
-    const onAvatarUpdated = useCallback(ev => {
+    const onAvatarUpdated = ev => {
         updateUser(ev.detail)
-    }, [])
+    }
 
-    const onCoverUpdated = useCallback(ev => {
+    const onCoverUpdated = ev => {
         updateUser(ev.detail)
-    }, [])
+    }
 
-    const updateUser = useCallback(payload => {
+    const updateUser = payload => {
         setUser(u => ({
             ...u,
             ...payload,
@@ -74,9 +74,9 @@ function UserPage({ username }) {
             setLocalAuth(newAuth)
             return newAuth
         })
-    }, [])
+    }
 
-    const loadMore = useCallback(() => {
+    const loadMore = () => {
         if (loadingMore || noMorePosts) {
             return
         }
@@ -101,7 +101,7 @@ function UserPage({ username }) {
         }).finally(() => {
             setLoadingMore(false)
         })
-    }, [loadingMore, noMorePosts, username, postsEndCursor, user])
+    }
 
     useEffect(() => {
         setFetching(true)
@@ -166,12 +166,12 @@ function UserPage({ username }) {
                         <p class="loader" aria-busy="true" aria-live="polite">Loading posts... please wait.</p>
                         ` : endReached ? html`
                         <p>End reached.</p>
-                        ` : nothing}
+                        ` : null}
                         `}
                         `}
             </div>
         </main>
-        ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : nothing}
+        ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : null}
     `
 }
 
@@ -185,9 +185,9 @@ function UserProfile({ user: initialUser }) {
     const [bio, setBio] = useState(user.bio ?? "")
     const [waifu, setWaifu] = useState(user.waifu ?? "")
     const [husbando, setHusbando] = useState(user.husbando ?? "")
-    const settingsDialogRef = useRef(null)
-    const avatarInputRef = useRef(null)
-    const coverInputRef = useRef(null)
+    const settingsDialogRef = /** @type {import("lit/directives/ref.js").Ref<HTMLDialogElement>} */(createRef())
+    const avatarInputRef = /** @type {import("lit/directives/ref.js").Ref<HTMLInputElement>} */(createRef())
+    const coverInputRef = /** @type {import("lit/directives/ref.js").Ref<HTMLInputElement>} */(createRef())
     const [updatingUser, setUpdatingUser] = useState(false)
     const [updatingAvatar, setUpdatingAvatar] = useState(false)
     const [updatingCover, setUpdatingCover] = useState(false)
@@ -209,35 +209,37 @@ function UserProfile({ user: initialUser }) {
         this.dispatchEvent(new CustomEvent("cover-updated", { bubbles: true, detail: payload }))
     }
 
-    const onFollowToggle = useCallback(ev => {
+    const onFollowToggle = ev => {
         const payload = ev.detail
         setUser(u => ({
             ...u,
             ...payload,
         }))
-    }, [user])
+    }
 
-    const onSettingsBtnClick = useCallback(() => {
-        settingsDialogRef.current.showModal()
-    }, [settingsDialogRef])
+    const onSettingsBtnClick = () => {
+        if (settingsDialogRef.value !== undefined) {
+            settingsDialogRef.value.showModal()
+        }
+    }
 
-    const onUsernameInput = useCallback(ev => {
+    const onUsernameInput = ev => {
         setUsername(ev.currentTarget.value)
-    }, [])
+    }
 
-    const onUserBioInput = useCallback(ev => {
+    const onUserBioInput = ev => {
         setBio(ev.currentTarget.value)
-    }, [])
+    }
 
-    const onUserWaifuInput = useCallback(ev => {
+    const onUserWaifuInput = ev => {
         setWaifu(ev.currentTarget.value)
-    }, [])
+    }
 
-    const onUserHusbandoInput = useCallback(ev => {
+    const onUserHusbandoInput = ev => {
         setHusbando(ev.currentTarget.value)
-    }, [])
+    }
 
-    const onUserFormSubmit = useCallback(ev => {
+    const onUserFormSubmit = ev => {
         ev.preventDefault()
 
         const payload = { username, bio, waifu, husbando }
@@ -269,9 +271,9 @@ function UserProfile({ user: initialUser }) {
         }).finally(() => {
             setUpdatingUser(false)
         })
-    }, [username, bio, waifu, husbando])
+    }
 
-    const onAvatarInputChange = useCallback(ev => {
+    const onAvatarInputChange = ev => {
         const files = ev.currentTarget.files
         if (files === null || files.length !== 1) {
             return
@@ -279,29 +281,29 @@ function UserProfile({ user: initialUser }) {
 
         const avatar = files.item(0)
         submitAvatar(avatar)
-    }, [])
+    }
 
-    const onAvatarDblClick = useCallback(() => {
+    const onAvatarDblClick = () => {
         if (updatingAvatar) {
             return
         }
 
-        avatarInputRef.current.click()
-    }, [updatingAvatar, avatarInputRef])
+        avatarInputRef.value.click()
+    }
 
-    const onAvatarBtnClick = useCallback(() => {
-        if (avatarInputRef.current === null || updatingAvatar) {
+    const onAvatarBtnClick = () => {
+        if (avatarInputRef.value === null || updatingAvatar) {
             return
         }
 
-        avatarInputRef.current.click()
-    }, [updatingAvatar, avatarInputRef])
+        avatarInputRef.value.click()
+    }
 
-    const onAvatarDragOver = useCallback(ev => {
+    const onAvatarDragOver = ev => {
         ev.preventDefault()
-    }, [])
+    }
 
-    const onAvatarDrop = useCallback(ev => {
+    const onAvatarDrop = ev => {
         ev.preventDefault()
         if (updatingAvatar) {
             return
@@ -314,9 +316,9 @@ function UserProfile({ user: initialUser }) {
 
         const avatar = files.item(0)
         submitAvatar(avatar)
-    }, [updatingAvatar])
+    }
 
-    const submitAvatar = useCallback(avatar => {
+    const submitAvatar = avatar => {
         setUpdatingAvatar(true)
         updateAvatar(avatar).then(payload => {
             setAuth(auth => ({
@@ -338,9 +340,9 @@ function UserProfile({ user: initialUser }) {
         }).finally(() => {
             setUpdatingAvatar(false)
         })
-    }, [])
+    }
 
-    const onCoverInputChange = useCallback(ev => {
+    const onCoverInputChange = ev => {
         const files = ev.currentTarget.files
         if (files === null || files.length !== 1) {
             return
@@ -348,29 +350,29 @@ function UserProfile({ user: initialUser }) {
 
         const cover = files.item(0)
         submitCover(cover)
-    }, [])
+    }
 
-    const onCoverDblClick = useCallback(() => {
-        if (updatingCover) {
+    const onCoverDblClick = () => {
+        if (coverInputRef.value === undefined || updatingCover) {
             return
         }
 
-        coverInputRef.current.click()
-    }, [updatingCover, coverInputRef])
+        coverInputRef.value.click()
+    }
 
-    const onCoverBtnClick = useCallback(() => {
-        if (coverInputRef.current === null || updatingCover) {
+    const onCoverBtnClick = () => {
+        if (coverInputRef.value === undefined || updatingCover) {
             return
         }
 
-        coverInputRef.current.click()
-    }, [updatingCover, coverInputRef])
+        coverInputRef.value.click()
+    }
 
-    const onCoverDragOver = useCallback(ev => {
+    const onCoverDragOver = ev => {
         ev.preventDefault()
-    }, [])
+    }
 
-    const onCoverDrop = useCallback(ev => {
+    const onCoverDrop = ev => {
         ev.preventDefault()
         if (updatingCover) {
             return
@@ -383,9 +385,9 @@ function UserProfile({ user: initialUser }) {
 
         const cover = files.item(0)
         submitCover(cover)
-    }, [updatingCover])
+    }
 
-    const submitCover = useCallback(cover => {
+    const submitCover = cover => {
         setUpdatingCover(true)
         updateCover(cover).then(payload => {
             setAuth(auth => ({
@@ -407,9 +409,9 @@ function UserProfile({ user: initialUser }) {
         }).finally(() => {
             setUpdatingCover(false)
         })
-    }, [])
+    }
 
-    const onThemeChange = useCallback(ev => {
+    const onThemeChange = ev => {
         const value = ev.currentTarget.value
         setTheme(value)
 
@@ -421,23 +423,32 @@ function UserProfile({ user: initialUser }) {
 
         localStorage.setItem("color-scheme", value)
         document.firstElementChild.setAttribute("color-scheme", value)
-    }, [])
+    }
 
-    const onSettingsDialogCloseBtnClick = useCallback(() => {
-        settingsDialogRef.current.close()
-    }, [settingsDialogRef])
+    const onSettingsDialogCloseBtnClick = () => {
+        settingsDialogRef.value.close()
+    }
 
-    const onSettingsDialogClose = useCallback(() => {
+    const onSettingsDialogClose = () => {
         setUsername(user.username)
-    }, [user])
+    }
 
     useEffect(() => {
-        if (settingsDialogRef.current !== null && !("HTMLDialogElement" in window || "showModal" in settingsDialogRef.current)) {
-            import("dialog-polyfill").then(m => m.default).then(dialogPolyfill => {
-                dialogPolyfill.registerDialog(settingsDialogRef.current)
-            })
+        if (settingsDialogRef.value === undefined) {
+            return
         }
-    }, [settingsDialogRef])
+
+        const el = /** @type {HTMLDialogElement} */ (settingsDialogRef.value)
+        if ("HTMLDialogElement" in window && "showModal" in el) {
+            return
+        }
+
+        import("dialog-polyfill").then(m => m.default).then(dialogPolyfill => {
+            if (el !== undefined) {
+                dialogPolyfill.registerDialog(el)
+            }
+        })
+    }, [settingsDialogRef.value])
 
     useEffect(() => {
         setUser(initialUser)
@@ -454,17 +465,17 @@ function UserProfile({ user: initialUser }) {
                 <div class="user-details">
                     ${user.bio !== null && user.bio !== "" ? html`
                         <p>${unsafeHTML(linkify(escapeHTML(user.bio)))}</p>
-                    ` : nothing}
+                    ` : null}
                     ${(user.waifu !== null && user.waifu !== "") || (user.husbando !== null && user.husbando !== "") ? html`
                         <dl>
                             ${user.waifu !== null && user.waifu !== "" ? html`
                                 <dt>Waifu:</dt><dd>${user.waifu}</dd>
-                            ` : nothing}
+                            ` : null}
                             ${user.husbando !== null && user.husbando !== "" ? html`
                                 <dt>Husbando:</dt><dd>${user.husbando}</dd>
-                            ` : nothing}
+                            ` : null}
                         </dl>
-                    ` : nothing}
+                    ` : null}
                 </div>
             </div>
             ${Avatar(user)}
@@ -488,10 +499,10 @@ function UserProfile({ user: initialUser }) {
                 <logout-btn></logout-btn>
                 ` : auth !== null ? html`
                 <user-follow-btn .user=${user} @follow-toggle=${onFollowToggle}></user-follow-btn>
-                ` : nothing}
+                ` : null}
             </div>
         </div>
-        <dialog class="user-settings-dialog" .ref=${ref(settingsDialogRef)} @close=${onSettingsDialogClose}>
+        <dialog class="user-settings-dialog" ${ref(settingsDialogRef)} @close=${onSettingsDialogClose}>
             <div class="user-settings">
                 <div class="user-settings-header">
                     <h2>Settings</h2>
@@ -545,7 +556,7 @@ function UserProfile({ user: initialUser }) {
                             ${Avatar(user)}
                         </div>
                         <input type="file" name="avatar" accept="image/png,image/jpeg" required hidden
-                            .disabled=${updatingAvatar} .ref=${ref(avatarInputRef)} @change=${onAvatarInputChange}>
+                            .disabled=${updatingAvatar} ${ref(avatarInputRef)} @change=${onAvatarInputChange}>
                         <button .disabled=${updatingAvatar} @click=${onAvatarBtnClick}>Update</button>
                     </div>
                 </fieldset>
@@ -554,9 +565,9 @@ function UserProfile({ user: initialUser }) {
                     <div class="cover-grp">
                         ${user.coverURL !== null ? html`
                             <img src="${user.coverURL}" @dblclick=${onCoverDblClick}>
-                        ` : nothing}
+                        ` : null}
                         <input type="file" name="cover" accept="image/png,image/jpeg" required hidden
-                            .disabled=${updatingCover} .ref=${ref(coverInputRef)} @change=${onCoverInputChange}>
+                            .disabled=${updatingCover} ${ref(coverInputRef)} @change=${onCoverInputChange}>
                         <button .disabled=${updatingCover} @click=${onCoverBtnClick}>Update</button>
                     </div>
                 </fieldset>
@@ -576,7 +587,7 @@ function UserProfile({ user: initialUser }) {
                     </label>
                 </fieldset>
             </div>
-            ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : nothing}
+            ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : null}
         </dialog>
     `
 }
@@ -587,11 +598,11 @@ customElements.define("user-profile", component(UserProfile, { useShadowDOM: fal
 function LogoutBtn() {
     const [, setAuth] = useStore(authStore)
 
-    const onClick = useCallback(() => {
+    const onClick = () => {
         localStorage.removeItem("auth")
         setAuth(null)
         navigate("/")
-    }, [])
+    }
 
     return html`
         <button @click=${onClick}>

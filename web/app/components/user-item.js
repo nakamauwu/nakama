@@ -1,6 +1,6 @@
-import { component, html, useCallback, useEffect, useState } from "haunted"
-import { nothing } from "lit-html"
-import { ifDefined } from "lit-html/directives/if-defined"
+import { component, useEffect, useState } from "haunted"
+import { html } from "lit"
+import { ifDefined } from "lit/directives/if-defined.js"
 import { authStore, useStore } from "../ctx.js"
 import { Avatar } from "./avatar.js"
 import "./user-follow-btn.js"
@@ -10,13 +10,13 @@ function UserItem({ user: initialUser }) {
     const [auth] = useStore(authStore)
     const [user, setUser] = useState(initialUser)
 
-    const onFollowToggle = useCallback(ev => {
+    const onFollowToggle = ev => {
         const payload = ev.detail
         setUser(u => ({
             ...u,
             ...payload,
         }))
-    }, [user])
+    }
 
     useEffect(() => {
         setUser(initialUser)
@@ -33,7 +33,7 @@ function UserItem({ user: initialUser }) {
             </a>
             ${auth !== null && !user.me ? html`
                 <user-follow-btn .user=${user} @follow-toggle=${onFollowToggle}></user-follow-btn>
-            ` : nothing}
+            ` : null}
         </article>
     `
 }

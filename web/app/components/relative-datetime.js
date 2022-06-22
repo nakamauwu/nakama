@@ -1,9 +1,11 @@
-import { component, html, useEffect, useState } from "haunted"
+import { component, useEffect, useState } from "haunted"
+import { html } from "lit"
 import { get as getTranslation } from "lit-translate"
+
+const ms = 1000 * 60
 
 function RelativeDateTime({ datetime }) {
     const [ago, setAgo] = useState(shortHumanDuration(datetime))
-    const [ms] = useState(1000 * 60)
 
     useEffect(() => {
         const id = setInterval(() => {
@@ -13,7 +15,7 @@ function RelativeDateTime({ datetime }) {
         return () => {
             clearInterval(id)
         }
-    }, [ms])
+    }, [])
 
     return html`
         <time datetime="${datetime.toJSON()}" title="${datetime.toLocaleString()}">${ago}</time>

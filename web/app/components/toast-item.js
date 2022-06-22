@@ -1,13 +1,13 @@
-import { component, html, useCallback, useEffect, useState } from "haunted"
-import { nothing } from "lit-html"
+import { component, useEffect, useState } from "haunted"
+import { html } from "lit"
 
 function ToastItem({ toast: initialToast }) {
     const [toast, setToast] = useState(Object.assign({ type: "", content: "", timeout: 5000 }, initialToast))
     const [show, setShow] = useState(true)
 
-    const onClick = useCallback(() => {
+    const onClick = () => {
         setShow(false)
-    }, [toast])
+    }
 
     useEffect(() => {
         const id = setTimeout(() => {
@@ -17,7 +17,7 @@ function ToastItem({ toast: initialToast }) {
         return () => {
             clearTimeout(id)
         }
-    }, [toast])
+    }, [toast.timeout])
 
     useEffect(() => {
         setToast(Object.assign({ type: "", content: "", timeout: 5000 }, initialToast))
@@ -25,7 +25,7 @@ function ToastItem({ toast: initialToast }) {
     }, [initialToast])
 
     if (!show) {
-        return nothing
+        return null
     }
 
     return html`
