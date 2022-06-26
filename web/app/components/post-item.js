@@ -446,6 +446,26 @@ function MediaScroller({ urls }) {
                     }
                 }
 
+                {
+                    const result = findTikTokVideoID(url)
+                    if (result !== null) {
+                        try {
+                            const resp = await fetch("https://www.tiktok.com/oembed?url=" + encodeURIComponent(url.toString()))
+                            if (!resp.ok) {
+                                continue
+                            }
+
+                            const json = await resp.json()
+                            items.push(html`
+                                <a href=${url.toString()} target="_blank" rel="noopener noreferrer">
+                                    <img src=${json.thumbnail_url} width=${json.thumbnail_width} height=${json.thumbnail_height} loading="lazy"></img>
+                                </a>
+                            `)
+                        } catch (_) { }
+                        continue
+                    }
+                }
+
                 try {
                     const endpoint = "/api/proxy?target=" + encodeURIComponent(url.toString())
                     const resp = await fetch(endpoint, {
@@ -557,9 +577,30 @@ function findCoubVideoID(url) {
     return decodeURIComponent(parts[2])
 }
 
+/**
+ * @param {URL} url
+ */
+function findTikTokVideoID(url) {
+    // URL example: https://www.tiktok.com/@scout2015/video/6718335390845095173
+    if (url.hostname !== "tiktok.com" && !url.hostname.endsWith(".tiktok.com")) {
+        return null
+    }
+
+    const parts = url.pathname.split("/")
+    if (parts.length !== 4) {
+        return null
+    }
+
+    if (parts[0] !== "" || !parts[1].startsWith("@") || parts[2] !== "video" || parts[3] === "") {
+        return null
+    }
+
+    return parts[3]
+}
+
 const zoom = mediumZoom()
 
-function ZoomableImg({ src }) {
+function ZoomableImg({ src, width = undefined, height = undefined }) {
     const imgRef = /** @type {import("lit/directives/ref.js").Ref<HTMLImageElement>} */ (createRef())
 
     useEffect(() => {
@@ -574,7 +615,7 @@ function ZoomableImg({ src }) {
         }
     }, [imgRef.value])
 
-    return html`<img src="${src}" alt="" loading="lazy" ${ref(imgRef)}>`
+    return html`<img src="${src}" width="${width}" height="${height}" alt="" loading="lazy" ${ref(imgRef)}>`
 }
 
 // @ts-ignore

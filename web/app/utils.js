@@ -1,6 +1,7 @@
-const mentionsRegExp = /\B@([a-zA-Z][a-zA-Z0-9_-]{0,17})(\b[^@]|$)/g
-const tagsRegExp = /\B#((?:\p{L}|\p{N}|_)+)(\b[^#]|$)/gu
-const urlsRegExp = /\b(https?:\/\/[\-A-Za-z0-9+&@#\/%?=~_|!:,\.;]*[\-A-Za-z0-9+&@#\/%=~_|])/gi
+import "linkify-plugin-hashtag"
+import "linkify-plugin-mention"
+import linkifyString from "linkify-string"
+import { find as findURLs } from "linkifyjs"
 
 /**
  * @param {string} s
@@ -18,10 +19,26 @@ export function escapeHTML(s) {
  * @param {string} s
  */
 export function linkify(s) {
-    return s
-        .replace(mentionsRegExp, '<a href="/@$1">@$1</a>$2')
-        .replace(tagsRegExp, '<a href="/tagged-posts/$1">#$1</a>$2')
-        .replace(urlsRegExp, '<a href="$1" target="_blank" rel="noopener">$1</a>')
+    return linkifyString(s, {
+        truncate: 10,
+        defaultProtocol: "https",
+        target: (_, type) => {
+            if (type === "mention" || type === "hashtag") {
+                return ""
+            }
+            return "_blank"
+        },
+        rel: (_, type) => {
+            if (type === "mention" || type === "hashtag") {
+                return ""
+            }
+            return "noopener noreferrer"
+        },
+        formatHref: {
+            mention: (href) => "/@" + href.substr(1),
+            hashtag: (href) => "/tagged-posts/" + href.substr(1),
+        }
+    })
 }
 
 /**
@@ -29,11 +46,10 @@ export function linkify(s) {
  */
 export function collectMediaURLs(s) {
     const out = []
-    for (const match of s.matchAll(urlsRegExp)) {
-        if (match !== null && match.length >= 2) {
+    for (const item of findURLs(s)) {
+        if (item.type === "url") {
             try {
-                const url = new URL(match[1], location.origin)
-                out.push(url)
+                out.push(new URL(item.href, location.origin))
             } catch (_) { }
         }
     }
