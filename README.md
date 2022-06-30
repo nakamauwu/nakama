@@ -4,6 +4,8 @@
 
 Source code of the next social network for anime fans. Still on development.
 
+New work is being done at [next](https://github.com/nakamauwu/nakama/tree/next) branch.
+
 ## Docker build
 
 The easies way to start the server and its dependencies is by using [Docker](https://www.docker.com/).
