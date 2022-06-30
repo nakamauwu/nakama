@@ -1,0 +1,17 @@
+{{template "layout.tmpl" .}}
+
+{{define "content"}}
+<main>
+    <h1>Home</h1>
+
+    {{if .Session.IsLoggedIn}}
+    <p>Welcome back, {{.Session.User.Username}}.</p>
+    <form action="/logout" method="POST" style="display: contents;">
+        <button>Logout</button>
+    </form>
+    {{else}}
+    <p>You are not logged in.</p>
+    <a href="/login">Login</a>
+    {{end}}
+</main>
+{{end}}

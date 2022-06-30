@@ -1,0 +1,9 @@
+version: "2"
+sql:
+  - schema: "schema.sql"
+    queries: "queries.sql"
+    engine: "postgresql"
+    gen:
+      go:
+        package: "nakama"
+        out: "."

@@ -1,0 +1,31 @@
+{{template "layout.tmpl" .}}
+
+{{define "content"}}
+<main>
+    <h1>Login</h1>
+
+    <form action="/login" method="POST">
+        <div>
+            <label for="email">Email</label>
+            <input type="email" name="email" id="email" placeholder="uwu@example.org" value='{{.Form.Get "email"}}'
+                required>
+        </div>
+
+        {{with .Err}}
+        {{if or (eq .Error "user not found") (eq .Error "username taken")}}
+        <div>
+            <label for="username">Username</label>
+            <input type="text" name="username" id="username" placeholder="uwu" value='{{$.Form.Get "username"}}'
+                required>
+        </div>
+        {{end}}
+        {{end}}
+
+        {{with .Err}}
+        <p>Could not login: <code>{{.Error}}</code></p>
+        {{end}}
+
+        <button>Login</button>
+    </form>
+</main>
+{{end}}
