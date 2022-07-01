@@ -13,7 +13,7 @@ var templateFS embed.FS
 
 func parseTmpl(name string) *template.Template {
 	tmpl := template.New(name)
-	tmpl = template.Must(template.ParseFS(templateFS, "template/include/*.tmpl"))
+	tmpl = template.Must(tmpl.ParseFS(templateFS, "template/include/*.tmpl"))
 	return template.Must(tmpl.ParseFS(templateFS, "template/"+name))
 }
 
