@@ -29,3 +29,11 @@ Usage of nakama:
   -sql-addr string
         SQL address (default "postgresql://root@127.0.0.1:26257/defaultdb?sslmode=disable")
 ```
+
+## Testing
+
+Make sure to have [Docker](https://www.docker.com/) running before running the tests.
+
+```bash
+go test .
+```
