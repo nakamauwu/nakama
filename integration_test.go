@@ -59,7 +59,11 @@ func setupCockroach(pool *dockertest.Pool) (*dockertest.Resource, error) {
 	return pool.RunWithOptions(&dockertest.RunOptions{
 		Repository: "cockroachdb/cockroach",
 		Tag:        "latest",
-		Cmd:        []string{"start-single-node", "--insecure"},
+		Cmd: []string{"start-single-node",
+			"--insecure",
+			"--store", "type=mem,size=0.25",
+			"--advertise-addr", "localhost",
+		},
 	})
 }
 
