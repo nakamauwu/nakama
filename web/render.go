@@ -21,7 +21,7 @@ func (h *Handler) renderTmpl(w http.ResponseWriter, tmpl *template.Template, dat
 	var buff bytes.Buffer
 	err := tmpl.Execute(&buff, data)
 	if err != nil {
-		h.Logger.Output(2, fmt.Sprintf("could not render %q: %v\n", tmpl.Name(), err))
+		_ = h.Logger.Output(2, fmt.Sprintf("could not render %q: %v\n", tmpl.Name(), err))
 		http.Error(w, fmt.Sprintf("could not render %q", tmpl.Name()), http.StatusInternalServerError)
 		return
 	}
@@ -30,6 +30,6 @@ func (h *Handler) renderTmpl(w http.ResponseWriter, tmpl *template.Template, dat
 	w.WriteHeader(statusCode)
 	_, err = buff.WriteTo(w)
 	if err != nil {
-		h.Logger.Output(2, fmt.Sprintf("could not send %q: %v\n", tmpl.Name(), err))
+		_ = h.Logger.Output(2, fmt.Sprintf("could not send %q: %v\n", tmpl.Name(), err))
 	}
 }
