@@ -3,13 +3,22 @@ package nakama
 import (
 	"context"
 	"errors"
+	"regexp"
+	"strings"
 
 	"github.com/rs/xid"
 )
 
 var (
-	ErrUserNotFound  = errors.New("user not found")
-	ErrUsernameTaken = errors.New("username taken")
+	ErrUserNotFound    = errors.New("user not found")
+	ErrUsernameTaken   = errors.New("username taken")
+	ErrInvalidEmail    = errors.New("invalid email")
+	ErrInvalidUsername = errors.New("invalid username")
+)
+
+var (
+	reEmail    = regexp.MustCompile(`^[^\s@]+@[^\s@]+\.[^\s@]+$`)
+	reUsername = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_-]{0,17}$`)
 )
 
 type LoginInput struct {
@@ -17,8 +26,29 @@ type LoginInput struct {
 	Username *string
 }
 
+func (in *LoginInput) Prepare() {
+	in.Email = strings.ToLower(in.Email)
+}
+
+func (in LoginInput) Validate() error {
+	if !isEmail(in.Email) {
+		return ErrInvalidEmail
+	}
+
+	if in.Username != nil && !isUsername(*in.Username) {
+		return ErrInvalidUsername
+	}
+
+	return nil
+}
+
 func (svc *Service) Login(ctx context.Context, in LoginInput) (User, error) {
 	var out User
+
+	in.Prepare()
+	if err := in.Validate(); err != nil {
+		return out, err
+	}
 
 	exists, err := svc.Queries.UserExistsByEmail(ctx, in.Email)
 	if err != nil {
@@ -59,6 +89,14 @@ func (svc *Service) Login(ctx context.Context, in LoginInput) (User, error) {
 		CreatedAt: createdAt,
 		UpdatedAt: createdAt,
 	}, nil
+}
+
+func isEmail(s string) bool {
+	return reEmail.MatchString(s)
+}
+
+func isUsername(s string) bool {
+	return reUsername.MatchString(s)
 }
 
 func genID() string {
