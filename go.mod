@@ -6,6 +6,7 @@ require (
 	github.com/alecthomas/assert/v2 v2.1.0
 	github.com/golangcollege/sessions v1.2.0
 	github.com/lib/pq v1.10.6
+	github.com/nicolasparada/go-errs v0.2.0
 	github.com/nicolasparada/go-mux v0.3.1
 	github.com/ory/dockertest/v3 v3.9.1
 	github.com/rs/xid v1.4.0

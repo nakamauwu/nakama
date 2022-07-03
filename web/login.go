@@ -6,6 +6,7 @@ import (
 	"net/url"
 
 	"github.com/nakamauwu/nakama"
+	"github.com/nicolasparada/go-errs/httperrs"
 )
 
 var loginTmpl = parseTmpl("login.tmpl")
@@ -25,7 +26,7 @@ func (h *Handler) showLogin(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+		h.renderLogin(w, loginData{Err: errors.New("bad request")}, http.StatusBadRequest)
 		return
 	}
 
@@ -35,21 +36,30 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 		Username: formPtr(r.PostForm, "username"),
 	}
 	user, err := h.Service.Login(ctx, input)
-	if errors.Is(err, nakama.ErrUserNotFound) || errors.Is(err, nakama.ErrUsernameTaken) {
+	if err != nil {
+		h.log(err)
 		h.renderLogin(w, loginData{
 			Form: r.PostForm,
-			Err:  err,
-		}, http.StatusBadRequest)
-		return
-	}
-	if err != nil {
-		h.Logger.Printf("could not login: %v\n", err)
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+			Err:  maskErr(err),
+		}, httperrs.Code(err))
 		return
 	}
 
 	h.session.Put(r, "user", user)
 	http.Redirect(w, r, "/", http.StatusFound)
+}
+
+func (h *Handler) log(err error) {
+	if httperrs.IsInternalServerError(err) {
+		_ = h.Logger.Output(2, err.Error())
+	}
+}
+
+func maskErr(err error) error {
+	if httperrs.IsInternalServerError(err) {
+		return errors.New("internal server error")
+	}
+	return err
 }
 
 func (h *Handler) logout(w http.ResponseWriter, r *http.Request) {
