@@ -30,8 +30,9 @@ func TestService_CreatePost(t *testing.T) {
 
 	t.Run("ok", func(t *testing.T) {
 		asUser := ContextWithUser(ctx, genUser(t))
-		_, err := svc.CreatePost(asUser, CreatePostInput{Content: genPostContent()})
+		got, err := svc.CreatePost(asUser, CreatePostInput{Content: genPostContent()})
 		assert.NoError(t, err)
+		assert.NotZero(t, got)
 	})
 }
 

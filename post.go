@@ -9,6 +9,10 @@ import (
 	"github.com/nicolasparada/go-errs"
 )
 
+const (
+	ErrInvalidPostContent = errs.InvalidArgumentError("invalid post content")
+)
+
 type CreatePostInput struct {
 	Content string
 }
@@ -21,7 +25,7 @@ func (in *CreatePostInput) Prepare() {
 
 func (in CreatePostInput) Validate() error {
 	if in.Content == "" || utf8.RuneCountInString(in.Content) > 1000 {
-		return errs.InvalidArgumentError("invalid post content")
+		return ErrInvalidPostContent
 	}
 	return nil
 }
