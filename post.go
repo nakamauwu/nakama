@@ -15,7 +15,7 @@ type CreatePostInput struct {
 
 func (in *CreatePostInput) Prepare() {
 	in.Content = strings.TrimSpace(in.Content)
-	in.Content = strings.ReplaceAll(in.Content, "\n\n", " \n")
+	in.Content = strings.ReplaceAll(in.Content, "\n\n", "\n")
 	in.Content = strings.ReplaceAll(in.Content, "  ", " ")
 }
 
