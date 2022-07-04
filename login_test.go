@@ -39,8 +39,15 @@ func TestService_Login(t *testing.T) {
 	})
 
 	t.Run("ok", func(t *testing.T) {
-		_, err := svc.Login(ctx, LoginInput{Email: genEmail(), Username: ptr(genUsername())})
+		email := genEmail()
+		got, err := svc.Login(ctx, LoginInput{Email: email, Username: ptr(genUsername())})
 		assert.NoError(t, err)
+		assert.NotZero(t, got)
+		assert.Equal(t, email, got.Email)
+
+		got2, err := svc.Login(ctx, LoginInput{Email: email})
+		assert.NoError(t, err)
+		assert.Equal(t, got, got2)
 	})
 
 	t.Run("lowercase_email", func(t *testing.T) {
