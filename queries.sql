@@ -15,3 +15,8 @@ SELECT EXISTS (
 SELECT EXISTS (
     SELECT 1 FROM users WHERE username ILIKE @username
 );
+
+-- name: CreatePost :one
+INSERT INTO posts (id, user_id, content)
+VALUES (@post_id, @user_id, @content)
+RETURNING created_at;

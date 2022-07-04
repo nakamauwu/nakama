@@ -13,5 +13,18 @@
     <p>You are not logged in.</p>
     <a href="/login">Login</a>
     {{end}}
+
+    {{if .Session.IsLoggedIn}}
+    <form action="/posts" method="POST">
+        <textarea name="content" aria-label="content" placeholder="Write something..."
+            required>{{.CreatePostForm.Get "content"}}</textarea>
+
+        {{with .CreatePostErr}}
+        <p>Could not create post: <code>{{.Error}}</code></p>
+        {{end}}
+
+        <button>Post</button>
+    </form>
+    {{end}}
 </main>
 {{end}}

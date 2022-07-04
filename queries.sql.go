@@ -10,6 +10,25 @@ import (
 	"time"
 )
 
+const createPost = `-- name: CreatePost :one
+INSERT INTO posts (id, user_id, content)
+VALUES ($1, $2, $3)
+RETURNING created_at
+`
+
+type CreatePostParams struct {
+	PostID  string
+	UserID  string
+	Content string
+}
+
+func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) (time.Time, error) {
+	row := q.db.QueryRowContext(ctx, createPost, arg.PostID, arg.UserID, arg.Content)
+	var created_at time.Time
+	err := row.Scan(&created_at)
+	return created_at, err
+}
+
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (id, email, username)
 VALUES ($1, $2, $3)

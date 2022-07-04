@@ -4,6 +4,7 @@ import (
 	"encoding/gob"
 	"log"
 	"net/http"
+	"net/url"
 	"sync"
 
 	"github.com/golangcollege/sessions"
@@ -36,10 +37,16 @@ func (h *Handler) init() {
 		http.MethodPost: h.logout,
 	})
 
+	r.Handle("/posts", mux.MethodHandler{
+		http.MethodPost: h.createPost,
+	})
+
 	gob.Register(nakama.User{})
+	gob.Register(url.Values{})
 	h.session = sessions.New(h.SessionKey)
 
 	h.handler = r
+	h.handler = h.withUser(h.handler)
 	h.handler = h.session.Enable(h.handler)
 }
 
