@@ -31,7 +31,7 @@ func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) (time.Ti
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (id, email, username)
-VALUES ($1, $2, $3)
+VALUES ($1, LOWER($2), $3)
 RETURNING created_at
 `
 
@@ -49,7 +49,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (time.Ti
 }
 
 const userByEmail = `-- name: UserByEmail :one
-SELECT id, email, username, created_at, updated_at FROM users WHERE email = $1
+SELECT id, email, username, created_at, updated_at FROM users WHERE email = LOWER($1)
 `
 
 func (q *Queries) UserByEmail(ctx context.Context, email string) (User, error) {
@@ -67,7 +67,7 @@ func (q *Queries) UserByEmail(ctx context.Context, email string) (User, error) {
 
 const userExistsByEmail = `-- name: UserExistsByEmail :one
 SELECT EXISTS (
-    SELECT 1 FROM users WHERE email = $1
+    SELECT 1 FROM users WHERE email = LOWER($1)
 )
 `
 
