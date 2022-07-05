@@ -80,7 +80,7 @@ func (q *Queries) UserExistsByEmail(ctx context.Context, email string) (bool, er
 
 const userExistsByUsername = `-- name: UserExistsByUsername :one
 SELECT EXISTS (
-    SELECT 1 FROM users WHERE username ILIKE $1
+    SELECT 1 FROM users WHERE LOWER(username) = LOWER($1)
 )
 `
 

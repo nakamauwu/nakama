@@ -13,7 +13,7 @@ SELECT EXISTS (
 
 -- name: UserExistsByUsername :one
 SELECT EXISTS (
-    SELECT 1 FROM users WHERE username ILIKE @username
+    SELECT 1 FROM users WHERE LOWER(username) = LOWER(@username)
 );
 
 -- name: CreatePost :one
