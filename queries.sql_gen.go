@@ -48,6 +48,82 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (time.Ti
 	return created_at, err
 }
 
+const post = `-- name: Post :one
+SELECT posts.id, posts.user_id, posts.content, posts.created_at, posts.updated_at, users.username
+FROM posts
+INNER JOIN users ON posts.user_id = users.id
+WHERE posts.id = $1
+`
+
+type PostRow struct {
+	ID        string
+	UserID    string
+	Content   string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	Username  string
+}
+
+func (q *Queries) Post(ctx context.Context, postID string) (PostRow, error) {
+	row := q.db.QueryRowContext(ctx, post, postID)
+	var i PostRow
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Content,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Username,
+	)
+	return i, err
+}
+
+const posts = `-- name: Posts :many
+SELECT posts.id, posts.user_id, posts.content, posts.created_at, posts.updated_at, users.username
+FROM posts
+INNER JOIN users ON posts.user_id = users.id
+ORDER BY posts.id DESC
+`
+
+type PostsRow struct {
+	ID        string
+	UserID    string
+	Content   string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	Username  string
+}
+
+func (q *Queries) Posts(ctx context.Context) ([]PostsRow, error) {
+	rows, err := q.db.QueryContext(ctx, posts)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []PostsRow
+	for rows.Next() {
+		var i PostsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Content,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Username,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const userByEmail = `-- name: UserByEmail :one
 SELECT id, email, username, created_at, updated_at FROM users WHERE email = LOWER($1)
 `

@@ -1,7 +1,9 @@
 package web
 
 import (
+	"embed"
 	"encoding/gob"
+	"io/fs"
 	"log"
 	"net/http"
 	"net/url"
@@ -11,6 +13,9 @@ import (
 	"github.com/nakamauwu/nakama"
 	"github.com/nicolasparada/go-mux"
 )
+
+//go:embed all:static
+var staticFS embed.FS
 
 type Handler struct {
 	Logger     *log.Logger
@@ -41,6 +46,14 @@ func (h *Handler) init() {
 		http.MethodPost: h.createPost,
 	})
 
+	r.Handle("/p/{postID}", mux.MethodHandler{
+		http.MethodGet: h.post,
+	})
+
+	r.Handle("/*", mux.MethodHandler{
+		http.MethodGet: h.static(),
+	})
+
 	gob.Register(nakama.User{})
 	gob.Register(url.Values{})
 	h.session = sessions.New(h.SessionKey)
@@ -53,4 +66,13 @@ func (h *Handler) init() {
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.once.Do(h.init)
 	h.handler.ServeHTTP(w, r)
+}
+
+func (h *Handler) static() http.HandlerFunc {
+	sub, err := fs.Sub(staticFS, "static")
+	if err != nil {
+		panic(err)
+	}
+
+	return http.FileServer(http.FS(sub)).ServeHTTP
 }

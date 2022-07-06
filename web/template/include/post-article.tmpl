@@ -1,0 +1,19 @@
+<article>
+    <div>
+        <a href="#!">
+            <h2 style="display: inline;">{{.Username}}</h2>
+        </a>
+        <a href="/p/{{.ID}}">
+            <time-ago>
+                <time datetime="{{.CreatedAt}}">{{.CreatedAt}}</time>
+            </time-ago>
+        </a>
+    </div>
+
+    {{/* linkify transforms urls into anchor tags */}}
+    <p>{{linkify .Content}}</p>
+</article>
+
+{{define "head"}}
+<script src="/time-ago.js" async></script>
+{{end}}

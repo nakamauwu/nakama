@@ -12,6 +12,7 @@ import (
 var loginTmpl = parseTmpl("login.tmpl")
 
 type loginData struct {
+	Session
 	Form url.Values
 	Err  error
 }
@@ -21,12 +22,17 @@ func (h *Handler) renderLogin(w http.ResponseWriter, data loginData, statusCode 
 }
 
 func (h *Handler) showLogin(w http.ResponseWriter, r *http.Request) {
-	h.renderLogin(w, loginData{}, http.StatusOK)
+	h.renderLogin(w, loginData{
+		Session: h.sessionFromReq(r),
+	}, http.StatusOK)
 }
 
 func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
-		h.renderLogin(w, loginData{Err: errors.New("bad request")}, http.StatusBadRequest)
+		h.renderLogin(w, loginData{
+			Session: h.sessionFromReq(r),
+			Err:     errors.New("bad request"),
+		}, http.StatusBadRequest)
 		return
 	}
 
@@ -39,8 +45,9 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.log(err)
 		h.renderLogin(w, loginData{
-			Form: r.PostForm,
-			Err:  maskErr(err),
+			Session: h.sessionFromReq(r),
+			Form:    r.PostForm,
+			Err:     maskErr(err),
 		}, httperrs.Code(err))
 		return
 	}
