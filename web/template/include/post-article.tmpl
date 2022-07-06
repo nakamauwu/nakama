@@ -5,7 +5,9 @@
         </a>
         <a href="/p/{{.ID}}">
             <time-ago>
-                <time datetime="{{.CreatedAt}}">{{.CreatedAt}}</time>
+                <time datetime='{{.CreatedAt.Format "2006-01-02T15:04:05Z07:00"}}'>
+                    {{- .CreatedAt.Format "02 Jan 06 15:04 MST" -}}
+                </time>
             </time-ago>
         </a>
     </div>

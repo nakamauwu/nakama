@@ -6,8 +6,9 @@
 
     {{if .Session.IsLoggedIn}}
     <form action="/posts" method="POST">
-        <textarea name="content" aria-label="content" placeholder="Write something..." rows="3"
-            required>{{.CreatePostForm.Get "content"}}</textarea>
+        <textarea name="content" aria-label="content" placeholder="Write something..." rows="3" required>
+            {{- .CreatePostForm.Get "content" -}}
+        </textarea>
 
         {{with .CreatePostErr}}
         <p>Could not create post: <code>{{.Error}}</code></p>
