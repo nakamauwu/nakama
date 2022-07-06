@@ -6,7 +6,7 @@
 
     {{if .Session.IsLoggedIn}}
     <form action="/posts" method="POST">
-        <textarea name="content" aria-label="content" placeholder="Write something..."
+        <textarea name="content" aria-label="content" placeholder="Write something..." rows="3"
             required>{{.CreatePostForm.Get "content"}}</textarea>
 
         {{with .CreatePostErr}}
