@@ -14,15 +14,12 @@ type Session struct {
 }
 
 func (h *Handler) sessionFromReq(r *http.Request) Session {
-	var out Session
-
-	if h.session.Exists(r, "user") {
-		user, ok := h.session.Get(r, "user").(nakama.User)
-		out.IsLoggedIn = ok
-		out.User = user
+	ctx := r.Context()
+	usr, ok := nakama.UserFromContext(ctx)
+	return Session{
+		IsLoggedIn: ok,
+		User:       usr,
 	}
-
-	return out
 }
 
 func (h *Handler) putErr(r *http.Request, key string, err error) {
