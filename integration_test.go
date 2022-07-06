@@ -4,8 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"math/rand"
 	"os"
 	"testing"
+	"time"
 
 	_ "github.com/lib/pq"
 	"github.com/ory/dockertest/v3"
@@ -78,4 +80,19 @@ func setupDB(cockroach *dockertest.Resource, retry func(op func() error) error) 
 
 		return db.Ping()
 	})
+}
+
+var letterRunes = []rune("abcdefghijklmnopqrstuvwxyz")
+
+func randString(n int) string {
+	rand.Seed(time.Now().UnixNano())
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+	}
+	return string(b)
+}
+
+func ptr[T any](v T) *T {
+	return &v
 }

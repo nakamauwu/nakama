@@ -2,10 +2,8 @@ package nakama
 
 import (
 	"context"
-	"math/rand"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/alecthomas/assert/v2"
 )
@@ -61,8 +59,26 @@ func TestService_Login(t *testing.T) {
 	})
 }
 
-func ptr[T any](v T) *T {
-	return &v
+func genUser(t *testing.T) User {
+	t.Helper()
+
+	ctx := context.Background()
+	userID := genID()
+	email := genEmail()
+	username := genUsername()
+	createdAt, err := testQueries.CreateUser(ctx, CreateUserParams{
+		UserID:   userID,
+		Email:    email,
+		Username: username,
+	})
+	assert.NoError(t, err)
+	return User{
+		ID:        userID,
+		Email:     email,
+		Username:  username,
+		CreatedAt: createdAt,
+		UpdatedAt: createdAt,
+	}
 }
 
 func genEmail() string {
@@ -71,15 +87,4 @@ func genEmail() string {
 
 func genUsername() string {
 	return randString(10)
-}
-
-var letterRunes = []rune("abcdefghijklmnopqrstuvwxyz")
-
-func randString(n int) string {
-	rand.Seed(time.Now().UnixNano())
-	b := make([]rune, n)
-	for i := range b {
-		b[i] = letterRunes[rand.Intn(len(letterRunes))]
-	}
-	return string(b)
 }

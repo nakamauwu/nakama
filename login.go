@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/nicolasparada/go-errs"
-	"github.com/rs/xid"
 )
 
 const (
@@ -97,8 +96,4 @@ func isEmail(s string) bool {
 
 func isUsername(s string) bool {
 	return reUsername.MatchString(s)
-}
-
-func genID() string {
-	return xid.New().String()
 }

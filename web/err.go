@@ -1,6 +1,7 @@
 package web
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/nicolasparada/go-errs/httperrs"
@@ -18,4 +19,11 @@ func (h *Handler) renderErr(w http.ResponseWriter, r *http.Request, err error) {
 		Session: h.sessionFromReq(r),
 		Err:     maskErr(err),
 	}, httperrs.Code(err))
+}
+
+func maskErr(err error) error {
+	if httperrs.IsInternalServerError(err) {
+		return errors.New("internal server error")
+	}
+	return err
 }

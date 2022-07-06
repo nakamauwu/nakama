@@ -19,14 +19,6 @@ var tmplFuncs = template.FuncMap{
 
 var reURL = xurls.Relaxed()
 
-func linkify(s string) template.HTML {
-	s = template.HTMLEscapeString(s)
-	s = reURL.ReplaceAllString(s,
-		`<a href="$0" target="_blank" rel="noopener noreferrer">$0</a>`,
-	)
-	return template.HTML(s)
-}
-
 func parseTmpl(name string) *template.Template {
 	tmpl := template.New(name).Funcs(tmplFuncs)
 	tmpl = template.Must(tmpl.ParseFS(templateFS, "template/include/*.tmpl"))
@@ -48,4 +40,13 @@ func (h *Handler) renderTmpl(w http.ResponseWriter, tmpl *template.Template, dat
 	if err != nil {
 		_ = h.Logger.Output(2, fmt.Sprintf("could not send %q: %v\n", tmpl.Name(), err))
 	}
+}
+
+// linkify transforms URLs in the given text to HTML anchor tags.
+func linkify(s string) template.HTML {
+	s = template.HTMLEscapeString(s)
+	s = reURL.ReplaceAllString(s,
+		`<a href="$0" target="_blank" rel="noopener noreferrer">$0</a>`,
+	)
+	return template.HTML(s)
 }

@@ -56,31 +56,9 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
-func (h *Handler) log(err error) {
-	if httperrs.IsInternalServerError(err) {
-		_ = h.Logger.Output(2, err.Error())
-	}
-}
-
-func maskErr(err error) error {
-	if httperrs.IsInternalServerError(err) {
-		return errors.New("internal server error")
-	}
-	return err
-}
-
 func (h *Handler) logout(w http.ResponseWriter, r *http.Request) {
 	h.session.Remove(r, "user")
 	http.Redirect(w, r, "/", http.StatusFound)
-}
-
-func formPtr(form url.Values, key string) *string {
-	if !form.Has(key) {
-		return nil
-	}
-
-	s := form.Get(key)
-	return &s
 }
 
 func (h *Handler) withUser(next http.Handler) http.Handler {

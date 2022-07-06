@@ -1,9 +1,7 @@
 package web
 
 import (
-	"embed"
 	"encoding/gob"
-	"io/fs"
 	"log"
 	"net/http"
 	"net/url"
@@ -11,11 +9,9 @@ import (
 
 	"github.com/golangcollege/sessions"
 	"github.com/nakamauwu/nakama"
+	"github.com/nicolasparada/go-errs/httperrs"
 	"github.com/nicolasparada/go-mux"
 )
-
-//go:embed all:static
-var staticFS embed.FS
 
 type Handler struct {
 	Logger     *log.Logger
@@ -68,11 +64,17 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.handler.ServeHTTP(w, r)
 }
 
-func (h *Handler) static() http.HandlerFunc {
-	sub, err := fs.Sub(staticFS, "static")
-	if err != nil {
-		panic(err)
+func (h *Handler) log(err error) {
+	if httperrs.IsInternalServerError(err) {
+		_ = h.Logger.Output(2, err.Error())
+	}
+}
+
+func formPtr(form url.Values, key string) *string {
+	if !form.Has(key) {
+		return nil
 	}
 
-	return http.FileServer(http.FS(sub)).ServeHTTP
+	s := form.Get(key)
+	return &s
 }

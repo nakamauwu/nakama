@@ -36,32 +36,6 @@ func TestService_CreatePost(t *testing.T) {
 	})
 }
 
-func genPostContent() string {
-	return randString(10)
-}
-
-func genUser(t *testing.T) User {
-	t.Helper()
-
-	ctx := context.Background()
-	userID := genID()
-	email := genEmail()
-	username := genUsername()
-	createdAt, err := testQueries.CreateUser(ctx, CreateUserParams{
-		UserID:   userID,
-		Email:    email,
-		Username: username,
-	})
-	assert.NoError(t, err)
-	return User{
-		ID:        userID,
-		Email:     email,
-		Username:  username,
-		CreatedAt: createdAt,
-		UpdatedAt: createdAt,
-	}
-}
-
 func TestService_Posts(t *testing.T) {
 	svc := &Service{Queries: testQueries}
 	ctx := context.Background()
@@ -96,6 +70,10 @@ func TestService_Post(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotZero(t, got)
 	})
+}
+
+func genPostContent() string {
+	return randString(10)
 }
 
 func genPost(t *testing.T, userID string) Post {

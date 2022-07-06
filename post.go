@@ -9,7 +9,6 @@ import (
 	"unicode/utf8"
 
 	"github.com/nicolasparada/go-errs"
-	"github.com/rs/xid"
 )
 
 const (
@@ -86,9 +85,4 @@ func (svc *Service) Post(ctx context.Context, postID string) (PostRow, error) {
 	}
 
 	return out, err
-}
-
-func isID(s string) bool {
-	_, err := xid.FromString(s)
-	return err == nil
 }
