@@ -16,10 +16,19 @@
 
         <button>Post</button>
     </form>
+
+    <br>
     {{end}}
 
-    {{range .Posts}}
-    {{template "post-article.tmpl" .}}
+
+    {{if eq (len .Posts) 0}}
+    <p>No posts yet.</p>
+    {{else}}
+    <section>
+        {{range .Posts}}
+        {{template "post-article.tmpl" .}}
+        {{end}}
+    </section>
     {{end}}
 </main>
 {{end}}
