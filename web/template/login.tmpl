@@ -8,7 +8,7 @@
         <div>
             <label for="email">Email</label>
             <input type="email" name="email" id="email" placeholder="uwu@example.org" value='{{.Form.Get "email"}}'
-                required>
+                pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$" required>
         </div>
 
         {{with .Err}}
@@ -16,7 +16,7 @@
         <div>
             <label for="username">Username</label>
             <input type="text" name="username" id="username" placeholder="uwu" value='{{$.Form.Get "username"}}'
-                autocomplete="off" required>
+                autocomplete="off" pattern="^[a-zA-Z0-9][a-zA-Z0-9_-]{0,17}$" maxlength="18" required>
         </div>
         {{end}}
         {{end}}

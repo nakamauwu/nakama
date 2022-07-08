@@ -20,7 +20,8 @@
     <form action="/comments" method="POST">
         <input type="hidden" name="post_id" value="{{.Post.ID}}">
 
-        <textarea name="content" aria-label="content" placeholder="Write something..." rows="3" required>
+        <textarea name="content" aria-label="content" placeholder="Write something..." rows="3" maxlength="1000"
+            required>
             {{- .CreateCommentForm.Get "content" -}}
         </textarea>
 
