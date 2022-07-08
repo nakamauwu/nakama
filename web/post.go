@@ -50,6 +50,8 @@ func (h *Handler) showPost(w http.ResponseWriter, r *http.Request) {
 	postID := mux.URLParam(ctx, "postID")
 
 	// TODO: fetch both post and comments in parallel.
+	// TODO: reverse order of comments.
+
 	p, err := h.Service.Post(ctx, postID)
 	if err != nil {
 		h.log(err)
