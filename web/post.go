@@ -18,6 +18,7 @@ func (h *Handler) renderPost(w http.ResponseWriter, data postData, statusCode in
 	h.renderTmpl(w, postTmpl, data, statusCode)
 }
 
+// createPost handles POST /posts.
 func (h *Handler) createPost(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		h.putErr(r, "create_post_err", err)
@@ -39,7 +40,8 @@ func (h *Handler) createPost(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
-func (h *Handler) post(w http.ResponseWriter, r *http.Request) {
+// showPost handles GET /p/{postID}.
+func (h *Handler) showPost(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	postID := mux.URLParam(ctx, "postID")
 	p, err := h.Service.Post(ctx, postID)

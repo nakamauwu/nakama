@@ -20,6 +20,7 @@ func (h *Handler) renderHome(w http.ResponseWriter, data homeData, statusCode in
 	h.renderTmpl(w, homeTmpl, data, statusCode)
 }
 
+// showHome handles GET /.
 func (h *Handler) showHome(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	pp, err := h.Service.Posts(ctx)

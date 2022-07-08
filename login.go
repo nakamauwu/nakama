@@ -41,6 +41,8 @@ func (in LoginInput) Validate() error {
 	return nil
 }
 
+// Login insecurely. Only for development purposes.
+// TODO: add 2nd factor.
 func (svc *Service) Login(ctx context.Context, in LoginInput) (User, error) {
 	var out User
 

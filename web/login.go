@@ -1,13 +1,14 @@
 package web
 
 import (
-	"errors"
 	"net/http"
 	"net/url"
 
 	"github.com/nakamauwu/nakama"
 	"github.com/nicolasparada/go-errs/httperrs"
 )
+
+const sessionKeyUser = "user"
 
 var loginTmpl = parseTmpl("login.tmpl")
 
@@ -21,17 +22,19 @@ func (h *Handler) renderLogin(w http.ResponseWriter, data loginData, statusCode 
 	h.renderTmpl(w, loginTmpl, data, statusCode)
 }
 
+// showLogin handles GET /login.
 func (h *Handler) showLogin(w http.ResponseWriter, r *http.Request) {
 	h.renderLogin(w, loginData{
 		Session: h.sessionFromReq(r),
 	}, http.StatusOK)
 }
 
+// login handles POST /login.
 func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		h.renderLogin(w, loginData{
 			Session: h.sessionFromReq(r),
-			Err:     errors.New("bad request"),
+			Err:     err,
 		}, http.StatusBadRequest)
 		return
 	}
@@ -52,23 +55,22 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.session.Put(r, "user", user)
+	h.session.Put(r, sessionKeyUser, user)
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
+// logout handles POST /logout.
 func (h *Handler) logout(w http.ResponseWriter, r *http.Request) {
-	h.session.Remove(r, "user")
+	h.session.Remove(r, sessionKeyUser)
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
+// withUser middleware places the user from the session
+// into the request's context.
+// It continues to the next handler if user does not exists in session.
 func (h *Handler) withUser(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !h.session.Exists(r, "user") {
-			next.ServeHTTP(w, r)
-			return
-		}
-
-		usr, ok := h.session.Get(r, "user").(nakama.User)
+		usr, ok := h.session.Get(r, sessionKeyUser).(nakama.User)
 		if !ok {
 			next.ServeHTTP(w, r)
 			return

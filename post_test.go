@@ -72,10 +72,6 @@ func TestService_Post(t *testing.T) {
 	})
 }
 
-func genPostContent() string {
-	return randString(10)
-}
-
 func genPost(t *testing.T, userID string) Post {
 	t.Helper()
 
@@ -94,4 +90,8 @@ func genPost(t *testing.T, userID string) Post {
 		CreatedAt: createdAt,
 		UpdatedAt: createdAt,
 	}
+}
+
+func genPostContent() string {
+	return randString(10)
 }

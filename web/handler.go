@@ -17,9 +17,11 @@ type Handler struct {
 	Logger     *log.Logger
 	Service    *nakama.Service
 	SessionKey []byte
-	once       sync.Once
-	handler    http.Handler
-	session    *sessions.Session
+
+	session *sessions.Session
+
+	once    sync.Once
+	handler http.Handler
 }
 
 func (h *Handler) init() {
@@ -43,15 +45,17 @@ func (h *Handler) init() {
 	})
 
 	r.Handle("/p/{postID}", mux.MethodHandler{
-		http.MethodGet: h.post,
+		http.MethodGet: h.showPost,
 	})
 
 	r.Handle("/*", mux.MethodHandler{
-		http.MethodGet: h.static(),
+		http.MethodGet: h.staticHandler(),
 	})
 
+	// register types used on sessions.
 	gob.Register(nakama.User{})
 	gob.Register(url.Values{})
+
 	h.session = sessions.New(h.SessionKey)
 
 	h.handler = r
@@ -64,12 +68,14 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.handler.ServeHTTP(w, r)
 }
 
+// log an error only if it's an internal error.
 func (h *Handler) log(err error) {
 	if httperrs.IsInternalServerError(err) {
 		_ = h.Logger.Output(2, err.Error())
 	}
 }
 
+// formPtr utility to get a *string from a form.
 func formPtr(form url.Values, key string) *string {
 	if !form.Has(key) {
 		return nil
