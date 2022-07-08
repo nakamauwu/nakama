@@ -17,6 +17,8 @@ const (
 	ErrPostNotFound       = errs.NotFoundError("post not found")
 )
 
+const maxPostContentLength = 1000
+
 type CreatePostInput struct {
 	Content string
 }
@@ -28,7 +30,7 @@ func (in *CreatePostInput) Prepare() {
 }
 
 func (in CreatePostInput) Validate() error {
-	if in.Content == "" || utf8.RuneCountInString(in.Content) > 1000 {
+	if in.Content == "" || utf8.RuneCountInString(in.Content) > maxPostContentLength {
 		return ErrInvalidPostContent
 	}
 	return nil

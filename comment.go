@@ -13,6 +13,8 @@ const (
 	ErrInvalidCommentContent = errs.InvalidArgumentError("invalid comment content")
 )
 
+const maxCommentContentLength = 1000
+
 type CreateCommentInput struct {
 	PostID  string
 	Content string
@@ -28,7 +30,7 @@ func (in CreateCommentInput) Validate() error {
 	if !isID(in.PostID) {
 		return ErrInvalidPostID
 	}
-	if in.Content == "" || utf8.RuneCountInString(in.Content) > 1000 {
+	if in.Content == "" || utf8.RuneCountInString(in.Content) > maxCommentContentLength {
 		return ErrInvalidCommentContent
 	}
 	return nil
