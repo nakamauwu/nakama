@@ -2,6 +2,8 @@
 
 The next social network for anime fans.
 
+Follow the development on [YouTube](https://www.youtube.com/playlist?list=PLOzDrFftjC09iI8rgmj9JZr4bwImeUpkf).
+
 ## Dependencies
 
 - [Go Programming Language](https://go.dev)
