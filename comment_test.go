@@ -61,7 +61,7 @@ func TestService_Comments(t *testing.T) {
 	svc := &Service{Queries: testQueries}
 	ctx := context.Background()
 
-	t.Run("ok", func(t *testing.T) {
+	t.Run("invalid_post_id", func(t *testing.T) {
 		_, err := svc.Comments(ctx, "@nope@")
 		assert.EqualError(t, err, "invalid post ID")
 	})
