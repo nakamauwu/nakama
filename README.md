@@ -1,4 +1,4 @@
-# Nakama
+# Nakama [![join slack](https://img.shields.io/badge/slack-join-none.svg?style=social&logo=slack)](https://join.slack.com/t/nakama-social/shared_invite/zt-143j6bzie-spuCdq79xIZJQa4DaPb0uQ)
 
 The next social network for anime fans.
 
