@@ -1,0 +1,17 @@
+<article>
+    <div>
+        <a href="#!">{{.Username}}</a>
+        <time-ago>
+            <time datetime='{{.CreatedAt.Format "2006-01-02T15:04:05Z07:00"}}'>
+                {{- .CreatedAt.Format "02 Jan 06 15:04 MST" -}}
+            </time>
+        </time-ago>
+    </div>
+
+    {{/* linkify transforms urls into anchor tags */}}
+    <p>{{linkify .Content}}</p>
+</article>
+
+{{define "head"}}
+<script src="/time-ago.js" async></script>
+{{end}}

@@ -51,6 +51,7 @@ func (svc *Service) Login(ctx context.Context, in LoginInput) (User, error) {
 		return out, err
 	}
 
+	// TODO: run inside a transaction.
 	exists, err := svc.Queries.UserExistsByEmail(ctx, in.Email)
 	if err != nil {
 		return out, err

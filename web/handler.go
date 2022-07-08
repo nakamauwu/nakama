@@ -48,6 +48,10 @@ func (h *Handler) init() {
 		http.MethodGet: h.showPost,
 	})
 
+	r.Handle("/comments", mux.MethodHandler{
+		http.MethodPost: h.createComment,
+	})
+
 	r.Handle("/*", mux.MethodHandler{
 		http.MethodGet: h.staticHandler(),
 	})

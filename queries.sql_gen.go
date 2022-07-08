@@ -10,6 +10,80 @@ import (
 	"time"
 )
 
+const comments = `-- name: Comments :many
+SELECT comments.id, comments.user_id, comments.post_id, comments.content, comments.created_at, comments.updated_at, users.username
+FROM comments
+INNER JOIN users ON comments.user_id = users.id
+WHERE comments.post_id = $1
+ORDER BY comments.id DESC
+`
+
+type CommentsRow struct {
+	ID        string
+	UserID    string
+	PostID    string
+	Content   string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	Username  string
+}
+
+func (q *Queries) Comments(ctx context.Context, postID string) ([]CommentsRow, error) {
+	rows, err := q.db.QueryContext(ctx, comments, postID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []CommentsRow
+	for rows.Next() {
+		var i CommentsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.PostID,
+			&i.Content,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Username,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const createComment = `-- name: CreateComment :one
+INSERT INTO comments (id, user_id, post_id, content)
+VALUES ($1, $2, $3, $4)
+RETURNING created_at
+`
+
+type CreateCommentParams struct {
+	CommentID string
+	UserID    string
+	PostID    string
+	Content   string
+}
+
+func (q *Queries) CreateComment(ctx context.Context, arg CreateCommentParams) (time.Time, error) {
+	row := q.db.QueryRowContext(ctx, createComment,
+		arg.CommentID,
+		arg.UserID,
+		arg.PostID,
+		arg.Content,
+	)
+	var created_at time.Time
+	err := row.Scan(&created_at)
+	return created_at, err
+}
+
 const createPost = `-- name: CreatePost :one
 INSERT INTO posts (id, user_id, content)
 VALUES ($1, $2, $3)
@@ -49,19 +123,20 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (time.Ti
 }
 
 const post = `-- name: Post :one
-SELECT posts.id, posts.user_id, posts.content, posts.created_at, posts.updated_at, users.username
+SELECT posts.id, posts.user_id, posts.content, posts.comments_count, posts.created_at, posts.updated_at, users.username
 FROM posts
 INNER JOIN users ON posts.user_id = users.id
 WHERE posts.id = $1
 `
 
 type PostRow struct {
-	ID        string
-	UserID    string
-	Content   string
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	Username  string
+	ID            string
+	UserID        string
+	Content       string
+	CommentsCount int32
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+	Username      string
 }
 
 func (q *Queries) Post(ctx context.Context, postID string) (PostRow, error) {
@@ -71,6 +146,7 @@ func (q *Queries) Post(ctx context.Context, postID string) (PostRow, error) {
 		&i.ID,
 		&i.UserID,
 		&i.Content,
+		&i.CommentsCount,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Username,
@@ -79,19 +155,20 @@ func (q *Queries) Post(ctx context.Context, postID string) (PostRow, error) {
 }
 
 const posts = `-- name: Posts :many
-SELECT posts.id, posts.user_id, posts.content, posts.created_at, posts.updated_at, users.username
+SELECT posts.id, posts.user_id, posts.content, posts.comments_count, posts.created_at, posts.updated_at, users.username
 FROM posts
 INNER JOIN users ON posts.user_id = users.id
 ORDER BY posts.id DESC
 `
 
 type PostsRow struct {
-	ID        string
-	UserID    string
-	Content   string
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	Username  string
+	ID            string
+	UserID        string
+	Content       string
+	CommentsCount int32
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+	Username      string
 }
 
 func (q *Queries) Posts(ctx context.Context) ([]PostsRow, error) {
@@ -107,6 +184,7 @@ func (q *Queries) Posts(ctx context.Context) ([]PostsRow, error) {
 			&i.ID,
 			&i.UserID,
 			&i.Content,
+			&i.CommentsCount,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Username,
@@ -122,6 +200,25 @@ func (q *Queries) Posts(ctx context.Context) ([]PostsRow, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const updatePost = `-- name: UpdatePost :one
+UPDATE posts
+SET comments_count = comments_count + $1, updated_at = now()
+WHERE id = $2
+RETURNING updated_at
+`
+
+type UpdatePostParams struct {
+	IncreaseCommentsCountBy int32
+	PostID                  string
+}
+
+func (q *Queries) UpdatePost(ctx context.Context, arg UpdatePostParams) (time.Time, error) {
+	row := q.db.QueryRowContext(ctx, updatePost, arg.IncreaseCommentsCountBy, arg.PostID)
+	var updated_at time.Time
+	err := row.Scan(&updated_at)
+	return updated_at, err
 }
 
 const userByEmail = `-- name: UserByEmail :one

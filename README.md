@@ -102,3 +102,17 @@ Any new dependency must be injected explicitly on `cmd/nakama/main.go`.
 Here is were configuration is also read. No other place is allowed to read
 configuration but here. That means, any call to `os.Getenv()` for example
 is discouraged but on `main.go`.
+
+## Troubleshoot
+
+If you run into migrations issues, that is because the SQL schema
+is not applied progressively. For now, you will have to cleanup the database
+and run the server again.
+
+You could stop cockroach. Remove the `cockroach-data` directory:
+
+```bash
+rm -rf ./cockroach-data
+```
+
+And start cockroach again.

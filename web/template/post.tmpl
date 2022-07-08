@@ -3,5 +3,33 @@
 {{define "content"}}
 <main>
     {{template "post-article.tmpl" .Post}}
+
+    <h2>Comments</h2>
+
+    {{if eq (len .Comments) 0}}
+    <p>No comments yet.</p>
+    {{else}}
+    <section>
+        {{range .Comments}}
+        {{template "comment.tmpl" .}}
+        {{end}}
+    </section>
+    {{end}}
+
+    {{if .Session.IsLoggedIn}}
+    <form action="/comments" method="POST">
+        <input type="hidden" name="post_id" value="{{.Post.ID}}">
+
+        <textarea name="content" aria-label="content" placeholder="Write something..." rows="3" required>
+            {{- .CreateCommentForm.Get "content" -}}
+        </textarea>
+
+        {{with .CreateCommentErr}}
+        <p>Could not create comment: <code>{{.Error}}</code></p>
+        {{end}}
+
+        <button>Comment</button>
+    </form>
+    {{end}}
 </main>
 {{end}}
