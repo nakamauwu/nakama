@@ -1,9 +1,9 @@
 <article>
     <div>
-        <a href="#!">
+        <a href="#!" style="text-decoration: none;">
             <h2 style="display: inline;">{{.Username}}</h2>
         </a>
-        <a href="/p/{{.ID}}">
+        <a href="/p/{{.ID}}" style="text-decoration: none;">
             <time-ago>
                 <time datetime='{{.CreatedAt.Format "2006-01-02T15:04:05Z07:00"}}'>
                     {{- .CreatedAt.Format "02 Jan 06 15:04 MST" -}}
@@ -16,7 +16,7 @@
     <p>{{linkify .Content}}</p>
 
     <div>
-        <a href="/p/{{.ID}}" title="{{.CommentsCount}} comments"
+        <a href="/p/{{.ID}}" style="text-decoration: none; color: inherit;" title="{{.CommentsCount}} comments"
             aria-label="{{.CommentsCount}} comments">{{.CommentsCount}} 💬</a>
     </div>
 </article>

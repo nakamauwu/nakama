@@ -1,6 +1,8 @@
 <article>
     <div>
-        <a href="#!">{{.Username}}</a>
+        <a href="#!" style="text-decoration: none; color: inherit;">
+            <b>{{.Username}}</b>
+        </a>
         <time-ago>
             <time datetime='{{.CreatedAt.Format "2006-01-02T15:04:05Z07:00"}}'>
                 {{- .CreatedAt.Format "02 Jan 06 15:04 MST" -}}
