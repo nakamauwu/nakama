@@ -9,7 +9,7 @@
     {{if eq (len .Comments) 0}}
     <p>No comments yet.</p>
     {{else}}
-    <section>
+    <section style="display: flex; flex-direction: column; gap: 1rem;">
         {{range .Comments}}
         {{template "comment.tmpl" .}}
         {{end}}
@@ -17,6 +17,7 @@
     {{end}}
 
     {{if .Session.IsLoggedIn}}
+    <br>
     <form action="/comments" method="POST">
         <input type="hidden" name="post_id" value="{{.Post.ID}}">
 

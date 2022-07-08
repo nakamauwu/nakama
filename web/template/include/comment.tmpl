@@ -1,4 +1,4 @@
-<article>
+<article style="background-color: var(--background); padding: 1rem; border-radius: 6px;">
     <div>
         <a href="#!" style="text-decoration: none; color: inherit;">
             <b>{{.Username}}</b>
@@ -11,7 +11,7 @@
     </div>
 
     {{/* linkify transforms urls into anchor tags */}}
-    <p style="white-space: pre-line;">{{linkify .Content}}</p>
+    <p style="white-space: pre-line; margin-bottom: 0;">{{linkify .Content}}</p>
 </article>
 
 {{define "head"}}
