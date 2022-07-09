@@ -57,12 +57,12 @@ func TestService_Posts(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("invalid_username", func(t *testing.T) {
-		_, err := svc.Posts(ctx, "@nope@")
+		_, err := svc.Posts(ctx, PostsInput{Username: "@nope@"})
 		assert.EqualError(t, err, "invalid username")
 	})
 
 	t.Run("optional_username", func(t *testing.T) {
-		_, err := svc.Posts(ctx, "")
+		_, err := svc.Posts(ctx, PostsInput{})
 		assert.NoError(t, err)
 	})
 
@@ -72,7 +72,7 @@ func TestService_Posts(t *testing.T) {
 			genPost(t, genUser(t).ID)
 		}
 
-		got, err := svc.Posts(ctx, "")
+		got, err := svc.Posts(ctx, PostsInput{})
 		assert.NoError(t, err)
 		assert.True(t, len(got) >= wantAtLeast, "got %d posts, want at least %d", len(got), wantAtLeast)
 		for _, p := range got {
@@ -88,7 +88,7 @@ func TestService_Posts(t *testing.T) {
 		}
 		genPost(t, genUser(t).ID) // additional post from another user
 
-		got, err := svc.Posts(ctx, usr.Username)
+		got, err := svc.Posts(ctx, PostsInput{Username: usr.Username})
 		assert.NoError(t, err)
 		assert.Equal(t, want, len(got))
 		for _, p := range got {

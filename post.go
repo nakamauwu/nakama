@@ -41,6 +41,19 @@ type CreatePostOutput struct {
 	CreateAt time.Time
 }
 
+type PostsInput struct {
+	// Username is optiona. If empty, all posts are returned.
+	// Otherwise, only posts created by this user are returned.
+	Username string
+}
+
+func (in PostsInput) Validate() error {
+	if in.Username != "" && !isUsername(in.Username) {
+		return ErrInvalidUsername
+	}
+	return nil
+}
+
 func (svc *Service) CreatePost(ctx context.Context, in CreatePostInput) (CreatePostOutput, error) {
 	var out CreatePostOutput
 
@@ -78,13 +91,11 @@ func (svc *Service) CreatePost(ctx context.Context, in CreatePostInput) (CreateP
 	return out, nil
 }
 
-// Posts returns a list of posts.
-// Username is optional. If empty, all posts are returned.
-func (svc *Service) Posts(ctx context.Context, username string) ([]PostsRow, error) {
-	if username != "" && !isUsername(username) {
-		return nil, ErrInvalidUsername
+func (svc *Service) Posts(ctx context.Context, in PostsInput) ([]PostsRow, error) {
+	if err := in.Validate(); err != nil {
+		return nil, err
 	}
-	return svc.Queries.Posts(ctx, username)
+	return svc.Queries.Posts(ctx, in.Username)
 }
 
 func (svc *Service) Post(ctx context.Context, postID string) (PostRow, error) {
