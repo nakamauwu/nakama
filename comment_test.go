@@ -28,7 +28,7 @@ func TestService_CreateComment(t *testing.T) {
 	})
 
 	t.Run("too_long_content", func(t *testing.T) {
-		s := strings.Repeat("a", 1001)
+		s := strings.Repeat("a", maxCommentContentLength+1)
 		_, err := svc.CreateComment(ctx, CreateCommentInput{
 			PostID:  genID(),
 			Content: s,
@@ -76,9 +76,9 @@ func TestService_Comments(t *testing.T) {
 		usr := genUser(t)
 		post := genPost(t, usr.ID)
 
-		want := 10
+		want := 5
 		for i := 0; i < want; i++ {
-			_ = genComment(t, usr.ID, post.ID)
+			genComment(t, usr.ID, post.ID)
 		}
 
 		got, err := svc.Comments(ctx, post.ID)
@@ -92,6 +92,7 @@ func TestService_Comments(t *testing.T) {
 
 func genComment(t *testing.T, userID, postID string) Comment {
 	t.Helper()
+
 	commentID := genID()
 	createdAt, err := testQueries.CreateComment(context.Background(), CreateCommentParams{
 		CommentID: commentID,

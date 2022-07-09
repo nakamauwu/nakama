@@ -18,7 +18,7 @@ func TestService_CreatePost(t *testing.T) {
 	})
 
 	t.Run("too_long_content", func(t *testing.T) {
-		s := strings.Repeat("a", 1001)
+		s := strings.Repeat("x", maxPostContentLength+1)
 		_, err := svc.CreatePost(ctx, CreatePostInput{Content: s})
 		assert.EqualError(t, err, "invalid post content")
 	})
@@ -41,8 +41,14 @@ func TestService_Posts(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("ok", func(t *testing.T) {
+		wantAtLeast := 5
+		for i := 0; i < wantAtLeast; i++ {
+			genPost(t, genUser(t).ID)
+		}
+
 		got, err := svc.Posts(ctx)
 		assert.NoError(t, err)
+		assert.True(t, len(got) >= wantAtLeast, "got %d posts, want at least %d", len(got), wantAtLeast)
 		for _, p := range got {
 			assert.NotZero(t, p)
 		}
@@ -64,8 +70,7 @@ func TestService_Post(t *testing.T) {
 	})
 
 	t.Run("ok", func(t *testing.T) {
-		usr := genUser(t)
-		post := genPost(t, usr.ID)
+		post := genPost(t, genUser(t).ID)
 		got, err := svc.Post(ctx, post.ID)
 		assert.NoError(t, err)
 		assert.NotZero(t, got)
