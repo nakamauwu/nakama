@@ -23,6 +23,7 @@ func (h *Handler) showUser(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	username := mux.URLParam(ctx, "username")
 
+	// TODO: fetch both user and posts in parallel.
 	usr, err := h.Service.UserByUsername(ctx, username)
 	if err != nil {
 		h.log(err)
