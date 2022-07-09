@@ -2,22 +2,7 @@ package nakama
 
 import (
 	"context"
-	"regexp"
 	"strings"
-
-	"github.com/nicolasparada/go-errs"
-)
-
-const (
-	ErrUserNotFound    = errs.NotFoundError("user not found")
-	ErrUsernameTaken   = errs.ConflictError("username taken")
-	ErrInvalidEmail    = errs.InvalidArgumentError("invalid email")
-	ErrInvalidUsername = errs.InvalidArgumentError("invalid username")
-)
-
-var (
-	reEmail    = regexp.MustCompile(`^[^\s@]+@[^\s@]+\.[^\s@]+$`)
-	reUsername = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_-]{0,17}$`)
 )
 
 type LoginInput struct {
@@ -91,12 +76,4 @@ func (svc *Service) Login(ctx context.Context, in LoginInput) (User, error) {
 		CreatedAt: createdAt,
 		UpdatedAt: createdAt,
 	}, nil
-}
-
-func isEmail(s string) bool {
-	return reEmail.MatchString(s)
-}
-
-func isUsername(s string) bool {
-	return reUsername.MatchString(s)
 }

@@ -58,33 +58,3 @@ func TestService_Login(t *testing.T) {
 		assert.NoError(t, err)
 	})
 }
-
-func genUser(t *testing.T) User {
-	t.Helper()
-
-	ctx := context.Background()
-	userID := genID()
-	email := genEmail()
-	username := genUsername()
-	createdAt, err := testQueries.CreateUser(ctx, CreateUserParams{
-		UserID:   userID,
-		Email:    email,
-		Username: username,
-	})
-	assert.NoError(t, err)
-	return User{
-		ID:        userID,
-		Email:     email,
-		Username:  username,
-		CreatedAt: createdAt,
-		UpdatedAt: createdAt,
-	}
-}
-
-func genEmail() string {
-	return randString(10) + "@example.org"
-}
-
-func genUsername() string {
-	return randString(10)
-}
