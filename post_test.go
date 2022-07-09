@@ -34,11 +34,37 @@ func TestService_CreatePost(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotZero(t, got)
 	})
+
+	t.Run("user_posts_count", func(t *testing.T) {
+		usr := genUser(t)
+		asUser := ContextWithUser(ctx, usr)
+
+		want := 5
+		for i := 0; i < want; i++ {
+			got, err := svc.CreatePost(asUser, CreatePostInput{Content: genPostContent()})
+			assert.NoError(t, err)
+			assert.NotZero(t, got)
+		}
+
+		got, err := svc.Queries.UserByUsername(ctx, usr.Username)
+		assert.NoError(t, err)
+		assert.Equal(t, want, int(got.PostsCount))
+	})
 }
 
 func TestService_Posts(t *testing.T) {
 	svc := &Service{Queries: testQueries}
 	ctx := context.Background()
+
+	t.Run("invalid_username", func(t *testing.T) {
+		_, err := svc.Posts(ctx, "@nope@")
+		assert.EqualError(t, err, "invalid username")
+	})
+
+	t.Run("optional_username", func(t *testing.T) {
+		_, err := svc.Posts(ctx, "")
+		assert.NoError(t, err)
+	})
 
 	t.Run("ok", func(t *testing.T) {
 		wantAtLeast := 5
@@ -46,9 +72,25 @@ func TestService_Posts(t *testing.T) {
 			genPost(t, genUser(t).ID)
 		}
 
-		got, err := svc.Posts(ctx)
+		got, err := svc.Posts(ctx, "")
 		assert.NoError(t, err)
 		assert.True(t, len(got) >= wantAtLeast, "got %d posts, want at least %d", len(got), wantAtLeast)
+		for _, p := range got {
+			assert.NotZero(t, p)
+		}
+	})
+
+	t.Run("ok_with_username", func(t *testing.T) {
+		usr := genUser(t)
+		want := 5
+		for i := 0; i < want; i++ {
+			genPost(t, usr.ID)
+		}
+		genPost(t, genUser(t).ID) // additional post from another user
+
+		got, err := svc.Posts(ctx, usr.Username)
+		assert.NoError(t, err)
+		assert.Equal(t, want, len(got))
 		for _, p := range got {
 			assert.NotZero(t, p)
 		}

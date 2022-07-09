@@ -27,9 +27,10 @@ type Post struct {
 }
 
 type User struct {
-	ID        string
-	Email     string
-	Username  string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID         string
+	Email      string
+	Username   string
+	PostsCount int32
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
 }

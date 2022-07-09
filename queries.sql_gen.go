@@ -158,6 +158,11 @@ const posts = `-- name: Posts :many
 SELECT posts.id, posts.user_id, posts.content, posts.comments_count, posts.created_at, posts.updated_at, users.username
 FROM posts
 INNER JOIN users ON posts.user_id = users.id
+WHERE
+    CASE
+        WHEN $1::varchar <> '' THEN LOWER(users.username) = LOWER($1::varchar)
+        ELSE true
+    END
 ORDER BY posts.id DESC
 `
 
@@ -171,8 +176,8 @@ type PostsRow struct {
 	Username      string
 }
 
-func (q *Queries) Posts(ctx context.Context) ([]PostsRow, error) {
-	rows, err := q.db.QueryContext(ctx, posts)
+func (q *Queries) Posts(ctx context.Context, username string) ([]PostsRow, error) {
+	rows, err := q.db.QueryContext(ctx, posts, username)
 	if err != nil {
 		return nil, err
 	}
@@ -221,8 +226,28 @@ func (q *Queries) UpdatePost(ctx context.Context, arg UpdatePostParams) (time.Ti
 	return updated_at, err
 }
 
+const updateUser = `-- name: UpdateUser :one
+UPDATE users SET
+    posts_count = posts_count + $1,
+    updated_at = now()
+WHERE id = $2
+RETURNING updated_at
+`
+
+type UpdateUserParams struct {
+	IncreasePostsCountBy int32
+	UserID               string
+}
+
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (time.Time, error) {
+	row := q.db.QueryRowContext(ctx, updateUser, arg.IncreasePostsCountBy, arg.UserID)
+	var updated_at time.Time
+	err := row.Scan(&updated_at)
+	return updated_at, err
+}
+
 const userByEmail = `-- name: UserByEmail :one
-SELECT id, email, username, created_at, updated_at FROM users WHERE email = LOWER($1)
+SELECT id, email, username, posts_count, created_at, updated_at FROM users WHERE email = LOWER($1)
 `
 
 func (q *Queries) UserByEmail(ctx context.Context, email string) (User, error) {
@@ -232,6 +257,25 @@ func (q *Queries) UserByEmail(ctx context.Context, email string) (User, error) {
 		&i.ID,
 		&i.Email,
 		&i.Username,
+		&i.PostsCount,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const userByUsername = `-- name: UserByUsername :one
+SELECT id, email, username, posts_count, created_at, updated_at FROM users WHERE LOWER(username) = LOWER($1)
+`
+
+func (q *Queries) UserByUsername(ctx context.Context, username string) (User, error) {
+	row := q.db.QueryRowContext(ctx, userByUsername, username)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Username,
+		&i.PostsCount,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

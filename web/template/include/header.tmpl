@@ -2,7 +2,7 @@
     <nav style="display: flex; align-items: center; gap: 1rem;">
         <a href="/">Home</a>
         {{if .Session.IsLoggedIn}}
-        <a href="#!">{{.Session.User.Username}}</a>
+        <a href="/@{{.Session.User.Username}}">{{.Session.User.Username}}</a>
         <form action="/logout" method="POST" style="display: contents;">
             <button>Logout</button>
         </form>

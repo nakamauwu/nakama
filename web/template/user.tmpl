@@ -1,0 +1,18 @@
+{{template "layout.tmpl" .}}
+
+{{define "content"}}
+<main>
+    <h1>{{.User.Username}}</h1>
+
+    <h2>{{.User.PostsCount}} Posts</h2>
+    {{if eq (len .Posts) 0}}
+    <p>No posts.</p>
+    {{else}}
+    <section style="display: flex; flex-direction: column; gap: 1rem;">
+        {{range .Posts}}
+        {{template "post-item.tmpl" .}}
+        {{end}}
+    </section>
+    {{end}}
+</main>
+{{end}}

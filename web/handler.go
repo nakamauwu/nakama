@@ -52,6 +52,10 @@ func (h *Handler) init() {
 		http.MethodPost: h.createComment,
 	})
 
+	r.Handle("/@{username}", mux.MethodHandler{
+		http.MethodGet: h.showUser,
+	})
+
 	r.Handle("/*", mux.MethodHandler{
 		http.MethodGet: h.staticHandler(),
 	})

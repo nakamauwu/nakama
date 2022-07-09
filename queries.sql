@@ -6,6 +6,9 @@ RETURNING created_at;
 -- name: UserByEmail :one
 SELECT * FROM users WHERE email = LOWER(@email);
 
+-- name: UserByUsername :one
+SELECT * FROM users WHERE LOWER(username) = LOWER(@username);
+
 -- name: UserExistsByEmail :one
 SELECT EXISTS (
     SELECT 1 FROM users WHERE email = LOWER(@email)
@@ -16,6 +19,13 @@ SELECT EXISTS (
     SELECT 1 FROM users WHERE LOWER(username) = LOWER(@username)
 );
 
+-- name: UpdateUser :one
+UPDATE users SET
+    posts_count = posts_count + @increase_posts_count_by,
+    updated_at = now()
+WHERE id = @user_id
+RETURNING updated_at;
+
 -- name: CreatePost :one
 INSERT INTO posts (id, user_id, content)
 VALUES (@post_id, @user_id, @content)
@@ -25,6 +35,11 @@ RETURNING created_at;
 SELECT posts.*, users.username
 FROM posts
 INNER JOIN users ON posts.user_id = users.id
+WHERE
+    CASE
+        WHEN @username::varchar <> '' THEN LOWER(users.username) = LOWER(@username::varchar)
+        ELSE true
+    END
 ORDER BY posts.id DESC;
 
 -- name: Post :one
