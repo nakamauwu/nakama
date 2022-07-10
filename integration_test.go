@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"math/rand"
+	mathrand "math/rand"
 	"os"
 	"testing"
 	"time"
@@ -85,10 +85,10 @@ func setupDB(cockroach *dockertest.Resource, retry func(op func() error) error) 
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyz")
 
 func randString(n int) string {
-	rand.Seed(time.Now().UnixNano())
+	mathrand.Seed(time.Now().UnixNano())
 	b := make([]rune, n)
 	for i := range b {
-		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+		b[i] = letterRunes[mathrand.Intn(len(letterRunes))]
 	}
 	return string(b)
 }
