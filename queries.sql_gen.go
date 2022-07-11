@@ -154,6 +154,19 @@ func (q *Queries) Post(ctx context.Context, postID string) (PostRow, error) {
 	return i, err
 }
 
+const postExists = `-- name: PostExists :one
+SELECT EXISTS (
+    SELECT 1 FROM posts WHERE id = $1
+)
+`
+
+func (q *Queries) PostExists(ctx context.Context, postID string) (bool, error) {
+	row := q.db.QueryRowContext(ctx, postExists, postID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const posts = `-- name: Posts :many
 SELECT posts.id, posts.user_id, posts.content, posts.comments_count, posts.created_at, posts.updated_at, users.username
 FROM posts

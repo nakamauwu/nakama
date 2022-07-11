@@ -44,6 +44,15 @@ func TestService_CreateComment(t *testing.T) {
 		assert.EqualError(t, err, "unauthenticated")
 	})
 
+	t.Run("post_not_found", func(t *testing.T) {
+		asUser := ContextWithUser(ctx, genUser(t))
+		_, err := svc.CreateComment(asUser, CreateCommentInput{
+			PostID:  genID(),
+			Content: genCommentContent(),
+		})
+		assert.EqualError(t, err, "post not found")
+	})
+
 	t.Run("ok", func(t *testing.T) {
 		usr := genUser(t)
 		asUser := ContextWithUser(ctx, usr)

@@ -55,6 +55,15 @@ func (svc *Service) CreateComment(ctx context.Context, in CreateCommentInput) (C
 	}
 
 	// TODO: run inside a transaction.
+	exists, err := svc.Queries.PostExists(ctx, in.PostID)
+	if err != nil {
+		return out, err
+	}
+
+	if !exists {
+		return out, ErrPostNotFound
+	}
+
 	commentID := genID()
 	createdAt, err := svc.Queries.CreateComment(ctx, CreateCommentParams{
 		CommentID: commentID,

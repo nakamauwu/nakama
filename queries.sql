@@ -48,6 +48,11 @@ FROM posts
 INNER JOIN users ON posts.user_id = users.id
 WHERE posts.id = @post_id;
 
+-- name: PostExists :one
+SELECT EXISTS (
+    SELECT 1 FROM posts WHERE id = @post_id
+);
+
 -- name: UpdatePost :one
 UPDATE posts
 SET comments_count = comments_count + @increase_comments_count_by, updated_at = now()
