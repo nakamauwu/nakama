@@ -55,6 +55,9 @@ func (svc *Service) CreateComment(ctx context.Context, in CreateCommentInput) (C
 	}
 
 	// TODO: run inside a transaction.
+
+	// Note: maybe check foreign key constraint violation
+	// error returned by `Queries.CreateComment`.
 	exists, err := svc.Queries.PostExists(ctx, in.PostID)
 	if err != nil {
 		return out, err
