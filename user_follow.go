@@ -59,8 +59,8 @@ func (svc *Service) FollowUser(ctx context.Context, followedUserID string) error
 		return err
 	}
 
-	// Side-effect: increase user's follow count on inserts
-	// so we don't have to compute it on each read.
+	// Side-effect: increase user's follow counts on inserts
+	// so we don't have to compute them on each read.
 
 	_, err = svc.Queries.UpdateUser(ctx, UpdateUserParams{
 		UserID:                   usr.ID,
