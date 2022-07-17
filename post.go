@@ -25,6 +25,8 @@ type CreatePostInput struct {
 
 func (in *CreatePostInput) Prepare() {
 	in.Content = strings.TrimSpace(in.Content)
+	// TODO: fix post content sanitization not removing
+	// duplicate spaces and line breaks properly.
 	in.Content = strings.ReplaceAll(in.Content, "\n\n", "\n")
 	in.Content = strings.ReplaceAll(in.Content, "  ", " ")
 }

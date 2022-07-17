@@ -22,6 +22,8 @@ type CreateCommentInput struct {
 
 func (in *CreateCommentInput) Prepare() {
 	in.Content = strings.TrimSpace(in.Content)
+	// TODO: fix comment content sanitization not removing
+	// duplicate spaces and line breaks properly.
 	in.Content = strings.ReplaceAll(in.Content, "\n\n", "\n")
 	in.Content = strings.ReplaceAll(in.Content, "  ", " ")
 }
