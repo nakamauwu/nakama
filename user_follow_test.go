@@ -49,4 +49,25 @@ func TestService_FollowUser(t *testing.T) {
 		err = svc.FollowUser(asUser, followUserID)
 		assert.NoError(t, err)
 	})
+
+	t.Run("follow_counts", func(t *testing.T) {
+		follower := genUser(t)
+		followed := genUser(t)
+
+		asFollower := ContextWithUser(ctx, follower)
+		err := svc.FollowUser(asFollower, followed.ID)
+		assert.NoError(t, err)
+
+		{
+			follower, err := svc.UserByUsername(ctx, follower.Username)
+			assert.NoError(t, err)
+			assert.Equal(t, 1, follower.FollowingCount)
+		}
+
+		{
+			followed, err := svc.UserByUsername(ctx, followed.Username)
+			assert.NoError(t, err)
+			assert.Equal(t, 1, followed.FollowersCount)
+		}
+	})
 }
