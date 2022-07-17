@@ -80,6 +80,8 @@ func (svc *Service) CreateComment(ctx context.Context, in CreateCommentInput) (C
 		return out, err
 	}
 
+	// Side-effect: increase post's comments count on inserts
+	// so we don't have to compute it on each read.
 	_, err = svc.Queries.UpdatePost(ctx, UpdatePostParams{
 		PostID:                  in.PostID,
 		IncreaseCommentsCountBy: 1,

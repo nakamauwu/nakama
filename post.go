@@ -79,6 +79,8 @@ func (svc *Service) CreatePost(ctx context.Context, in CreatePostInput) (CreateP
 		return out, err
 	}
 
+	// Side-effect: increase user's posts count on inserts
+	// so we don't have to compute it on each read.
 	_, err = svc.Queries.UpdateUser(ctx, UpdateUserParams{
 		UserID:               usr.ID,
 		IncreasePostsCountBy: 1,
