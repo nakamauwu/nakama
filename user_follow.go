@@ -37,6 +37,7 @@ func (svc *Service) FollowUser(ctx context.Context, followedUserID string) error
 		return err
 	}
 
+	// Early return if following already.
 	if exists {
 		return nil
 	}
