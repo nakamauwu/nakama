@@ -44,7 +44,7 @@ type CreatePostOutput struct {
 }
 
 type PostsInput struct {
-	// Username is optiona. If empty, all posts are returned.
+	// Username is optional. If empty, all posts are returned.
 	// Otherwise, only posts created by this user are returned.
 	Username string
 }
