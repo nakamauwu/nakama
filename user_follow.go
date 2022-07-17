@@ -24,6 +24,11 @@ func (svc *Service) FollowUser(ctx context.Context, followUserID string) error {
 		return ErrCannotFollowSelf
 	}
 
+	// TODO: run inside a transaction.
+
+	// Note: maybe check unique violation
+	// error returned by `Queries.CreateUserFollow`.
+
 	exists, err := svc.Queries.UserFollowExists(ctx, UserFollowExistsParams{
 		FollowerID: usr.ID,
 		FollowedID: followUserID,
@@ -65,9 +70,5 @@ func (svc *Service) FollowUser(ctx context.Context, followUserID string) error {
 		UserID:                   followUserID,
 		IncreaseFollowersCountBy: 1,
 	})
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
