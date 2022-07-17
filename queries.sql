@@ -9,6 +9,11 @@ SELECT * FROM users WHERE email = LOWER(@email);
 -- name: UserByUsername :one
 SELECT * FROM users WHERE LOWER(username) = LOWER(@username);
 
+-- name: UserExists :one
+SELECT EXISTS (
+    SELECT 1 FROM users WHERE id = @user_id
+);
+
 -- name: UserExistsByEmail :one
 SELECT EXISTS (
     SELECT 1 FROM users WHERE email = LOWER(@email)
@@ -22,6 +27,8 @@ SELECT EXISTS (
 -- name: UpdateUser :one
 UPDATE users SET
     posts_count = posts_count + @increase_posts_count_by,
+    followers_count = followers_count + @increase_followers_count_by,
+    following_count = following_count + @increase_following_count_by,
     updated_at = now()
 WHERE id = @user_id
 RETURNING updated_at;
@@ -70,3 +77,15 @@ FROM comments
 INNER JOIN users ON comments.user_id = users.id
 WHERE comments.post_id = @post_id
 ORDER BY comments.id DESC;
+
+-- name: CreateUserFollow :one
+INSERT INTO user_follows (follower_id, followed_id)
+VALUES (@follower_id, @followed_id)
+RETURNING created_at;
+
+-- name: UserFollowExists :one
+SELECT EXISTS (
+    SELECT 1 FROM user_follows
+    WHERE follower_id = @follower_id
+    AND followed_id = @followed_id
+);

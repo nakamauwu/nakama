@@ -12,6 +12,7 @@ import (
 const (
 	ErrUserNotFound    = errs.NotFoundError("user not found")
 	ErrUsernameTaken   = errs.ConflictError("username taken")
+	ErrInvalidUserID   = errs.InvalidArgumentError("invalid user ID")
 	ErrInvalidEmail    = errs.InvalidArgumentError("invalid email")
 	ErrInvalidUsername = errs.InvalidArgumentError("invalid username")
 )

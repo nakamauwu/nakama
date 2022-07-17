@@ -11,8 +11,9 @@ var userTmpl = parseTmpl("user.tmpl")
 
 type userData struct {
 	Session
-	User  nakama.User
-	Posts []nakama.PostsRow
+	User          nakama.User
+	Posts         []nakama.PostsRow
+	UserFollowErr error
 }
 
 func (h *Handler) renderUser(w http.ResponseWriter, data userData, statusCode int) {
@@ -39,8 +40,9 @@ func (h *Handler) showUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.renderUser(w, userData{
-		Session: h.sessionFromReq(r),
-		User:    usr,
-		Posts:   pp,
+		Session:       h.sessionFromReq(r),
+		User:          usr,
+		Posts:         pp,
+		UserFollowErr: h.popErr(r, "user_follow_err"),
 	}, http.StatusOK)
 }

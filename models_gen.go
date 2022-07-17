@@ -27,10 +27,19 @@ type Post struct {
 }
 
 type User struct {
-	ID         string
-	Email      string
-	Username   string
-	PostsCount int32
+	ID             string
+	Email          string
+	Username       string
+	PostsCount     int32
+	FollowersCount int32
+	FollowingCount int32
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+}
+
+type UserFollow struct {
+	FollowerID string
+	FollowedID string
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
 }

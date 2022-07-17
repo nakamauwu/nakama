@@ -4,6 +4,18 @@
 <main>
     <h1>{{.User.Username}}</h1>
 
+    {{if and .Session.IsLoggedIn (ne .Session.User.ID .User.ID)}}
+    <form action="/user-follows" method="POST">
+        <input type="hidden" name="user_id" value="{{.User.ID}}">
+
+        {{if .UserFollowErr}}
+        <p>Could not follow user: <code>{{.UserFollowErr}}</code></p>
+        {{end}}
+
+        <button>Follow</button>
+    </form>
+    {{end}}
+
     <h2>{{.User.PostsCount}} Posts</h2>
     {{if eq (len .Posts) 0}}
     <p>No posts.</p>

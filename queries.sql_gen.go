@@ -122,6 +122,24 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (time.Ti
 	return created_at, err
 }
 
+const createUserFollow = `-- name: CreateUserFollow :one
+INSERT INTO user_follows (follower_id, followed_id)
+VALUES ($1, $2)
+RETURNING created_at
+`
+
+type CreateUserFollowParams struct {
+	FollowerID string
+	FollowedID string
+}
+
+func (q *Queries) CreateUserFollow(ctx context.Context, arg CreateUserFollowParams) (time.Time, error) {
+	row := q.db.QueryRowContext(ctx, createUserFollow, arg.FollowerID, arg.FollowedID)
+	var created_at time.Time
+	err := row.Scan(&created_at)
+	return created_at, err
+}
+
 const post = `-- name: Post :one
 SELECT posts.id, posts.user_id, posts.content, posts.comments_count, posts.created_at, posts.updated_at, users.username
 FROM posts
@@ -242,25 +260,34 @@ func (q *Queries) UpdatePost(ctx context.Context, arg UpdatePostParams) (time.Ti
 const updateUser = `-- name: UpdateUser :one
 UPDATE users SET
     posts_count = posts_count + $1,
+    followers_count = followers_count + $2,
+    following_count = following_count + $3,
     updated_at = now()
-WHERE id = $2
+WHERE id = $4
 RETURNING updated_at
 `
 
 type UpdateUserParams struct {
-	IncreasePostsCountBy int32
-	UserID               string
+	IncreasePostsCountBy     int32
+	IncreaseFollowersCountBy int32
+	IncreaseFollowingCountBy int32
+	UserID                   string
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (time.Time, error) {
-	row := q.db.QueryRowContext(ctx, updateUser, arg.IncreasePostsCountBy, arg.UserID)
+	row := q.db.QueryRowContext(ctx, updateUser,
+		arg.IncreasePostsCountBy,
+		arg.IncreaseFollowersCountBy,
+		arg.IncreaseFollowingCountBy,
+		arg.UserID,
+	)
 	var updated_at time.Time
 	err := row.Scan(&updated_at)
 	return updated_at, err
 }
 
 const userByEmail = `-- name: UserByEmail :one
-SELECT id, email, username, posts_count, created_at, updated_at FROM users WHERE email = LOWER($1)
+SELECT id, email, username, posts_count, followers_count, following_count, created_at, updated_at FROM users WHERE email = LOWER($1)
 `
 
 func (q *Queries) UserByEmail(ctx context.Context, email string) (User, error) {
@@ -271,6 +298,8 @@ func (q *Queries) UserByEmail(ctx context.Context, email string) (User, error) {
 		&i.Email,
 		&i.Username,
 		&i.PostsCount,
+		&i.FollowersCount,
+		&i.FollowingCount,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -278,7 +307,7 @@ func (q *Queries) UserByEmail(ctx context.Context, email string) (User, error) {
 }
 
 const userByUsername = `-- name: UserByUsername :one
-SELECT id, email, username, posts_count, created_at, updated_at FROM users WHERE LOWER(username) = LOWER($1)
+SELECT id, email, username, posts_count, followers_count, following_count, created_at, updated_at FROM users WHERE LOWER(username) = LOWER($1)
 `
 
 func (q *Queries) UserByUsername(ctx context.Context, username string) (User, error) {
@@ -289,10 +318,25 @@ func (q *Queries) UserByUsername(ctx context.Context, username string) (User, er
 		&i.Email,
 		&i.Username,
 		&i.PostsCount,
+		&i.FollowersCount,
+		&i.FollowingCount,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const userExists = `-- name: UserExists :one
+SELECT EXISTS (
+    SELECT 1 FROM users WHERE id = $1
+)
+`
+
+func (q *Queries) UserExists(ctx context.Context, userID string) (bool, error) {
+	row := q.db.QueryRowContext(ctx, userExists, userID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
 }
 
 const userExistsByEmail = `-- name: UserExistsByEmail :one
@@ -316,6 +360,26 @@ SELECT EXISTS (
 
 func (q *Queries) UserExistsByUsername(ctx context.Context, username string) (bool, error) {
 	row := q.db.QueryRowContext(ctx, userExistsByUsername, username)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
+const userFollowExists = `-- name: UserFollowExists :one
+SELECT EXISTS (
+    SELECT 1 FROM user_follows
+    WHERE follower_id = $1
+    AND followed_id = $2
+)
+`
+
+type UserFollowExistsParams struct {
+	FollowerID string
+	FollowedID string
+}
+
+func (q *Queries) UserFollowExists(ctx context.Context, arg UserFollowExistsParams) (bool, error) {
+	row := q.db.QueryRowContext(ctx, userFollowExists, arg.FollowerID, arg.FollowedID)
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err
