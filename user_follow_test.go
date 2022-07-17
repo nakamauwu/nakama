@@ -42,11 +42,11 @@ func TestService_FollowUser(t *testing.T) {
 
 	t.Run("exists", func(t *testing.T) {
 		asUser := ContextWithUser(ctx, genUser(t))
-		followUserID := genUser(t).ID
-		err := svc.FollowUser(asUser, followUserID)
+		followedUserID := genUser(t).ID
+		err := svc.FollowUser(asUser, followedUserID)
 		assert.NoError(t, err)
 
-		err = svc.FollowUser(asUser, followUserID)
+		err = svc.FollowUser(asUser, followedUserID)
 		assert.NoError(t, err)
 	})
 

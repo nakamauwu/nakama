@@ -10,8 +10,8 @@ const (
 	ErrCannotFollowSelf = errs.ConflictError("cannot follow self")
 )
 
-func (svc *Service) FollowUser(ctx context.Context, followUserID string) error {
-	if !isID(followUserID) {
+func (svc *Service) FollowUser(ctx context.Context, followedUserID string) error {
+	if !isID(followedUserID) {
 		return ErrInvalidUserID
 	}
 
@@ -20,7 +20,7 @@ func (svc *Service) FollowUser(ctx context.Context, followUserID string) error {
 		return errs.ErrUnauthenticated
 	}
 
-	if usr.ID == followUserID {
+	if usr.ID == followedUserID {
 		return ErrCannotFollowSelf
 	}
 
@@ -31,7 +31,7 @@ func (svc *Service) FollowUser(ctx context.Context, followUserID string) error {
 
 	exists, err := svc.Queries.UserFollowExists(ctx, UserFollowExistsParams{
 		FollowerID: usr.ID,
-		FollowedID: followUserID,
+		FollowedID: followedUserID,
 	})
 	if err != nil {
 		return err
@@ -41,7 +41,7 @@ func (svc *Service) FollowUser(ctx context.Context, followUserID string) error {
 		return nil
 	}
 
-	exists, err = svc.Queries.UserExists(ctx, followUserID)
+	exists, err = svc.Queries.UserExists(ctx, followedUserID)
 	if err != nil {
 		return err
 	}
@@ -52,7 +52,7 @@ func (svc *Service) FollowUser(ctx context.Context, followUserID string) error {
 
 	_, err = svc.Queries.CreateUserFollow(ctx, CreateUserFollowParams{
 		FollowerID: usr.ID,
-		FollowedID: followUserID,
+		FollowedID: followedUserID,
 	})
 	if err != nil {
 		return err
@@ -67,7 +67,7 @@ func (svc *Service) FollowUser(ctx context.Context, followUserID string) error {
 	}
 
 	_, err = svc.Queries.UpdateUser(ctx, UpdateUserParams{
-		UserID:                   followUserID,
+		UserID:                   followedUserID,
 		IncreaseFollowersCountBy: 1,
 	})
 	return err
