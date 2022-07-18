@@ -11,8 +11,8 @@
                 pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$" required>
         </div>
 
-        {{with .Err}}
-        {{if or (eq .Error "user not found") (eq .Error "username taken") (eq .Error "invalid username")}}
+        {{if .Err}}
+        {{if or (eq .Err "user not found") (eq .Err "username taken") (eq .Err "invalid username")}}
         <div>
             <label for="username">Username</label>
             <input type="text" name="username" id="username" placeholder="uwu" value='{{$.Form.Get "username"}}'
@@ -21,8 +21,8 @@
         {{end}}
         {{end}}
 
-        {{with .Err}}
-        <p>Could not login: <code>{{.Error}}</code></p>
+        {{if .Err}}
+        <p>Could not login: <code>{{.Err}}</code></p>
         {{end}}
 
         <button>Login</button>

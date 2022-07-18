@@ -26,8 +26,8 @@
             {{- .CreateCommentForm.Get "content" -}}
         </textarea>
 
-        {{with .CreateCommentErr}}
-        <p>Could not create comment: <code>{{.Error}}</code></p>
+        {{if .CreateCommentErr}}
+        <p>Could not create comment: <code>{{.CreateCommentErr}}</code></p>
         {{end}}
 
         <button>Comment</button>
