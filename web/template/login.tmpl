@@ -11,14 +11,12 @@
                 pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$" required>
         </div>
 
-        {{if .Err}}
-        {{if or (eq .Err "user not found") (eq .Err "username taken") (eq .Err "invalid username")}}
+        {{if and .Err (or (eq .Err "user not found") (eq .Err "username taken") (eq .Err "invalid username"))}}
         <div>
             <label for="username">Username</label>
             <input type="text" name="username" id="username" placeholder="uwu" value='{{$.Form.Get "username"}}'
                 autocomplete="off" pattern="^[a-zA-Z0-9][a-zA-Z0-9_-]{0,17}$" maxlength="18" required>
         </div>
-        {{end}}
         {{end}}
 
         {{if .Err}}
