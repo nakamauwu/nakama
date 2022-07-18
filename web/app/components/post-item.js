@@ -7,7 +7,7 @@ import { unsafeHTML } from "lit/directives/unsafe-html.js"
 import mediumZoom from "medium-zoom"
 import { authStore, useStore } from "../ctx.js"
 import { request } from "../http.js"
-import { collectMediaURLs, escapeHTML, linkify } from "../utils.js"
+import { collectMediaURLs, linkify } from "../utils.js"
 import { Avatar } from "./avatar.js"
 import "./relative-datetime.js"
 import "./toast-item.js"
@@ -200,7 +200,7 @@ function PostItem({ post: initialPost, type }) {
                         <button @click=${onDisplaySpoilerBtnClick}>${translate("postItem.spoiler.show")}</button>
                     </div>
                 ` : html`
-                    <p>${unsafeHTML(linkify(escapeHTML(post.content)))}</p>
+                    <p>${unsafeHTML(linkify(post.content))}</p>
                     ${"nsfw" in post && post.nsfw && !displayNSFW ? html`
                         <div class="post-warning">
                             <p>${translate("postItem.nsfw.warning")}</p>

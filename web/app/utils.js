@@ -6,18 +6,6 @@ import { find as findURLs } from "linkifyjs"
 /**
  * @param {string} s
  */
-export function escapeHTML(s) {
-    return s
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/"/g, "&#039;")
-}
-
-/**
- * @param {string} s
- */
 export function linkify(s) {
     return linkifyString(s, {
         truncate: 10,

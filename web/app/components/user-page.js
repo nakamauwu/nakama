@@ -8,7 +8,7 @@ import { setLocalAuth } from "../auth.js"
 import { authStore, useStore } from "../ctx.js"
 import { request } from "../http.js"
 import { navigate } from "../router.js"
-import { escapeHTML, linkify } from "../utils.js"
+import { linkify } from "../utils.js"
 import { Avatar } from "./avatar.js"
 import "./intersectable-comp.js"
 import "./post-item.js"
@@ -464,7 +464,7 @@ function UserProfile({ user: initialUser }) {
                 </div>
                 <div class="user-details">
                     ${user.bio !== null && user.bio !== "" ? html`
-                        <p>${unsafeHTML(linkify(escapeHTML(user.bio)))}</p>
+                        <p>${unsafeHTML(linkify(user.bio))}</p>
                     ` : null}
                     ${(user.waifu !== null && user.waifu !== "") || (user.husbando !== null && user.husbando !== "") ? html`
                         <dl>
