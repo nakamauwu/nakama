@@ -1,7 +1,9 @@
 package web
 
 import (
+	"context"
 	"encoding/gob"
+	"errors"
 	"log"
 	"net/http"
 	"net/url"
@@ -82,7 +84,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // log an error only if it's an internal error.
 func (h *Handler) log(err error) {
-	if httperrs.IsInternalServerError(err) {
+	if httperrs.IsInternalServerError(err) && !errors.Is(err, context.Canceled) {
 		_ = h.Logger.Output(2, err.Error())
 	}
 }
