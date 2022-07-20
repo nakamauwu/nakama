@@ -31,6 +31,36 @@ func TestService_UserByUsername(t *testing.T) {
 		assert.Equal(t, usr.CreatedAt, got.CreatedAt)
 		assert.Equal(t, usr.UpdatedAt, got.UpdatedAt)
 	})
+
+	t.Run("following", func(t *testing.T) {
+		{
+			usr, err := svc.UserByUsername(ctx, genUser(t).Username)
+			assert.NoError(t, err)
+			assert.False(t, usr.Following)
+		}
+
+		follower := genUser(t)
+		followed := genUser(t)
+		asFollower := ContextWithUser(ctx, follower)
+
+		{
+			err := svc.FollowUser(asFollower, followed.ID)
+			assert.NoError(t, err)
+
+			usr, err := svc.UserByUsername(asFollower, followed.Username)
+			assert.NoError(t, err)
+			assert.True(t, usr.Following)
+		}
+
+		{
+			err := svc.UnfollowUser(asFollower, followed.ID)
+			assert.NoError(t, err)
+
+			usr, err := svc.UserByUsername(asFollower, followed.Username)
+			assert.NoError(t, err)
+			assert.False(t, usr.Following)
+		}
+	})
 }
 
 func genUser(t *testing.T) User {
