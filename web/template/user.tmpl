@@ -24,7 +24,11 @@
         <p>Could not follow user: <code>{{.UserFollowErr}}</code></p>
         {{end}}
 
-        <button aria-pressed="{{.User.Following}}">{{if .User.Following}}Following{{else}}Follow{{end}}</button>
+        <button aria-pressed="{{.User.Following}}"
+            title="{{if .User.Following}}Stop following {{.User.Username}}{{else}}Follow {{.User.Username}}{{end}}"
+            aria-label="{{if .User.Following}}Stop following {{.User.Username}}{{else}}Follow {{.User.Username}}{{end}}">
+            {{- if .User.Following}}Following{{else}}Follow{{end -}}
+        </button>
     </form>
     {{end}}
 
