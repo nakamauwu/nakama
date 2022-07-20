@@ -4,15 +4,27 @@
 <main>
     <h1>{{.User.Username}}</h1>
 
+    <dl>
+        <dt>Following</dt>
+        <dd>{{.User.FollowingCount}}</dd>
+
+        <dt>Followers</dt>
+        <dd>{{.User.FollowersCount}}</dd>
+    </dl>
+
     {{if and .Session.IsLoggedIn (ne .Session.User.ID .User.ID)}}
     <form action="/user-follows" method="POST">
         <input type="hidden" name="user_id" value="{{.User.ID}}">
+
+        {{if .User.Following}}
+        <input type="hidden" name="_method" value="DELETE">
+        {{end}}
 
         {{if .UserFollowErr}}
         <p>Could not follow user: <code>{{.UserFollowErr}}</code></p>
         {{end}}
 
-        <button>Follow</button>
+        <button>{{if .User.Following}}Following{{else}}Follow{{end}}</button>
     </form>
     {{end}}
 

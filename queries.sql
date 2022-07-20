@@ -7,7 +7,21 @@ RETURNING created_at;
 SELECT * FROM users WHERE email = LOWER(@email);
 
 -- name: UserByUsername :one
-SELECT * FROM users WHERE LOWER(username) = LOWER(@username);
+SELECT users.*,
+(
+    CASE
+        WHEN @follower_id::varchar <> '' THEN (
+            SELECT EXISTS (
+                SELECT 1 FROM user_follows
+                WHERE follower_id = @follower_id::varchar
+                AND followed_id = users.id
+            )
+        )
+        ELSE false
+    END
+) AS following
+FROM users
+WHERE LOWER(username) = LOWER(@username);
 
 -- name: UserExists :one
 SELECT EXISTS (
@@ -89,3 +103,9 @@ SELECT EXISTS (
     WHERE follower_id = @follower_id
     AND followed_id = @followed_id
 );
+
+-- name: DeleteUserFollow :one
+DELETE FROM user_follows
+WHERE follower_id = @follower_id
+AND followed_id = @followed_id
+RETURNING now()::timestamp AS deleted_at;

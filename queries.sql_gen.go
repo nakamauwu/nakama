@@ -140,6 +140,25 @@ func (q *Queries) CreateUserFollow(ctx context.Context, arg CreateUserFollowPara
 	return created_at, err
 }
 
+const deleteUserFollow = `-- name: DeleteUserFollow :one
+DELETE FROM user_follows
+WHERE follower_id = $1
+AND followed_id = $2
+RETURNING now()::timestamp AS deleted_at
+`
+
+type DeleteUserFollowParams struct {
+	FollowerID string
+	FollowedID string
+}
+
+func (q *Queries) DeleteUserFollow(ctx context.Context, arg DeleteUserFollowParams) (time.Time, error) {
+	row := q.db.QueryRowContext(ctx, deleteUserFollow, arg.FollowerID, arg.FollowedID)
+	var deleted_at time.Time
+	err := row.Scan(&deleted_at)
+	return deleted_at, err
+}
+
 const post = `-- name: Post :one
 SELECT posts.id, posts.user_id, posts.content, posts.comments_count, posts.created_at, posts.updated_at, users.username
 FROM posts
@@ -307,12 +326,43 @@ func (q *Queries) UserByEmail(ctx context.Context, email string) (User, error) {
 }
 
 const userByUsername = `-- name: UserByUsername :one
-SELECT id, email, username, posts_count, followers_count, following_count, created_at, updated_at FROM users WHERE LOWER(username) = LOWER($1)
+SELECT users.id, users.email, users.username, users.posts_count, users.followers_count, users.following_count, users.created_at, users.updated_at,
+(
+    CASE
+        WHEN $1::varchar <> '' THEN (
+            SELECT EXISTS (
+                SELECT 1 FROM user_follows
+                WHERE follower_id = $1::varchar
+                AND followed_id = users.id
+            )
+        )
+        ELSE false
+    END
+) AS following
+FROM users
+WHERE LOWER(username) = LOWER($2)
 `
 
-func (q *Queries) UserByUsername(ctx context.Context, username string) (User, error) {
-	row := q.db.QueryRowContext(ctx, userByUsername, username)
-	var i User
+type UserByUsernameParams struct {
+	FollowerID string
+	Username   string
+}
+
+type UserByUsernameRow struct {
+	ID             string
+	Email          string
+	Username       string
+	PostsCount     int32
+	FollowersCount int32
+	FollowingCount int32
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	Following      bool
+}
+
+func (q *Queries) UserByUsername(ctx context.Context, arg UserByUsernameParams) (UserByUsernameRow, error) {
+	row := q.db.QueryRowContext(ctx, userByUsername, arg.FollowerID, arg.Username)
+	var i UserByUsernameRow
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
@@ -322,6 +372,7 @@ func (q *Queries) UserByUsername(ctx context.Context, username string) (User, er
 		&i.FollowingCount,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Following,
 	)
 	return i, err
 }

@@ -25,7 +25,11 @@ func TestService_UserByUsername(t *testing.T) {
 		usr := genUser(t)
 		got, err := svc.UserByUsername(ctx, usr.Username)
 		assert.NoError(t, err)
-		assert.Equal(t, usr, got)
+		assert.Equal(t, usr.ID, got.ID)
+		assert.Equal(t, usr.Email, got.Email)
+		assert.Equal(t, usr.Username, got.Username)
+		assert.Equal(t, usr.CreatedAt, got.CreatedAt)
+		assert.Equal(t, usr.UpdatedAt, got.UpdatedAt)
 	})
 }
 

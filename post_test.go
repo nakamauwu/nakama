@@ -46,7 +46,7 @@ func TestService_CreatePost(t *testing.T) {
 			assert.NotZero(t, got)
 		}
 
-		got, err := svc.Queries.UserByUsername(ctx, usr.Username)
+		got, err := svc.Queries.UserByUsername(ctx, UserByUsernameParams{Username: usr.Username})
 		assert.NoError(t, err)
 		assert.Equal(t, want, int(got.PostsCount))
 	})

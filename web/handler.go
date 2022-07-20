@@ -59,7 +59,8 @@ func (h *Handler) init() {
 	})
 
 	r.Handle("/user-follows", mux.MethodHandler{
-		http.MethodPost: h.followUser,
+		http.MethodPost:   h.followUser,
+		http.MethodDelete: h.unfollowUser,
 	})
 
 	r.Handle("/*", mux.MethodHandler{
@@ -75,6 +76,7 @@ func (h *Handler) init() {
 	h.handler = r
 	h.handler = h.withUser(h.handler)
 	h.handler = h.session.Enable(h.handler)
+	h.handler = withMethodOverride(h.handler)
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -97,4 +99,25 @@ func formPtr(form url.Values, key string) *string {
 
 	s := form.Get(key)
 	return &s
+}
+
+func withMethodOverride(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Only act on POST requests.
+		if r.Method == "POST" {
+
+			// Look in the request body and headers for a spoofed method.
+			// Prefer the value in the request body if they conflict.
+			method := r.PostFormValue("_method")
+
+			// Check that the spoofed method is a valid HTTP method and
+			// update the request object accordingly.
+			if method == "PUT" || method == "PATCH" || method == "DELETE" {
+				r.Method = method
+			}
+		}
+
+		// Call the next handler in the chain.
+		next.ServeHTTP(w, r)
+	})
 }

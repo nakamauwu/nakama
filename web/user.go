@@ -11,7 +11,7 @@ var userTmpl = parseTmpl("user.tmpl")
 
 type userData struct {
 	Session
-	User          nakama.User
+	User          nakama.UserByUsernameRow
 	Posts         []nakama.PostsRow
 	UserFollowErr error
 }
