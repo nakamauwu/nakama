@@ -101,10 +101,11 @@ func TestService_UnfollowUser(t *testing.T) {
 
 	t.Run("ok", func(t *testing.T) {
 		asUser := ContextWithUser(ctx, genUser(t))
-		err := svc.FollowUser(asUser, genUser(t).ID)
+		followedUserID := genUser(t).ID
+		err := svc.FollowUser(asUser, followedUserID)
 		assert.NoError(t, err)
 
-		err = svc.UnfollowUser(asUser, genUser(t).ID)
+		err = svc.UnfollowUser(asUser, followedUserID)
 		assert.NoError(t, err)
 	})
 
