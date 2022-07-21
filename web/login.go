@@ -31,6 +31,8 @@ func (h *Handler) showLogin(w http.ResponseWriter, r *http.Request) {
 
 // login handles POST /login.
 func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
 	if err := r.ParseForm(); err != nil {
 		h.renderLogin(w, loginData{
 			Session: h.sessionFromReq(r),

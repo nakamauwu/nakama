@@ -23,7 +23,7 @@ func (h *Handler) sessionFromReq(r *http.Request) Session {
 }
 
 func (h *Handler) putErr(r *http.Request, key string, err error) {
-	h.session.Put(r, key, err.Error())
+	h.session.Put(r, key, maskErr(err).Error())
 }
 
 func (h *Handler) popErr(r *http.Request, key string) error {

@@ -3,6 +3,8 @@ package web
 import "net/http"
 
 func (h *Handler) followUser(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
 	if err := r.ParseForm(); err != nil {
 		h.log(err)
 		h.putErr(r, "follow_user_err", err)
@@ -23,6 +25,8 @@ func (h *Handler) followUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) unfollowUser(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
 	if err := r.ParseForm(); err != nil {
 		h.log(err)
 		h.putErr(r, "follow_user_err", err)
