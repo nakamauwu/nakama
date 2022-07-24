@@ -109,3 +109,24 @@ DELETE FROM user_follows
 WHERE follower_id = @follower_id
 AND followed_id = @followed_id
 RETURNING now()::timestamp AS deleted_at;
+
+-- name: CreateHomeTimelineItem :one
+INSERT INTO home_timeline (user_id, post_id)
+VALUES (@user_id, @post_id)
+RETURNING id, created_at;
+
+-- name: FanoutHomeTimeline :many
+INSERT INTO home_timeline (user_id, post_id)
+SELECT user_follows.follower_id, @posts_id
+FROM user_follows
+WHERE user_follows.followed_id = @followed_id
+ON CONFLICT (user_id, post_id) DO NOTHING
+RETURNING id, created_at;
+
+-- name: HomeTimeline :many
+SELECT posts.*, users.username
+FROM home_timeline
+INNER JOIN posts ON home_timeline.post_id = posts.id
+INNER JOIN users ON posts.user_id = users.id
+WHERE home_timeline.user_id = @user_id
+ORDER BY home_timeline.id DESC;

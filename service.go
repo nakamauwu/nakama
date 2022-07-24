@@ -1,9 +1,14 @@
 package nakama
 
-import "github.com/rs/xid"
+import (
+	"log"
+
+	"github.com/rs/xid"
+)
 
 type Service struct {
 	Queries *Queries
+	Logger  *log.Logger
 }
 
 func genID() string {

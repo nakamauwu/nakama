@@ -89,10 +89,39 @@ func (svc *Service) CreatePost(ctx context.Context, in CreatePostInput) (CreateP
 		return out, err
 	}
 
+	_, err = svc.Queries.CreateHomeTimelineItem(ctx, CreateHomeTimelineItemParams{
+		UserID: usr.ID,
+		PostID: postID,
+	})
+	if err != nil {
+		return out, err
+	}
+
+	go func() {
+		// TODO: take background context as dependency.
+		ctx := context.Background()
+		_, err := svc.Queries.FanoutHomeTimeline(ctx, FanoutHomeTimelineParams{
+			FollowedID: usr.ID,
+			PostsID:    postID,
+		})
+		if err != nil {
+			svc.Logger.Printf("failed to fanout home timeline: %v\n", err)
+		}
+	}()
+
 	out.ID = postID
 	out.CreateAt = createdAt
 
 	return out, nil
+}
+
+func (svc *Service) HomeTimeline(ctx context.Context) ([]HomeTimelineRow, error) {
+	usr, ok := UserFromContext(ctx)
+	if !ok {
+		return nil, errs.ErrUnauthenticated
+	}
+
+	return svc.Queries.HomeTimeline(ctx, usr.ID)
 }
 
 func (svc *Service) Posts(ctx context.Context, in PostsInput) ([]PostsRow, error) {

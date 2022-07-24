@@ -84,6 +84,29 @@ func (q *Queries) CreateComment(ctx context.Context, arg CreateCommentParams) (t
 	return created_at, err
 }
 
+const createHomeTimelineItem = `-- name: CreateHomeTimelineItem :one
+INSERT INTO home_timeline (user_id, post_id)
+VALUES ($1, $2)
+RETURNING id, created_at
+`
+
+type CreateHomeTimelineItemParams struct {
+	UserID string
+	PostID string
+}
+
+type CreateHomeTimelineItemRow struct {
+	ID        string
+	CreatedAt time.Time
+}
+
+func (q *Queries) CreateHomeTimelineItem(ctx context.Context, arg CreateHomeTimelineItemParams) (CreateHomeTimelineItemRow, error) {
+	row := q.db.QueryRowContext(ctx, createHomeTimelineItem, arg.UserID, arg.PostID)
+	var i CreateHomeTimelineItemRow
+	err := row.Scan(&i.ID, &i.CreatedAt)
+	return i, err
+}
+
 const createPost = `-- name: CreatePost :one
 INSERT INTO posts (id, user_id, content)
 VALUES ($1, $2, $3)
@@ -157,6 +180,98 @@ func (q *Queries) DeleteUserFollow(ctx context.Context, arg DeleteUserFollowPara
 	var deleted_at time.Time
 	err := row.Scan(&deleted_at)
 	return deleted_at, err
+}
+
+const fanoutHomeTimeline = `-- name: FanoutHomeTimeline :many
+INSERT INTO home_timeline (user_id, post_id)
+SELECT user_follows.follower_id, $1
+FROM user_follows
+WHERE user_follows.followed_id = $2
+ON CONFLICT (user_id, post_id) DO NOTHING
+RETURNING id, created_at
+`
+
+type FanoutHomeTimelineParams struct {
+	PostsID    string
+	FollowedID string
+}
+
+type FanoutHomeTimelineRow struct {
+	ID        string
+	CreatedAt time.Time
+}
+
+func (q *Queries) FanoutHomeTimeline(ctx context.Context, arg FanoutHomeTimelineParams) ([]FanoutHomeTimelineRow, error) {
+	rows, err := q.db.QueryContext(ctx, fanoutHomeTimeline, arg.PostsID, arg.FollowedID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []FanoutHomeTimelineRow
+	for rows.Next() {
+		var i FanoutHomeTimelineRow
+		if err := rows.Scan(&i.ID, &i.CreatedAt); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const homeTimeline = `-- name: HomeTimeline :many
+SELECT posts.id, posts.user_id, posts.content, posts.comments_count, posts.created_at, posts.updated_at, users.username
+FROM home_timeline
+INNER JOIN posts ON home_timeline.post_id = posts.id
+INNER JOIN users ON posts.user_id = users.id
+WHERE home_timeline.user_id = $1
+ORDER BY home_timeline.id DESC
+`
+
+type HomeTimelineRow struct {
+	ID            string
+	UserID        string
+	Content       string
+	CommentsCount int32
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+	Username      string
+}
+
+func (q *Queries) HomeTimeline(ctx context.Context, userID string) ([]HomeTimelineRow, error) {
+	rows, err := q.db.QueryContext(ctx, homeTimeline, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []HomeTimelineRow
+	for rows.Next() {
+		var i HomeTimelineRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Content,
+			&i.CommentsCount,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Username,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const post = `-- name: Post :one

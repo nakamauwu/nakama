@@ -34,3 +34,11 @@ CREATE TABLE IF NOT EXISTS user_follows (
     updated_at TIMESTAMP NOT NULL DEFAULT now(),
     PRIMARY KEY (follower_id, followed_id)
 );
+
+CREATE TABLE IF NOT EXISTS home_timeline (
+    id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_ulid(),
+    user_id VARCHAR NOT NULL REFERENCES users ON DELETE CASCADE ON UPDATE CASCADE,
+    post_id VARCHAR NOT NULL REFERENCES posts ON DELETE CASCADE ON UPDATE CASCADE,
+    created_at TIMESTAMP NOT NULL DEFAULT now(),
+    UNIQUE (user_id, post_id)
+);

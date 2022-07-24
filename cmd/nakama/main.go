@@ -52,12 +52,13 @@ func run() error {
 		return fmt.Errorf("migrate sql: %w", err)
 	}
 
+	logger := log.New(os.Stderr, "", log.Ldate|log.Ltime|log.Llongfile)
 	queries := nakama.New(db)
 	svc := &nakama.Service{
 		Queries: queries,
+		Logger:  logger,
 	}
 
-	logger := log.New(os.Stderr, "", log.Ldate|log.Ltime|log.Llongfile)
 	handler := &web.Handler{
 		Logger:     logger,
 		Service:    svc,

@@ -2,6 +2,7 @@ package nakama
 
 import (
 	"context"
+	"log"
 	"strings"
 	"testing"
 
@@ -9,7 +10,7 @@ import (
 )
 
 func TestService_CreatePost(t *testing.T) {
-	svc := &Service{Queries: testQueries}
+	svc := &Service{Queries: testQueries, Logger: log.Default()}
 	ctx := context.Background()
 
 	t.Run("empty_content", func(t *testing.T) {
@@ -49,6 +50,34 @@ func TestService_CreatePost(t *testing.T) {
 		got, err := svc.Queries.UserByUsername(ctx, UserByUsernameParams{Username: usr.Username})
 		assert.NoError(t, err)
 		assert.Equal(t, want, int(got.PostsCount))
+	})
+
+	t.Run("fanout", func(t *testing.T) {
+		follower := genUser(t)
+		followed := genUser(t)
+		anotherUser := genUser(t)
+
+		asFollower := ContextWithUser(ctx, follower)
+		err := svc.FollowUser(asFollower, followed.ID)
+		assert.NoError(t, err)
+
+		asFollowed := ContextWithUser(ctx, followed)
+		post, err := svc.CreatePost(asFollowed, CreatePostInput{Content: genPostContent()})
+
+		timeline, err := svc.HomeTimeline(asFollowed)
+		assert.NoError(t, err)
+		assert.Equal(t, 1, len(timeline))
+		assert.Equal(t, post.ID, timeline[0].ID)
+
+		timeline, err = svc.HomeTimeline(asFollower)
+		assert.NoError(t, err)
+		assert.Equal(t, 1, len(timeline))
+		assert.Equal(t, post.ID, timeline[0].ID)
+
+		asAnotherUser := ContextWithUser(ctx, anotherUser)
+		timeline, err = svc.HomeTimeline(asAnotherUser)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, len(timeline))
 	})
 }
 

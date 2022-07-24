@@ -17,6 +17,13 @@ type Comment struct {
 	UpdatedAt time.Time
 }
 
+type HomeTimeline struct {
+	ID        string
+	UserID    string
+	PostID    string
+	CreatedAt time.Time
+}
+
 type Post struct {
 	ID            string
 	UserID        string
