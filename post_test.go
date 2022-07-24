@@ -63,6 +63,7 @@ func TestService_CreatePost(t *testing.T) {
 
 		asFollowed := ContextWithUser(ctx, followed)
 		post, err := svc.CreatePost(asFollowed, CreatePostInput{Content: genPostContent()})
+		assert.NoError(t, err)
 
 		timeline, err := svc.HomeTimeline(asFollowed)
 		assert.NoError(t, err)
