@@ -65,16 +65,19 @@ func TestService_CreatePost(t *testing.T) {
 		post, err := svc.CreatePost(asFollowed, CreatePostInput{Content: genPostContent()})
 		assert.NoError(t, err)
 
+		// The post should have been added the the author's timeline.
 		timeline, err := svc.HomeTimeline(asFollowed)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(timeline))
 		assert.Equal(t, post.ID, timeline[0].ID)
 
+		// The post should have been added to the follower's timeline.
 		timeline, err = svc.HomeTimeline(asFollower)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(timeline))
 		assert.Equal(t, post.ID, timeline[0].ID)
 
+		// The post should not have been added to any other user's timeline.
 		asAnotherUser := ContextWithUser(ctx, anotherUser)
 		timeline, err = svc.HomeTimeline(asAnotherUser)
 		assert.NoError(t, err)
