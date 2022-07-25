@@ -89,6 +89,7 @@ func (svc *Service) CreatePost(ctx context.Context, in CreatePostInput) (CreateP
 		return out, err
 	}
 
+	// Side-effect: add the post to the user's home timeline.
 	_, err = svc.Queries.CreateHomeTimelineItem(ctx, CreateHomeTimelineItemParams{
 		UserID: usr.ID,
 		PostID: postID,
@@ -97,6 +98,7 @@ func (svc *Service) CreatePost(ctx context.Context, in CreatePostInput) (CreateP
 		return out, err
 	}
 
+	// Side-effect: add the post to all followers' home timelines.
 	go func() {
 		// TODO: take background context as dependency.
 		ctx := context.Background()
@@ -115,6 +117,12 @@ func (svc *Service) CreatePost(ctx context.Context, in CreatePostInput) (CreateP
 	return out, nil
 }
 
+// HomeTimeline is personalized list of posts to each user.
+// When a post is created, a reference to the post is added to the user's home timeline
+// and is also fanned-out to all followers' home timelines.
+// This is so reads are faster since we don't have query the posts
+// doing a JOIN with the user_follows table.
+// We can query the home_timeline table of each user directly.
 func (svc *Service) HomeTimeline(ctx context.Context) ([]HomeTimelineRow, error) {
 	usr, ok := UserFromContext(ctx)
 	if !ok {
