@@ -20,6 +20,7 @@ func (h *Handler) renderUser(w http.ResponseWriter, data userData, statusCode in
 	h.renderTmpl(w, userTmpl, data, statusCode)
 }
 
+// showUser handles GET /@{username}.
 func (h *Handler) showUser(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	username := mux.URLParam(ctx, "username")

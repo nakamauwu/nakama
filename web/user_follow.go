@@ -2,6 +2,7 @@ package web
 
 import "net/http"
 
+// followUser handles POST /user-follows.
 func (h *Handler) followUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
@@ -24,6 +25,7 @@ func (h *Handler) followUser(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, r.Referer(), http.StatusFound)
 }
 
+// unfollowUser handles DELETE /user-follows.
 func (h *Handler) unfollowUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
