@@ -20,7 +20,7 @@ export default function () {
 
 function HomePage() {
     const [_, setAuth] = useStore(authStore)
-    const [mode, setMode] = useState("timeline")
+    const [mode, setMode] = useState(/** @type {"timeline"|"posts"} */("posts"))
     const [posts, setPosts] = useState([])
     const [endCursor, setEndCursor] = useState(null)
     const [fetching, setFetching] = useState(posts.length === 0)
@@ -142,11 +142,11 @@ function HomePage() {
                 </button>
             ` : null}
             <div role="tablist">
-                <button role="tab" id="${mode}-tab" aria-controls="${mode}-tabpanel" aria-selected=${String(mode === "timeline")} @click=${onTimelineModeClick}>
-                    ${translate("homePage.tabs.timeline")}
-                </button>
                 <button role="tab" id="${mode}-tab" aria-controls="${mode}-tabpanel" aria-selected=${String(mode === "posts")} @click=${onPostsModeClick}>
                     ${translate("homePage.tabs.posts")}
+                </button>
+                <button role="tab" id="${mode}-tab" aria-controls="${mode}-tabpanel" aria-selected=${String(mode === "timeline")} @click=${onTimelineModeClick}>
+                    ${translate("homePage.tabs.timeline")}
                 </button>
             </div>
             ${err !== null ? html`
