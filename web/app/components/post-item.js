@@ -415,6 +415,30 @@ function MediaScroller({ urls }) {
                 }
 
                 {
+                    const tweetID = findTweetID(url)
+                    if (tweetID !== null) {
+                        try {
+                            const u = "https://publish.twitter.com/oembed?dnt=true&hide_thread=true&omit_script=1&theme=dark&border_color=23a80000&chrome=" + encodeURIComponent("transparent noborders") + "&url=" + encodeURIComponent(url.origin + url.pathname)
+                            const fetchJSONP = await import("fetch-jsonp").then(m => m.default)
+                            const resp = await fetchJSONP(u)
+                            const json = await resp.json()
+                            if (typeof json === "object" && json !== null && typeof json.html === "string") {
+                                await addTwitterWidget()
+                                const div = document.createElement("div")
+                                div.innerHTML = json.html
+                                items.push(html`${div}`)
+                                if ("twttr" in window) {
+                                    window.twttr.widgets.load(div)
+                                }
+                                continue
+                            }
+                        } catch (err) {
+                            console.error("failed to load tweet", err)
+                        }
+                    }
+                }
+
+                {
                     const id = findCoubVideoID(url)
                     if (id !== null) {
                         items.push(html`<iframe
@@ -518,6 +542,33 @@ function MediaScroller({ urls }) {
     `
 }
 
+let twitterWidgetAdded = false
+
+function addTwitterWidget() {
+    if (twitterWidgetAdded) {
+        return
+    }
+
+    let resolve = (x) => { }
+    let reject = (x) => { }
+    const promise = new Promise((ok, bad) => {
+        resolve = ok
+        reject = bad
+    })
+
+    const script = document.createElement("script")
+    script.src = "https://platform.twitter.com/widgets.js"
+    script.onload = () => {
+        resolve()
+    }
+    script.onerror = (err) => {
+        reject(err)
+    }
+
+    document.head.append(script)
+    return promise
+}
+
 // @ts-ignore
 customElements.define("media-scroller", component(MediaScroller, { useShadowDOM: false }))
 
@@ -559,6 +610,24 @@ function findYouTubeID(url) {
     }
 
     return { id, seconds }
+}
+
+/**
+ * @param {URL} url
+ * @returns {string|null}
+ */
+function findTweetID(url) {
+    if (url.hostname !== "twitter.com") {
+        return null
+    }
+
+    const parts = url.pathname.split("/")
+    // /{user_handle}/status/{id}
+    if (parts.length !== 4 || parts[0] !== "" || parts[1] === "" || parts[2] !== "status" || parts[3] === "") {
+        return null
+    }
+
+    return parts[3]
 }
 
 /**
