@@ -5,6 +5,7 @@
 /letsencrypt
 /nakama
 !/web/dist/keepme
+/web/dist
 
 # Created by https://www.toptal.com/developers/gitignore/api/go,windows,macos,linux,visualstudiocode,goland,vim,git,dotenv,node,database,executable
 # Edit at https://www.toptal.com/developers/gitignore?templates=go,windows,macos,linux,visualstudiocode,goland,vim,git,dotenv,node,database,executable
