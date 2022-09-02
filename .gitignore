@@ -3,9 +3,8 @@
 /loki-data/**
 /prometheus-data/**
 /letsencrypt
-
-/web/static/
 /nakama
+!/web/dist/keepme
 
 # Created by https://www.toptal.com/developers/gitignore/api/go,windows,macos,linux,visualstudiocode,goland,vim,git,dotenv,node,database,executable
 # Edit at https://www.toptal.com/developers/gitignore?templates=go,windows,macos,linux,visualstudiocode,goland,vim,git,dotenv,node,database,executable
@@ -288,7 +287,6 @@ out
 
 # Nuxt.js build / generate output
 .nuxt
-dist
 
 # Gatsby files
 .cache/
