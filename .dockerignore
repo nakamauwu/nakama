@@ -4,7 +4,6 @@
 /prometheus-data/**
 /letsencrypt
 /web/app/node_modules/**
-/web/static/**
 /.env
 /nakama
 *.exe
