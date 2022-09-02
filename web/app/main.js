@@ -24,7 +24,7 @@ router.route(/.*/, view("not-found"))
 addEventListener("click", hijackClicks)
 
 function view(name) {
-    return params => html`${until(import(`/components/${name}-page.js`).then(m => m.default({ params }), err => {
+    return params => html`${until(import(`./components/${name}-page.js`).then(m => m.default({ params }), err => {
         console.error("could not import page:", err)
         return html`
             <div class="container">

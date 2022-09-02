@@ -1,14 +1,12 @@
 {
     "private": true,
     "scripts": {
-        "dev": "SNOWPACK_PUBLIC_VAPID_PUBLIC_KEY=$(echo $VAPID_PUBLIC_KEY) snowpack dev",
-        "build": "SNOWPACK_PUBLIC_VAPID_PUBLIC_KEY=$(echo $VAPID_PUBLIC_KEY) snowpack build",
-        "test": "echo \"Error: no test specified\" && exit 1"
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview"
     },
     "devDependencies": {
-        "@snowpack/plugin-optimize": "~0.2.0",
-        "http2-proxy": "^5.0.0",
-        "snowpack": "^3.8.0"
+        "vite": "^3.0.9"
     },
     "dependencies": {
         "@nicolasparada/store": "~0.4.0",
