@@ -23,7 +23,7 @@ import (
 func (h *handler) staticHandler() http.Handler {
 	var root http.FileSystem
 	if h.embedStaticFiles {
-		sub, err := fs.Sub(web.StaticFiles, "static")
+		sub, err := fs.Sub(web.StaticFiles, "dist")
 		if err != nil {
 			_ = h.logger.Log("err", fmt.Errorf("could not embed static files: %w", err))
 			os.Exit(1)
@@ -35,7 +35,7 @@ func (h *handler) staticHandler() http.Handler {
 			_ = h.logger.Log("err", "could not get runtime caller")
 			os.Exit(1)
 		}
-		root = http.Dir(filepath.Join(path.Dir(file), "..", "..", "web", "static"))
+		root = http.Dir(filepath.Join(path.Dir(file), "..", "..", "web", "dist"))
 	}
 	return http.FileServer(&spaFileSystem{root: root})
 }
