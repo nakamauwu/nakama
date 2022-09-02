@@ -1,3 +1,4 @@
+import fetchJSONP from "fetch-jsonp"
 import { component, useEffect, useState } from "haunted"
 import { html } from "lit"
 import { get as getTranslation, translate } from "lit-translate"
@@ -419,7 +420,6 @@ function MediaScroller({ urls }) {
                     if (tweetID !== null) {
                         try {
                             const u = "https://publish.twitter.com/oembed?dnt=true&hide_thread=true&omit_script=1&theme=dark&border_color=23a80000&chrome=" + encodeURIComponent("transparent noborders") + "&url=" + encodeURIComponent(url.origin + url.pathname)
-                            const fetchJSONP = await import("fetch-jsonp").then(m => m.default)
                             const resp = await fetchJSONP(u)
                             const json = await resp.json()
                             if (typeof json === "object" && json !== null && typeof json.html === "string") {
