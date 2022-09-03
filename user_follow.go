@@ -26,35 +26,22 @@ func (svc *Service) FollowUser(ctx context.Context, followedUserID string) error
 
 	// TODO: run inside a transaction.
 
-	// Note: maybe check unique violation
-	// error returned by `Queries.CreateUserFollow`.
-
-	exists, err := svc.Queries.UserFollowExists(ctx, UserFollowExistsParams{
+	_, err := svc.Queries.CreateUserFollow(ctx, CreateUserFollowParams{
 		FollowerID: usr.ID,
 		FollowedID: followedUserID,
 	})
-	if err != nil {
-		return err
-	}
-
-	// Early return if following already.
-	if exists {
+	if isPqUniqueViolationError(err) {
+		// Early return if following already.
+		// Note: Careful! As this query contains an error at the database layer.
+		// Running this inside a transaction
+		// will cause the entire transaction to fail.
 		return nil
 	}
 
-	exists, err = svc.Queries.UserExists(ctx, followedUserID)
-	if err != nil {
-		return err
-	}
-
-	if !exists {
+	if isPqForeignKeyViolationError(err, "followed_id") {
 		return ErrUserNotFound
 	}
 
-	_, err = svc.Queries.CreateUserFollow(ctx, CreateUserFollowParams{
-		FollowerID: usr.ID,
-		FollowedID: followedUserID,
-	})
 	if err != nil {
 		return err
 	}
@@ -92,9 +79,6 @@ func (svc *Service) UnfollowUser(ctx context.Context, followedUserID string) err
 	}
 
 	// TODO: run inside a transaction.
-
-	// Note: maybe check unique violation
-	// error returned by `Queries.CreateUserFollow`.
 
 	exists, err := svc.Queries.UserExists(ctx, followedUserID)
 	if err != nil {
