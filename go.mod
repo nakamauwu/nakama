@@ -10,6 +10,7 @@ require (
 	github.com/nicolasparada/go-mux v0.3.1
 	github.com/ory/dockertest/v3 v3.9.1
 	github.com/rs/xid v1.4.0
+	golang.org/x/sync v0.0.0-20220819030929-7fc1605a5dde
 	mvdan.cc/xurls/v2 v2.4.0
 )
 
