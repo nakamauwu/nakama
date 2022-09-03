@@ -55,8 +55,9 @@ func run() error {
 	logger := log.New(os.Stderr, "", log.Ldate|log.Ltime|log.Llongfile)
 	queries := nakama.New(db)
 	svc := &nakama.Service{
-		Queries: queries,
-		Logger:  logger,
+		Queries:     queries,
+		Logger:      logger,
+		BaseContext: context.Background,
 	}
 
 	handler := &web.Handler{

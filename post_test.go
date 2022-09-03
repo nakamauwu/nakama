@@ -2,7 +2,6 @@ package nakama
 
 import (
 	"context"
-	"log"
 	"strings"
 	"testing"
 
@@ -10,28 +9,27 @@ import (
 )
 
 func TestService_CreatePost(t *testing.T) {
-	svc := &Service{Queries: testQueries, Logger: log.Default()}
 	ctx := context.Background()
 
 	t.Run("empty_content", func(t *testing.T) {
-		_, err := svc.CreatePost(ctx, CreatePostInput{Content: ""})
+		_, err := testService.CreatePost(ctx, CreatePostInput{Content: ""})
 		assert.EqualError(t, err, "invalid post content")
 	})
 
 	t.Run("too_long_content", func(t *testing.T) {
 		s := strings.Repeat("x", maxPostContentLength+1)
-		_, err := svc.CreatePost(ctx, CreatePostInput{Content: s})
+		_, err := testService.CreatePost(ctx, CreatePostInput{Content: s})
 		assert.EqualError(t, err, "invalid post content")
 	})
 
 	t.Run("unauthenticated", func(t *testing.T) {
-		_, err := svc.CreatePost(ctx, CreatePostInput{Content: genPostContent()})
+		_, err := testService.CreatePost(ctx, CreatePostInput{Content: genPostContent()})
 		assert.EqualError(t, err, "unauthenticated")
 	})
 
 	t.Run("ok", func(t *testing.T) {
 		asUser := ContextWithUser(ctx, genUser(t))
-		got, err := svc.CreatePost(asUser, CreatePostInput{Content: genPostContent()})
+		got, err := testService.CreatePost(asUser, CreatePostInput{Content: genPostContent()})
 		assert.NoError(t, err)
 		assert.NotZero(t, got)
 	})
@@ -42,12 +40,12 @@ func TestService_CreatePost(t *testing.T) {
 
 		want := 5
 		for i := 0; i < want; i++ {
-			got, err := svc.CreatePost(asUser, CreatePostInput{Content: genPostContent()})
+			got, err := testService.CreatePost(asUser, CreatePostInput{Content: genPostContent()})
 			assert.NoError(t, err)
 			assert.NotZero(t, got)
 		}
 
-		got, err := svc.Queries.UserByUsername(ctx, UserByUsernameParams{Username: usr.Username})
+		got, err := testService.Queries.UserByUsername(ctx, UserByUsernameParams{Username: usr.Username})
 		assert.NoError(t, err)
 		assert.Equal(t, want, int(got.PostsCount))
 	})
@@ -58,44 +56,43 @@ func TestService_CreatePost(t *testing.T) {
 		anotherUser := genUser(t)
 
 		asFollower := ContextWithUser(ctx, follower)
-		err := svc.FollowUser(asFollower, followed.ID)
+		err := testService.FollowUser(asFollower, followed.ID)
 		assert.NoError(t, err)
 
 		asFollowed := ContextWithUser(ctx, followed)
-		post, err := svc.CreatePost(asFollowed, CreatePostInput{Content: genPostContent()})
+		post, err := testService.CreatePost(asFollowed, CreatePostInput{Content: genPostContent()})
 		assert.NoError(t, err)
 
 		// The post should have been added the the author's timeline.
-		timeline, err := svc.HomeTimeline(asFollowed)
+		timeline, err := testService.HomeTimeline(asFollowed)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(timeline))
 		assert.Equal(t, post.ID, timeline[0].ID)
 
 		// The post should have been added to the follower's timeline.
-		timeline, err = svc.HomeTimeline(asFollower)
+		timeline, err = testService.HomeTimeline(asFollower)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(timeline))
 		assert.Equal(t, post.ID, timeline[0].ID)
 
 		// The post should not have been added to any other user's timeline.
 		asAnotherUser := ContextWithUser(ctx, anotherUser)
-		timeline, err = svc.HomeTimeline(asAnotherUser)
+		timeline, err = testService.HomeTimeline(asAnotherUser)
 		assert.NoError(t, err)
 		assert.Equal(t, 0, len(timeline))
 	})
 }
 
 func TestService_Posts(t *testing.T) {
-	svc := &Service{Queries: testQueries}
 	ctx := context.Background()
 
 	t.Run("invalid_username", func(t *testing.T) {
-		_, err := svc.Posts(ctx, PostsInput{Username: "@nope@"})
+		_, err := testService.Posts(ctx, PostsInput{Username: "@nope@"})
 		assert.EqualError(t, err, "invalid username")
 	})
 
 	t.Run("optional_username", func(t *testing.T) {
-		_, err := svc.Posts(ctx, PostsInput{})
+		_, err := testService.Posts(ctx, PostsInput{})
 		assert.NoError(t, err)
 	})
 
@@ -105,7 +102,7 @@ func TestService_Posts(t *testing.T) {
 			genPost(t, genUser(t).ID)
 		}
 
-		got, err := svc.Posts(ctx, PostsInput{})
+		got, err := testService.Posts(ctx, PostsInput{})
 		assert.NoError(t, err)
 		assert.True(t, len(got) >= wantAtLeast, "got %d posts, want at least %d", len(got), wantAtLeast)
 		for _, p := range got {
@@ -121,7 +118,7 @@ func TestService_Posts(t *testing.T) {
 		}
 		genPost(t, genUser(t).ID) // additional post from another user
 
-		got, err := svc.Posts(ctx, PostsInput{Username: usr.Username})
+		got, err := testService.Posts(ctx, PostsInput{Username: usr.Username})
 		assert.NoError(t, err)
 		assert.Equal(t, want, len(got))
 		for _, p := range got {
@@ -131,22 +128,21 @@ func TestService_Posts(t *testing.T) {
 }
 
 func TestService_Post(t *testing.T) {
-	svc := &Service{Queries: testQueries}
 	ctx := context.Background()
 
 	t.Run("invalid_id", func(t *testing.T) {
-		_, err := svc.Post(ctx, "@nope@")
+		_, err := testService.Post(ctx, "@nope@")
 		assert.EqualError(t, err, "invalid post ID")
 	})
 
 	t.Run("not_found", func(t *testing.T) {
-		_, err := svc.Post(ctx, genID())
+		_, err := testService.Post(ctx, genID())
 		assert.EqualError(t, err, "post not found")
 	})
 
 	t.Run("ok", func(t *testing.T) {
 		post := genPost(t, genUser(t).ID)
-		got, err := svc.Post(ctx, post.ID)
+		got, err := testService.Post(ctx, post.ID)
 		assert.NoError(t, err)
 		assert.NotZero(t, got)
 	})
@@ -157,7 +153,7 @@ func genPost(t *testing.T, userID string) Post {
 
 	ctx := context.Background()
 	postID := genID()
-	createdAt, err := testQueries.CreatePost(ctx, CreatePostParams{
+	createdAt, err := testService.Queries.CreatePost(ctx, CreatePostParams{
 		PostID:  postID,
 		UserID:  userID,
 		Content: genPostContent(),

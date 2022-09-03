@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	mathrand "math/rand"
 	"os"
 	"testing"
@@ -13,7 +14,7 @@ import (
 	"github.com/ory/dockertest/v3"
 )
 
-var testQueries *Queries
+var testService *Service
 
 func TestMain(m *testing.M) {
 	code, err := setupT(m)
@@ -52,7 +53,11 @@ func setupT(m *testing.M) (int, error) {
 		return 0, err
 	}
 
-	testQueries = New(db)
+	testService = &Service{
+		Queries:     New(db),
+		Logger:      log.Default(),
+		BaseContext: context.Background,
+	}
 
 	return m.Run(), nil
 }

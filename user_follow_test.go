@@ -8,45 +8,44 @@ import (
 )
 
 func TestService_FollowUser(t *testing.T) {
-	svc := &Service{Queries: testQueries}
 	ctx := context.Background()
 
 	t.Run("invalid_user_id", func(t *testing.T) {
-		err := svc.FollowUser(ctx, "@nope@")
+		err := testService.FollowUser(ctx, "@nope@")
 		assert.EqualError(t, err, "invalid user ID")
 	})
 
 	t.Run("unauthenticated", func(t *testing.T) {
-		err := svc.FollowUser(ctx, genID())
+		err := testService.FollowUser(ctx, genID())
 		assert.EqualError(t, err, "unauthenticated")
 	})
 
 	t.Run("self", func(t *testing.T) {
 		usr := genUser(t)
 		asUser := ContextWithUser(ctx, usr)
-		err := svc.FollowUser(asUser, usr.ID)
+		err := testService.FollowUser(asUser, usr.ID)
 		assert.EqualError(t, err, "cannot follow self")
 	})
 
 	t.Run("user_not_found", func(t *testing.T) {
 		asUser := ContextWithUser(ctx, genUser(t))
-		err := svc.FollowUser(asUser, genID())
+		err := testService.FollowUser(asUser, genID())
 		assert.EqualError(t, err, "user not found")
 	})
 
 	t.Run("ok", func(t *testing.T) {
 		asUser := ContextWithUser(ctx, genUser(t))
-		err := svc.FollowUser(asUser, genUser(t).ID)
+		err := testService.FollowUser(asUser, genUser(t).ID)
 		assert.NoError(t, err)
 	})
 
 	t.Run("exists", func(t *testing.T) {
 		asUser := ContextWithUser(ctx, genUser(t))
 		followedUserID := genUser(t).ID
-		err := svc.FollowUser(asUser, followedUserID)
+		err := testService.FollowUser(asUser, followedUserID)
 		assert.NoError(t, err)
 
-		err = svc.FollowUser(asUser, followedUserID)
+		err = testService.FollowUser(asUser, followedUserID)
 		assert.NoError(t, err)
 	})
 
@@ -55,17 +54,17 @@ func TestService_FollowUser(t *testing.T) {
 		followed := genUser(t)
 
 		asFollower := ContextWithUser(ctx, follower)
-		err := svc.FollowUser(asFollower, followed.ID)
+		err := testService.FollowUser(asFollower, followed.ID)
 		assert.NoError(t, err)
 
 		{
-			follower, err := svc.UserByUsername(ctx, follower.Username)
+			follower, err := testService.UserByUsername(ctx, follower.Username)
 			assert.NoError(t, err)
 			assert.Equal(t, 1, follower.FollowingCount)
 		}
 
 		{
-			followed, err := svc.UserByUsername(ctx, followed.Username)
+			followed, err := testService.UserByUsername(ctx, followed.Username)
 			assert.NoError(t, err)
 			assert.Equal(t, 1, followed.FollowersCount)
 		}
@@ -73,52 +72,51 @@ func TestService_FollowUser(t *testing.T) {
 }
 
 func TestService_UnfollowUser(t *testing.T) {
-	svc := &Service{Queries: testQueries}
 	ctx := context.Background()
 
 	t.Run("invalid_user_id", func(t *testing.T) {
-		err := svc.UnfollowUser(ctx, "@nope@")
+		err := testService.UnfollowUser(ctx, "@nope@")
 		assert.EqualError(t, err, "invalid user ID")
 	})
 
 	t.Run("unauthenticated", func(t *testing.T) {
-		err := svc.UnfollowUser(ctx, genID())
+		err := testService.UnfollowUser(ctx, genID())
 		assert.EqualError(t, err, "unauthenticated")
 	})
 
 	t.Run("self", func(t *testing.T) {
 		usr := genUser(t)
 		asUser := ContextWithUser(ctx, usr)
-		err := svc.UnfollowUser(asUser, usr.ID)
+		err := testService.UnfollowUser(asUser, usr.ID)
 		assert.EqualError(t, err, "cannot follow self")
 	})
 
 	t.Run("user_not_found", func(t *testing.T) {
 		asUser := ContextWithUser(ctx, genUser(t))
-		err := svc.UnfollowUser(asUser, genID())
+		err := testService.UnfollowUser(asUser, genID())
 		assert.EqualError(t, err, "user not found")
 	})
 
 	t.Run("ok", func(t *testing.T) {
 		asUser := ContextWithUser(ctx, genUser(t))
 		followedUserID := genUser(t).ID
-		err := svc.FollowUser(asUser, followedUserID)
+		err := testService.FollowUser(asUser, followedUserID)
 		assert.NoError(t, err)
 
-		err = svc.UnfollowUser(asUser, followedUserID)
+		err = testService.UnfollowUser(asUser, followedUserID)
 		assert.NoError(t, err)
 	})
 
 	t.Run("exists", func(t *testing.T) {
 		asUser := ContextWithUser(ctx, genUser(t))
 		followedUserID := genUser(t).ID
-		err := svc.FollowUser(asUser, followedUserID)
+		err := testService.FollowUser(asUser, followedUserID)
 		assert.NoError(t, err)
 
-		err = svc.UnfollowUser(asUser, followedUserID)
+		err = testService.UnfollowUser(asUser, followedUserID)
 		assert.NoError(t, err)
 
-		err = svc.UnfollowUser(asUser, followedUserID)
+		err = testService.UnfollowUser(asUser, followedUserID)
 		assert.NoError(t, err)
 	})
 
@@ -127,20 +125,20 @@ func TestService_UnfollowUser(t *testing.T) {
 		followed := genUser(t)
 
 		asFollower := ContextWithUser(ctx, follower)
-		err := svc.FollowUser(asFollower, followed.ID)
+		err := testService.FollowUser(asFollower, followed.ID)
 		assert.NoError(t, err)
 
-		err = svc.UnfollowUser(asFollower, followed.ID)
+		err = testService.UnfollowUser(asFollower, followed.ID)
 		assert.NoError(t, err)
 
 		{
-			follower, err := svc.UserByUsername(ctx, follower.Username)
+			follower, err := testService.UserByUsername(ctx, follower.Username)
 			assert.NoError(t, err)
 			assert.Equal(t, 0, follower.FollowingCount)
 		}
 
 		{
-			followed, err := svc.UserByUsername(ctx, followed.Username)
+			followed, err := testService.UserByUsername(ctx, followed.Username)
 			assert.NoError(t, err)
 			assert.Equal(t, 0, followed.FollowersCount)
 		}

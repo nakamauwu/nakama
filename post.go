@@ -95,8 +95,7 @@ func (svc *Service) CreatePost(ctx context.Context, in CreatePostInput) (CreateP
 
 	// Side-effect: add the post to all followers' home timelines.
 	go func() {
-		// TODO: take background context as dependency.
-		ctx := context.Background()
+		ctx := svc.BaseContext()
 		_, err := svc.Queries.FanoutHomeTimeline(ctx, FanoutHomeTimelineParams{
 			FollowedID: usr.ID,
 			PostsID:    postID,

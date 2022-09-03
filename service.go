@@ -1,14 +1,16 @@
 package nakama
 
 import (
+	"context"
 	"log"
 
 	"github.com/rs/xid"
 )
 
 type Service struct {
-	Queries *Queries
-	Logger  *log.Logger
+	Queries     *Queries
+	Logger      *log.Logger
+	BaseContext func() context.Context
 }
 
 func genID() string {
