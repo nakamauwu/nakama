@@ -6,6 +6,7 @@ import (
 
 	"github.com/nakamauwu/nakama"
 	"github.com/nicolasparada/go-mux"
+	"golang.org/x/sync/errgroup"
 )
 
 var postPageTmpl = parseTmpl("post-page.tmpl")
@@ -53,28 +54,35 @@ func (h *Handler) showPost(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	postID := mux.URLParam(ctx, "postID")
 
-	// TODO: fetch both post and comments in parallel.
+	var post nakama.PostRow
+	var comments []nakama.CommentsRow
 
-	p, err := h.Service.Post(ctx, postID)
-	if err != nil {
+	g, gctx := errgroup.WithContext(ctx)
+
+	g.Go(func() error {
+		var err error
+		post, err = h.Service.Post(gctx, postID)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		comments, err = h.Service.Comments(gctx, postID)
+		return err
+	})
+
+	if err := g.Wait(); err != nil {
 		h.log(err)
 		h.renderErr(w, r, err)
 		return
 	}
 
-	cc, err := h.Service.Comments(ctx, postID)
-	if err != nil {
-		h.log(err)
-		h.renderErr(w, r, err)
-		return
-	}
-
-	reverse(cc)
+	reverse(comments)
 
 	h.renderPost(w, postData{
 		Session:           h.sessionFromReq(r),
-		Post:              p,
-		Comments:          cc,
+		Post:              post,
+		Comments:          comments,
 		CreateCommentForm: h.popForm(r, "create_comment_form"),
 		CreateCommentErr:  h.popErr(r, "create_comment_err"),
 	}, http.StatusOK)
