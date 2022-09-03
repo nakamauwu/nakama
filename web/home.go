@@ -14,6 +14,7 @@ type homeData struct {
 	CreatePostErr  error
 	CreatePostForm url.Values
 	Posts          any
+	Mode           string
 }
 
 func (h *Handler) renderHome(w http.ResponseWriter, data homeData, statusCode int) {
@@ -23,11 +24,12 @@ func (h *Handler) renderHome(w http.ResponseWriter, data homeData, statusCode in
 // showHome handles GET /.
 func (h *Handler) showHome(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	mode := r.URL.Query().Get("mode")
 
 	var posts any
 	var err error
 
-	if _, ok := nakama.UserFromContext(ctx); ok {
+	if _, ok := nakama.UserFromContext(ctx); ok && mode != "global" {
 		posts, err = h.Service.HomeTimeline(ctx)
 	} else {
 		posts, err = h.Service.Posts(ctx, nakama.PostsInput{})
@@ -44,5 +46,6 @@ func (h *Handler) showHome(w http.ResponseWriter, r *http.Request) {
 		CreatePostErr:  h.popErr(r, "create_post_err"),
 		CreatePostForm: h.popForm(r, "create_post_form"),
 		Posts:          posts,
+		Mode:           mode,
 	}, http.StatusOK)
 }

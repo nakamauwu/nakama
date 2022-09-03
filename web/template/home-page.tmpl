@@ -28,6 +28,18 @@
     <br>
     {{end}}
 
+    {{if .Session.IsLoggedIn}}
+    <div class="v-stack">
+        <div class="btn-group" style="margin-bottom: 1rem; margin-left: auto">
+            <a href="/" class="btn" aria-current='{{if ne .Mode "global"}}page{{else}}false{{end}}'>
+                Following
+            </a>
+            <a href="/?mode=global" class="btn" aria-current='{{if eq .Mode "global"}}page{{else}}false{{end}}'>
+                Global
+            </a>
+        </div>
+    </div>
+    {{end}}
 
     {{if eq (len .Posts) 0}}
     <p>No posts yet.</p>
