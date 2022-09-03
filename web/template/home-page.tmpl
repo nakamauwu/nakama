@@ -29,11 +29,11 @@
     {{end}}
 
 
-    {{if eq (len .Timeline) 0}}
+    {{if eq (len .Posts) 0}}
     <p>No posts yet.</p>
     {{else}}
     <section style="display: flex; flex-direction: column; gap: 1rem;">
-        {{range .Timeline}}
+        {{range .Posts}}
         {{template "post.tmpl" .}}
         {{end}}
     </section>
