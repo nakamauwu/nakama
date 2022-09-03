@@ -7,7 +7,7 @@ import (
 	"github.com/nakamauwu/nakama"
 )
 
-var homeTmpl = parseTmpl("home.tmpl")
+var homePageTmpl = parseTmpl("home-page.tmpl")
 
 type homeData struct {
 	Session
@@ -18,7 +18,7 @@ type homeData struct {
 }
 
 func (h *Handler) renderHome(w http.ResponseWriter, data homeData, statusCode int) {
-	h.renderTmpl(w, homeTmpl, data, statusCode)
+	h.renderTmpl(w, homePageTmpl, data, statusCode)
 }
 
 // showHome handles GET /.

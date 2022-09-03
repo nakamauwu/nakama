@@ -8,7 +8,7 @@ import (
 	"github.com/nicolasparada/go-mux"
 )
 
-var postTmpl = parseTmpl("post.tmpl")
+var postPageTmpl = parseTmpl("post-page.tmpl")
 
 type postData struct {
 	Session
@@ -19,7 +19,7 @@ type postData struct {
 }
 
 func (h *Handler) renderPost(w http.ResponseWriter, data postData, statusCode int) {
-	h.renderTmpl(w, postTmpl, data, statusCode)
+	h.renderTmpl(w, postPageTmpl, data, statusCode)
 }
 
 // createPost handles POST /posts.

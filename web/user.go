@@ -7,7 +7,7 @@ import (
 	"github.com/nicolasparada/go-mux"
 )
 
-var userTmpl = parseTmpl("user.tmpl")
+var userPageTmpl = parseTmpl("user-page.tmpl")
 
 type userData struct {
 	Session
@@ -17,7 +17,7 @@ type userData struct {
 }
 
 func (h *Handler) renderUser(w http.ResponseWriter, data userData, statusCode int) {
-	h.renderTmpl(w, userTmpl, data, statusCode)
+	h.renderTmpl(w, userPageTmpl, data, statusCode)
 }
 
 // showUser handles GET /@{username}.
