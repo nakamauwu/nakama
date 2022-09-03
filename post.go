@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"strings"
 	"time"
 	"unicode/utf8"
 
@@ -24,15 +23,11 @@ type CreatePostInput struct {
 }
 
 func (in *CreatePostInput) Prepare() {
-	in.Content = strings.TrimSpace(in.Content)
-	// TODO: fix post content sanitization not removing
-	// duplicate spaces and line breaks properly.
-	in.Content = strings.ReplaceAll(in.Content, "\n\n", "\n")
-	in.Content = strings.ReplaceAll(in.Content, "  ", " ")
+	in.Content = smartTrim(in.Content)
 }
 
 func (in CreatePostInput) Validate() error {
-	if in.Content == "" || utf8.RuneCountInString(in.Content) > maxPostContentLength {
+	if in.Content == "" || !utf8.ValidString(in.Content) || utf8.RuneCountInString(in.Content) > maxPostContentLength {
 		return ErrInvalidPostContent
 	}
 	return nil

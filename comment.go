@@ -2,7 +2,6 @@ package nakama
 
 import (
 	"context"
-	"strings"
 	"time"
 	"unicode/utf8"
 
@@ -21,18 +20,14 @@ type CreateCommentInput struct {
 }
 
 func (in *CreateCommentInput) Prepare() {
-	in.Content = strings.TrimSpace(in.Content)
-	// TODO: fix comment content sanitization not removing
-	// duplicate spaces and line breaks properly.
-	in.Content = strings.ReplaceAll(in.Content, "\n\n", "\n")
-	in.Content = strings.ReplaceAll(in.Content, "  ", " ")
+	in.Content = smartTrim(in.Content)
 }
 
 func (in CreateCommentInput) Validate() error {
 	if !isID(in.PostID) {
 		return ErrInvalidPostID
 	}
-	if in.Content == "" || utf8.RuneCountInString(in.Content) > maxCommentContentLength {
+	if in.Content == "" || !utf8.ValidString(in.Content) || utf8.RuneCountInString(in.Content) > maxCommentContentLength {
 		return ErrInvalidCommentContent
 	}
 	return nil
