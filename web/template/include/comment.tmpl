@@ -1,13 +1,23 @@
 <article style="background-color: var(--background); padding: 1rem; border-radius: 6px;">
-    <div>
-        <a href="/@{{.Username}}" style="text-decoration: none; color: inherit;">
+    <div class="v-stack">
+        <a href="/@{{.Username}}" style="text-decoration: none; color: inherit;" class="v-stack">
+            <picture class="initials smaller" data-initials='{{printf "%.1s" .Username }}'></picture>
             <b>{{.Username}}</b>
         </a>
-        <time-ago>
-            <time datetime='{{.CreatedAt.Format "2006-01-02T15:04:05Z07:00"}}'>
-                {{- .CreatedAt.Format "02 Jan 06 15:04 MST" -}}
-            </time>
-        </time-ago>
+        <div class="v-stack no-gap" style="margin-left: auto">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                stroke="currentColor" class="w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <small>
+                <time-ago>
+                    <time datetime='{{.CreatedAt.Format "2006-01-02T15:04:05Z07:00"}}'>
+                        {{- .CreatedAt.Format "02 Jan 06 15:04 MST" -}}
+                    </time>
+                </time-ago>
+            </small>
+        </div>
     </div>
 
     {{/* linkify transforms urls into anchor tags */}}

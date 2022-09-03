@@ -2,7 +2,10 @@
 
 {{define "content"}}
 <main>
-    <h1>{{.User.Username}}</h1>
+    <div style="margin: 1rem 0" class="v-stack">
+        <picture class="initials bigger" data-initials='{{printf "%.1s" .User.Username }}'></picture>
+        <h1 style="margin-top: 0">{{.User.Username}}</h1>
+    </div>
 
     <dl>
         <dt>Following</dt>
