@@ -66,7 +66,7 @@ func (svc *Service) CreatePost(ctx context.Context, in CreatePostInput) (CreateP
 
 	usr, ok := UserFromContext(ctx)
 	if !ok {
-		return out, errs.ErrUnauthenticated
+		return out, errs.Unauthenticated
 	}
 
 	postID := genID()
@@ -126,7 +126,7 @@ func (svc *Service) CreatePost(ctx context.Context, in CreatePostInput) (CreateP
 func (svc *Service) HomeTimeline(ctx context.Context) ([]HomeTimelineRow, error) {
 	usr, ok := UserFromContext(ctx)
 	if !ok {
-		return nil, errs.ErrUnauthenticated
+		return nil, errs.Unauthenticated
 	}
 
 	return svc.Queries.HomeTimeline(ctx, usr.ID)

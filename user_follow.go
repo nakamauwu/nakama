@@ -17,7 +17,7 @@ func (svc *Service) FollowUser(ctx context.Context, followedUserID string) error
 
 	usr, ok := UserFromContext(ctx)
 	if !ok {
-		return errs.ErrUnauthenticated
+		return errs.Unauthenticated
 	}
 
 	if usr.ID == followedUserID {
@@ -84,7 +84,7 @@ func (svc *Service) UnfollowUser(ctx context.Context, followedUserID string) err
 
 	usr, ok := UserFromContext(ctx)
 	if !ok {
-		return errs.ErrUnauthenticated
+		return errs.Unauthenticated
 	}
 
 	if usr.ID == followedUserID {

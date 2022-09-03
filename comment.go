@@ -53,7 +53,7 @@ func (svc *Service) CreateComment(ctx context.Context, in CreateCommentInput) (C
 
 	usr, ok := UserFromContext(ctx)
 	if !ok {
-		return out, errs.ErrUnauthenticated
+		return out, errs.Unauthenticated
 	}
 
 	// TODO: run inside a transaction.
