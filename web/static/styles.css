@@ -124,3 +124,11 @@ a.btn:active {
 .btn-group .btn[aria-current="page"] {
     text-decoration: underline;
 }
+
+.link-preview {
+    background-color: var(--background-alt, #1a242f);
+    border: 1px solid var(--border, #526980);
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}

@@ -2,7 +2,7 @@
 
 {{define "content"}}
 <main>
-    {{template "post.tmpl" .Post}}
+    {{template "post.tmpl" (dict "Post" .Post "PostMedia" .PostMedia)}}
 
     <h2>Comments</h2>
 

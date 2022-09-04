@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"net/http"
 
+	"github.com/Masterminds/sprig/v3"
 	"mvdan.cc/xurls/v2"
 )
 
@@ -20,7 +21,7 @@ var tmplFuncs = template.FuncMap{
 var reURL = xurls.Relaxed()
 
 func parseTmpl(name string) *template.Template {
-	tmpl := template.New(name).Funcs(tmplFuncs)
+	tmpl := template.New(name).Funcs(sprig.FuncMap()).Funcs(tmplFuncs)
 	tmpl = template.Must(tmpl.ParseFS(templateFS, "template/include/*.tmpl"))
 	return template.Must(tmpl.ParseFS(templateFS, "template/"+name))
 }
