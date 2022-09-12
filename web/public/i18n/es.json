@@ -1,32 +1,32 @@
 {
     "InternalServerError": "error inesperado en los servidores de nakama, trata más tarde",
     "BadRequestError": "solicitud inválida",
-    "StreamingUnsupportedError": "streaming np soportado",
+    "StreamingUnsupportedError": "streaming no soportado",
     "IAMATeapotError": "Soy una tetera ;p",
     "InvalidEmailError": "correo inválido",
-    "OauthTimeoutError": "proceso the oauth fuera de tiempo",
+    "OauthTimeoutError": "proceso de oauth fuera de tiempo",
     "ServiceUnavailableError": "servicio no disponible",
     "EmailNotVerifiedError": "correo no verificado",
     "EmailNotProvidedError": "correo no previsto",
     "InvalidRedirectURIError": "URI de redireccionamiento inválida",
     "UntrustedRedirectURIError": "URI de redireccionamiento no confiable",
-    "UserNotFoundError": "usuario no encontrado",
-    "UserGoneError": "usuario ya no existe",
-    "InvalidTokenError": "token invalido",
+    "UserNotFoundError": "usuário no encontrado",
+    "UserGoneError": "usuário ya no existe",
+    "InvalidTokenError": "token inválido",
     "ExpiredTokenError": "token expirado",
     "InvalidVerificationCodeError": "código de verificación inválido",
     "VerificationCodeNotFoundError": "código de verificación no encontrado",
     "MissingAuthDataError": "falta información para autentificación",
     "InvalidTimelineItemIDError": "ID de ítem de línea de tiempo inválida",
-    "InvalidPostIDError": "ID de publicación invalida",
+    "InvalidPostIDError": "ID de publicación inválida",
     "InvalidContentError": "contenido inválido",
     "InvalidSpoilerError": "spoiler inválido",
     "PostNotFoundError": "publicación no encontrada",
     "InvalidUpdatePostParamsError": "parámetros para actualizar publicación inválidos",
     "InvalidCursorError": "marcador de página inválido",
     "InvalidReactionError": "reacción inválida",
-    "InvalidCommentIDError": "ID de comentario inválida",
-    "CommentNotFoundError": "Comentario no encontrado",
+    "InvalidCommentIDError": "ID de comentário inválida",
+    "CommentNotFoundError": "Comentário no encontrado",
     "errView": "Algo salió mal al cargar la página.",
     "pageLoader": "Cargando página... por favor espera.",
     "accessPage": {
@@ -87,7 +87,7 @@
     },
     "postForm": {
         "err": "No se pudo crear publicación:",
-        "placeholder": "Escribe algo...",
+        "placeholder": "Escríbe algo...",
         "textAreaLabel": "Contenido",
         "nsfwLabel": "NSFW",
         "spoilerLabel": "Spoiler",
@@ -108,7 +108,7 @@
             "types": {
                 "timeline_item": "el ítem",
                 "post": "la publicación",
-                "comment": "el comentario"
+                "comment": "el comentário"
             }
         },
         "menu": {
@@ -126,7 +126,7 @@
             "warning": "Esta publicación tiene contenido NSFW",
             "show": "Mostrar de todas formas"
         },
-        "comments": "Comentarios"
+        "comments": "Comentários"
     },
     "relativeDateTime": {
         "now": "Justo ahora"
