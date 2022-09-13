@@ -10,8 +10,8 @@
     "EmailNotProvidedError": "correo no previsto",
     "InvalidRedirectURIError": "URI de redireccionamiento inválida",
     "UntrustedRedirectURIError": "URI de redireccionamiento no confiable",
-    "UserNotFoundError": "usuário no encontrado",
-    "UserGoneError": "usuário ya no existe",
+    "UserNotFoundError": "usuario no encontrado",
+    "UserGoneError": "usuario ya no existe",
     "InvalidTokenError": "token inválido",
     "ExpiredTokenError": "token expirado",
     "InvalidVerificationCodeError": "código de verificación inválido",
@@ -25,8 +25,8 @@
     "InvalidUpdatePostParamsError": "parámetros para actualizar publicación inválidos",
     "InvalidCursorError": "marcador de página inválido",
     "InvalidReactionError": "reacción inválida",
-    "InvalidCommentIDError": "ID de comentário inválida",
-    "CommentNotFoundError": "Comentário no encontrado",
+    "InvalidCommentIDError": "ID de comentario inválida",
+    "CommentNotFoundError": "Comentario no encontrado",
     "errView": "Algo salió mal al cargar la página.",
     "pageLoader": "Cargando página... por favor espera.",
     "accessPage": {
@@ -87,7 +87,7 @@
     },
     "postForm": {
         "err": "No se pudo crear publicación:",
-        "placeholder": "Escríbe algo...",
+        "placeholder": "Escribe algo...",
         "textAreaLabel": "Contenido",
         "nsfwLabel": "NSFW",
         "spoilerLabel": "Spoiler",
@@ -108,7 +108,7 @@
             "types": {
                 "timeline_item": "el ítem",
                 "post": "la publicación",
-                "comment": "el comentário"
+                "comment": "el comentario"
             }
         },
         "menu": {
@@ -126,7 +126,7 @@
             "warning": "Esta publicación tiene contenido NSFW",
             "show": "Mostrar de todas formas"
         },
-        "comments": "Comentários"
+        "comments": "Comentarios"
     },
     "relativeDateTime": {
         "now": "Justo ahora"
