@@ -58,11 +58,11 @@ type ServiceWithInstrumentation struct {
 	Next Service
 }
 
-func (mw *ServiceWithInstrumentation) SendMagicLink(ctx context.Context, email, redirectURI string) error {
+func (mw *ServiceWithInstrumentation) SendMagicLink(ctx context.Context, in nakama.SendMagicLink) error {
 	defer func(begin time.Time) {
 		reqDur_SendMagicLink.Observe(float64(time.Since(begin)) / float64(time.Millisecond))
 	}(time.Now())
-	return mw.Next.SendMagicLink(ctx, email, redirectURI)
+	return mw.Next.SendMagicLink(ctx, in)
 }
 
 func (mw *ServiceWithInstrumentation) ParseRedirectURI(rawurl string) (*url.URL, error) {

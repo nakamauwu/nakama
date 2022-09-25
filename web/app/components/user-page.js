@@ -181,6 +181,7 @@ customElements.define("user-page", component(UserPage, { useShadowDOM: false }))
 function UserProfile({ user: initialUser }) {
     const [auth, setAuth] = useStore(authStore)
     const [user, setUser] = useState(initialUser)
+    const [email, setEmail] = useState(user.email)
     const [username, setUsername] = useState(user.username)
     const [bio, setBio] = useState(user.bio ?? "")
     const [waifu, setWaifu] = useState(user.waifu ?? "")
@@ -188,6 +189,7 @@ function UserProfile({ user: initialUser }) {
     const settingsDialogRef = /** @type {import("lit/directives/ref.js").Ref<HTMLDialogElement>} */(createRef())
     const avatarInputRef = /** @type {import("lit/directives/ref.js").Ref<HTMLInputElement>} */(createRef())
     const coverInputRef = /** @type {import("lit/directives/ref.js").Ref<HTMLInputElement>} */(createRef())
+    const [sendingMagicLink, setSendingMagicLink] = useState(false)
     const [updatingUser, setUpdatingUser] = useState(false)
     const [updatingAvatar, setUpdatingAvatar] = useState(false)
     const [updatingCover, setUpdatingCover] = useState(false)
@@ -223,6 +225,10 @@ function UserProfile({ user: initialUser }) {
         }
     }
 
+    const onEmailInput = ev => {
+        setEmail(ev.currentTarget.value)
+    }
+
     const onUsernameInput = ev => {
         setUsername(ev.currentTarget.value)
     }
@@ -237,6 +243,29 @@ function UserProfile({ user: initialUser }) {
 
     const onUserHusbandoInput = ev => {
         setHusbando(ev.currentTarget.value)
+    }
+
+    const onEmailFormSubmit = ev => {
+        ev.preventDefault()
+        if (email === user.email) {
+            setToast({ type: "error", content: "same email" })
+            return
+        }
+
+        const payload = {
+            email,
+            updateEmail: true,
+            redirectURI: location.origin + "/access-callback",
+        }
+        setSendingMagicLink(true)
+        request("POST", "/api/send_magic_link", { body: payload }).then(() => {
+            setToast({ type: "success", content: "email verification sended" })
+        }, err => {
+            const msg = "could not send email verification: " + err.message
+            setToast({ type: "error", content: msg })
+        }).finally(() => {
+            setSendingMagicLink(false)
+        })
     }
 
     const onUserFormSubmit = ev => {
@@ -518,6 +547,7 @@ function UserProfile({ user: initialUser }) {
                         </svg>
                     </button>
                 </div>
+
                 <form class="update-user-form" @submit=${onUserFormSubmit}>
                     <div class="input-grp">
                         <label for="update-username-input">Username:</label>
@@ -549,6 +579,21 @@ function UserProfile({ user: initialUser }) {
                     </div>
                     <button .disabled=${updatingUser}>Update</button>
                 </form>
+
+                <fieldset class="email-fieldset">
+                    <form class="update-email-form" @submit="${onEmailFormSubmit}">
+                        <div class="input-grp">
+                            <label for="update-email-input">Email:</label>
+                            <input id="update-email-input" type="email" name="email" placeholder="Email" autocomplete="off"
+                                .value=${email}
+                                .disabled=${sendingMagicLink}
+                                @input=${onEmailInput}>
+                        </div>
+
+                        <button .disabled=${sendingMagicLink}>Update and verify</button>
+                    </form>
+                </fieldset>
+
                 <fieldset class="avatar-fieldset" @drop=${onAvatarDrop} @dragover=${onAvatarDragOver}>
                     <legend>Avatar</legend>
                     <div class="avatar-grp">

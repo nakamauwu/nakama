@@ -16,21 +16,16 @@ type loginInput struct {
 	Email string
 }
 
-type sendMagicLinkInput struct {
-	Email       string
-	RedirectURI string
-}
-
 func (h *handler) sendMagicLink(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	var in sendMagicLinkInput
+	var in nakama.SendMagicLink
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		h.respondErr(w, errBadRequest)
 		return
 	}
 
-	err := h.svc.SendMagicLink(r.Context(), in.Email, in.RedirectURI)
+	err := h.svc.SendMagicLink(r.Context(), in)
 	if err != nil {
 		h.respondErr(w, err)
 		return

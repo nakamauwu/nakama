@@ -18,9 +18,8 @@ import (
 
 func Test_handler_sendMagicLink(t *testing.T) {
 	type call struct {
-		Ctx         context.Context
-		Email       string
-		RedirectURI string
+		Ctx context.Context
+		In  nakama.SendMagicLink
 	}
 
 	tt := []struct {
@@ -49,7 +48,7 @@ func Test_handler_sendMagicLink(t *testing.T) {
 			name: "invalid_email",
 			body: []byte(`{}`),
 			svc: &transport.ServiceMock{
-				SendMagicLinkFunc: func(context.Context, string, string) error {
+				SendMagicLinkFunc: func(context.Context, nakama.SendMagicLink) error {
 					return nakama.ErrInvalidEmail
 				},
 			},
@@ -62,7 +61,7 @@ func Test_handler_sendMagicLink(t *testing.T) {
 			name: "invalid_redirect_uri",
 			body: []byte(`{}`),
 			svc: &transport.ServiceMock{
-				SendMagicLinkFunc: func(context.Context, string, string) error {
+				SendMagicLinkFunc: func(context.Context, nakama.SendMagicLink) error {
 					return nakama.ErrInvalidRedirectURI
 				},
 			},
@@ -75,7 +74,7 @@ func Test_handler_sendMagicLink(t *testing.T) {
 			name: "untrusted_redirect_uri",
 			body: []byte(`{}`),
 			svc: &transport.ServiceMock{
-				SendMagicLinkFunc: func(context.Context, string, string) error {
+				SendMagicLinkFunc: func(context.Context, nakama.SendMagicLink) error {
 					return nakama.ErrUntrustedRedirectURI
 				},
 			},
@@ -88,7 +87,7 @@ func Test_handler_sendMagicLink(t *testing.T) {
 			name: "internal_error",
 			body: []byte(`{}`),
 			svc: &transport.ServiceMock{
-				SendMagicLinkFunc: func(context.Context, string, string) error {
+				SendMagicLinkFunc: func(context.Context, nakama.SendMagicLink) error {
 					return errors.New("internal error")
 				},
 			},
@@ -101,7 +100,7 @@ func Test_handler_sendMagicLink(t *testing.T) {
 			name: "ok",
 			body: []byte(`{"email":"user@example.org","redirectURI":"https://example.org"}`),
 			svc: &transport.ServiceMock{
-				SendMagicLinkFunc: func(context.Context, string, string) error {
+				SendMagicLinkFunc: func(context.Context, nakama.SendMagicLink) error {
 					return nil
 				},
 			},
@@ -109,8 +108,8 @@ func Test_handler_sendMagicLink(t *testing.T) {
 				testutil.WantEq(t, http.StatusNoContent, resp.StatusCode, "status code")
 			},
 			testCall: func(t *testing.T, call call) {
-				testutil.WantEq(t, "user@example.org", call.Email, "email")
-				testutil.WantEq(t, "https://example.org", call.RedirectURI, "redirect URI")
+				testutil.WantEq(t, "user@example.org", call.In.Email, "email")
+				testutil.WantEq(t, "https://example.org", call.In.RedirectURI, "redirect URI")
 			},
 		},
 	}

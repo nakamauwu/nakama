@@ -16,13 +16,13 @@ func TestService_SendMagicLink(t *testing.T) {
 	ctx := context.Background()
 	t.Run("empty_email", func(t *testing.T) {
 		svc := &Service{}
-		err := svc.SendMagicLink(ctx, "", "")
+		err := svc.SendMagicLink(ctx, SendMagicLink{})
 		testutil.WantEq(t, ErrInvalidEmail, err, "error")
 	})
 
 	t.Run("invalid_email", func(t *testing.T) {
 		svc := &Service{}
-		err := svc.SendMagicLink(ctx, "nope", "")
+		err := svc.SendMagicLink(ctx, SendMagicLink{Email: "nope"})
 		testutil.WantEq(t, ErrInvalidEmail, err, "error")
 	})
 
@@ -30,13 +30,13 @@ func TestService_SendMagicLink(t *testing.T) {
 
 	t.Run("empty_redirect_uri", func(t *testing.T) {
 		svc := &Service{}
-		err := svc.SendMagicLink(ctx, email, "")
+		err := svc.SendMagicLink(ctx, SendMagicLink{Email: email})
 		testutil.WantEq(t, ErrInvalidRedirectURI, err, "error")
 	})
 
 	t.Run("non_absolute_redirect_uri", func(t *testing.T) {
 		svc := &Service{}
-		err := svc.SendMagicLink(ctx, email, "/nope")
+		err := svc.SendMagicLink(ctx, SendMagicLink{Email: email, RedirectURI: "/nope"})
 		testutil.WantEq(t, ErrInvalidRedirectURI, err, "error")
 	})
 
@@ -47,7 +47,7 @@ func TestService_SendMagicLink(t *testing.T) {
 				Host:   "localhost:3000",
 			},
 		}
-		err := svc.SendMagicLink(ctx, email, "https://example.org/login-callback")
+		err := svc.SendMagicLink(ctx, SendMagicLink{Email: email, RedirectURI: "https://example.org/login-callback"})
 		testutil.WantEq(t, ErrUntrustedRedirectURI, err, "error")
 	})
 
@@ -69,7 +69,7 @@ func TestService_SendMagicLink(t *testing.T) {
 			},
 		}
 
-		err := svc.SendMagicLink(ctx, email, redirectURI)
+		err := svc.SendMagicLink(ctx, SendMagicLink{Email: email, RedirectURI: redirectURI})
 		testutil.WantEq(t, fmt.Errorf("could not send magic link: %w", errInternal), err, "error")
 	})
 
@@ -85,7 +85,7 @@ func TestService_SendMagicLink(t *testing.T) {
 			Sender: senderMock,
 		}
 
-		err := svc.SendMagicLink(ctx, email, redirectURI)
+		err := svc.SendMagicLink(ctx, SendMagicLink{Email: email, RedirectURI: redirectURI})
 		testutil.WantEq(t, nil, err, "error")
 
 		calls := senderMock.SendCalls()

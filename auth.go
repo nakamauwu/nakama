@@ -57,23 +57,62 @@ type AuthOutput struct {
 	ExpiresAt time.Time `json:"expiresAt"`
 }
 
+type SendMagicLink struct {
+	UpdateEmail bool   `json:"updateEmail"`
+	Email       string `json:"email"`
+	RedirectURI string `json:"redirectURI"`
+}
+
 // SendMagicLink to login without passwords.
+// Or to update and verify a new email address.
 // A second endpoint GET /api/verify_magic_link?email&code&redirect_uri must exist.
-func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) error {
-	email = strings.TrimSpace(email)
-	email = strings.ToLower(email)
-	if !reEmail.MatchString(email) {
+func (s *Service) SendMagicLink(ctx context.Context, in SendMagicLink) error {
+	in.Email = strings.TrimSpace(in.Email)
+	in.Email = strings.ToLower(in.Email)
+	if !reEmail.MatchString(in.Email) {
 		return ErrInvalidEmail
 	}
 
-	_, err := s.ParseRedirectURI(redirectURI)
+	_, err := s.ParseRedirectURI(in.RedirectURI)
 	if err != nil {
 		return err
 	}
 
+	if in.UpdateEmail {
+		uid, ok := ctx.Value(KeyAuthUserID).(string)
+		if !ok {
+			return ErrUnauthenticated
+		}
+
+		query := `
+			SELECT EXISTS (
+				SELECT 1 FROM users WHERE email = $1 AND id != $2
+			)
+		`
+		var exists bool
+		row := s.DB.QueryRowContext(ctx, query, in.Email, uid)
+		err := row.Scan(&exists)
+		if err != nil {
+			return fmt.Errorf("sql query select email existence: %w", err)
+		}
+
+		if exists {
+			return ErrEmailTaken
+		}
+	}
+
+	var row *sql.Row
+
+	if in.UpdateEmail {
+		uid, _ := ctx.Value(KeyAuthUserID).(string)
+		query := "INSERT INTO email_verification_codes (user_id, email) VALUES ($1, $2) RETURNING code"
+		row = s.DB.QueryRowContext(ctx, query, uid, in.Email)
+	} else {
+		query := "INSERT INTO email_verification_codes (email) VALUES ($1) RETURNING code"
+		row = s.DB.QueryRowContext(ctx, query, in.Email)
+	}
+
 	var code string
-	query := "INSERT INTO email_verification_codes (email) VALUES ($1) RETURNING code"
-	row := s.DB.QueryRowContext(ctx, query, email)
 	err = row.Scan(&code)
 	if err != nil {
 		return fmt.Errorf("could not insert verification code: %w", err)
@@ -83,7 +122,7 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 		if err != nil {
 			go func() {
 				query := "DELETE FROM email_verification_codes WHERE email = $1 AND code = $2"
-				_, err := s.DB.Exec(query, email, code)
+				_, err := s.DB.Exec(query, in.Email, code)
 				if err != nil {
 					_ = s.Logger.Log("error", fmt.Errorf("could not delete verification code: %w", err))
 				}
@@ -96,9 +135,9 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 	magicLink := cloneURL(s.Origin)
 	magicLink.Path = "/api/verify_magic_link"
 	q := magicLink.Query()
-	q.Set("email", email)
+	q.Set("email", in.Email)
 	q.Set("verification_code", code)
-	q.Set("redirect_uri", redirectURI)
+	q.Set("redirect_uri", in.RedirectURI)
 	magicLink.RawQuery = q.Encode()
 
 	s.magicLinkTmplOncer.Do(func() {
@@ -131,15 +170,22 @@ func (s *Service) SendMagicLink(ctx context.Context, email, redirectURI string) 
 
 	var b bytes.Buffer
 	err = s.magicLinkTmpl.Execute(&b, map[string]interface{}{
-		"Origin":    s.Origin,
-		"MagicLink": magicLink,
-		"TTL":       emailVerificationCodeTTL,
+		"UpdateEmail": in.UpdateEmail,
+		"Origin":      s.Origin,
+		"MagicLink":   magicLink,
+		"TTL":         emailVerificationCodeTTL,
 	})
 	if err != nil {
 		return fmt.Errorf("could not execute magic link mail template: %w", err)
 	}
 
-	err = s.Sender.Send(email, "Login to Nakama", b.String(), magicLink.String())
+	var subject string
+	if in.UpdateEmail {
+		subject = "Update email at Nakama"
+	} else {
+		subject = "Login to Nakama"
+	}
+	err = s.Sender.Send(in.Email, subject, b.String(), magicLink.String())
 	if err != nil {
 		return fmt.Errorf("could not send magic link: %w", err)
 	}
@@ -187,10 +233,11 @@ func (s *Service) VerifyMagicLink(ctx context.Context, email, code string, usern
 	}
 
 	err := crdb.ExecuteTx(ctx, s.DB, nil, func(tx *sql.Tx) error {
+		var userID sql.NullString
 		var createdAt time.Time
-		query := "SELECT created_at FROM email_verification_codes WHERE email = $1 AND code = $2"
+		query := "SELECT user_id, created_at FROM email_verification_codes WHERE email = $1 AND code = $2"
 		row := tx.QueryRowContext(ctx, query, email, code)
-		err := row.Scan(&createdAt)
+		err := row.Scan(&userID, &createdAt)
 		if err == sql.ErrNoRows {
 			return ErrVerificationCodeNotFound
 		}
@@ -203,9 +250,16 @@ func (s *Service) VerifyMagicLink(ctx context.Context, email, code string, usern
 			return ErrExpiredToken
 		}
 
+		// not login but update email.
+		if userID.Valid {
+			query := "UPDATE users SET email = $1 WHERE id = $2 RETURNING id, username, avatar"
+			row = tx.QueryRowContext(ctx, query, email, userID.String)
+		} else {
+			query := "SELECT id, username, avatar FROM users WHERE email = $1"
+			row = tx.QueryRowContext(ctx, query, email)
+		}
+
 		var avatar sql.NullString
-		query = "SELECT id, username, avatar FROM users WHERE email = $1"
-		row = tx.QueryRowContext(ctx, query, email)
 		err = row.Scan(&auth.User.ID, &auth.User.Username, &avatar)
 		if err == sql.ErrNoRows {
 			if username == nil {

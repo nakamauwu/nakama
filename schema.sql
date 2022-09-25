@@ -11,11 +11,15 @@ CREATE TABLE IF NOT EXISTS email_verification_codes (
     PRIMARY KEY (email, code)
 );
 
+ALTER TABLE IF EXISTS email_verification_codes ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users ON DELETE CASCADE;
+
 CREATE TABLE IF NOT EXISTS users (
     id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
     email VARCHAR NOT NULL UNIQUE,
     username VARCHAR NOT NULL UNIQUE,
     avatar VARCHAR,
+    google_provider_id VARCHAR UNIQUE,
+    github_provider_id VARCHAR UNIQUE,
     cover VARCHAR,
     bio VARCHAR,
     waifu VARCHAR,
@@ -24,9 +28,6 @@ CREATE TABLE IF NOT EXISTS users (
     followees_count INT NOT NULL DEFAULT 0 CHECK (followees_count >= 0),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
-ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS google_provider_id VARCHAR UNIQUE;
-ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS github_provider_id VARCHAR UNIQUE;
 
 CREATE TABLE IF NOT EXISTS follows (
     follower_id UUID NOT NULL REFERENCES users ON DELETE CASCADE,

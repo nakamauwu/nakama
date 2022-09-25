@@ -1494,6 +1494,7 @@ notification-item {
   font-size: 1.75rem;
 }
 
+.email-fieldset,
 .avatar-fieldset,
 .cover-fieldset,
 .theme-fieldset {
@@ -1533,6 +1534,7 @@ legend {
   line-height: 0;
 }
 
+.update-email-form,
 .update-user-form {
   display: grid;
   grid-auto-flow: row;

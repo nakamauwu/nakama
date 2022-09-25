@@ -6,10 +6,11 @@ package transport
 import (
 	"context"
 	"encoding/json"
-	"github.com/nakamauwu/nakama"
 	"io"
 	"net/url"
 	"sync"
+
+	"github.com/nakamauwu/nakama"
 )
 
 // Ensure, that ServiceMock does implement Service.
@@ -91,7 +92,7 @@ var _ Service = &ServiceMock{}
 //			PostsFunc: func(ctx context.Context, last uint64, before *string, opts ...nakama.PostsOpt) (nakama.Posts, error) {
 //				panic("mock out the Posts method")
 //			},
-//			SendMagicLinkFunc: func(ctx context.Context, email string, redirectURI string) error {
+//			SendMagicLinkFunc: func(ctx context.Context, in nakama.SendMagicLink) error {
 //				panic("mock out the SendMagicLink method")
 //			},
 //			TimelineFunc: func(ctx context.Context, last uint64, before *string) (nakama.Timeline, error) {
@@ -213,7 +214,7 @@ type ServiceMock struct {
 	PostsFunc func(ctx context.Context, last uint64, before *string, opts ...nakama.PostsOpt) (nakama.Posts, error)
 
 	// SendMagicLinkFunc mocks the SendMagicLink method.
-	SendMagicLinkFunc func(ctx context.Context, email string, redirectURI string) error
+	SendMagicLinkFunc func(ctx context.Context, in nakama.SendMagicLink) error
 
 	// TimelineFunc mocks the Timeline method.
 	TimelineFunc func(ctx context.Context, last uint64, before *string) (nakama.Timeline, error)
@@ -438,10 +439,8 @@ type ServiceMock struct {
 		SendMagicLink []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
-			// Email is the email argument value.
-			Email string
-			// RedirectURI is the redirectURI argument value.
-			RedirectURI string
+			// In is the in argument value.
+			In nakama.SendMagicLink
 		}
 		// Timeline holds details about calls to the Timeline method.
 		Timeline []struct {
@@ -1539,15 +1538,13 @@ func (mock *ServiceMock) PostsCalls() []struct {
 }
 
 // SendMagicLink calls SendMagicLinkFunc.
-func (mock *ServiceMock) SendMagicLink(ctx context.Context, email string, redirectURI string) error {
+func (mock *ServiceMock) SendMagicLink(ctx context.Context, in nakama.SendMagicLink) error {
 	callInfo := struct {
-		Ctx         context.Context
-		Email       string
-		RedirectURI string
+		Ctx context.Context
+		In  nakama.SendMagicLink
 	}{
-		Ctx:         ctx,
-		Email:       email,
-		RedirectURI: redirectURI,
+		Ctx: ctx,
+		In:  in,
 	}
 	mock.lockSendMagicLink.Lock()
 	mock.calls.SendMagicLink = append(mock.calls.SendMagicLink, callInfo)
@@ -1558,7 +1555,7 @@ func (mock *ServiceMock) SendMagicLink(ctx context.Context, email string, redire
 		)
 		return errOut
 	}
-	return mock.SendMagicLinkFunc(ctx, email, redirectURI)
+	return mock.SendMagicLinkFunc(ctx, in)
 }
 
 // SendMagicLinkCalls gets all the calls that were made to SendMagicLink.
@@ -1566,14 +1563,12 @@ func (mock *ServiceMock) SendMagicLink(ctx context.Context, email string, redire
 //
 //	len(mockedService.SendMagicLinkCalls())
 func (mock *ServiceMock) SendMagicLinkCalls() []struct {
-	Ctx         context.Context
-	Email       string
-	RedirectURI string
+	Ctx context.Context
+	In  nakama.SendMagicLink
 } {
 	var calls []struct {
-		Ctx         context.Context
-		Email       string
-		RedirectURI string
+		Ctx context.Context
+		In  nakama.SendMagicLink
 	}
 	mock.lockSendMagicLink.RLock()
 	calls = mock.calls.SendMagicLink

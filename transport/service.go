@@ -13,7 +13,7 @@ import (
 
 // Service interface.
 type Service interface {
-	SendMagicLink(ctx context.Context, email, redirectURI string) error
+	SendMagicLink(ctx context.Context, in nakama.SendMagicLink) error
 	ParseRedirectURI(rawurl string) (*url.URL, error)
 	VerifyMagicLink(ctx context.Context, email, code string, username *string) (nakama.AuthOutput, error)
 
