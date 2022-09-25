@@ -4,15 +4,6 @@
 CREATE DATABASE IF NOT EXISTS nakama;
 SET DATABASE = nakama;
 
-CREATE TABLE IF NOT EXISTS email_verification_codes (
-    email VARCHAR NOT NULL,
-    code UUID NOT NULL DEFAULT gen_random_uuid(),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    PRIMARY KEY (email, code)
-);
-
-ALTER TABLE IF EXISTS email_verification_codes ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users ON DELETE CASCADE;
-
 CREATE TABLE IF NOT EXISTS users (
     id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
     email VARCHAR NOT NULL UNIQUE,
@@ -28,6 +19,15 @@ CREATE TABLE IF NOT EXISTS users (
     followees_count INT NOT NULL DEFAULT 0 CHECK (followees_count >= 0),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+CREATE TABLE IF NOT EXISTS email_verification_codes (
+    email VARCHAR NOT NULL,
+    code UUID NOT NULL DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (email, code)
+);
+
+ALTER TABLE IF EXISTS email_verification_codes ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users ON DELETE CASCADE;
 
 CREATE TABLE IF NOT EXISTS follows (
     follower_id UUID NOT NULL REFERENCES users ON DELETE CASCADE,
