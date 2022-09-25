@@ -17,7 +17,7 @@ type Service interface {
 	ParseRedirectURI(rawurl string) (*url.URL, error)
 	VerifyMagicLink(ctx context.Context, email, code string, username *string) (nakama.AuthOutput, error)
 
-	EnsureUser(ctx context.Context, email string, username *string) (nakama.User, error)
+	LoginFromProvider(ctx context.Context, name string, user nakama.ProvidedUser) (nakama.User, error)
 
 	DevLogin(ctx context.Context, email string) (nakama.AuthOutput, error)
 

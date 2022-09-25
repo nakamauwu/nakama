@@ -13,9 +13,11 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/go-kit/log/level"
 	"github.com/hybridtheory/samesite-cookie-support"
 	"golang.org/x/oauth2"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/nakamauwu/nakama"
 	webtemplate "github.com/nakamauwu/nakama/web"
@@ -26,26 +28,18 @@ const oauth2Timeout = time.Minute * 2
 var refreshTmpl = template.Must(template.ParseFS(webtemplate.TemplateFiles, "template/refresh.html.tmpl"))
 
 type OauthProvider struct {
-	Name       string
-	Config     *oauth2.Config
-	FetchEmail func(ctx context.Context, config *oauth2.Config, token *oauth2.Token) (string, error)
+	Name            string
+	Config          *oauth2.Config
+	FetchUser       func(ctx context.Context, config *oauth2.Config, token *oauth2.Token) (nakama.ProvidedUser, error)
+	IDTokenVerifier *oidc.IDTokenVerifier
 }
 
-var GithubEmailFetcher = func(ctx context.Context, config *oauth2.Config, token *oauth2.Token) (string, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://api.github.com/user/emails", nil)
-	if err != nil {
-		return "", fmt.Errorf("could not create user emails request: %w", err)
-	}
+var GithubUserFetcher = func(ctx context.Context, config *oauth2.Config, token *oauth2.Token) (nakama.ProvidedUser, error) {
+	const baseURL = "https://api.github.com"
 
-	resp, err := config.Client(ctx, token).Do(req)
-	if err != nil {
-		return "", errServiceUnavailable
-	}
-
-	defer resp.Body.Close()
-
-	if resp.StatusCode >= 400 {
-		return "", errServiceUnavailable
+	var user struct {
+		ID    int    `json:"id"`
+		Login string `json:"login"`
 	}
 
 	var emails []struct {
@@ -53,57 +47,93 @@ var GithubEmailFetcher = func(ctx context.Context, config *oauth2.Config, token 
 		Primary  bool   `json:"primary"`
 		Verified bool   `json:"verified"`
 	}
-	err = json.NewDecoder(resp.Body).Decode(&emails)
-	if err != nil {
-		return "", errServiceUnavailable
+
+	g, gctx := errgroup.WithContext(ctx)
+
+	g.Go(func() error {
+		req, err := http.NewRequestWithContext(gctx, http.MethodGet, baseURL+"/user", nil)
+		if err != nil {
+			return fmt.Errorf("could not create user request: %w", err)
+		}
+
+		req.Header.Set("User-Agent", "nakama")
+
+		resp, err := config.Client(ctx, token).Do(req)
+		if err != nil {
+			return errServiceUnavailable
+		}
+
+		defer resp.Body.Close()
+
+		if resp.StatusCode >= 400 {
+			return errServiceUnavailable
+		}
+
+		err = json.NewDecoder(resp.Body).Decode(&user)
+		if err != nil {
+			return errServiceUnavailable
+		}
+
+		return nil
+	})
+
+	g.Go(func() error {
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, baseURL+"/user/emails", nil)
+		if err != nil {
+			return fmt.Errorf("could not create user emails request: %w", err)
+		}
+
+		req.Header.Set("User-Agent", "nakama")
+
+		resp, err := config.Client(ctx, token).Do(req)
+		if err != nil {
+			return errServiceUnavailable
+		}
+
+		defer resp.Body.Close()
+
+		if resp.StatusCode >= 400 {
+			return errServiceUnavailable
+		}
+
+		err = json.NewDecoder(resp.Body).Decode(&emails)
+		if err != nil {
+			return errServiceUnavailable
+		}
+
+		return nil
+	})
+
+	var out nakama.ProvidedUser
+
+	if err := g.Wait(); err != nil {
+		return out, err
 	}
 
 	for _, email := range emails {
-		if email.Verified && email.Primary && email.Email != "" {
-			return email.Email, nil
+		if email.Email != "" && email.Verified && email.Primary {
+			out.Email = email.Email
+			break
 		}
 	}
 
-	for _, email := range emails {
-		if email.Verified && email.Email != "" {
-			return email.Email, nil
+	if out.Email == "" {
+		for _, email := range emails {
+			if email.Email != "" && email.Verified {
+				out.Email = email.Email
+				break
+			}
 		}
 	}
 
-	return "", errEmailNotProvided
-}
-
-var GoogleEmailFetcher = func(ctx context.Context, config *oauth2.Config, token *oauth2.Token) (string, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://www.googleapis.com/oauth2/v2/userinfo", nil)
-	if err != nil {
-		return "", fmt.Errorf("could not create user request: %w", err)
+	if out.Email == "" {
+		return out, errEmailNotProvided
 	}
 
-	resp, err := config.Client(ctx, token).Do(req)
-	if err != nil {
-		return "", errServiceUnavailable
-	}
+	out.ID = fmt.Sprintf("%d", user.ID)
+	out.Username = &user.Login
 
-	defer resp.Body.Close()
-
-	if resp.StatusCode >= 400 {
-		return "", errServiceUnavailable
-	}
-
-	var user struct {
-		Email         string `json:"email"`
-		VerifiedEmail bool   `json:"verified_email"`
-	}
-	err = json.NewDecoder(resp.Body).Decode(&user)
-	if err != nil {
-		return "", errServiceUnavailable
-	}
-
-	if !user.VerifiedEmail {
-		return "", errEmailNotVerified
-	}
-
-	return user.Email, nil
+	return out, nil
 }
 
 func (h *handler) oauth2Handler(provider OauthProvider) http.HandlerFunc {
@@ -296,31 +326,81 @@ func (h *handler) oauth2CallbackHandler(provider OauthProvider) http.HandlerFunc
 			return
 		}
 
-		email, err := provider.FetchEmail(ctx, provider.Config, token)
-		if err != nil {
-			statusCode := err2code(err)
-			if statusCode != http.StatusInternalServerError {
+		var providedUser nakama.ProvidedUser
+
+		if provider.IDTokenVerifier != nil {
+			rawIDToken, ok := token.Extra("id_token").(string)
+			if !ok {
 				redirectWithHashFragment(w, r, redirectURI, url.Values{
-					"error": []string{err.Error()},
+					"error": []string{nakama.ErrUnauthenticated.Error()},
 				}, http.StatusSeeOther)
 				return
 			}
 
-			if !errors.Is(err, context.Canceled) {
-				_ = h.logger.Log("err", err)
+			idToken, err := provider.IDTokenVerifier.Verify(ctx, rawIDToken)
+			if err != nil {
+				redirectWithHashFragment(w, r, redirectURI, url.Values{
+					"error": []string{nakama.ErrUnauthenticated.Error()},
+				}, http.StatusSeeOther)
+				return
 			}
-			redirectWithHashFragment(w, r, redirectURI, url.Values{
-				"error": []string{"internal server error"},
-			}, http.StatusSeeOther)
-			return
+
+			var claims struct {
+				Sub      string `json:"sub"`
+				Email    string `json:"email"`
+				Verified bool   `json:"email_verified"`
+			}
+			if err := idToken.Claims(&claims); err != nil {
+				redirectWithHashFragment(w, r, redirectURI, url.Values{
+					"error": []string{nakama.ErrUnauthenticated.Error()},
+				}, http.StatusSeeOther)
+				return
+			}
+
+			if !claims.Verified {
+				redirectWithHashFragment(w, r, redirectURI, url.Values{
+					"error": []string{errEmailNotVerified.Error()},
+				}, http.StatusSeeOther)
+				return
+			}
+
+			if claims.Email == "" {
+				redirectWithHashFragment(w, r, redirectURI, url.Values{
+					"error": []string{errEmailNotProvided.Error()},
+				}, http.StatusSeeOther)
+				return
+			}
+
+			providedUser.ID = claims.Sub
+			providedUser.Email = claims.Email
+		} else {
+			var err error
+			providedUser, err = provider.FetchUser(ctx, provider.Config, token)
+			if err != nil {
+				statusCode := err2code(err)
+				if statusCode != http.StatusInternalServerError {
+					redirectWithHashFragment(w, r, redirectURI, url.Values{
+						"error": []string{err.Error()},
+					}, http.StatusSeeOther)
+					return
+				}
+
+				if !errors.Is(err, context.Canceled) {
+					_ = h.logger.Log("err", err)
+				}
+				redirectWithHashFragment(w, r, redirectURI, url.Values{
+					"error": []string{"internal server error"},
+				}, http.StatusSeeOther)
+				return
+			}
 		}
 
-		var username *string
 		if usernameCookie.Value != "" {
-			username = &usernameCookie.Value
+			s := usernameCookie.Value
+			providedUser.Username = &s
 		}
 
-		user, err := h.svc.EnsureUser(ctx, email, username)
+		user, err := h.svc.LoginFromProvider(ctx, provider.Name, providedUser)
 		if err == nakama.ErrUserNotFound || err == nakama.ErrInvalidUsername || err == nakama.ErrUsernameTaken {
 			redirectWithHashFragment(w, r, redirectURI, url.Values{
 				"error":          []string{err.Error()},

@@ -17,6 +17,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/go-kit/log"
 	"github.com/gorilla/securecookie"
 	"github.com/joho/godotenv"
@@ -234,24 +235,31 @@ func run(ctx context.Context, logger log.Logger, args []string) error {
 				Endpoint:     endpoints.GitHub,
 				Scopes:       []string{"read:user", "user:email"},
 			},
-			FetchEmail: httptransport.GithubEmailFetcher,
+			FetchUser: httptransport.GithubUserFetcher,
 		})
 	}
 	if googleClientID != "" && googleClientSecret != "" {
+		provider, err := oidc.NewProvider(ctx, "https://accounts.google.com")
+		if err != nil {
+			return fmt.Errorf("setup google oidc: %w", err)
+		}
+
 		oauthProviders = append(oauthProviders, httptransport.OauthProvider{
 			Name: "google",
 			Config: &oauth2.Config{
 				ClientID:     googleClientID,
 				ClientSecret: googleClientSecret,
 				RedirectURL:  origin.String() + "/api/google_auth/callback",
-				Endpoint:     endpoints.Google,
+				Endpoint:     provider.Endpoint(),
 				Scopes: []string{
-					"openid",
-					"https://www.googleapis.com/auth/userinfo.email",
-					"https://www.googleapis.com/auth/userinfo.profile",
+					oidc.ScopeOpenID,
+					"profile",
+					"email",
 				},
 			},
-			FetchEmail: httptransport.GoogleEmailFetcher,
+			IDTokenVerifier: provider.Verifier(&oidc.Config{
+				ClientID: googleClientID,
+			}),
 		})
 	}
 	cookieCodec := securecookie.New(

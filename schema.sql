@@ -25,6 +25,9 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS google_provider_id VARCHAR UNIQUE;
+ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS github_provider_id VARCHAR UNIQUE;
+
 CREATE TABLE IF NOT EXISTS follows (
     follower_id UUID NOT NULL REFERENCES users ON DELETE CASCADE,
     followee_id UUID NOT NULL REFERENCES users ON DELETE CASCADE,
@@ -109,9 +112,6 @@ CREATE TABLE IF NOT EXISTS user_web_push_subscriptions (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE INDEX unique_user_web_push_subscriptions (user_id, sub)
 );
-
-DROP TABLE IF EXISTS webauthn_credentials;
-DROP TABLE IF EXISTS webauthn_authenticators;
 
 
 -- INSERT INTO users (id, email, username) VALUES

@@ -9,61 +9,88 @@ import (
 	"github.com/cockroachdb/cockroach-go/crdb"
 )
 
-func (svc *Service) EnsureUser(ctx context.Context, email string, username *string) (User, error) {
+type ProvidedUser struct {
+	ID       string
+	Email    string
+	Username *string
+}
+
+func (svc *Service) LoginFromProvider(ctx context.Context, name string, providedUser ProvidedUser) (User, error) {
 	var u User
 
-	if !reEmail.MatchString(email) {
+	providedUser.Email = strings.ToLower(providedUser.Email)
+	if !reEmail.MatchString(providedUser.Email) {
 		return u, ErrInvalidEmail
 	}
 
-	if username != nil && !ValidUsername(*username) {
+	if providedUser.Username != nil && !ValidUsername(*providedUser.Username) {
 		return u, ErrInvalidUsername
 	}
 
 	err := crdb.ExecuteTx(ctx, svc.DB, nil, func(tx *sql.Tx) error {
-		var exists bool
+		var existsWithProviderID bool
 
-		query := `
+		query := fmt.Sprintf(`
 			SELECT EXISTS (
-				SELECT 1 FROM users WHERE email = $1
+				SELECT 1 FROM users WHERE %s_provider_id = $1
 			)
-		`
-		row := tx.QueryRowContext(ctx, query, email)
-		err := row.Scan(&exists)
+		`, name)
+		row := tx.QueryRowContext(ctx, query, providedUser.ID)
+		err := row.Scan(&existsWithProviderID)
 		if err != nil {
-			return fmt.Errorf("could not sql query user existence by email: %w", err)
+			return fmt.Errorf("could not sql query user existence with provider id: %w", err)
 		}
 
-		if exists {
-			var avatar sql.NullString
-			query := `SELECT id, username, avatar FROM users WHERE email = $1`
-			row := tx.QueryRowContext(ctx, query, email)
-			err := row.Scan(&u.ID, &u.Username, &avatar)
+		if !existsWithProviderID {
+			var existsWithEmail bool
+
+			query := `
+				SELECT EXISTS (
+					SELECT 1 FROM users WHERE email = $1
+				)
+			`
+			row := tx.QueryRowContext(ctx, query, providedUser.Email)
+			err := row.Scan(&existsWithEmail)
 			if err != nil {
-				return fmt.Errorf("could not sql query user by email: %w", err)
+				return fmt.Errorf("could not sql query user existence with provider email: %w", err)
 			}
 
-			u.AvatarURL = svc.avatarURL(avatar)
+			if !existsWithEmail {
+				if providedUser.Username == nil {
+					return ErrUserNotFound
+				}
 
-			return nil
+				query = fmt.Sprintf(`INSERT INTO users (email, username, %s_provider_id) VALUES ($1, $2, $3) RETURNING id`, name)
+				row = tx.QueryRowContext(ctx, query, providedUser.Email, *providedUser.Username, providedUser.ID)
+				err = row.Scan(&u.ID)
+				if isUniqueViolation(err) && strings.Contains(err.Error(), "username") {
+					return ErrUsernameTaken
+				}
+
+				if err != nil {
+					return fmt.Errorf("could not sql insert provided user: %w", err)
+				}
+
+				u.Username = *providedUser.Username
+				return nil
+			}
+
+			query = fmt.Sprintf(`UPDATE users SET %s_provider_id = $1 WHERE email = $2`, name)
+			_, err = tx.ExecContext(ctx, query, providedUser.ID, providedUser.Email)
+			if err != nil {
+				return fmt.Errorf("could not sql update user with provider id: %w", err)
+			}
 		}
 
-		if username == nil {
-			return ErrUserNotFound
-		}
-
-		query = `INSERT INTO users (email, username) VALUES ($1, $2) RETURNING id`
-		row = tx.QueryRowContext(ctx, query, email, *username)
-		err = row.Scan(&u.ID)
-		if isUniqueViolation(err) && strings.Contains(err.Error(), "username") {
-			return ErrUsernameTaken
-		}
-
+		var avatar sql.NullString
+		query = fmt.Sprintf(`SELECT id, username, avatar FROM users WHERE %s_provider_id = $1`, name)
+		row = tx.QueryRowContext(ctx, query, providedUser.ID)
+		err = row.Scan(&u.ID, &u.Username, &avatar)
 		if err != nil {
-			return fmt.Errorf("could not sql insert user: %w", err)
+			return fmt.Errorf("could not sql query user by provider id: %w", err)
 		}
 
-		u.Username = *username
+		u.AvatarURL = svc.avatarURL(avatar)
 
 		return nil
 	})

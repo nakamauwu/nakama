@@ -17,7 +17,7 @@ var (
 	reqDur_SendMagicLink           = promauto.NewHistogram(prometheus.HistogramOpts{Name: "send_magic_link_request_duration_ms"})
 	reqDur_ParseRedirectURI        = promauto.NewHistogram(prometheus.HistogramOpts{Name: "parse_redirect_uri_request_duration_ms"})
 	reqDur_VerifyMagicLink         = promauto.NewHistogram(prometheus.HistogramOpts{Name: "verify_magic_link_request_duration_ms"})
-	reqDur_EnsureUser              = promauto.NewHistogram(prometheus.HistogramOpts{Name: "ensure_user_request_duration_ms"})
+	reqDur_LoginFromProvider       = promauto.NewHistogram(prometheus.HistogramOpts{Name: "login_from_provider_request_duration_ms"})
 	reqDur_DevLogin                = promauto.NewHistogram(prometheus.HistogramOpts{Name: "dev_login_request_duration_ms"})
 	reqDur_AuthUserIDFromToken     = promauto.NewHistogram(prometheus.HistogramOpts{Name: "auth_user_id_from_token_request_duration_ms"})
 	reqDur_AuthUser                = promauto.NewHistogram(prometheus.HistogramOpts{Name: "auth_user_request_duration_ms"})
@@ -79,11 +79,11 @@ func (mw *ServiceWithInstrumentation) VerifyMagicLink(ctx context.Context, email
 	return mw.Next.VerifyMagicLink(ctx, email, code, username)
 }
 
-func (mw *ServiceWithInstrumentation) EnsureUser(ctx context.Context, email string, username *string) (nakama.User, error) {
+func (mw *ServiceWithInstrumentation) LoginFromProvider(ctx context.Context, name string, user nakama.ProvidedUser) (nakama.User, error) {
 	defer func(begin time.Time) {
-		reqDur_EnsureUser.Observe(float64(time.Since(begin)) / float64(time.Millisecond))
+		reqDur_LoginFromProvider.Observe(float64(time.Since(begin)) / float64(time.Millisecond))
 	}(time.Now())
-	return mw.Next.EnsureUser(ctx, email, username)
+	return mw.Next.LoginFromProvider(ctx, name, user)
 }
 
 func (mw *ServiceWithInstrumentation) DevLogin(ctx context.Context, email string) (nakama.AuthOutput, error) {

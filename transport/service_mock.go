@@ -18,130 +18,130 @@ var _ Service = &ServiceMock{}
 
 // ServiceMock is a mock implementation of Service.
 //
-// 	func TestSomethingThatUsesService(t *testing.T) {
+//	func TestSomethingThatUsesService(t *testing.T) {
 //
-// 		// make and configure a mocked Service
-// 		mockedService := &ServiceMock{
-// 			AddWebPushSubscriptionFunc: func(ctx context.Context, sub json.RawMessage) error {
-// 				panic("mock out the AddWebPushSubscription method")
-// 			},
-// 			AuthUserFunc: func(ctx context.Context) (nakama.User, error) {
-// 				panic("mock out the AuthUser method")
-// 			},
-// 			AuthUserIDFromTokenFunc: func(token string) (string, error) {
-// 				panic("mock out the AuthUserIDFromToken method")
-// 			},
-// 			CommentStreamFunc: func(ctx context.Context, postID string) (<-chan nakama.Comment, error) {
-// 				panic("mock out the CommentStream method")
-// 			},
-// 			CommentsFunc: func(ctx context.Context, postID string, last uint64, before *string) (nakama.Comments, error) {
-// 				panic("mock out the Comments method")
-// 			},
-// 			CreateCommentFunc: func(ctx context.Context, postID string, content string) (nakama.Comment, error) {
-// 				panic("mock out the CreateComment method")
-// 			},
-// 			CreateTimelineItemFunc: func(ctx context.Context, content string, spoilerOf *string, nsfw bool, media []io.Reader) (nakama.TimelineItem, error) {
-// 				panic("mock out the CreateTimelineItem method")
-// 			},
-// 			DeleteCommentFunc: func(ctx context.Context, commentID string) error {
-// 				panic("mock out the DeleteComment method")
-// 			},
-// 			DeletePostFunc: func(ctx context.Context, postID string) error {
-// 				panic("mock out the DeletePost method")
-// 			},
-// 			DeleteTimelineItemFunc: func(ctx context.Context, timelineItemID string) error {
-// 				panic("mock out the DeleteTimelineItem method")
-// 			},
-// 			DevLoginFunc: func(ctx context.Context, email string) (nakama.AuthOutput, error) {
-// 				panic("mock out the DevLogin method")
-// 			},
-// 			EnsureUserFunc: func(ctx context.Context, email string, username *string) (nakama.User, error) {
-// 				panic("mock out the EnsureUser method")
-// 			},
-// 			FolloweesFunc: func(ctx context.Context, username string, first uint64, after *string) (nakama.UserProfiles, error) {
-// 				panic("mock out the Followees method")
-// 			},
-// 			FollowersFunc: func(ctx context.Context, username string, first uint64, after *string) (nakama.UserProfiles, error) {
-// 				panic("mock out the Followers method")
-// 			},
-// 			HasUnreadNotificationsFunc: func(ctx context.Context) (bool, error) {
-// 				panic("mock out the HasUnreadNotifications method")
-// 			},
-// 			MarkNotificationAsReadFunc: func(ctx context.Context, notificationID string) error {
-// 				panic("mock out the MarkNotificationAsRead method")
-// 			},
-// 			MarkNotificationsAsReadFunc: func(ctx context.Context) error {
-// 				panic("mock out the MarkNotificationsAsRead method")
-// 			},
-// 			NotificationStreamFunc: func(ctx context.Context) (<-chan nakama.Notification, error) {
-// 				panic("mock out the NotificationStream method")
-// 			},
-// 			NotificationsFunc: func(ctx context.Context, last uint64, before *string) (nakama.Notifications, error) {
-// 				panic("mock out the Notifications method")
-// 			},
-// 			ParseRedirectURIFunc: func(rawurl string) (*url.URL, error) {
-// 				panic("mock out the ParseRedirectURI method")
-// 			},
-// 			PostFunc: func(ctx context.Context, postID string) (nakama.Post, error) {
-// 				panic("mock out the Post method")
-// 			},
-// 			PostStreamFunc: func(ctx context.Context) (<-chan nakama.Post, error) {
-// 				panic("mock out the PostStream method")
-// 			},
-// 			PostsFunc: func(ctx context.Context, last uint64, before *string, opts ...nakama.PostsOpt) (nakama.Posts, error) {
-// 				panic("mock out the Posts method")
-// 			},
-// 			SendMagicLinkFunc: func(ctx context.Context, email string, redirectURI string) error {
-// 				panic("mock out the SendMagicLink method")
-// 			},
-// 			TimelineFunc: func(ctx context.Context, last uint64, before *string) (nakama.Timeline, error) {
-// 				panic("mock out the Timeline method")
-// 			},
-// 			TimelineItemStreamFunc: func(ctx context.Context) (<-chan nakama.TimelineItem, error) {
-// 				panic("mock out the TimelineItemStream method")
-// 			},
-// 			ToggleCommentReactionFunc: func(ctx context.Context, commentID string, in nakama.ReactionInput) ([]nakama.Reaction, error) {
-// 				panic("mock out the ToggleCommentReaction method")
-// 			},
-// 			ToggleFollowFunc: func(ctx context.Context, username string) (nakama.ToggleFollowOutput, error) {
-// 				panic("mock out the ToggleFollow method")
-// 			},
-// 			TogglePostReactionFunc: func(ctx context.Context, postID string, in nakama.ReactionInput) ([]nakama.Reaction, error) {
-// 				panic("mock out the TogglePostReaction method")
-// 			},
-// 			TogglePostSubscriptionFunc: func(ctx context.Context, postID string) (nakama.ToggleSubscriptionOutput, error) {
-// 				panic("mock out the TogglePostSubscription method")
-// 			},
-// 			TokenFunc: func(ctx context.Context) (nakama.TokenOutput, error) {
-// 				panic("mock out the Token method")
-// 			},
-// 			UpdateAvatarFunc: func(ctx context.Context, r io.Reader) (string, error) {
-// 				panic("mock out the UpdateAvatar method")
-// 			},
-// 			UpdateCoverFunc: func(ctx context.Context, r io.Reader) (string, error) {
-// 				panic("mock out the UpdateCover method")
-// 			},
-// 			UpdateUserFunc: func(ctx context.Context, params nakama.UpdateUserParams) error {
-// 				panic("mock out the UpdateUser method")
-// 			},
-// 			UserFunc: func(ctx context.Context, username string) (nakama.UserProfile, error) {
-// 				panic("mock out the User method")
-// 			},
-// 			UsernamesFunc: func(ctx context.Context, startingWith string, first uint64, after *string) (nakama.Usernames, error) {
-// 				panic("mock out the Usernames method")
-// 			},
-// 			UsersFunc: func(ctx context.Context, search string, first uint64, after *string) (nakama.UserProfiles, error) {
-// 				panic("mock out the Users method")
-// 			},
-// 			VerifyMagicLinkFunc: func(ctx context.Context, email string, code string, username *string) (nakama.AuthOutput, error) {
-// 				panic("mock out the VerifyMagicLink method")
-// 			},
-// 		}
+//		// make and configure a mocked Service
+//		mockedService := &ServiceMock{
+//			AddWebPushSubscriptionFunc: func(ctx context.Context, sub json.RawMessage) error {
+//				panic("mock out the AddWebPushSubscription method")
+//			},
+//			AuthUserFunc: func(ctx context.Context) (nakama.User, error) {
+//				panic("mock out the AuthUser method")
+//			},
+//			AuthUserIDFromTokenFunc: func(token string) (string, error) {
+//				panic("mock out the AuthUserIDFromToken method")
+//			},
+//			CommentStreamFunc: func(ctx context.Context, postID string) (<-chan nakama.Comment, error) {
+//				panic("mock out the CommentStream method")
+//			},
+//			CommentsFunc: func(ctx context.Context, postID string, last uint64, before *string) (nakama.Comments, error) {
+//				panic("mock out the Comments method")
+//			},
+//			CreateCommentFunc: func(ctx context.Context, postID string, content string) (nakama.Comment, error) {
+//				panic("mock out the CreateComment method")
+//			},
+//			CreateTimelineItemFunc: func(ctx context.Context, content string, spoilerOf *string, nsfw bool, media []io.Reader) (nakama.TimelineItem, error) {
+//				panic("mock out the CreateTimelineItem method")
+//			},
+//			DeleteCommentFunc: func(ctx context.Context, commentID string) error {
+//				panic("mock out the DeleteComment method")
+//			},
+//			DeletePostFunc: func(ctx context.Context, postID string) error {
+//				panic("mock out the DeletePost method")
+//			},
+//			DeleteTimelineItemFunc: func(ctx context.Context, timelineItemID string) error {
+//				panic("mock out the DeleteTimelineItem method")
+//			},
+//			DevLoginFunc: func(ctx context.Context, email string) (nakama.AuthOutput, error) {
+//				panic("mock out the DevLogin method")
+//			},
+//			FolloweesFunc: func(ctx context.Context, username string, first uint64, after *string) (nakama.UserProfiles, error) {
+//				panic("mock out the Followees method")
+//			},
+//			FollowersFunc: func(ctx context.Context, username string, first uint64, after *string) (nakama.UserProfiles, error) {
+//				panic("mock out the Followers method")
+//			},
+//			HasUnreadNotificationsFunc: func(ctx context.Context) (bool, error) {
+//				panic("mock out the HasUnreadNotifications method")
+//			},
+//			LoginFromProviderFunc: func(ctx context.Context, name string, user nakama.ProvidedUser) (nakama.User, error) {
+//				panic("mock out the LoginFromProvider method")
+//			},
+//			MarkNotificationAsReadFunc: func(ctx context.Context, notificationID string) error {
+//				panic("mock out the MarkNotificationAsRead method")
+//			},
+//			MarkNotificationsAsReadFunc: func(ctx context.Context) error {
+//				panic("mock out the MarkNotificationsAsRead method")
+//			},
+//			NotificationStreamFunc: func(ctx context.Context) (<-chan nakama.Notification, error) {
+//				panic("mock out the NotificationStream method")
+//			},
+//			NotificationsFunc: func(ctx context.Context, last uint64, before *string) (nakama.Notifications, error) {
+//				panic("mock out the Notifications method")
+//			},
+//			ParseRedirectURIFunc: func(rawurl string) (*url.URL, error) {
+//				panic("mock out the ParseRedirectURI method")
+//			},
+//			PostFunc: func(ctx context.Context, postID string) (nakama.Post, error) {
+//				panic("mock out the Post method")
+//			},
+//			PostStreamFunc: func(ctx context.Context) (<-chan nakama.Post, error) {
+//				panic("mock out the PostStream method")
+//			},
+//			PostsFunc: func(ctx context.Context, last uint64, before *string, opts ...nakama.PostsOpt) (nakama.Posts, error) {
+//				panic("mock out the Posts method")
+//			},
+//			SendMagicLinkFunc: func(ctx context.Context, email string, redirectURI string) error {
+//				panic("mock out the SendMagicLink method")
+//			},
+//			TimelineFunc: func(ctx context.Context, last uint64, before *string) (nakama.Timeline, error) {
+//				panic("mock out the Timeline method")
+//			},
+//			TimelineItemStreamFunc: func(ctx context.Context) (<-chan nakama.TimelineItem, error) {
+//				panic("mock out the TimelineItemStream method")
+//			},
+//			ToggleCommentReactionFunc: func(ctx context.Context, commentID string, in nakama.ReactionInput) ([]nakama.Reaction, error) {
+//				panic("mock out the ToggleCommentReaction method")
+//			},
+//			ToggleFollowFunc: func(ctx context.Context, username string) (nakama.ToggleFollowOutput, error) {
+//				panic("mock out the ToggleFollow method")
+//			},
+//			TogglePostReactionFunc: func(ctx context.Context, postID string, in nakama.ReactionInput) ([]nakama.Reaction, error) {
+//				panic("mock out the TogglePostReaction method")
+//			},
+//			TogglePostSubscriptionFunc: func(ctx context.Context, postID string) (nakama.ToggleSubscriptionOutput, error) {
+//				panic("mock out the TogglePostSubscription method")
+//			},
+//			TokenFunc: func(ctx context.Context) (nakama.TokenOutput, error) {
+//				panic("mock out the Token method")
+//			},
+//			UpdateAvatarFunc: func(ctx context.Context, r io.Reader) (string, error) {
+//				panic("mock out the UpdateAvatar method")
+//			},
+//			UpdateCoverFunc: func(ctx context.Context, r io.Reader) (string, error) {
+//				panic("mock out the UpdateCover method")
+//			},
+//			UpdateUserFunc: func(ctx context.Context, params nakama.UpdateUserParams) error {
+//				panic("mock out the UpdateUser method")
+//			},
+//			UserFunc: func(ctx context.Context, username string) (nakama.UserProfile, error) {
+//				panic("mock out the User method")
+//			},
+//			UsernamesFunc: func(ctx context.Context, startingWith string, first uint64, after *string) (nakama.Usernames, error) {
+//				panic("mock out the Usernames method")
+//			},
+//			UsersFunc: func(ctx context.Context, search string, first uint64, after *string) (nakama.UserProfiles, error) {
+//				panic("mock out the Users method")
+//			},
+//			VerifyMagicLinkFunc: func(ctx context.Context, email string, code string, username *string) (nakama.AuthOutput, error) {
+//				panic("mock out the VerifyMagicLink method")
+//			},
+//		}
 //
-// 		// use mockedService in code that requires Service
-// 		// and then make assertions.
+//		// use mockedService in code that requires Service
+//		// and then make assertions.
 //
-// 	}
+//	}
 type ServiceMock struct {
 	// AddWebPushSubscriptionFunc mocks the AddWebPushSubscription method.
 	AddWebPushSubscriptionFunc func(ctx context.Context, sub json.RawMessage) error
@@ -176,9 +176,6 @@ type ServiceMock struct {
 	// DevLoginFunc mocks the DevLogin method.
 	DevLoginFunc func(ctx context.Context, email string) (nakama.AuthOutput, error)
 
-	// EnsureUserFunc mocks the EnsureUser method.
-	EnsureUserFunc func(ctx context.Context, email string, username *string) (nakama.User, error)
-
 	// FolloweesFunc mocks the Followees method.
 	FolloweesFunc func(ctx context.Context, username string, first uint64, after *string) (nakama.UserProfiles, error)
 
@@ -187,6 +184,9 @@ type ServiceMock struct {
 
 	// HasUnreadNotificationsFunc mocks the HasUnreadNotifications method.
 	HasUnreadNotificationsFunc func(ctx context.Context) (bool, error)
+
+	// LoginFromProviderFunc mocks the LoginFromProvider method.
+	LoginFromProviderFunc func(ctx context.Context, name string, user nakama.ProvidedUser) (nakama.User, error)
 
 	// MarkNotificationAsReadFunc mocks the MarkNotificationAsRead method.
 	MarkNotificationAsReadFunc func(ctx context.Context, notificationID string) error
@@ -344,15 +344,6 @@ type ServiceMock struct {
 			// Email is the email argument value.
 			Email string
 		}
-		// EnsureUser holds details about calls to the EnsureUser method.
-		EnsureUser []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-			// Email is the email argument value.
-			Email string
-			// Username is the username argument value.
-			Username *string
-		}
 		// Followees holds details about calls to the Followees method.
 		Followees []struct {
 			// Ctx is the ctx argument value.
@@ -379,6 +370,15 @@ type ServiceMock struct {
 		HasUnreadNotifications []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
+		}
+		// LoginFromProvider holds details about calls to the LoginFromProvider method.
+		LoginFromProvider []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Name is the name argument value.
+			Name string
+			// User is the user argument value.
+			User nakama.ProvidedUser
 		}
 		// MarkNotificationAsRead holds details about calls to the MarkNotificationAsRead method.
 		MarkNotificationAsRead []struct {
@@ -567,10 +567,10 @@ type ServiceMock struct {
 	lockDeletePost              sync.RWMutex
 	lockDeleteTimelineItem      sync.RWMutex
 	lockDevLogin                sync.RWMutex
-	lockEnsureUser              sync.RWMutex
 	lockFollowees               sync.RWMutex
 	lockFollowers               sync.RWMutex
 	lockHasUnreadNotifications  sync.RWMutex
+	lockLoginFromProvider       sync.RWMutex
 	lockMarkNotificationAsRead  sync.RWMutex
 	lockMarkNotificationsAsRead sync.RWMutex
 	lockNotificationStream      sync.RWMutex
@@ -619,7 +619,8 @@ func (mock *ServiceMock) AddWebPushSubscription(ctx context.Context, sub json.Ra
 
 // AddWebPushSubscriptionCalls gets all the calls that were made to AddWebPushSubscription.
 // Check the length with:
-//     len(mockedService.AddWebPushSubscriptionCalls())
+//
+//	len(mockedService.AddWebPushSubscriptionCalls())
 func (mock *ServiceMock) AddWebPushSubscriptionCalls() []struct {
 	Ctx context.Context
 	Sub json.RawMessage
@@ -656,7 +657,8 @@ func (mock *ServiceMock) AuthUser(ctx context.Context) (nakama.User, error) {
 
 // AuthUserCalls gets all the calls that were made to AuthUser.
 // Check the length with:
-//     len(mockedService.AuthUserCalls())
+//
+//	len(mockedService.AuthUserCalls())
 func (mock *ServiceMock) AuthUserCalls() []struct {
 	Ctx context.Context
 } {
@@ -691,7 +693,8 @@ func (mock *ServiceMock) AuthUserIDFromToken(token string) (string, error) {
 
 // AuthUserIDFromTokenCalls gets all the calls that were made to AuthUserIDFromToken.
 // Check the length with:
-//     len(mockedService.AuthUserIDFromTokenCalls())
+//
+//	len(mockedService.AuthUserIDFromTokenCalls())
 func (mock *ServiceMock) AuthUserIDFromTokenCalls() []struct {
 	Token string
 } {
@@ -728,7 +731,8 @@ func (mock *ServiceMock) CommentStream(ctx context.Context, postID string) (<-ch
 
 // CommentStreamCalls gets all the calls that were made to CommentStream.
 // Check the length with:
-//     len(mockedService.CommentStreamCalls())
+//
+//	len(mockedService.CommentStreamCalls())
 func (mock *ServiceMock) CommentStreamCalls() []struct {
 	Ctx    context.Context
 	PostID string
@@ -771,7 +775,8 @@ func (mock *ServiceMock) Comments(ctx context.Context, postID string, last uint6
 
 // CommentsCalls gets all the calls that were made to Comments.
 // Check the length with:
-//     len(mockedService.CommentsCalls())
+//
+//	len(mockedService.CommentsCalls())
 func (mock *ServiceMock) CommentsCalls() []struct {
 	Ctx    context.Context
 	PostID string
@@ -816,7 +821,8 @@ func (mock *ServiceMock) CreateComment(ctx context.Context, postID string, conte
 
 // CreateCommentCalls gets all the calls that were made to CreateComment.
 // Check the length with:
-//     len(mockedService.CreateCommentCalls())
+//
+//	len(mockedService.CreateCommentCalls())
 func (mock *ServiceMock) CreateCommentCalls() []struct {
 	Ctx     context.Context
 	PostID  string
@@ -863,7 +869,8 @@ func (mock *ServiceMock) CreateTimelineItem(ctx context.Context, content string,
 
 // CreateTimelineItemCalls gets all the calls that were made to CreateTimelineItem.
 // Check the length with:
-//     len(mockedService.CreateTimelineItemCalls())
+//
+//	len(mockedService.CreateTimelineItemCalls())
 func (mock *ServiceMock) CreateTimelineItemCalls() []struct {
 	Ctx       context.Context
 	Content   string
@@ -907,7 +914,8 @@ func (mock *ServiceMock) DeleteComment(ctx context.Context, commentID string) er
 
 // DeleteCommentCalls gets all the calls that were made to DeleteComment.
 // Check the length with:
-//     len(mockedService.DeleteCommentCalls())
+//
+//	len(mockedService.DeleteCommentCalls())
 func (mock *ServiceMock) DeleteCommentCalls() []struct {
 	Ctx       context.Context
 	CommentID string
@@ -945,7 +953,8 @@ func (mock *ServiceMock) DeletePost(ctx context.Context, postID string) error {
 
 // DeletePostCalls gets all the calls that were made to DeletePost.
 // Check the length with:
-//     len(mockedService.DeletePostCalls())
+//
+//	len(mockedService.DeletePostCalls())
 func (mock *ServiceMock) DeletePostCalls() []struct {
 	Ctx    context.Context
 	PostID string
@@ -983,7 +992,8 @@ func (mock *ServiceMock) DeleteTimelineItem(ctx context.Context, timelineItemID 
 
 // DeleteTimelineItemCalls gets all the calls that were made to DeleteTimelineItem.
 // Check the length with:
-//     len(mockedService.DeleteTimelineItemCalls())
+//
+//	len(mockedService.DeleteTimelineItemCalls())
 func (mock *ServiceMock) DeleteTimelineItemCalls() []struct {
 	Ctx            context.Context
 	TimelineItemID string
@@ -1022,7 +1032,8 @@ func (mock *ServiceMock) DevLogin(ctx context.Context, email string) (nakama.Aut
 
 // DevLoginCalls gets all the calls that were made to DevLogin.
 // Check the length with:
-//     len(mockedService.DevLoginCalls())
+//
+//	len(mockedService.DevLoginCalls())
 func (mock *ServiceMock) DevLoginCalls() []struct {
 	Ctx   context.Context
 	Email string
@@ -1034,49 +1045,6 @@ func (mock *ServiceMock) DevLoginCalls() []struct {
 	mock.lockDevLogin.RLock()
 	calls = mock.calls.DevLogin
 	mock.lockDevLogin.RUnlock()
-	return calls
-}
-
-// EnsureUser calls EnsureUserFunc.
-func (mock *ServiceMock) EnsureUser(ctx context.Context, email string, username *string) (nakama.User, error) {
-	callInfo := struct {
-		Ctx      context.Context
-		Email    string
-		Username *string
-	}{
-		Ctx:      ctx,
-		Email:    email,
-		Username: username,
-	}
-	mock.lockEnsureUser.Lock()
-	mock.calls.EnsureUser = append(mock.calls.EnsureUser, callInfo)
-	mock.lockEnsureUser.Unlock()
-	if mock.EnsureUserFunc == nil {
-		var (
-			userOut nakama.User
-			errOut  error
-		)
-		return userOut, errOut
-	}
-	return mock.EnsureUserFunc(ctx, email, username)
-}
-
-// EnsureUserCalls gets all the calls that were made to EnsureUser.
-// Check the length with:
-//     len(mockedService.EnsureUserCalls())
-func (mock *ServiceMock) EnsureUserCalls() []struct {
-	Ctx      context.Context
-	Email    string
-	Username *string
-} {
-	var calls []struct {
-		Ctx      context.Context
-		Email    string
-		Username *string
-	}
-	mock.lockEnsureUser.RLock()
-	calls = mock.calls.EnsureUser
-	mock.lockEnsureUser.RUnlock()
 	return calls
 }
 
@@ -1108,7 +1076,8 @@ func (mock *ServiceMock) Followees(ctx context.Context, username string, first u
 
 // FolloweesCalls gets all the calls that were made to Followees.
 // Check the length with:
-//     len(mockedService.FolloweesCalls())
+//
+//	len(mockedService.FolloweesCalls())
 func (mock *ServiceMock) FolloweesCalls() []struct {
 	Ctx      context.Context
 	Username string
@@ -1155,7 +1124,8 @@ func (mock *ServiceMock) Followers(ctx context.Context, username string, first u
 
 // FollowersCalls gets all the calls that were made to Followers.
 // Check the length with:
-//     len(mockedService.FollowersCalls())
+//
+//	len(mockedService.FollowersCalls())
 func (mock *ServiceMock) FollowersCalls() []struct {
 	Ctx      context.Context
 	Username string
@@ -1196,7 +1166,8 @@ func (mock *ServiceMock) HasUnreadNotifications(ctx context.Context) (bool, erro
 
 // HasUnreadNotificationsCalls gets all the calls that were made to HasUnreadNotifications.
 // Check the length with:
-//     len(mockedService.HasUnreadNotificationsCalls())
+//
+//	len(mockedService.HasUnreadNotificationsCalls())
 func (mock *ServiceMock) HasUnreadNotificationsCalls() []struct {
 	Ctx context.Context
 } {
@@ -1206,6 +1177,50 @@ func (mock *ServiceMock) HasUnreadNotificationsCalls() []struct {
 	mock.lockHasUnreadNotifications.RLock()
 	calls = mock.calls.HasUnreadNotifications
 	mock.lockHasUnreadNotifications.RUnlock()
+	return calls
+}
+
+// LoginFromProvider calls LoginFromProviderFunc.
+func (mock *ServiceMock) LoginFromProvider(ctx context.Context, name string, user nakama.ProvidedUser) (nakama.User, error) {
+	callInfo := struct {
+		Ctx  context.Context
+		Name string
+		User nakama.ProvidedUser
+	}{
+		Ctx:  ctx,
+		Name: name,
+		User: user,
+	}
+	mock.lockLoginFromProvider.Lock()
+	mock.calls.LoginFromProvider = append(mock.calls.LoginFromProvider, callInfo)
+	mock.lockLoginFromProvider.Unlock()
+	if mock.LoginFromProviderFunc == nil {
+		var (
+			userOut nakama.User
+			errOut  error
+		)
+		return userOut, errOut
+	}
+	return mock.LoginFromProviderFunc(ctx, name, user)
+}
+
+// LoginFromProviderCalls gets all the calls that were made to LoginFromProvider.
+// Check the length with:
+//
+//	len(mockedService.LoginFromProviderCalls())
+func (mock *ServiceMock) LoginFromProviderCalls() []struct {
+	Ctx  context.Context
+	Name string
+	User nakama.ProvidedUser
+} {
+	var calls []struct {
+		Ctx  context.Context
+		Name string
+		User nakama.ProvidedUser
+	}
+	mock.lockLoginFromProvider.RLock()
+	calls = mock.calls.LoginFromProvider
+	mock.lockLoginFromProvider.RUnlock()
 	return calls
 }
 
@@ -1232,7 +1247,8 @@ func (mock *ServiceMock) MarkNotificationAsRead(ctx context.Context, notificatio
 
 // MarkNotificationAsReadCalls gets all the calls that were made to MarkNotificationAsRead.
 // Check the length with:
-//     len(mockedService.MarkNotificationAsReadCalls())
+//
+//	len(mockedService.MarkNotificationAsReadCalls())
 func (mock *ServiceMock) MarkNotificationAsReadCalls() []struct {
 	Ctx            context.Context
 	NotificationID string
@@ -1268,7 +1284,8 @@ func (mock *ServiceMock) MarkNotificationsAsRead(ctx context.Context) error {
 
 // MarkNotificationsAsReadCalls gets all the calls that were made to MarkNotificationsAsRead.
 // Check the length with:
-//     len(mockedService.MarkNotificationsAsReadCalls())
+//
+//	len(mockedService.MarkNotificationsAsReadCalls())
 func (mock *ServiceMock) MarkNotificationsAsReadCalls() []struct {
 	Ctx context.Context
 } {
@@ -1303,7 +1320,8 @@ func (mock *ServiceMock) NotificationStream(ctx context.Context) (<-chan nakama.
 
 // NotificationStreamCalls gets all the calls that were made to NotificationStream.
 // Check the length with:
-//     len(mockedService.NotificationStreamCalls())
+//
+//	len(mockedService.NotificationStreamCalls())
 func (mock *ServiceMock) NotificationStreamCalls() []struct {
 	Ctx context.Context
 } {
@@ -1342,7 +1360,8 @@ func (mock *ServiceMock) Notifications(ctx context.Context, last uint64, before 
 
 // NotificationsCalls gets all the calls that were made to Notifications.
 // Check the length with:
-//     len(mockedService.NotificationsCalls())
+//
+//	len(mockedService.NotificationsCalls())
 func (mock *ServiceMock) NotificationsCalls() []struct {
 	Ctx    context.Context
 	Last   uint64
@@ -1381,7 +1400,8 @@ func (mock *ServiceMock) ParseRedirectURI(rawurl string) (*url.URL, error) {
 
 // ParseRedirectURICalls gets all the calls that were made to ParseRedirectURI.
 // Check the length with:
-//     len(mockedService.ParseRedirectURICalls())
+//
+//	len(mockedService.ParseRedirectURICalls())
 func (mock *ServiceMock) ParseRedirectURICalls() []struct {
 	Rawurl string
 } {
@@ -1418,7 +1438,8 @@ func (mock *ServiceMock) Post(ctx context.Context, postID string) (nakama.Post, 
 
 // PostCalls gets all the calls that were made to Post.
 // Check the length with:
-//     len(mockedService.PostCalls())
+//
+//	len(mockedService.PostCalls())
 func (mock *ServiceMock) PostCalls() []struct {
 	Ctx    context.Context
 	PostID string
@@ -1455,7 +1476,8 @@ func (mock *ServiceMock) PostStream(ctx context.Context) (<-chan nakama.Post, er
 
 // PostStreamCalls gets all the calls that were made to PostStream.
 // Check the length with:
-//     len(mockedService.PostStreamCalls())
+//
+//	len(mockedService.PostStreamCalls())
 func (mock *ServiceMock) PostStreamCalls() []struct {
 	Ctx context.Context
 } {
@@ -1496,7 +1518,8 @@ func (mock *ServiceMock) Posts(ctx context.Context, last uint64, before *string,
 
 // PostsCalls gets all the calls that were made to Posts.
 // Check the length with:
-//     len(mockedService.PostsCalls())
+//
+//	len(mockedService.PostsCalls())
 func (mock *ServiceMock) PostsCalls() []struct {
 	Ctx    context.Context
 	Last   uint64
@@ -1540,7 +1563,8 @@ func (mock *ServiceMock) SendMagicLink(ctx context.Context, email string, redire
 
 // SendMagicLinkCalls gets all the calls that were made to SendMagicLink.
 // Check the length with:
-//     len(mockedService.SendMagicLinkCalls())
+//
+//	len(mockedService.SendMagicLinkCalls())
 func (mock *ServiceMock) SendMagicLinkCalls() []struct {
 	Ctx         context.Context
 	Email       string
@@ -1583,7 +1607,8 @@ func (mock *ServiceMock) Timeline(ctx context.Context, last uint64, before *stri
 
 // TimelineCalls gets all the calls that were made to Timeline.
 // Check the length with:
-//     len(mockedService.TimelineCalls())
+//
+//	len(mockedService.TimelineCalls())
 func (mock *ServiceMock) TimelineCalls() []struct {
 	Ctx    context.Context
 	Last   uint64
@@ -1622,7 +1647,8 @@ func (mock *ServiceMock) TimelineItemStream(ctx context.Context) (<-chan nakama.
 
 // TimelineItemStreamCalls gets all the calls that were made to TimelineItemStream.
 // Check the length with:
-//     len(mockedService.TimelineItemStreamCalls())
+//
+//	len(mockedService.TimelineItemStreamCalls())
 func (mock *ServiceMock) TimelineItemStreamCalls() []struct {
 	Ctx context.Context
 } {
@@ -1661,7 +1687,8 @@ func (mock *ServiceMock) ToggleCommentReaction(ctx context.Context, commentID st
 
 // ToggleCommentReactionCalls gets all the calls that were made to ToggleCommentReaction.
 // Check the length with:
-//     len(mockedService.ToggleCommentReactionCalls())
+//
+//	len(mockedService.ToggleCommentReactionCalls())
 func (mock *ServiceMock) ToggleCommentReactionCalls() []struct {
 	Ctx       context.Context
 	CommentID string
@@ -1702,7 +1729,8 @@ func (mock *ServiceMock) ToggleFollow(ctx context.Context, username string) (nak
 
 // ToggleFollowCalls gets all the calls that were made to ToggleFollow.
 // Check the length with:
-//     len(mockedService.ToggleFollowCalls())
+//
+//	len(mockedService.ToggleFollowCalls())
 func (mock *ServiceMock) ToggleFollowCalls() []struct {
 	Ctx      context.Context
 	Username string
@@ -1743,7 +1771,8 @@ func (mock *ServiceMock) TogglePostReaction(ctx context.Context, postID string, 
 
 // TogglePostReactionCalls gets all the calls that were made to TogglePostReaction.
 // Check the length with:
-//     len(mockedService.TogglePostReactionCalls())
+//
+//	len(mockedService.TogglePostReactionCalls())
 func (mock *ServiceMock) TogglePostReactionCalls() []struct {
 	Ctx    context.Context
 	PostID string
@@ -1784,7 +1813,8 @@ func (mock *ServiceMock) TogglePostSubscription(ctx context.Context, postID stri
 
 // TogglePostSubscriptionCalls gets all the calls that were made to TogglePostSubscription.
 // Check the length with:
-//     len(mockedService.TogglePostSubscriptionCalls())
+//
+//	len(mockedService.TogglePostSubscriptionCalls())
 func (mock *ServiceMock) TogglePostSubscriptionCalls() []struct {
 	Ctx    context.Context
 	PostID string
@@ -1821,7 +1851,8 @@ func (mock *ServiceMock) Token(ctx context.Context) (nakama.TokenOutput, error) 
 
 // TokenCalls gets all the calls that were made to Token.
 // Check the length with:
-//     len(mockedService.TokenCalls())
+//
+//	len(mockedService.TokenCalls())
 func (mock *ServiceMock) TokenCalls() []struct {
 	Ctx context.Context
 } {
@@ -1858,7 +1889,8 @@ func (mock *ServiceMock) UpdateAvatar(ctx context.Context, r io.Reader) (string,
 
 // UpdateAvatarCalls gets all the calls that were made to UpdateAvatar.
 // Check the length with:
-//     len(mockedService.UpdateAvatarCalls())
+//
+//	len(mockedService.UpdateAvatarCalls())
 func (mock *ServiceMock) UpdateAvatarCalls() []struct {
 	Ctx context.Context
 	R   io.Reader
@@ -1897,7 +1929,8 @@ func (mock *ServiceMock) UpdateCover(ctx context.Context, r io.Reader) (string, 
 
 // UpdateCoverCalls gets all the calls that were made to UpdateCover.
 // Check the length with:
-//     len(mockedService.UpdateCoverCalls())
+//
+//	len(mockedService.UpdateCoverCalls())
 func (mock *ServiceMock) UpdateCoverCalls() []struct {
 	Ctx context.Context
 	R   io.Reader
@@ -1935,7 +1968,8 @@ func (mock *ServiceMock) UpdateUser(ctx context.Context, params nakama.UpdateUse
 
 // UpdateUserCalls gets all the calls that were made to UpdateUser.
 // Check the length with:
-//     len(mockedService.UpdateUserCalls())
+//
+//	len(mockedService.UpdateUserCalls())
 func (mock *ServiceMock) UpdateUserCalls() []struct {
 	Ctx    context.Context
 	Params nakama.UpdateUserParams
@@ -1974,7 +2008,8 @@ func (mock *ServiceMock) User(ctx context.Context, username string) (nakama.User
 
 // UserCalls gets all the calls that were made to User.
 // Check the length with:
-//     len(mockedService.UserCalls())
+//
+//	len(mockedService.UserCalls())
 func (mock *ServiceMock) UserCalls() []struct {
 	Ctx      context.Context
 	Username string
@@ -2017,7 +2052,8 @@ func (mock *ServiceMock) Usernames(ctx context.Context, startingWith string, fir
 
 // UsernamesCalls gets all the calls that were made to Usernames.
 // Check the length with:
-//     len(mockedService.UsernamesCalls())
+//
+//	len(mockedService.UsernamesCalls())
 func (mock *ServiceMock) UsernamesCalls() []struct {
 	Ctx          context.Context
 	StartingWith string
@@ -2064,7 +2100,8 @@ func (mock *ServiceMock) Users(ctx context.Context, search string, first uint64,
 
 // UsersCalls gets all the calls that were made to Users.
 // Check the length with:
-//     len(mockedService.UsersCalls())
+//
+//	len(mockedService.UsersCalls())
 func (mock *ServiceMock) UsersCalls() []struct {
 	Ctx    context.Context
 	Search string
@@ -2111,7 +2148,8 @@ func (mock *ServiceMock) VerifyMagicLink(ctx context.Context, email string, code
 
 // VerifyMagicLinkCalls gets all the calls that were made to VerifyMagicLink.
 // Check the length with:
-//     len(mockedService.VerifyMagicLinkCalls())
+//
+//	len(mockedService.VerifyMagicLinkCalls())
 func (mock *ServiceMock) VerifyMagicLinkCalls() []struct {
 	Ctx      context.Context
 	Email    string

@@ -13,19 +13,19 @@ var _ Sender = &SenderMock{}
 
 // SenderMock is a mock implementation of Sender.
 //
-// 	func TestSomethingThatUsesSender(t *testing.T) {
+//	func TestSomethingThatUsesSender(t *testing.T) {
 //
-// 		// make and configure a mocked Sender
-// 		mockedSender := &SenderMock{
-// 			SendFunc: func(to string, subject string, html string, text string) error {
-// 				panic("mock out the Send method")
-// 			},
-// 		}
+//		// make and configure a mocked Sender
+//		mockedSender := &SenderMock{
+//			SendFunc: func(to string, subject string, html string, text string) error {
+//				panic("mock out the Send method")
+//			},
+//		}
 //
-// 		// use mockedSender in code that requires Sender
-// 		// and then make assertions.
+//		// use mockedSender in code that requires Sender
+//		// and then make assertions.
 //
-// 	}
+//	}
 type SenderMock struct {
 	// SendFunc mocks the Send method.
 	SendFunc func(to string, subject string, html string, text string) error
@@ -74,7 +74,8 @@ func (mock *SenderMock) Send(to string, subject string, html string, text string
 
 // SendCalls gets all the calls that were made to Send.
 // Check the length with:
-//     len(mockedSender.SendCalls())
+//
+//	len(mockedSender.SendCalls())
 func (mock *SenderMock) SendCalls() []struct {
 	To      string
 	Subject string
