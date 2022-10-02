@@ -1,12 +1,12 @@
-<article style="background-color: var(--background); padding: 1rem; border-radius: 6px;">
-    <div class="v-stack">
-        <a href="/@{{.Post.Username}}" style="text-decoration: none;" class="v-stack">
+<article class="card">
+    <div class="h-stack">
+        <a href="/@{{.Post.Username}}" style="text-decoration: none;" class="h-stack">
             <picture class="initials" data-initials='{{printf "%.1s" .Post.Username }}'></picture>
             <h2 style="margin: 0; margin-left: .5rem">{{.Post.Username}}</h2>
         </a>
 
         <a href="/p/{{.Post.ID}}" style="text-decoration: none; margin-left: auto;">
-            <div class="v-stack no-gap">
+            <div class="h-stack no-gap">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                     stroke="currentColor" class="w-6 h-6">
                     <path stroke-linecap="round" stroke-linejoin="round"
@@ -26,55 +26,8 @@
     {{/* linkify transforms urls into anchor tags */}}
     <p style="white-space: pre-line;">{{linkify .Post.Content}}</p>
 
-    {{if .PostMedia}}
-    {{range .PostMedia}}
     <div>
-        {{if .IsDirectLink}}
-
-        {{if .DirectLink.IsImage}}
-        <img src="{{.DirectLink.Source}}" style="border-radius: 6px">
-        {{end}}
-
-        {{if .DirectLink.IsVideo}}
-        <video controls>
-            <source src="{{.DirectLink.Source}}">
-        </video>
-        {{end}}
-
-        {{if .DirectLink.IsAudio}}
-        <audio controls>
-            <source src="{{.DirectLink.Source}}">
-        </audio>
-        {{end}}
-
-        {{else if .IsPreview}}
-        <div class="link-preview">
-            <small>Preview</small>
-
-            {{if .Preview.Site}}
-            <h2 style="margin-top: 0">{{.Preview.Site}}</h2>
-            {{end}}
-
-            {{if .Preview.Title}}
-            <h3>{{.Preview.Title}}</h3>
-            {{end}}
-
-            {{if .Preview.Description}}
-            <p style="white-space: pre-line;">{{linkify .Preview.Description}}</p>
-            {{end}}
-
-            {{range .Preview.Images}}
-            <img src="{{.Source}}" alt="{{.Alt}}" width="{{if .Width}}{{.Width}}{{end}}"
-                height="{{if .Height}}{{.Height}}{{end}}" style="border-radius: 6px">
-            {{end}}
-        </div>
-        {{end}}
-    </div>
-    {{end}}
-    {{end}}
-
-    <div>
-        <a href="/p/{{.Post.ID}}" class="v-stack" style="text-decoration: none; color: inherit;"
+        <a href="/p/{{.Post.ID}}" class="h-stack" style="text-decoration: none; color: inherit;"
             title="{{.Post.CommentsCount}} comments" aria-label="{{.Post.CommentsCount}} comments">
             <span>{{.Post.CommentsCount}}</span>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"

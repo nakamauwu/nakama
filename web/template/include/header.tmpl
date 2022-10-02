@@ -1,6 +1,6 @@
 <header>
-    <nav class="v-stack" style="gap: 1rem">
-        <a href="/" class="v-stack" style="color: inherit">
+    <nav class="h-stack" style="gap: 1rem">
+        <a href="/" class="h-stack" style="color: inherit">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                 stroke="currentColor" class="w-6 h-6">
                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -9,12 +9,12 @@
             <span>Home</span>
         </a>
         {{if .Session.IsLoggedIn}}
-        <a href="/@{{.Session.User.Username}}" class="v-stack" style="color: inherit">
+        <a href="/@{{.Session.User.Username}}" class="h-stack" style="color: inherit">
             <picture class="initials smaller" data-initials='{{printf "%.1s" .Session.User.Username }}'></picture>
             <span>{{.Session.User.Username}}</span>
         </a>
         <form action="/logout" method="POST" style="display: contents;">
-            <button class="v-stack">
+            <button class="h-stack">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                     stroke="currentColor" class="w-6 h-6">
                     <path stroke-linecap="round" stroke-linejoin="round"
@@ -24,7 +24,7 @@
             </button>
         </form>
         {{else}}
-        <a href="/login" class="v-stack" style="color: inherit">
+        <a href="/login" class="h-stack" style="color: inherit">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                 stroke="currentColor" class="w-6 h-6">
                 <path stroke-linecap="round" stroke-linejoin="round"

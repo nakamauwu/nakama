@@ -5,7 +5,6 @@ import (
 	"net/url"
 
 	"github.com/nakamauwu/nakama"
-	"github.com/nakamauwu/nakama/media"
 	"github.com/nicolasparada/go-mux"
 	"golang.org/x/sync/errgroup"
 )
@@ -15,7 +14,6 @@ var postPageTmpl = parseTmpl("post-page.tmpl")
 type postData struct {
 	Session
 	Post              nakama.PostRow
-	PostMedia         []media.Media
 	Comments          []nakama.CommentsRow
 	CreateCommentForm url.Values
 	CreateCommentErr  error
@@ -57,7 +55,6 @@ func (h *Handler) showPost(w http.ResponseWriter, r *http.Request) {
 	postID := mux.URLParam(ctx, "postID")
 
 	var post nakama.PostRow
-	var postMedia []media.Media
 	var comments []nakama.CommentsRow
 
 	g, gctx := errgroup.WithContext(ctx)
@@ -65,13 +62,7 @@ func (h *Handler) showPost(w http.ResponseWriter, r *http.Request) {
 	g.Go(func() error {
 		var err error
 		post, err = h.Service.Post(gctx, postID)
-		if err != nil {
-			return err
-		}
-
-		postMedia = h.MediaExtractor.Extract(gctx, post.Content)
-
-		return nil
+		return err
 	})
 
 	g.Go(func() error {
@@ -91,7 +82,6 @@ func (h *Handler) showPost(w http.ResponseWriter, r *http.Request) {
 	h.renderPost(w, postData{
 		Session:           h.sessionFromReq(r),
 		Post:              post,
-		PostMedia:         postMedia,
 		Comments:          comments,
 		CreateCommentForm: h.popForm(r, "create_comment_form"),
 		CreateCommentErr:  h.popErr(r, "create_comment_err"),

@@ -15,13 +15,19 @@ svg {
     stroke: var(--text-muted, currentColor);
 }
 
-.v-stack {
+.card {
+    background-color: var(--background);
+    padding: 1rem;
+    border-radius: 6px;
+}
+
+.h-stack {
     display: flex;
     gap: .5rem;
     align-items: center;
 }
 
-.v-stack.no-gap {
+.h-stack.no-gap {
     gap: 0;
 }
 
@@ -123,12 +129,4 @@ a.btn:active {
 
 .btn-group .btn[aria-current="page"] {
     text-decoration: underline;
-}
-
-.link-preview {
-    background-color: var(--background-alt, #1a242f);
-    border: 1px solid var(--border, #526980);
-    border-radius: 6px;
-    padding: 1rem;
-    margin-bottom: 1rem;
 }

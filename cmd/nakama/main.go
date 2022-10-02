@@ -10,10 +10,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/golang/groupcache/lru"
 	_ "github.com/lib/pq"
 	"github.com/nakamauwu/nakama"
-	"github.com/nakamauwu/nakama/media"
 	"github.com/nakamauwu/nakama/web"
 )
 
@@ -66,9 +64,6 @@ func run() error {
 		Logger:     logger,
 		Service:    svc,
 		SessionKey: []byte(sessionKey),
-		MediaExtractor: &media.Extractor{
-			Cache: lru.New(512),
-		},
 	}
 
 	srv := &http.Server{

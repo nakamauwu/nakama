@@ -15,7 +15,7 @@
         <p>Could not create post: <code>{{.CreatePostErr}}</code></p>
         {{end}}
 
-        <button class="v-stack">
+        <button class="h-stack">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                 stroke="currentColor" class="w-6 h-6">
                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -29,7 +29,7 @@
     {{end}}
 
     {{if .Session.IsLoggedIn}}
-    <div class="v-stack">
+    <div class="h-stack">
         <div class="btn-group" style="margin-bottom: 1rem; margin-left: auto">
             <a href="/" class="btn" aria-current='{{if ne .Mode "global"}}page{{else}}false{{end}}'>
                 Following

@@ -11,16 +11,14 @@ import (
 
 	"github.com/golangcollege/sessions"
 	"github.com/nakamauwu/nakama"
-	"github.com/nakamauwu/nakama/media"
 	"github.com/nicolasparada/go-errs/httperrs"
 	"github.com/nicolasparada/go-mux"
 )
 
 type Handler struct {
-	Logger         *log.Logger
-	Service        *nakama.Service
-	SessionKey     []byte
-	MediaExtractor *media.Extractor
+	Logger     *log.Logger
+	Service    *nakama.Service
+	SessionKey []byte
 
 	session *sessions.Session
 
