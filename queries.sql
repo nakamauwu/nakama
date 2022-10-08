@@ -3,14 +3,11 @@ INSERT INTO users (id, email, username)
 VALUES (@user_id, LOWER(@email), @username)
 RETURNING created_at;
 
--- name: UserByEmail :one
-SELECT * FROM users WHERE email = LOWER(@email);
-
--- name: UserByUsername :one
+-- name: User :one
 SELECT users.*,
 (
     CASE
-        WHEN @follower_id::varchar <> '' THEN (
+        WHEN @follower_id::varchar != '' THEN (
             SELECT EXISTS (
                 SELECT 1 FROM user_follows
                 WHERE follower_id = @follower_id::varchar
@@ -21,21 +18,23 @@ SELECT users.*,
     END
 ) AS following
 FROM users
-WHERE LOWER(username) = LOWER(@username);
+WHERE CASE
+    WHEN @user_id::varchar != '' THEN users.id = @user_id::varchar
+    WHEN @email::varchar != '' THEN users.email = LOWER(@email::varchar)
+    WHEN @username::varchar != '' THEN LOWER(users.username) = LOWER(@username::varchar)
+    ELSE false
+END;
+
+
 
 -- name: UserExists :one
 SELECT EXISTS (
-    SELECT 1 FROM users WHERE id = @user_id
-);
-
--- name: UserExistsByEmail :one
-SELECT EXISTS (
-    SELECT 1 FROM users WHERE email = LOWER(@email)
-);
-
--- name: UserExistsByUsername :one
-SELECT EXISTS (
-    SELECT 1 FROM users WHERE LOWER(username) = LOWER(@username)
+    SELECT 1 FROM users WHERE CASE
+        WHEN @user_id::varchar != '' THEN id = @user_id::varchar
+        WHEN @email::varchar != '' THEN email = LOWER(@email::varchar)
+        WHEN @username::varchar != '' THEN LOWER(username) = LOWER(@username::varchar)
+        ELSE false
+    END
 );
 
 -- name: UpdateUser :one
@@ -58,7 +57,7 @@ FROM posts
 INNER JOIN users ON posts.user_id = users.id
 WHERE
     CASE
-        WHEN @username::varchar <> '' THEN LOWER(users.username) = LOWER(@username::varchar)
+        WHEN @username::varchar != '' THEN LOWER(users.username) = LOWER(@username::varchar)
         ELSE true
     END
 ORDER BY posts.id DESC;

@@ -68,7 +68,7 @@ func (h *Handler) init() {
 	})
 
 	// register types used on sessions.
-	gob.Register(nakama.User{})
+	gob.Register(nakama.UserIdentity{})
 	gob.Register(url.Values{})
 
 	h.session = sessions.New(h.SessionKey)

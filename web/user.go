@@ -12,7 +12,7 @@ var userPageTmpl = parseTmpl("user-page.tmpl")
 
 type userData struct {
 	Session
-	User          nakama.UserByUsernameRow
+	User          nakama.UserRow
 	Posts         []nakama.PostsRow
 	UserFollowErr error
 }
@@ -26,14 +26,14 @@ func (h *Handler) showUser(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	username := mux.URLParam(ctx, "username")
 
-	var user nakama.UserByUsernameRow
+	var user nakama.UserRow
 	var posts []nakama.PostsRow
 
 	g, gctx := errgroup.WithContext(ctx)
 
 	g.Go(func() error {
 		var err error
-		user, err = h.Service.UserByUsername(gctx, username)
+		user, err = h.Service.User(gctx, username)
 		return err
 	})
 

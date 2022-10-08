@@ -80,7 +80,7 @@ func (svc *Service) UnfollowUser(ctx context.Context, followedUserID string) err
 
 	// TODO: run inside a transaction.
 
-	exists, err := svc.Queries.UserExists(ctx, followedUserID)
+	exists, err := svc.Queries.UserExists(ctx, UserExistsParams{UserID: followedUserID})
 	if err != nil {
 		return err
 	}

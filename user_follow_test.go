@@ -22,25 +22,25 @@ func TestService_FollowUser(t *testing.T) {
 
 	t.Run("self", func(t *testing.T) {
 		usr := genUser(t)
-		asUser := ContextWithUser(ctx, usr)
+		asUser := ContextWithUser(ctx, usr.Identity())
 		err := testService.FollowUser(asUser, usr.ID)
 		assert.EqualError(t, err, "cannot follow self")
 	})
 
 	t.Run("user_not_found", func(t *testing.T) {
-		asUser := ContextWithUser(ctx, genUser(t))
+		asUser := ContextWithUser(ctx, genUser(t).Identity())
 		err := testService.FollowUser(asUser, genID())
 		assert.EqualError(t, err, "user not found")
 	})
 
 	t.Run("ok", func(t *testing.T) {
-		asUser := ContextWithUser(ctx, genUser(t))
+		asUser := ContextWithUser(ctx, genUser(t).Identity())
 		err := testService.FollowUser(asUser, genUser(t).ID)
 		assert.NoError(t, err)
 	})
 
 	t.Run("exists", func(t *testing.T) {
-		asUser := ContextWithUser(ctx, genUser(t))
+		asUser := ContextWithUser(ctx, genUser(t).Identity())
 		followedUserID := genUser(t).ID
 		err := testService.FollowUser(asUser, followedUserID)
 		assert.NoError(t, err)
@@ -53,18 +53,18 @@ func TestService_FollowUser(t *testing.T) {
 		follower := genUser(t)
 		followed := genUser(t)
 
-		asFollower := ContextWithUser(ctx, follower)
+		asFollower := ContextWithUser(ctx, follower.Identity())
 		err := testService.FollowUser(asFollower, followed.ID)
 		assert.NoError(t, err)
 
 		{
-			follower, err := testService.UserByUsername(ctx, follower.Username)
+			follower, err := testService.User(ctx, follower.Username)
 			assert.NoError(t, err)
 			assert.Equal(t, 1, follower.FollowingCount)
 		}
 
 		{
-			followed, err := testService.UserByUsername(ctx, followed.Username)
+			followed, err := testService.User(ctx, followed.Username)
 			assert.NoError(t, err)
 			assert.Equal(t, 1, followed.FollowersCount)
 		}
@@ -86,19 +86,19 @@ func TestService_UnfollowUser(t *testing.T) {
 
 	t.Run("self", func(t *testing.T) {
 		usr := genUser(t)
-		asUser := ContextWithUser(ctx, usr)
+		asUser := ContextWithUser(ctx, usr.Identity())
 		err := testService.UnfollowUser(asUser, usr.ID)
 		assert.EqualError(t, err, "cannot follow self")
 	})
 
 	t.Run("user_not_found", func(t *testing.T) {
-		asUser := ContextWithUser(ctx, genUser(t))
+		asUser := ContextWithUser(ctx, genUser(t).Identity())
 		err := testService.UnfollowUser(asUser, genID())
 		assert.EqualError(t, err, "user not found")
 	})
 
 	t.Run("ok", func(t *testing.T) {
-		asUser := ContextWithUser(ctx, genUser(t))
+		asUser := ContextWithUser(ctx, genUser(t).Identity())
 		followedUserID := genUser(t).ID
 		err := testService.FollowUser(asUser, followedUserID)
 		assert.NoError(t, err)
@@ -108,7 +108,7 @@ func TestService_UnfollowUser(t *testing.T) {
 	})
 
 	t.Run("exists", func(t *testing.T) {
-		asUser := ContextWithUser(ctx, genUser(t))
+		asUser := ContextWithUser(ctx, genUser(t).Identity())
 		followedUserID := genUser(t).ID
 		err := testService.FollowUser(asUser, followedUserID)
 		assert.NoError(t, err)
@@ -124,7 +124,7 @@ func TestService_UnfollowUser(t *testing.T) {
 		follower := genUser(t)
 		followed := genUser(t)
 
-		asFollower := ContextWithUser(ctx, follower)
+		asFollower := ContextWithUser(ctx, follower.Identity())
 		err := testService.FollowUser(asFollower, followed.ID)
 		assert.NoError(t, err)
 
@@ -132,13 +132,13 @@ func TestService_UnfollowUser(t *testing.T) {
 		assert.NoError(t, err)
 
 		{
-			follower, err := testService.UserByUsername(ctx, follower.Username)
+			follower, err := testService.User(ctx, follower.Username)
 			assert.NoError(t, err)
 			assert.Equal(t, 0, follower.FollowingCount)
 		}
 
 		{
-			followed, err := testService.UserByUsername(ctx, followed.Username)
+			followed, err := testService.User(ctx, followed.Username)
 			assert.NoError(t, err)
 			assert.Equal(t, 0, followed.FollowersCount)
 		}

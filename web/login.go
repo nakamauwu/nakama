@@ -72,12 +72,12 @@ func (h *Handler) logout(w http.ResponseWriter, r *http.Request) {
 // It continues to the next handler if user does not exists in session.
 func (h *Handler) withUser(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		usr, ok := h.session.Get(r, sessionKeyUser).(nakama.User)
-		if !ok {
+		if !h.session.Exists(r, sessionKeyUser) {
 			next.ServeHTTP(w, r)
 			return
 		}
 
+		usr := h.getUserIdentity(r, sessionKeyUser)
 		ctx := r.Context()
 		ctx = nakama.ContextWithUser(ctx, usr)
 		next.ServeHTTP(w, r.WithContext(ctx))

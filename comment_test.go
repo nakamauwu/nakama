@@ -44,7 +44,7 @@ func TestService_CreateComment(t *testing.T) {
 	})
 
 	t.Run("post_not_found", func(t *testing.T) {
-		asUser := ContextWithUser(ctx, genUser(t))
+		asUser := ContextWithUser(ctx, genUser(t).Identity())
 		_, err := testService.CreateComment(asUser, CreateCommentInput{
 			PostID:  genID(),
 			Content: genCommentContent(),
@@ -54,7 +54,7 @@ func TestService_CreateComment(t *testing.T) {
 
 	t.Run("ok", func(t *testing.T) {
 		usr := genUser(t)
-		asUser := ContextWithUser(ctx, usr)
+		asUser := ContextWithUser(ctx, usr.Identity())
 		post := genPost(t, usr.ID)
 		got, err := testService.CreateComment(asUser, CreateCommentInput{
 			PostID:  post.ID,

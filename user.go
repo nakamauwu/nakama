@@ -22,8 +22,8 @@ var (
 	reUsername = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_-]{0,17}$`)
 )
 
-func (svc *Service) UserByUsername(ctx context.Context, username string) (UserByUsernameRow, error) {
-	var out UserByUsernameRow
+func (svc *Service) User(ctx context.Context, username string) (UserRow, error) {
+	var out UserRow
 
 	if !isUsername(username) {
 		return out, ErrInvalidUsername
@@ -31,7 +31,7 @@ func (svc *Service) UserByUsername(ctx context.Context, username string) (UserBy
 
 	usr, _ := UserFromContext(ctx)
 
-	out, err := svc.Queries.UserByUsername(ctx, UserByUsernameParams{
+	out, err := svc.Queries.User(ctx, UserParams{
 		FollowerID: usr.ID,
 		Username:   username,
 	})

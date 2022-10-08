@@ -312,7 +312,7 @@ FROM posts
 INNER JOIN users ON posts.user_id = users.id
 WHERE
     CASE
-        WHEN $1::varchar <> '' THEN LOWER(users.username) = LOWER($1::varchar)
+        WHEN $1::varchar != '' THEN LOWER(users.username) = LOWER($1::varchar)
         ELSE true
     END
 ORDER BY posts.id DESC
@@ -407,31 +407,11 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (time.Ti
 	return updated_at, err
 }
 
-const userByEmail = `-- name: UserByEmail :one
-SELECT id, email, username, posts_count, followers_count, following_count, created_at, updated_at FROM users WHERE email = LOWER($1)
-`
-
-func (q *Queries) UserByEmail(ctx context.Context, email string) (User, error) {
-	row := q.db.QueryRowContext(ctx, userByEmail, email)
-	var i User
-	err := row.Scan(
-		&i.ID,
-		&i.Email,
-		&i.Username,
-		&i.PostsCount,
-		&i.FollowersCount,
-		&i.FollowingCount,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const userByUsername = `-- name: UserByUsername :one
+const user = `-- name: User :one
 SELECT users.id, users.email, users.username, users.posts_count, users.followers_count, users.following_count, users.created_at, users.updated_at,
 (
     CASE
-        WHEN $1::varchar <> '' THEN (
+        WHEN $1::varchar != '' THEN (
             SELECT EXISTS (
                 SELECT 1 FROM user_follows
                 WHERE follower_id = $1::varchar
@@ -442,15 +422,22 @@ SELECT users.id, users.email, users.username, users.posts_count, users.followers
     END
 ) AS following
 FROM users
-WHERE LOWER(username) = LOWER($2)
+WHERE CASE
+    WHEN $2::varchar != '' THEN users.id = $2::varchar
+    WHEN $3::varchar != '' THEN users.email = LOWER($3::varchar)
+    WHEN $4::varchar != '' THEN LOWER(users.username) = LOWER($4::varchar)
+    ELSE false
+END
 `
 
-type UserByUsernameParams struct {
+type UserParams struct {
 	FollowerID string
+	UserID     string
+	Email      string
 	Username   string
 }
 
-type UserByUsernameRow struct {
+type UserRow struct {
 	ID             string
 	Email          string
 	Username       string
@@ -462,9 +449,14 @@ type UserByUsernameRow struct {
 	Following      bool
 }
 
-func (q *Queries) UserByUsername(ctx context.Context, arg UserByUsernameParams) (UserByUsernameRow, error) {
-	row := q.db.QueryRowContext(ctx, userByUsername, arg.FollowerID, arg.Username)
-	var i UserByUsernameRow
+func (q *Queries) User(ctx context.Context, arg UserParams) (UserRow, error) {
+	row := q.db.QueryRowContext(ctx, user,
+		arg.FollowerID,
+		arg.UserID,
+		arg.Email,
+		arg.Username,
+	)
+	var i UserRow
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
@@ -481,38 +473,23 @@ func (q *Queries) UserByUsername(ctx context.Context, arg UserByUsernameParams) 
 
 const userExists = `-- name: UserExists :one
 SELECT EXISTS (
-    SELECT 1 FROM users WHERE id = $1
+    SELECT 1 FROM users WHERE CASE
+        WHEN $1::varchar != '' THEN id = $1::varchar
+        WHEN $2::varchar != '' THEN email = LOWER($2::varchar)
+        WHEN $3::varchar != '' THEN LOWER(username) = LOWER($3::varchar)
+        ELSE false
+    END
 )
 `
 
-func (q *Queries) UserExists(ctx context.Context, userID string) (bool, error) {
-	row := q.db.QueryRowContext(ctx, userExists, userID)
-	var exists bool
-	err := row.Scan(&exists)
-	return exists, err
+type UserExistsParams struct {
+	UserID   string
+	Email    string
+	Username string
 }
 
-const userExistsByEmail = `-- name: UserExistsByEmail :one
-SELECT EXISTS (
-    SELECT 1 FROM users WHERE email = LOWER($1)
-)
-`
-
-func (q *Queries) UserExistsByEmail(ctx context.Context, email string) (bool, error) {
-	row := q.db.QueryRowContext(ctx, userExistsByEmail, email)
-	var exists bool
-	err := row.Scan(&exists)
-	return exists, err
-}
-
-const userExistsByUsername = `-- name: UserExistsByUsername :one
-SELECT EXISTS (
-    SELECT 1 FROM users WHERE LOWER(username) = LOWER($1)
-)
-`
-
-func (q *Queries) UserExistsByUsername(ctx context.Context, username string) (bool, error) {
-	row := q.db.QueryRowContext(ctx, userExistsByUsername, username)
+func (q *Queries) UserExists(ctx context.Context, arg UserExistsParams) (bool, error) {
+	row := q.db.QueryRowContext(ctx, userExists, arg.UserID, arg.Email, arg.Username)
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err

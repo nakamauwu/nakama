@@ -28,7 +28,7 @@ func TestService_CreatePost(t *testing.T) {
 	})
 
 	t.Run("ok", func(t *testing.T) {
-		asUser := ContextWithUser(ctx, genUser(t))
+		asUser := ContextWithUser(ctx, genUser(t).Identity())
 		got, err := testService.CreatePost(asUser, CreatePostInput{Content: genPostContent()})
 		assert.NoError(t, err)
 		assert.NotZero(t, got)
@@ -36,7 +36,7 @@ func TestService_CreatePost(t *testing.T) {
 
 	t.Run("user_posts_count", func(t *testing.T) {
 		usr := genUser(t)
-		asUser := ContextWithUser(ctx, usr)
+		asUser := ContextWithUser(ctx, usr.Identity())
 
 		want := 5
 		for i := 0; i < want; i++ {
@@ -45,7 +45,7 @@ func TestService_CreatePost(t *testing.T) {
 			assert.NotZero(t, got)
 		}
 
-		got, err := testService.Queries.UserByUsername(ctx, UserByUsernameParams{Username: usr.Username})
+		got, err := testService.Queries.User(ctx, UserParams{Username: usr.Username})
 		assert.NoError(t, err)
 		assert.Equal(t, want, int(got.PostsCount))
 	})
@@ -55,11 +55,11 @@ func TestService_CreatePost(t *testing.T) {
 		followed := genUser(t)
 		anotherUser := genUser(t)
 
-		asFollower := ContextWithUser(ctx, follower)
+		asFollower := ContextWithUser(ctx, follower.Identity())
 		err := testService.FollowUser(asFollower, followed.ID)
 		assert.NoError(t, err)
 
-		asFollowed := ContextWithUser(ctx, followed)
+		asFollowed := ContextWithUser(ctx, followed.Identity())
 		post, err := testService.CreatePost(asFollowed, CreatePostInput{Content: genPostContent()})
 		assert.NoError(t, err)
 
@@ -76,7 +76,7 @@ func TestService_CreatePost(t *testing.T) {
 		assert.Equal(t, post.ID, timeline[0].ID)
 
 		// The post should not have been added to any other user's timeline.
-		asAnotherUser := ContextWithUser(ctx, anotherUser)
+		asAnotherUser := ContextWithUser(ctx, anotherUser.Identity())
 		timeline, err = testService.HomeTimeline(asAnotherUser)
 		assert.NoError(t, err)
 		assert.Equal(t, 0, len(timeline))
