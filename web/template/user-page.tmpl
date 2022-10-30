@@ -16,23 +16,7 @@
     </dl>
 
     {{if and .Session.IsLoggedIn (ne .Session.User.ID .User.ID)}}
-    <form action="/user-follows" method="POST">
-        <input type="hidden" name="user_id" value="{{.User.ID}}">
-
-        {{if .User.Following}}
-        <input type="hidden" name="_method" value="DELETE">
-        {{end}}
-
-        {{if .UserFollowErr}}
-        <p>Could not follow user: <code>{{.UserFollowErr}}</code></p>
-        {{end}}
-
-        <button aria-pressed="{{.User.Following}}"
-            title="{{if .User.Following}}Stop following {{.User.Username}}{{else}}Follow {{.User.Username}}{{end}}"
-            aria-label="{{if .User.Following}}Stop following {{.User.Username}}{{else}}Follow {{.User.Username}}{{end}}">
-            {{- if .User.Following}}Following{{else}}Follow{{end -}}
-        </button>
-    </form>
+    {{template "user-follow-form.tmpl" .}}
     {{end}}
 
     <hr>
