@@ -6,7 +6,7 @@ import (
 	_ "embed"
 )
 
-//go:embed schema.sql
+//go:embed sql/schema.sql
 var sqlSchema string
 
 func MigrateSQL(ctx context.Context, db *sql.DB) error {
