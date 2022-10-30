@@ -1,12 +1,12 @@
 <article class="card">
-    <div class="h-stack">
-        <a href="/@{{.Post.Username}}" style="text-decoration: none;" class="h-stack">
+    <div class="stack">
+        <a href="/@{{.Post.Username}}" style="text-decoration: none;" class="stack">
             <picture class="initials" data-initials='{{printf "%.1s" .Post.Username }}'></picture>
             <h2 style="margin: 0; margin-left: .5rem">{{.Post.Username}}</h2>
         </a>
 
         <a href="/p/{{.Post.ID}}" style="text-decoration: none; margin-left: auto;">
-            <div class="h-stack no-gap">
+            <div class="stack no-gap">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                     stroke="currentColor" class="w-6 h-6">
                     <path stroke-linecap="round" stroke-linejoin="round"
@@ -27,7 +27,7 @@
     <p style="white-space: pre-line;">{{linkify .Post.Content}}</p>
 
     <div>
-        <a href="/p/{{.Post.ID}}" class="h-stack" style="text-decoration: none; color: inherit;"
+        <a href="/p/{{.Post.ID}}" class="stack" style="text-decoration: none; color: inherit;"
             title="{{.Post.CommentsCount}} comments" aria-label="{{.Post.CommentsCount}} comments">
             <span>{{.Post.CommentsCount}}</span>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"

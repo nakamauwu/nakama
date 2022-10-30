@@ -21,13 +21,13 @@ svg {
     border-radius: 6px;
 }
 
-.h-stack {
+.stack {
     display: flex;
     gap: .5rem;
     align-items: center;
 }
 
-.h-stack.no-gap {
+.stack.no-gap {
     gap: 0;
 }
 
