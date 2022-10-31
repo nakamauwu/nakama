@@ -9,18 +9,63 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-var postPageTmpl = parseTmpl("post-page.tmpl")
+var (
+	postsPageTmpl = parseTmpl("posts-page.tmpl")
+	postPageTmpl  = parseTmpl("post-page.tmpl")
+)
 
-type postData struct {
-	Session
-	Post              nakama.PostRow
-	Comments          []nakama.CommentsRow
-	CreateCommentForm url.Values
-	CreateCommentErr  error
+type (
+	postsData struct {
+		Session
+		CreatePostErr  error
+		CreatePostForm url.Values
+		Posts          any
+		Mode           string
+	}
+	postData struct {
+		Session
+		Post              nakama.PostRow
+		Comments          []nakama.CommentsRow
+		CreateCommentForm url.Values
+		CreateCommentErr  error
+	}
+)
+
+func (h *Handler) renderPosts(w http.ResponseWriter, data postsData, statusCode int) {
+	h.renderTmpl(w, postsPageTmpl, data, statusCode)
 }
 
 func (h *Handler) renderPost(w http.ResponseWriter, data postData, statusCode int) {
 	h.renderTmpl(w, postPageTmpl, data, statusCode)
+}
+
+// showPosts handles GET /.
+func (h *Handler) showPosts(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	mode := r.URL.Query().Get("mode")
+
+	var posts any
+	var err error
+
+	if _, ok := nakama.UserFromContext(ctx); ok && mode != "global" {
+		posts, err = h.Service.HomeTimeline(ctx)
+	} else {
+		posts, err = h.Service.Posts(ctx, nakama.PostsInput{})
+	}
+
+	if err != nil {
+		h.log(err)
+		h.renderErr(w, r, err)
+		return
+	}
+
+	h.renderPosts(w, postsData{
+		Session:        h.sessionFromReq(r),
+		CreatePostErr:  h.popErr(r, "create_post_err"),
+		CreatePostForm: h.popForm(r, "create_post_form"),
+		Posts:          posts,
+		Mode:           mode,
+	}, http.StatusOK)
 }
 
 // createPost handles POST /posts.

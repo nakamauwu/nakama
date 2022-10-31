@@ -30,7 +30,7 @@ func (h *Handler) init() {
 	r := mux.NewRouter()
 
 	r.Handle("/", mux.MethodHandler{
-		http.MethodGet: h.showHome,
+		http.MethodGet: h.showPosts,
 	})
 
 	r.Handle("/login", mux.MethodHandler{
