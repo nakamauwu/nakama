@@ -12,6 +12,7 @@ import (
 
 	_ "github.com/lib/pq"
 	"github.com/nakamauwu/nakama"
+	"github.com/nakamauwu/nakama/db"
 	"github.com/nakamauwu/nakama/web"
 )
 
@@ -37,25 +38,24 @@ func run() error {
 		return fmt.Errorf("parse flags: %w", err)
 	}
 
-	db, err := sql.Open("postgres", sqlAddr)
+	pool, err := sql.Open("postgres", sqlAddr)
 	if err != nil {
-		return fmt.Errorf("open db: %w", err)
+		return fmt.Errorf("open pool: %w", err)
 	}
 
-	defer db.Close()
+	defer pool.Close()
 
-	if err := db.Ping(); err != nil {
+	if err := pool.Ping(); err != nil {
 		return fmt.Errorf("ping db: %w", err)
 	}
 
-	if err := nakama.MigrateSQL(context.Background(), db); err != nil {
+	if err := nakama.MigrateSQL(context.Background(), pool); err != nil {
 		return fmt.Errorf("migrate sql: %w", err)
 	}
 
 	logger := log.New(os.Stderr, "", log.Ldate|log.Ltime|log.Llongfile)
-	queries := nakama.New(db)
 	svc := &nakama.Service{
-		Queries:     queries,
+		DB:          db.New(pool),
 		Logger:      logger,
 		BaseContext: context.Background,
 	}

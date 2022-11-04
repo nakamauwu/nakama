@@ -69,7 +69,7 @@ func genUser(t *testing.T) User {
 	userID := genID()
 	email := genEmail()
 	username := genUsername()
-	createdAt, err := testService.Queries.CreateUser(ctx, CreateUserParams{
+	createdAt, err := testService.sqlInsertUser(ctx, sqlInsertUser{
 		UserID:   userID,
 		Email:    email,
 		Username: username,

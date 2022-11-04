@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"regexp"
+	"time"
 
 	"github.com/nicolasparada/go-errs"
 )
@@ -22,8 +23,24 @@ var (
 	reUsername = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_-]{0,17}$`)
 )
 
-func (svc *Service) User(ctx context.Context, username string) (UserRow, error) {
-	var out UserRow
+type User struct {
+	ID             string
+	Email          string
+	Username       string
+	PostsCount     int32
+	FollowersCount int32
+	FollowingCount int32
+	Following      bool
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+}
+
+type UserPreview struct {
+	Username string
+}
+
+func (svc *Service) User(ctx context.Context, username string) (User, error) {
+	var out User
 
 	if !isUsername(username) {
 		return out, ErrInvalidUsername
@@ -31,7 +48,7 @@ func (svc *Service) User(ctx context.Context, username string) (UserRow, error) 
 
 	usr, _ := UserFromContext(ctx)
 
-	out, err := svc.Queries.User(ctx, UserParams{
+	out, err := svc.sqlSelectUser(ctx, sqlSelectUser{
 		FollowerID: usr.ID,
 		Username:   username,
 	})

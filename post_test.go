@@ -45,7 +45,7 @@ func TestService_CreatePost(t *testing.T) {
 			assert.NotZero(t, got)
 		}
 
-		got, err := testService.Queries.User(ctx, UserParams{Username: usr.Username})
+		got, err := testService.sqlSelectUser(ctx, sqlSelectUser{Username: usr.Username})
 		assert.NoError(t, err)
 		assert.Equal(t, want, int(got.PostsCount))
 	})
@@ -64,20 +64,20 @@ func TestService_CreatePost(t *testing.T) {
 		assert.NoError(t, err)
 
 		// The post should have been added the the author's timeline.
-		timeline, err := testService.HomeTimeline(asFollowed)
+		timeline, err := testService.Timeline(asFollowed)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(timeline))
 		assert.Equal(t, post.ID, timeline[0].ID)
 
 		// The post should have been added to the follower's timeline.
-		timeline, err = testService.HomeTimeline(asFollower)
+		timeline, err = testService.Timeline(asFollower)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(timeline))
 		assert.Equal(t, post.ID, timeline[0].ID)
 
 		// The post should not have been added to any other user's timeline.
 		asAnotherUser := ContextWithUser(ctx, anotherUser.Identity())
-		timeline, err = testService.HomeTimeline(asAnotherUser)
+		timeline, err = testService.Timeline(asAnotherUser)
 		assert.NoError(t, err)
 		assert.Equal(t, 0, len(timeline))
 	})
@@ -153,7 +153,7 @@ func genPost(t *testing.T, userID string) Post {
 
 	ctx := context.Background()
 	postID := genID()
-	createdAt, err := testService.Queries.CreatePost(ctx, CreatePostParams{
+	createdAt, err := testService.sqlInsertPost(ctx, sqlInsertPost{
 		PostID:  postID,
 		UserID:  userID,
 		Content: genPostContent(),

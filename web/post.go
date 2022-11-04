@@ -24,8 +24,8 @@ type (
 	}
 	postData struct {
 		Session
-		Post              nakama.PostRow
-		Comments          []nakama.CommentsRow
+		Post              nakama.Post
+		Comments          []nakama.Comment
 		CreateCommentForm url.Values
 		CreateCommentErr  error
 	}
@@ -48,7 +48,7 @@ func (h *Handler) showPosts(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	if _, ok := nakama.UserFromContext(ctx); ok && mode != "global" {
-		posts, err = h.Service.HomeTimeline(ctx)
+		posts, err = h.Service.Timeline(ctx)
 	} else {
 		posts, err = h.Service.Posts(ctx, nakama.PostsInput{})
 	}
@@ -99,8 +99,8 @@ func (h *Handler) showPost(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	postID := mux.URLParam(ctx, "postID")
 
-	var post nakama.PostRow
-	var comments []nakama.CommentsRow
+	var post nakama.Post
+	var comments []nakama.Comment
 
 	g, gctx := errgroup.WithContext(ctx)
 

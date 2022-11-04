@@ -101,7 +101,7 @@ func genComment(t *testing.T, userID, postID string) Comment {
 	t.Helper()
 
 	commentID := genID()
-	createdAt, err := testService.Queries.CreateComment(context.Background(), CreateCommentParams{
+	createdAt, err := testService.sqlInsertComment(context.Background(), sqlInsertComment{
 		CommentID: commentID,
 		PostID:    postID,
 		UserID:    userID,

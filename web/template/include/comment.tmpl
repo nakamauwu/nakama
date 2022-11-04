@@ -1,8 +1,8 @@
 <article class="card">
     <div class="stack">
-        <a href="/@{{.Username}}" style="text-decoration: none; color: inherit;" class="stack">
-            <picture class="initials smaller" data-initials='{{printf "%.1s" .Username }}'></picture>
-            <b>{{.Username}}</b>
+        <a href="/@{{.Comment.User.Username}}" style="text-decoration: none; color: inherit;" class="stack">
+            <picture class="initials smaller" data-initials='{{printf "%.1s" .Comment.User.Username }}'></picture>
+            <b>{{.Comment.User.Username}}</b>
         </a>
         <div class="stack no-gap" style="margin-left: auto">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
@@ -12,8 +12,8 @@
             </svg>
             <small>
                 <time-ago>
-                    <time datetime='{{.CreatedAt.Format "2006-01-02T15:04:05Z07:00"}}'>
-                        {{- .CreatedAt.Format "02 Jan 06 15:04 MST" -}}
+                    <time datetime='{{.Comment.CreatedAt.Format "2006-01-02T15:04:05Z07:00"}}'>
+                        {{- .Comment.CreatedAt.Format "02 Jan 06 15:04 MST" -}}
                     </time>
                 </time-ago>
             </small>
@@ -21,7 +21,7 @@
     </div>
 
     {{/* linkify transforms urls into anchor tags */}}
-    <p style="white-space: pre-line; margin-bottom: 0;">{{linkify .Content}}</p>
+    <p style="white-space: pre-line; margin-bottom: 0;">{{linkify .Comment.Content}}</p>
 </article>
 
 {{define "head"}}

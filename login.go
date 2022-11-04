@@ -51,13 +51,13 @@ func (svc *Service) Login(ctx context.Context, in LoginInput) (UserIdentity, err
 	}
 
 	// TODO: run inside a transaction.
-	exists, err := svc.Queries.UserExists(ctx, UserExistsParams{Email: in.Email})
+	exists, err := svc.sqlSelectUserExists(ctx, sqlSelectUserExists{Email: in.Email})
 	if err != nil {
 		return out, err
 	}
 
 	if exists {
-		row, err := svc.Queries.User(ctx, UserParams{Email: in.Email})
+		row, err := svc.sqlSelectUser(ctx, sqlSelectUser{Email: in.Email})
 		if err != nil {
 			return out, err
 		}
@@ -73,7 +73,7 @@ func (svc *Service) Login(ctx context.Context, in LoginInput) (UserIdentity, err
 		return out, ErrUserNotFound
 	}
 
-	exists, err = svc.Queries.UserExists(ctx, UserExistsParams{Username: *in.Username})
+	exists, err = svc.sqlSelectUserExists(ctx, sqlSelectUserExists{Username: *in.Username})
 	if err != nil {
 		return out, err
 	}
@@ -83,7 +83,7 @@ func (svc *Service) Login(ctx context.Context, in LoginInput) (UserIdentity, err
 	}
 
 	userID := genID()
-	_, err = svc.Queries.CreateUser(ctx, CreateUserParams{
+	_, err = svc.sqlInsertUser(ctx, sqlInsertUser{
 		UserID:   userID,
 		Email:    in.Email,
 		Username: *in.Username,

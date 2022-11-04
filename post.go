@@ -18,6 +18,23 @@ const (
 
 const maxPostContentLength = 1000
 
+// type TimelineItem struct {
+// 	ID     string
+// 	UserID string
+// 	PostID string
+// 	Post   Post
+// }
+
+type Post struct {
+	ID            string
+	UserID        string
+	Content       string
+	CommentsCount int32
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+	User          UserPreview
+}
+
 type CreatePostInput struct {
 	Content string
 }
@@ -65,7 +82,7 @@ func (svc *Service) CreatePost(ctx context.Context, in CreatePostInput) (CreateP
 	}
 
 	postID := genID()
-	createdAt, err := svc.Queries.CreatePost(ctx, CreatePostParams{
+	createdAt, err := svc.sqlInsertPost(ctx, sqlInsertPost{
 		PostID:  postID,
 		UserID:  usr.ID,
 		Content: in.Content,
@@ -76,7 +93,7 @@ func (svc *Service) CreatePost(ctx context.Context, in CreatePostInput) (CreateP
 
 	// Side-effect: increase user's posts count on inserts
 	// so we don't have to compute it on each read.
-	_, err = svc.Queries.UpdateUser(ctx, UpdateUserParams{
+	_, err = svc.sqlUpdateUser(ctx, sqlUpdateUser{
 		UserID:               usr.ID,
 		IncreasePostsCountBy: 1,
 	})
@@ -84,8 +101,8 @@ func (svc *Service) CreatePost(ctx context.Context, in CreatePostInput) (CreateP
 		return out, err
 	}
 
-	// Side-effect: add the post to the user's home timeline.
-	_, err = svc.Queries.CreateHomeTimelineItem(ctx, CreateHomeTimelineItemParams{
+	// Side-effect: add the post to the user's timeline.
+	_, err = svc.sqlInsertTimelineItem(ctx, sqlInsertTimelineItem{
 		UserID: usr.ID,
 		PostID: postID,
 	})
@@ -93,15 +110,15 @@ func (svc *Service) CreatePost(ctx context.Context, in CreatePostInput) (CreateP
 		return out, err
 	}
 
-	// Side-effect: add the post to all followers' home timelines.
+	// Side-effect: add the post to all followers' timelines.
 	go func() {
 		ctx := svc.BaseContext()
-		_, err := svc.Queries.FanoutHomeTimeline(ctx, FanoutHomeTimelineParams{
+		_, err := svc.sqlInsertTimeline(ctx, sqlInsertTimeline{
 			FollowedID: usr.ID,
 			PostsID:    postID,
 		})
 		if err != nil {
-			svc.Logger.Printf("failed to fanout home timeline: %v\n", err)
+			svc.Logger.Printf("failed to fanout timeline: %v\n", err)
 		}
 	}()
 
@@ -111,36 +128,36 @@ func (svc *Service) CreatePost(ctx context.Context, in CreatePostInput) (CreateP
 	return out, nil
 }
 
-// HomeTimeline is personalized list of posts to each user.
-// When a post is created, a reference to the post is added to the user's home timeline
-// and is also fanned-out to all followers' home timelines.
+// Timeline is personalized list of posts to each user.
+// When a post is created, a reference to the post is added to the user's timeline
+// and is also fanned-out to all followers' timelines.
 // This is so reads are faster since we don't have query the posts
 // doing a JOIN with the user_follows table.
-// We can query the home_timeline table of each user directly.
-func (svc *Service) HomeTimeline(ctx context.Context) ([]HomeTimelineRow, error) {
+// We can query the timeline table of each user directly.
+func (svc *Service) Timeline(ctx context.Context) ([]Post, error) {
 	usr, ok := UserFromContext(ctx)
 	if !ok {
 		return nil, errs.Unauthenticated
 	}
 
-	return svc.Queries.HomeTimeline(ctx, usr.ID)
+	return svc.sqlSelectTimeline(ctx, usr.ID)
 }
 
-func (svc *Service) Posts(ctx context.Context, in PostsInput) ([]PostsRow, error) {
+func (svc *Service) Posts(ctx context.Context, in PostsInput) ([]Post, error) {
 	if err := in.Validate(); err != nil {
 		return nil, err
 	}
-	return svc.Queries.Posts(ctx, in.Username)
+	return svc.sqlSelectPosts(ctx, in.Username)
 }
 
-func (svc *Service) Post(ctx context.Context, postID string) (PostRow, error) {
-	var out PostRow
+func (svc *Service) Post(ctx context.Context, postID string) (Post, error) {
+	var out Post
 
 	if !isID(postID) {
 		return out, ErrInvalidPostID
 	}
 
-	out, err := svc.Queries.Post(ctx, postID)
+	out, err := svc.sqlSelectPost(ctx, postID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return out, ErrPostNotFound
 	}

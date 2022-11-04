@@ -14,6 +14,16 @@ const (
 
 const maxCommentContentLength = 1000
 
+type Comment struct {
+	ID        string
+	UserID    string
+	PostID    string
+	Content   string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	User      UserPreview
+}
+
 type CreateCommentInput struct {
 	PostID  string
 	Content string
@@ -54,7 +64,7 @@ func (svc *Service) CreateComment(ctx context.Context, in CreateCommentInput) (C
 	// TODO: run inside a transaction.
 
 	commentID := genID()
-	createdAt, err := svc.Queries.CreateComment(ctx, CreateCommentParams{
+	createdAt, err := svc.sqlInsertComment(ctx, sqlInsertComment{
 		CommentID: commentID,
 		PostID:    in.PostID,
 		UserID:    usr.ID,
@@ -70,7 +80,7 @@ func (svc *Service) CreateComment(ctx context.Context, in CreateCommentInput) (C
 
 	// Side-effect: increase post's comments count on inserts
 	// so we don't have to compute it on each read.
-	_, err = svc.Queries.UpdatePost(ctx, UpdatePostParams{
+	_, err = svc.sqlUpdatePost(ctx, sqlUpdatePost{
 		PostID:                  in.PostID,
 		IncreaseCommentsCountBy: 1,
 	})
@@ -84,9 +94,9 @@ func (svc *Service) CreateComment(ctx context.Context, in CreateCommentInput) (C
 	return out, nil
 }
 
-func (svc *Service) Comments(ctx context.Context, postID string) ([]CommentsRow, error) {
+func (svc *Service) Comments(ctx context.Context, postID string) ([]Comment, error) {
 	if !isID(postID) {
 		return nil, ErrInvalidPostID
 	}
-	return svc.Queries.Comments(ctx, postID)
+	return svc.sqlSelectComments(ctx, postID)
 }

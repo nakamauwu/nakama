@@ -2,6 +2,7 @@ package nakama
 
 import (
 	"context"
+	"time"
 
 	"github.com/nicolasparada/go-errs"
 )
@@ -9,6 +10,13 @@ import (
 const (
 	ErrCannotFollowSelf = errs.ConflictError("cannot follow self")
 )
+
+type UserFollow struct {
+	FollowerID string
+	FollowedID string
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+}
 
 func (svc *Service) FollowUser(ctx context.Context, followedUserID string) error {
 	if !isID(followedUserID) {
@@ -26,7 +34,7 @@ func (svc *Service) FollowUser(ctx context.Context, followedUserID string) error
 
 	// TODO: run inside a transaction.
 
-	_, err := svc.Queries.CreateUserFollow(ctx, CreateUserFollowParams{
+	_, err := svc.sqlInsertUserFollow(ctx, sqlInsertUserFollow{
 		FollowerID: usr.ID,
 		FollowedID: followedUserID,
 	})
@@ -49,7 +57,7 @@ func (svc *Service) FollowUser(ctx context.Context, followedUserID string) error
 	// Side-effect: increase user's follow counts on inserts
 	// so we don't have to compute them on each read.
 
-	_, err = svc.Queries.UpdateUser(ctx, UpdateUserParams{
+	_, err = svc.sqlUpdateUser(ctx, sqlUpdateUser{
 		UserID:                   usr.ID,
 		IncreaseFollowingCountBy: 1,
 	})
@@ -57,7 +65,7 @@ func (svc *Service) FollowUser(ctx context.Context, followedUserID string) error
 		return err
 	}
 
-	_, err = svc.Queries.UpdateUser(ctx, UpdateUserParams{
+	_, err = svc.sqlUpdateUser(ctx, sqlUpdateUser{
 		UserID:                   followedUserID,
 		IncreaseFollowersCountBy: 1,
 	})
@@ -80,7 +88,7 @@ func (svc *Service) UnfollowUser(ctx context.Context, followedUserID string) err
 
 	// TODO: run inside a transaction.
 
-	exists, err := svc.Queries.UserExists(ctx, UserExistsParams{UserID: followedUserID})
+	exists, err := svc.sqlSelectUserExists(ctx, sqlSelectUserExists{UserID: followedUserID})
 	if err != nil {
 		return err
 	}
@@ -89,7 +97,7 @@ func (svc *Service) UnfollowUser(ctx context.Context, followedUserID string) err
 		return ErrUserNotFound
 	}
 
-	exists, err = svc.Queries.UserFollowExists(ctx, UserFollowExistsParams{
+	exists, err = svc.sqlSelectUserFollowExists(ctx, sqlSelectUserFollowExists{
 		FollowerID: usr.ID,
 		FollowedID: followedUserID,
 	})
@@ -102,7 +110,7 @@ func (svc *Service) UnfollowUser(ctx context.Context, followedUserID string) err
 		return nil
 	}
 
-	_, err = svc.Queries.DeleteUserFollow(ctx, DeleteUserFollowParams{
+	_, err = svc.sqlDeleteUserFollow(ctx, sqlDeleteUserFollow{
 		FollowerID: usr.ID,
 		FollowedID: followedUserID,
 	})
@@ -113,7 +121,7 @@ func (svc *Service) UnfollowUser(ctx context.Context, followedUserID string) err
 	// Side-effect: increase user's follow counts on inserts
 	// so we don't have to compute them on each read.
 
-	_, err = svc.Queries.UpdateUser(ctx, UpdateUserParams{
+	_, err = svc.sqlUpdateUser(ctx, sqlUpdateUser{
 		UserID:                   usr.ID,
 		IncreaseFollowingCountBy: -1,
 	})
@@ -121,7 +129,7 @@ func (svc *Service) UnfollowUser(ctx context.Context, followedUserID string) err
 		return err
 	}
 
-	_, err = svc.Queries.UpdateUser(ctx, UpdateUserParams{
+	_, err = svc.sqlUpdateUser(ctx, sqlUpdateUser{
 		UserID:                   followedUserID,
 		IncreaseFollowersCountBy: -1,
 	})

@@ -1,8 +1,8 @@
 <article class="card">
     <div class="stack">
-        <a href="/@{{.Post.Username}}" style="text-decoration: none;" class="stack">
-            <picture class="initials" data-initials='{{printf "%.1s" .Post.Username }}'></picture>
-            <h2 style="margin: 0; margin-left: .5rem">{{.Post.Username}}</h2>
+        <a href="/@{{.Post.User.Username}}" style="text-decoration: none;" class="stack">
+            <picture class="initials" data-initials='{{printf "%.1s" .Post.User.Username }}'></picture>
+            <h2 style="margin: 0; margin-left: .5rem">{{.Post.User.Username}}</h2>
         </a>
 
         <a href="/p/{{.Post.ID}}" style="text-decoration: none; margin-left: auto;">

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
+	"github.com/nakamauwu/nakama/db"
 	"github.com/ory/dockertest/v3"
 )
 
@@ -42,19 +43,19 @@ func setupT(m *testing.M) (int, error) {
 
 	defer cockroach.Close()
 
-	db, err := setupDB(cockroach, pool.Retry)
+	dbPool, err := setupDB(cockroach, pool.Retry)
 	if err != nil {
 		return 0, err
 	}
 
-	defer db.Close()
+	defer dbPool.Close()
 
-	if err := MigrateSQL(context.Background(), db); err != nil {
+	if err := MigrateSQL(context.Background(), dbPool); err != nil {
 		return 0, err
 	}
 
 	testService = &Service{
-		Queries:     New(db),
+		DB:          db.New(dbPool),
 		Logger:      log.Default(),
 		BaseContext: context.Background,
 	}
