@@ -5,6 +5,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/nakamauwu/nakama/db"
 	"github.com/nicolasparada/go-errs"
 )
 
@@ -69,7 +70,7 @@ func (svc *Service) CreateComment(ctx context.Context, in CreateCommentInput) (C
 			UserID:    usr.ID,
 			Content:   in.Content,
 		})
-		if isPqForeignKeyViolationError(err, "post_id") {
+		if db.IsPqForeignKeyViolationError(err, "post_id") {
 			return ErrPostNotFound
 		}
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/nakamauwu/nakama/db"
 	"github.com/nicolasparada/go-errs"
 )
 
@@ -50,7 +51,7 @@ func (svc *Service) FollowUser(ctx context.Context, followedUserID string) error
 			FollowerID: usr.ID,
 			FollowedID: followedUserID,
 		})
-		if isPqForeignKeyViolationError(err, "followed_id") {
+		if db.IsPqForeignKeyViolationError(err, "followed_id") {
 			return ErrUserNotFound
 		}
 
