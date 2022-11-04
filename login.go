@@ -24,11 +24,13 @@ type LoginInput struct {
 	Username *string
 }
 
-func (in *LoginInput) Prepare() {
+func (in *LoginInput) Validate() error {
+	in.Email = strings.TrimSpace(in.Email)
 	in.Email = strings.ToLower(in.Email)
-}
+	if in.Username != nil {
+		*in.Username = strings.TrimSpace(*in.Username)
+	}
 
-func (in LoginInput) Validate() error {
 	if !isEmail(in.Email) {
 		return ErrInvalidEmail
 	}
@@ -45,7 +47,6 @@ func (in LoginInput) Validate() error {
 func (svc *Service) Login(ctx context.Context, in LoginInput) (UserIdentity, error) {
 	var out UserIdentity
 
-	in.Prepare()
 	if err := in.Validate(); err != nil {
 		return out, err
 	}

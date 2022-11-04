@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 	"time"
 	"unicode/utf8"
 
@@ -39,14 +40,13 @@ type CreatePostInput struct {
 	Content string
 }
 
-func (in *CreatePostInput) Prepare() {
+func (in *CreatePostInput) Validate() error {
 	in.Content = smartTrim(in.Content)
-}
 
-func (in CreatePostInput) Validate() error {
 	if in.Content == "" || !utf8.ValidString(in.Content) || utf8.RuneCountInString(in.Content) > maxPostContentLength {
 		return ErrInvalidPostContent
 	}
+
 	return nil
 }
 
@@ -61,17 +61,19 @@ type PostsInput struct {
 	Username string
 }
 
-func (in PostsInput) Validate() error {
+func (in *PostsInput) Validate() error {
+	in.Username = strings.TrimSpace(in.Username)
+
 	if in.Username != "" && !isUsername(in.Username) {
 		return ErrInvalidUsername
 	}
+
 	return nil
 }
 
 func (svc *Service) CreatePost(ctx context.Context, in CreatePostInput) (CreatePostOutput, error) {
 	var out CreatePostOutput
 
-	in.Prepare()
 	if err := in.Validate(); err != nil {
 		return out, err
 	}

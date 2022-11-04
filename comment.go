@@ -2,6 +2,7 @@ package nakama
 
 import (
 	"context"
+	"strings"
 	"time"
 	"unicode/utf8"
 
@@ -30,17 +31,18 @@ type CreateCommentInput struct {
 	Content string
 }
 
-func (in *CreateCommentInput) Prepare() {
+func (in *CreateCommentInput) Validate() error {
+	in.PostID = strings.TrimSpace(in.PostID)
 	in.Content = smartTrim(in.Content)
-}
 
-func (in CreateCommentInput) Validate() error {
 	if !isID(in.PostID) {
 		return ErrInvalidPostID
 	}
+
 	if in.Content == "" || !utf8.ValidString(in.Content) || utf8.RuneCountInString(in.Content) > maxCommentContentLength {
 		return ErrInvalidCommentContent
 	}
+
 	return nil
 }
 
@@ -52,7 +54,6 @@ type CreateCommentOutput struct {
 func (svc *Service) CreateComment(ctx context.Context, in CreateCommentInput) (CreateCommentOutput, error) {
 	var out CreateCommentOutput
 
-	in.Prepare()
 	if err := in.Validate(); err != nil {
 		return out, err
 	}
