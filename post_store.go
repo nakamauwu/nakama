@@ -29,6 +29,11 @@ type sqlUpdatePost struct {
 	PostID                  string
 }
 
+type sqlInsertedTimelineItem struct {
+	ID     string
+	UserID string
+}
+
 func (svc *Service) sqlInsertTimelineItem(ctx context.Context, in sqlInsertTimelineItem) (string, error) {
 	const query = `
 		INSERT INTO timeline (user_id, post_id)
@@ -59,14 +64,14 @@ func (svc *Service) sqlInsertPost(ctx context.Context, in sqlInsertPost) (time.T
 	return createdAt, nil
 }
 
-func (svc *Service) sqlInsertTimeline(ctx context.Context, in sqlInsertTimeline) ([]string, error) {
+func (svc *Service) sqlInsertTimeline(ctx context.Context, in sqlInsertTimeline) ([]sqlInsertedTimelineItem, error) {
 	const query = `
 		INSERT INTO timeline (user_id, post_id)
 		SELECT user_follows.follower_id, $1
 		FROM user_follows
 		WHERE user_follows.followed_id = $2
 		ON CONFLICT (user_id, post_id) DO NOTHING
-		RETURNING id
+		RETURNING id, user_id
 	`
 
 	rows, err := svc.DB.QueryContext(ctx, query, in.PostsID, in.FollowedID)
@@ -74,9 +79,9 @@ func (svc *Service) sqlInsertTimeline(ctx context.Context, in sqlInsertTimeline)
 		return nil, fmt.Errorf("sql fanout timeline: %w", err)
 	}
 
-	return db.Collect(rows, func(scanner db.Scanner) (string, error) {
-		var id string
-		return id, scanner.Scan(&id)
+	return db.Collect(rows, func(scanner db.Scanner) (sqlInsertedTimelineItem, error) {
+		var out sqlInsertedTimelineItem
+		return out, scanner.Scan(&out.ID, &out.UserID)
 	})
 }
 
