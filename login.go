@@ -50,51 +50,51 @@ func (svc *Service) Login(ctx context.Context, in LoginInput) (UserIdentity, err
 		return out, err
 	}
 
-	// TODO: run inside a transaction.
-	exists, err := svc.sqlSelectUserExists(ctx, sqlSelectUserExists{Email: in.Email})
-	if err != nil {
-		return out, err
-	}
-
-	if exists {
-		row, err := svc.sqlSelectUser(ctx, sqlSelectUser{Email: in.Email})
+	return out, svc.DB.RunTx(ctx, func(ctx context.Context) error {
+		exists, err := svc.sqlSelectUserExists(ctx, sqlSelectUserExists{Email: in.Email})
 		if err != nil {
-			return out, err
+			return err
 		}
 
-		return UserIdentity{
-			ID:       row.ID,
-			Email:    row.Email,
-			Username: row.Username,
-		}, nil
-	}
+		if exists {
+			row, err := svc.sqlSelectUser(ctx, sqlSelectUser{Email: in.Email})
+			if err != nil {
+				return err
+			}
 
-	if in.Username == nil {
-		return out, ErrUserNotFound
-	}
+			out.ID = row.ID
+			out.Email = row.Email
+			out.Username = row.Username
+			return nil
+		}
 
-	exists, err = svc.sqlSelectUserExists(ctx, sqlSelectUserExists{Username: *in.Username})
-	if err != nil {
-		return out, err
-	}
+		if in.Username == nil {
+			return ErrUserNotFound
+		}
 
-	if exists {
-		return out, ErrUsernameTaken
-	}
+		exists, err = svc.sqlSelectUserExists(ctx, sqlSelectUserExists{Username: *in.Username})
+		if err != nil {
+			return err
+		}
 
-	userID := genID()
-	_, err = svc.sqlInsertUser(ctx, sqlInsertUser{
-		UserID:   userID,
-		Email:    in.Email,
-		Username: *in.Username,
+		if exists {
+			return ErrUsernameTaken
+		}
+
+		userID := genID()
+		_, err = svc.sqlInsertUser(ctx, sqlInsertUser{
+			UserID:   userID,
+			Email:    in.Email,
+			Username: *in.Username,
+		})
+		if err != nil {
+			return err
+		}
+
+		out.ID = userID
+		out.Email = in.Email
+		out.Username = *in.Username
+
+		return nil
 	})
-	if err != nil {
-		return out, err
-	}
-
-	return UserIdentity{
-		ID:       userID,
-		Email:    in.Email,
-		Username: *in.Username,
-	}, nil
 }

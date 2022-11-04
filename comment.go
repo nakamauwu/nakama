@@ -61,37 +61,37 @@ func (svc *Service) CreateComment(ctx context.Context, in CreateCommentInput) (C
 		return out, errs.Unauthenticated
 	}
 
-	// TODO: run inside a transaction.
+	return out, svc.DB.RunTx(ctx, func(ctx context.Context) error {
+		commentID := genID()
+		createdAt, err := svc.sqlInsertComment(ctx, sqlInsertComment{
+			CommentID: commentID,
+			PostID:    in.PostID,
+			UserID:    usr.ID,
+			Content:   in.Content,
+		})
+		if isPqForeignKeyViolationError(err, "post_id") {
+			return ErrPostNotFound
+		}
 
-	commentID := genID()
-	createdAt, err := svc.sqlInsertComment(ctx, sqlInsertComment{
-		CommentID: commentID,
-		PostID:    in.PostID,
-		UserID:    usr.ID,
-		Content:   in.Content,
+		if err != nil {
+			return err
+		}
+
+		// Side-effect: increase post's comments count on inserts
+		// so we don't have to compute it on each read.
+		_, err = svc.sqlUpdatePost(ctx, sqlUpdatePost{
+			PostID:                  in.PostID,
+			IncreaseCommentsCountBy: 1,
+		})
+		if err != nil {
+			return err
+		}
+
+		out.ID = commentID
+		out.CreatedAt = createdAt
+
+		return nil
 	})
-	if isPqForeignKeyViolationError(err, "post_id") {
-		return out, ErrPostNotFound
-	}
-
-	if err != nil {
-		return out, err
-	}
-
-	// Side-effect: increase post's comments count on inserts
-	// so we don't have to compute it on each read.
-	_, err = svc.sqlUpdatePost(ctx, sqlUpdatePost{
-		PostID:                  in.PostID,
-		IncreaseCommentsCountBy: 1,
-	})
-	if err != nil {
-		return out, err
-	}
-
-	out.ID = commentID
-	out.CreatedAt = createdAt
-
-	return out, nil
 }
 
 func (svc *Service) Comments(ctx context.Context, postID string) ([]Comment, error) {

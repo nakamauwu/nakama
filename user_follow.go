@@ -32,44 +32,49 @@ func (svc *Service) FollowUser(ctx context.Context, followedUserID string) error
 		return ErrCannotFollowSelf
 	}
 
-	// TODO: run inside a transaction.
+	return svc.DB.RunTx(ctx, func(ctx context.Context) error {
+		exists, err := svc.sqlSelectUserFollowExists(ctx, sqlSelectUserFollowExists{
+			FollowerID: usr.ID,
+			FollowedID: followedUserID,
+		})
+		if err != nil {
+			return err
+		}
 
-	_, err := svc.sqlInsertUserFollow(ctx, sqlInsertUserFollow{
-		FollowerID: usr.ID,
-		FollowedID: followedUserID,
-	})
-	if isPqUniqueViolationError(err) {
-		// Early return if following already.
-		// Note: Careful! As this query contains an error at the database layer.
-		// Running this inside a transaction
-		// will cause the entire transaction to fail.
-		return nil
-	}
+		if exists {
+			// Early return if following already.
+			return nil
+		}
 
-	if isPqForeignKeyViolationError(err, "followed_id") {
-		return ErrUserNotFound
-	}
+		_, err = svc.sqlInsertUserFollow(ctx, sqlInsertUserFollow{
+			FollowerID: usr.ID,
+			FollowedID: followedUserID,
+		})
+		if isPqForeignKeyViolationError(err, "followed_id") {
+			return ErrUserNotFound
+		}
 
-	if err != nil {
+		if err != nil {
+			return err
+		}
+
+		// Side-effect: increase user's follow counts on inserts
+		// so we don't have to compute them on each read.
+
+		_, err = svc.sqlUpdateUser(ctx, sqlUpdateUser{
+			UserID:                   usr.ID,
+			IncreaseFollowingCountBy: 1,
+		})
+		if err != nil {
+			return err
+		}
+
+		_, err = svc.sqlUpdateUser(ctx, sqlUpdateUser{
+			UserID:                   followedUserID,
+			IncreaseFollowersCountBy: 1,
+		})
 		return err
-	}
-
-	// Side-effect: increase user's follow counts on inserts
-	// so we don't have to compute them on each read.
-
-	_, err = svc.sqlUpdateUser(ctx, sqlUpdateUser{
-		UserID:                   usr.ID,
-		IncreaseFollowingCountBy: 1,
 	})
-	if err != nil {
-		return err
-	}
-
-	_, err = svc.sqlUpdateUser(ctx, sqlUpdateUser{
-		UserID:                   followedUserID,
-		IncreaseFollowersCountBy: 1,
-	})
-	return err
 }
 
 func (svc *Service) UnfollowUser(ctx context.Context, followedUserID string) error {
@@ -86,52 +91,52 @@ func (svc *Service) UnfollowUser(ctx context.Context, followedUserID string) err
 		return ErrCannotFollowSelf
 	}
 
-	// TODO: run inside a transaction.
+	return svc.DB.RunTx(ctx, func(ctx context.Context) error {
+		exists, err := svc.sqlSelectUserExists(ctx, sqlSelectUserExists{UserID: followedUserID})
+		if err != nil {
+			return err
+		}
 
-	exists, err := svc.sqlSelectUserExists(ctx, sqlSelectUserExists{UserID: followedUserID})
-	if err != nil {
+		if !exists {
+			return ErrUserNotFound
+		}
+
+		exists, err = svc.sqlSelectUserFollowExists(ctx, sqlSelectUserFollowExists{
+			FollowerID: usr.ID,
+			FollowedID: followedUserID,
+		})
+		if err != nil {
+			return err
+		}
+
+		// Early return if not following already.
+		if !exists {
+			return nil
+		}
+
+		_, err = svc.sqlDeleteUserFollow(ctx, sqlDeleteUserFollow{
+			FollowerID: usr.ID,
+			FollowedID: followedUserID,
+		})
+		if err != nil {
+			return err
+		}
+
+		// Side-effect: increase user's follow counts on inserts
+		// so we don't have to compute them on each read.
+
+		_, err = svc.sqlUpdateUser(ctx, sqlUpdateUser{
+			UserID:                   usr.ID,
+			IncreaseFollowingCountBy: -1,
+		})
+		if err != nil {
+			return err
+		}
+
+		_, err = svc.sqlUpdateUser(ctx, sqlUpdateUser{
+			UserID:                   followedUserID,
+			IncreaseFollowersCountBy: -1,
+		})
 		return err
-	}
-
-	if !exists {
-		return ErrUserNotFound
-	}
-
-	exists, err = svc.sqlSelectUserFollowExists(ctx, sqlSelectUserFollowExists{
-		FollowerID: usr.ID,
-		FollowedID: followedUserID,
 	})
-	if err != nil {
-		return err
-	}
-
-	// Early return if not following already.
-	if !exists {
-		return nil
-	}
-
-	_, err = svc.sqlDeleteUserFollow(ctx, sqlDeleteUserFollow{
-		FollowerID: usr.ID,
-		FollowedID: followedUserID,
-	})
-	if err != nil {
-		return err
-	}
-
-	// Side-effect: increase user's follow counts on inserts
-	// so we don't have to compute them on each read.
-
-	_, err = svc.sqlUpdateUser(ctx, sqlUpdateUser{
-		UserID:                   usr.ID,
-		IncreaseFollowingCountBy: -1,
-	})
-	if err != nil {
-		return err
-	}
-
-	_, err = svc.sqlUpdateUser(ctx, sqlUpdateUser{
-		UserID:                   followedUserID,
-		IncreaseFollowersCountBy: -1,
-	})
-	return err
 }
