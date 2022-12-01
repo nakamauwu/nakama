@@ -1,0 +1,6 @@
+{{if .User.AvatarPath}}
+<img class="avatar" src="{{.User.AvatarPath}}" width="{{.User.AvatarWidth}}" height="{{.User.AvatarHeight}}"
+    alt="Avatar">
+{{else}}
+<picture class="initials" data-initials='{{printf "%.1s" .User.Username }}'></picture>
+{{end}}

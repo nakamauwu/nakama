@@ -98,7 +98,3 @@ func randString(n int) string {
 	}
 	return string(b)
 }
-
-func ptr[T any](v T) *T {
-	return &v
-}

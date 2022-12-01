@@ -63,6 +63,18 @@ func (h *Handler) init() {
 		http.MethodDelete: h.unfollowUser,
 	})
 
+	r.Handle("/settings", mux.MethodHandler{
+		http.MethodGet: h.showSettings,
+	})
+
+	r.Handle("/avatar", mux.MethodHandler{
+		http.MethodPut: h.updateAvatar,
+	})
+
+	r.Handle("/user", mux.MethodHandler{
+		http.MethodPatch: h.updateUser,
+	})
+
 	r.Handle("/*", mux.MethodHandler{
 		http.MethodGet: h.staticHandler(),
 	})

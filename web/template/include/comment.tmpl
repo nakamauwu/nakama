@@ -1,7 +1,7 @@
 <article class="card">
     <div class="stack">
         <a href="/@{{.Comment.User.Username}}" style="text-decoration: none; color: inherit;" class="stack">
-            <picture class="initials smaller" data-initials='{{printf "%.1s" .Comment.User.Username }}'></picture>
+            {{template "avatar.tmpl" (dict "User" .Comment.User)}}
             <b>{{.Comment.User.Username}}</b>
         </a>
         <div class="stack no-gap" style="margin-left: auto">

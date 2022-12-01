@@ -10,7 +10,7 @@
         </a>
         {{if .Session.IsLoggedIn}}
         <a href="/@{{.Session.User.Username}}" class="stack" style="color: inherit">
-            <picture class="initials smaller" data-initials='{{printf "%.1s" .Session.User.Username }}'></picture>
+            {{template "avatar.tmpl" (dict "User" .Session.User)}}
             <span>{{.Session.User.Username}}</span>
         </a>
         <form action="/logout" method="POST" style="display: contents;">

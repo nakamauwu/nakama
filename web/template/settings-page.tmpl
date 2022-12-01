@@ -1,0 +1,82 @@
+{{template "layout.tmpl" .}}
+
+{{define "content"}}
+<main>
+    <h1>Settings</h1>
+
+    <div>
+        <form action="/user" method="POST">
+            <input type="hidden" name="_method" value="PATCH">
+
+            <label id="username_label" for="username_input">Username:</label>
+
+            <div class="stack">
+                <input id="username_input" type="text" name="username"
+                    value='{{if .UpdateUserForm.Has "username"}}{{.UpdateUserForm.Get "username"}}{{else}}{{.User.Username}}{{end}}'
+                    aria-labelledby="username_label username_help" placeholder="Username" autocomplete="off" required>
+                <button style="margin-left: auto">Change username</button>
+            </div>
+
+            <small id="username_help">
+                Allowed alphanumeric characters and dashes.
+                Max 18 characters.
+                Must start with a letter.
+            </small>
+
+            {{if .UpdateUserErr}}
+            <p role="alert">Could not update user: <code>{{.UpdateUserErr}}</code></p>
+            {{end}}
+        </form>
+    </div>
+
+    <br>
+
+    <div>
+        <form action="/avatar" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="_method" value="PUT">
+
+            <label id="avatar_label" for="avatar_input">Avatar:</label>
+
+            <div class="stack">
+                <input id="avatar_input" type="file" name="avatar" aria-labelledby="avatar_label avatar_help" required>
+                <button style="margin-left: auto">Upload avatar</button>
+            </div>
+
+            <small id="avatar_help">Max size: 5MB.</small>
+
+            {{if .UpdateAvatarErr}}
+            <p role="alert">Could not update avatar: <code>{{.UpdateAvatarErr}}</code></p>
+            {{end}}
+        </form>
+    </div>
+</main>
+
+<script>
+    /** @type {HTMLInputElement} */
+    const avatarInput = document.getElementById("avatar_input")
+
+    avatarInput.addEventListener("change", () => {
+        if (avatarInput.files.length === 0) {
+            const avatarPreview = document.getElementById("avatar_preview")
+            if (avatarPreview !== null) {
+                avatarPreview.remove()
+            }
+            return
+        }
+
+        const avatar = avatarInput.files[0]
+        const src = window.URL.createObjectURL(avatar)
+
+        const avatarPreview = document.createElement("img")
+
+        avatarPreview.addEventListener("load", () => {
+            window.URL.revokeObjectURL(avatarPreview.src)
+        }, { once: true })
+
+        avatarPreview.id = "avatar_preview"
+        avatarPreview.src = src
+
+        avatarInput.parentElement.parentElement.insertAdjacentElement("afterend", avatarPreview)
+    })
+</script>
+{{end}}

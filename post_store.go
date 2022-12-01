@@ -87,7 +87,17 @@ func (svc *Service) sqlInsertTimeline(ctx context.Context, in sqlInsertTimeline)
 
 func (svc *Service) sqlSelectTimeline(ctx context.Context, userID string) ([]Post, error) {
 	const query = `
-		SELECT posts.id, posts.user_id, posts.content, posts.comments_count, posts.created_at, posts.updated_at, users.username
+		SELECT
+			  posts.id
+			, posts.user_id
+			, posts.content
+			, posts.comments_count
+			, posts.created_at
+			, posts.updated_at
+			, users.username
+			, users.avatar_path
+			, users.avatar_width
+			, users.avatar_height
 		FROM timeline
 		INNER JOIN posts ON timeline.post_id = posts.id
 		INNER JOIN users ON posts.user_id = users.id
@@ -109,13 +119,26 @@ func (svc *Service) sqlSelectTimeline(ctx context.Context, userID string) ([]Pos
 			&out.CreatedAt,
 			&out.UpdatedAt,
 			&out.User.Username,
+			svc.sqlScanAvatar(&out.User.AvatarPath),
+			&out.User.AvatarWidth,
+			&out.User.AvatarHeight,
 		)
 	})
 }
 
 func (svc *Service) sqlSelectPost(ctx context.Context, postID string) (Post, error) {
 	const post = `-- name: Post :one
-		SELECT posts.id, posts.user_id, posts.content, posts.comments_count, posts.created_at, posts.updated_at, users.username
+		SELECT
+			  posts.id
+			, posts.user_id
+			, posts.content
+			, posts.comments_count
+			, posts.created_at
+			, posts.updated_at
+			, users.username
+			, users.avatar_path
+			, users.avatar_width
+			, users.avatar_height
 		FROM posts
 		INNER JOIN users ON posts.user_id = users.id
 		WHERE posts.id = $1
@@ -129,6 +152,9 @@ func (svc *Service) sqlSelectPost(ctx context.Context, postID string) (Post, err
 		&p.CreatedAt,
 		&p.UpdatedAt,
 		&p.User.Username,
+		svc.sqlScanAvatar(&p.User.AvatarPath),
+		&p.User.AvatarWidth,
+		&p.User.AvatarHeight,
 	)
 	if err != nil {
 		return Post{}, fmt.Errorf("sql select post: %w", err)
@@ -139,7 +165,17 @@ func (svc *Service) sqlSelectPost(ctx context.Context, postID string) (Post, err
 
 func (svc *Service) sqlSelectPosts(ctx context.Context, username string) ([]Post, error) {
 	const query = `
-		SELECT posts.id, posts.user_id, posts.content, posts.comments_count, posts.created_at, posts.updated_at, users.username
+		SELECT
+			  posts.id
+			, posts.user_id
+			, posts.content
+			, posts.comments_count
+			, posts.created_at
+			, posts.updated_at
+			, users.username
+			, users.avatar_path
+			, users.avatar_width
+			, users.avatar_height
 		FROM posts
 		INNER JOIN users ON posts.user_id = users.id
 		WHERE
@@ -164,6 +200,9 @@ func (svc *Service) sqlSelectPosts(ctx context.Context, username string) ([]Post
 			&out.CreatedAt,
 			&out.UpdatedAt,
 			&out.User.Username,
+			svc.sqlScanAvatar(&out.User.AvatarPath),
+			&out.User.AvatarWidth,
+			&out.User.AvatarHeight,
 		)
 	})
 }

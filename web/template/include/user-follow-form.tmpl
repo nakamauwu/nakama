@@ -6,7 +6,7 @@
     {{end}}
 
     {{if .UserFollowErr}}
-    <p>Could not follow user: <code>{{.UserFollowErr}}</code></p>
+    <p role="alert">Could not follow user: <code>{{.UserFollowErr}}</code></p>
     {{end}}
 
     <button aria-pressed="{{.User.Following}}"

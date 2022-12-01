@@ -4,7 +4,7 @@
     </textarea>
 
     {{if .CreatePostErr}}
-    <p>Could not create post: <code>{{.CreatePostErr}}</code></p>
+    <p role="alert">Could not create post: <code>{{.CreatePostErr}}</code></p>
     {{end}}
 
     <button class="stack">

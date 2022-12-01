@@ -6,16 +6,22 @@ import (
 )
 
 type UserIdentity struct {
-	ID       string
-	Email    string
-	Username string
+	ID           string
+	Email        string
+	Username     string
+	AvatarPath   *string
+	AvatarWidth  *uint
+	AvatarHeight *uint
 }
 
 func (u User) Identity() UserIdentity {
 	return UserIdentity{
-		ID:       u.ID,
-		Email:    u.Email,
-		Username: u.Username,
+		ID:           u.ID,
+		Email:        u.Email,
+		Username:     u.Username,
+		AvatarPath:   u.AvatarPath,
+		AvatarWidth:  u.AvatarWidth,
+		AvatarHeight: u.AvatarHeight,
 	}
 }
 
@@ -66,6 +72,10 @@ func (svc *Service) Login(ctx context.Context, in LoginInput) (UserIdentity, err
 			out.ID = row.ID
 			out.Email = row.Email
 			out.Username = row.Username
+			out.AvatarPath = row.AvatarPath
+			out.AvatarWidth = row.AvatarWidth
+			out.AvatarHeight = row.AvatarHeight
+
 			return nil
 		}
 

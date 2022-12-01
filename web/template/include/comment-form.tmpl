@@ -6,7 +6,7 @@
     </textarea>
 
     {{if .CreateCommentErr}}
-    <p>Could not create comment: <code>{{.CreateCommentErr}}</code></p>
+    <p role="alert">Could not create comment: <code>{{.CreateCommentErr}}</code></p>
     {{end}}
 
     <button class="stack">

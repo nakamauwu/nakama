@@ -17,7 +17,17 @@ type sqlInsertComment struct {
 
 func (svc *Service) sqlSelectComments(ctx context.Context, postID string) ([]Comment, error) {
 	const comments = `
-		SELECT comments.id, comments.user_id, comments.post_id, comments.content, comments.created_at, comments.updated_at, users.username
+		SELECT
+			  comments.id
+			, comments.user_id
+			, comments.post_id
+			, comments.content
+			, comments.created_at
+			, comments.updated_at
+			, users.username
+			, users.avatar_path
+			, users.avatar_width
+			, users.avatar_height
 		FROM comments
 		INNER JOIN users ON comments.user_id = users.id
 		WHERE comments.post_id = $1
@@ -38,6 +48,9 @@ func (svc *Service) sqlSelectComments(ctx context.Context, postID string) ([]Com
 			&out.CreatedAt,
 			&out.UpdatedAt,
 			&out.User.Username,
+			svc.sqlScanAvatar(&out.User.AvatarPath),
+			&out.User.AvatarWidth,
+			&out.User.AvatarHeight,
 		)
 	})
 }

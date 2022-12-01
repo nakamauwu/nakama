@@ -31,6 +31,15 @@ svg {
     gap: 0;
 }
 
+.avatar {
+    --size: 3rem;
+    display: block;
+    width: var(--size);
+    height: var(--size);
+    object-fit: cover;
+    border-radius: 50%;
+}
+
 .initials {
     --size: 3rem;
     display: block;
@@ -57,13 +66,8 @@ svg {
     color: var(--text-bright, black);
 }
 
-.initials.smaller {
-    --size: 2rem;
-    font-size: .75rem;
-}
-
-.initials.bigger {
-    --size: 5rem;
+.big-avatar-wrapper * {
+    --size: 7rem;
     font-size: 2.5rem;
 }
 
@@ -129,4 +133,12 @@ a.btn:active {
 
 .btn-group .btn[aria-current="page"] {
     text-decoration: underline;
+}
+
+#avatar_preview {
+    display: block;
+    width: 7rem;
+    height: 7rem;
+    object-fit: cover;
+    border-radius: 50%;
 }

@@ -8,9 +8,14 @@ Follow the development on [YouTube](https://www.youtube.com/playlist?list=PLOzDr
 
 - [Go Programming Language](https://go.dev)
 - [CockroachDB](https://cockroachlabs.com)
+- [Minio](https://min.io)
 
 ```bash
 cockroach start-single-node --insecure --listen-addr 127.0.0.1
+```
+
+```bash
+minio server ./minio-data
 ```
 
 ## Build
@@ -42,24 +47,13 @@ go test .
 
 ## Development
 
-Nakama uses [sqlc](https://sqlc.dev) to quickstart all queries to the database.
-
 When adding a new feature, you start by modifying the `schema.sql` file,
-and then writing the necessary queries in the `queries.sql` file.
+and then writing the necessary queries in a `_store.go` file.
+All methods are part of the `*Service` type and prefixed with `sql`.
 
-Then you run:
+Now create a new exported method as part of the `nakama.Service` struct.
 
-```bash
-sqlc generate
-````
-
-That will update `nakama.Queries` struct and add the new queries as a method.
-It will generate the necessary types too.
-
-Now create a new method as part of the `nakama.Service` struct.
-You should have access to the queries from within service.
-
-When creating a new method, if input data has many fields,
+When creating a new method, if the input data has many fields,
 then create a struct following the naming of `MethodInput`
 and output `MethodOutput`.
 

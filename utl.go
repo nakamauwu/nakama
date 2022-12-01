@@ -16,3 +16,7 @@ func smartTrim(s string) string {
 	}
 	return strings.Join(lines, "\n")
 }
+
+func ptr[T any](v T) *T {
+	return &v
+}

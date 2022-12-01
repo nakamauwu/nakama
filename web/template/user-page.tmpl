@@ -3,8 +3,14 @@
 {{define "content"}}
 <main>
     <div style="margin: 1rem 0" class="stack">
-        <picture class="initials bigger" data-initials='{{printf "%.1s" .User.Username }}'></picture>
+        <div class="big-avatar-wrapper">
+            {{template "avatar.tmpl" (dict "User" .Session.User)}}
+        </div>
         <h1 style="margin-top: 0">{{.User.Username}}</h1>
+
+        {{if and .Session.IsLoggedIn (eq .Session.User.ID .User.ID)}}
+        <a href="/settings" style="margin-left: auto;">Settings</a>
+        {{end}}
     </div>
 
     <dl>

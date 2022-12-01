@@ -2,6 +2,8 @@ package nakama
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 )
@@ -13,6 +15,10 @@ type sqlInsertUser struct {
 }
 
 type sqlUpdateUser struct {
+	Username                 *string
+	AvatarPath               *string
+	AvatarWidth              *uint
+	AvatarHeight             *uint
 	IncreasePostsCountBy     int
 	IncreaseFollowersCountBy int
 	IncreaseFollowingCountBy int
@@ -50,20 +56,32 @@ func (svc *Service) sqlInsertUser(ctx context.Context, in sqlInsertUser) (time.T
 func (svc *Service) sqlUpdateUser(ctx context.Context, in sqlUpdateUser) (time.Time, error) {
 	const query = `
 		UPDATE users SET
-			posts_count = posts_count + $1,
-			followers_count = followers_count + $2,
-			following_count = following_count + $3,
-			updated_at = now()
-		WHERE id = $4
+			   username = COALESCE($1, username)
+			,  avatar_path = COALESCE($2, avatar_path)
+			, avatar_width = COALESCE($3, avatar_width)
+			, avatar_height = COALESCE($4, avatar_height)
+			, posts_count = posts_count + $5
+			, followers_count = followers_count + $6
+			, following_count = following_count + $7
+			, updated_at = now()
+		WHERE id = $8
 		RETURNING updated_at
 	`
 	var updatedAt time.Time
 	err := svc.DB.QueryRowContext(ctx, query,
+		in.Username,
+		in.AvatarPath,
+		in.AvatarWidth,
+		in.AvatarHeight,
 		in.IncreasePostsCountBy,
 		in.IncreaseFollowersCountBy,
 		in.IncreaseFollowingCountBy,
 		in.UserID,
 	).Scan(&updatedAt)
+	if errors.Is(err, sql.ErrNoRows) {
+		return time.Time{}, ErrUserNotFound
+	}
+
 	if err != nil {
 		return time.Time{}, fmt.Errorf("sql update user: %w", err)
 	}
@@ -73,19 +91,29 @@ func (svc *Service) sqlUpdateUser(ctx context.Context, in sqlUpdateUser) (time.T
 
 func (svc *Service) sqlSelectUser(ctx context.Context, in sqlSelectUser) (User, error) {
 	const query = `
-		SELECT users.id, users.email, users.username, users.posts_count, users.followers_count, users.following_count, users.created_at, users.updated_at,
-		(
-			CASE
-				WHEN $1::varchar != '' THEN (
-					SELECT EXISTS (
-						SELECT 1 FROM user_follows
-						WHERE follower_id = $1::varchar
-						AND followed_id = users.id
+		SELECT users.id
+			, users.email
+			, users.username
+			, users.avatar_path
+			, users.avatar_width
+			, users.avatar_height
+			, users.posts_count
+			, users.followers_count
+			, users.following_count
+			, users.created_at
+			, users.updated_at
+			, (
+				CASE
+					WHEN $1::varchar != '' AND $1 != users.id THEN (
+						SELECT EXISTS (
+							SELECT 1 FROM user_follows
+							WHERE follower_id = $1::varchar
+							AND followed_id = users.id
+						)
 					)
-				)
-				ELSE false
-			END
-		) AS following
+					ELSE false
+				END
+			) AS following
 		FROM users
 		WHERE CASE
 			WHEN $2::varchar != '' THEN users.id = $2::varchar
@@ -104,6 +132,9 @@ func (svc *Service) sqlSelectUser(ctx context.Context, in sqlSelectUser) (User, 
 		&usr.ID,
 		&usr.Email,
 		&usr.Username,
+		svc.sqlScanAvatar(&usr.AvatarPath),
+		&usr.AvatarWidth,
+		&usr.AvatarHeight,
 		&usr.PostsCount,
 		&usr.FollowersCount,
 		&usr.FollowingCount,
@@ -111,6 +142,9 @@ func (svc *Service) sqlSelectUser(ctx context.Context, in sqlSelectUser) (User, 
 		&usr.UpdatedAt,
 		&usr.Following,
 	)
+	if errors.Is(err, sql.ErrNoRows) {
+		return usr, ErrUserNotFound
+	}
 	if err != nil {
 		return usr, fmt.Errorf("sql select user: %w", err)
 	}
@@ -136,4 +170,23 @@ func (svc *Service) sqlSelectUserExists(ctx context.Context, in sqlSelectUserExi
 	}
 
 	return exists, nil
+}
+
+func (svc Service) sqlScanAvatar(dst **string) sql.Scanner {
+	return &sqlAvatarScanner{Prefix: svc.AvatarsPrefix, Destination: dst}
+}
+
+type sqlAvatarScanner struct {
+	Prefix      string
+	Destination **string
+}
+
+func (s *sqlAvatarScanner) Scan(src any) error {
+	str, ok := src.(string)
+	if !ok {
+		return nil
+	}
+
+	*s.Destination = ptr(s.Prefix + str)
+	return nil
 }
