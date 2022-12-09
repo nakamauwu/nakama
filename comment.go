@@ -6,7 +6,6 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/nakamauwu/nakama/db"
 	"github.com/nicolasparada/go-errs"
 )
 
@@ -64,17 +63,12 @@ func (svc *Service) CreateComment(ctx context.Context, in CreateCommentInput) (C
 	}
 
 	return out, svc.DB.RunTx(ctx, func(ctx context.Context) error {
-		commentID := genID()
-		createdAt, err := svc.sqlInsertComment(ctx, sqlInsertComment{
-			CommentID: commentID,
-			PostID:    in.PostID,
-			UserID:    usr.ID,
-			Content:   in.Content,
+		var err error
+		out, err = svc.sqlInsertComment(ctx, sqlInsertComment{
+			UserID:  usr.ID,
+			PostID:  in.PostID,
+			Content: in.Content,
 		})
-		if db.IsPqForeignKeyViolationError(err, "post_id") {
-			return ErrPostNotFound
-		}
-
 		if err != nil {
 			return err
 		}
@@ -85,14 +79,7 @@ func (svc *Service) CreateComment(ctx context.Context, in CreateCommentInput) (C
 			PostID:                  in.PostID,
 			IncreaseCommentsCountBy: 1,
 		})
-		if err != nil {
-			return err
-		}
-
-		out.ID = commentID
-		out.CreatedAt = createdAt
-
-		return nil
+		return err
 	})
 }
 

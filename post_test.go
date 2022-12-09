@@ -152,19 +152,18 @@ func genPost(t *testing.T, userID string) Post {
 	t.Helper()
 
 	ctx := context.Background()
-	postID := genID()
-	createdAt, err := testService.sqlInsertPost(ctx, sqlInsertPost{
-		PostID:  postID,
+	in := sqlInsertPost{
 		UserID:  userID,
 		Content: genPostContent(),
-	})
+	}
+	inserted, err := testService.sqlInsertPost(ctx, in)
 	assert.NoError(t, err)
 	return Post{
-		ID:        postID,
-		UserID:    userID,
-		Content:   genPostContent(),
-		CreatedAt: createdAt,
-		UpdatedAt: createdAt,
+		ID:        inserted.ID,
+		UserID:    in.UserID,
+		Content:   in.Content,
+		CreatedAt: inserted.CreatedAt,
+		UpdatedAt: inserted.CreatedAt,
 	}
 }
 

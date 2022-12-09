@@ -9,7 +9,6 @@ import (
 )
 
 type sqlInsertUser struct {
-	UserID   string
 	Email    string
 	Username string
 }
@@ -38,55 +37,28 @@ type sqlSelectUserExists struct {
 	Username string
 }
 
-func (svc *Service) sqlInsertUser(ctx context.Context, in sqlInsertUser) (time.Time, error) {
+type sqlInsertedUser struct {
+	ID        string
+	CreatedAt time.Time
+}
+
+func (svc *Service) sqlInsertUser(ctx context.Context, in sqlInsertUser) (sqlInsertedUser, error) {
+	var out sqlInsertedUser
+
 	const query = `
 		INSERT INTO users (id, email, username)
 		VALUES ($1, LOWER($2), $3)
 		RETURNING created_at
 	`
-	var createdAt time.Time
-	err := svc.DB.QueryRowContext(ctx, query, in.UserID, in.Email, in.Username).Scan(&createdAt)
+	userID := genID()
+	err := svc.DB.QueryRowContext(ctx, query, userID, in.Email, in.Username).Scan(&out.CreatedAt)
 	if err != nil {
-		return time.Time{}, fmt.Errorf("sql insert user: %w", err)
+		return out, fmt.Errorf("sql insert user: %w", err)
 	}
 
-	return createdAt, nil
-}
+	out.ID = userID
 
-func (svc *Service) sqlUpdateUser(ctx context.Context, in sqlUpdateUser) (time.Time, error) {
-	const query = `
-		UPDATE users SET
-			   username = COALESCE($1, username)
-			,  avatar_path = COALESCE($2, avatar_path)
-			, avatar_width = COALESCE($3, avatar_width)
-			, avatar_height = COALESCE($4, avatar_height)
-			, posts_count = posts_count + $5
-			, followers_count = followers_count + $6
-			, following_count = following_count + $7
-			, updated_at = now()
-		WHERE id = $8
-		RETURNING updated_at
-	`
-	var updatedAt time.Time
-	err := svc.DB.QueryRowContext(ctx, query,
-		in.Username,
-		in.AvatarPath,
-		in.AvatarWidth,
-		in.AvatarHeight,
-		in.IncreasePostsCountBy,
-		in.IncreaseFollowersCountBy,
-		in.IncreaseFollowingCountBy,
-		in.UserID,
-	).Scan(&updatedAt)
-	if errors.Is(err, sql.ErrNoRows) {
-		return time.Time{}, ErrUserNotFound
-	}
-
-	if err != nil {
-		return time.Time{}, fmt.Errorf("sql update user: %w", err)
-	}
-
-	return updatedAt, nil
+	return out, nil
 }
 
 func (svc *Service) sqlSelectUser(ctx context.Context, in sqlSelectUser) (User, error) {
@@ -170,6 +142,42 @@ func (svc *Service) sqlSelectUserExists(ctx context.Context, in sqlSelectUserExi
 	}
 
 	return exists, nil
+}
+
+func (svc *Service) sqlUpdateUser(ctx context.Context, in sqlUpdateUser) (time.Time, error) {
+	const query = `
+		UPDATE users SET
+			   username = COALESCE($1, username)
+			,  avatar_path = COALESCE($2, avatar_path)
+			, avatar_width = COALESCE($3, avatar_width)
+			, avatar_height = COALESCE($4, avatar_height)
+			, posts_count = posts_count + $5
+			, followers_count = followers_count + $6
+			, following_count = following_count + $7
+			, updated_at = now()
+		WHERE id = $8
+		RETURNING updated_at
+	`
+	var updatedAt time.Time
+	err := svc.DB.QueryRowContext(ctx, query,
+		in.Username,
+		in.AvatarPath,
+		in.AvatarWidth,
+		in.AvatarHeight,
+		in.IncreasePostsCountBy,
+		in.IncreaseFollowersCountBy,
+		in.IncreaseFollowingCountBy,
+		in.UserID,
+	).Scan(&updatedAt)
+	if errors.Is(err, sql.ErrNoRows) {
+		return time.Time{}, ErrUserNotFound
+	}
+
+	if err != nil {
+		return time.Time{}, fmt.Errorf("sql update user: %w", err)
+	}
+
+	return updatedAt, nil
 }
 
 func (svc Service) sqlScanAvatar(dst **string) sql.Scanner {

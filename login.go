@@ -64,17 +64,17 @@ func (svc *Service) Login(ctx context.Context, in LoginInput) (UserIdentity, err
 		}
 
 		if exists {
-			row, err := svc.sqlSelectUser(ctx, sqlSelectUser{Email: in.Email})
+			usr, err := svc.sqlSelectUser(ctx, sqlSelectUser{Email: in.Email})
 			if err != nil {
 				return err
 			}
 
-			out.ID = row.ID
-			out.Email = row.Email
-			out.Username = row.Username
-			out.AvatarPath = row.AvatarPath
-			out.AvatarWidth = row.AvatarWidth
-			out.AvatarHeight = row.AvatarHeight
+			out.ID = usr.ID
+			out.Email = usr.Email
+			out.Username = usr.Username
+			out.AvatarPath = usr.AvatarPath
+			out.AvatarWidth = usr.AvatarWidth
+			out.AvatarHeight = usr.AvatarHeight
 
 			return nil
 		}
@@ -92,9 +92,7 @@ func (svc *Service) Login(ctx context.Context, in LoginInput) (UserIdentity, err
 			return ErrUsernameTaken
 		}
 
-		userID := genID()
-		_, err = svc.sqlInsertUser(ctx, sqlInsertUser{
-			UserID:   userID,
+		inserted, err := svc.sqlInsertUser(ctx, sqlInsertUser{
 			Email:    in.Email,
 			Username: *in.Username,
 		})
@@ -102,7 +100,7 @@ func (svc *Service) Login(ctx context.Context, in LoginInput) (UserIdentity, err
 			return err
 		}
 
-		out.ID = userID
+		out.ID = inserted.ID
 		out.Email = in.Email
 		out.Username = *in.Username
 

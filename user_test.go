@@ -66,21 +66,18 @@ func genUser(t *testing.T) User {
 	t.Helper()
 
 	ctx := context.Background()
-	userID := genID()
-	email := genEmail()
-	username := genUsername()
-	createdAt, err := testService.sqlInsertUser(ctx, sqlInsertUser{
-		UserID:   userID,
-		Email:    email,
-		Username: username,
-	})
+	in := sqlInsertUser{
+		Email:    genEmail(),
+		Username: genUsername(),
+	}
+	inserted, err := testService.sqlInsertUser(ctx, in)
 	assert.NoError(t, err)
 	return User{
-		ID:        userID,
-		Email:     email,
-		Username:  username,
-		CreatedAt: createdAt,
-		UpdatedAt: createdAt,
+		ID:        inserted.ID,
+		Email:     in.Email,
+		Username:  in.Username,
+		CreatedAt: inserted.CreatedAt,
+		UpdatedAt: inserted.CreatedAt,
 	}
 }
 

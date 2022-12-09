@@ -3,16 +3,42 @@ package nakama
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/nakamauwu/nakama/db"
 )
 
 type sqlInsertComment struct {
-	CommentID string
-	UserID    string
-	PostID    string
-	Content   string
+	UserID  string
+	PostID  string
+	Content string
+}
+
+func (svc *Service) sqlInsertComment(ctx context.Context, in sqlInsertComment) (CreateCommentOutput, error) {
+	var out CreateCommentOutput
+
+	const createComment = `
+		INSERT INTO comments (id, user_id, post_id, content)
+		VALUES ($1, $2, $3, $4)
+		RETURNING created_at
+	`
+	commentID := genID()
+	err := svc.DB.QueryRowContext(ctx, createComment,
+		commentID,
+		in.UserID,
+		in.PostID,
+		in.Content,
+	).Scan(&out.CreatedAt)
+	if db.IsPqForeignKeyViolationError(err, "post_id") {
+		return out, ErrPostNotFound
+	}
+
+	if err != nil {
+		return out, fmt.Errorf("sql insert comment: %w", err)
+	}
+
+	out.ID = commentID
+
+	return out, nil
 }
 
 func (svc *Service) sqlSelectComments(ctx context.Context, postID string) ([]Comment, error) {
@@ -53,24 +79,4 @@ func (svc *Service) sqlSelectComments(ctx context.Context, postID string) ([]Com
 			&out.User.AvatarHeight,
 		)
 	})
-}
-
-func (svc *Service) sqlInsertComment(ctx context.Context, in sqlInsertComment) (time.Time, error) {
-	const createComment = `-- name: CreateComment :one
-		INSERT INTO comments (id, user_id, post_id, content)
-		VALUES ($1, $2, $3, $4)
-		RETURNING created_at
-	`
-	var createdAt time.Time
-	err := svc.DB.QueryRowContext(ctx, createComment,
-		in.CommentID,
-		in.UserID,
-		in.PostID,
-		in.Content,
-	).Scan(&createdAt)
-	if err != nil {
-		return time.Time{}, fmt.Errorf("sql insert comment: %w", err)
-	}
-
-	return createdAt, nil
 }

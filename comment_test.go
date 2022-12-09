@@ -100,17 +100,20 @@ func TestService_Comments(t *testing.T) {
 func genComment(t *testing.T, userID, postID string) Comment {
 	t.Helper()
 
-	commentID := genID()
-	createdAt, err := testService.sqlInsertComment(context.Background(), sqlInsertComment{
-		CommentID: commentID,
-		PostID:    postID,
-		UserID:    userID,
-		Content:   genCommentContent(),
-	})
+	in := sqlInsertComment{
+		PostID:  postID,
+		UserID:  userID,
+		Content: genCommentContent(),
+	}
+	inserted, err := testService.sqlInsertComment(context.Background(), in)
 	assert.NoError(t, err)
 	return Comment{
-		ID:        commentID,
-		CreatedAt: createdAt,
+		ID:        inserted.ID,
+		PostID:    in.PostID,
+		UserID:    in.UserID,
+		Content:   in.Content,
+		CreatedAt: inserted.CreatedAt,
+		UpdatedAt: inserted.CreatedAt,
 	}
 }
 

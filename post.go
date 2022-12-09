@@ -51,8 +51,8 @@ func (in *CreatePostInput) Validate() error {
 }
 
 type CreatePostOutput struct {
-	ID       string
-	CreateAt time.Time
+	ID        string
+	CreatedAt time.Time
 }
 
 type PostsInput struct {
@@ -83,9 +83,8 @@ func (svc *Service) CreatePost(ctx context.Context, in CreatePostInput) (CreateP
 		return out, errs.Unauthenticated
 	}
 
-	postID := genID()
-	createdAt, err := svc.sqlInsertPost(ctx, sqlInsertPost{
-		PostID:  postID,
+	var err error
+	out, err = svc.sqlInsertPost(ctx, sqlInsertPost{
 		UserID:  usr.ID,
 		Content: in.Content,
 	})
@@ -106,7 +105,7 @@ func (svc *Service) CreatePost(ctx context.Context, in CreatePostInput) (CreateP
 	// Side-effect: add the post to the user's timeline.
 	_, err = svc.sqlInsertTimelineItem(ctx, sqlInsertTimelineItem{
 		UserID: usr.ID,
-		PostID: postID,
+		PostID: out.ID,
 	})
 	if err != nil {
 		return out, err
@@ -116,16 +115,13 @@ func (svc *Service) CreatePost(ctx context.Context, in CreatePostInput) (CreateP
 	go func() {
 		ctx := svc.BaseContext()
 		_, err := svc.sqlInsertTimeline(ctx, sqlInsertTimeline{
+			PostID:     out.ID,
 			FollowedID: usr.ID,
-			PostsID:    postID,
 		})
 		if err != nil {
 			svc.Logger.Printf("failed to fanout timeline: %v\n", err)
 		}
 	}()
-
-	out.ID = postID
-	out.CreateAt = createdAt
 
 	return out, nil
 }

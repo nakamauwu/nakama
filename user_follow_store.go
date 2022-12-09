@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"time"
+
+	"github.com/nakamauwu/nakama/db"
 )
 
 type sqlInsertUserFollow struct {
@@ -29,26 +31,15 @@ func (svc *Service) sqlInsertUserFollow(ctx context.Context, in sqlInsertUserFol
 	`
 	var createdAt time.Time
 	err := svc.DB.QueryRowContext(ctx, createUserFollow, in.FollowerID, in.FollowedID).Scan(&createdAt)
+	if db.IsPqForeignKeyViolationError(err, "followed_id") {
+		return time.Time{}, ErrUserNotFound
+	}
+
 	if err != nil {
 		return time.Time{}, fmt.Errorf("sql insert user follow: %w", err)
 	}
+
 	return createdAt, nil
-}
-
-func (svc *Service) sqlDeleteUserFollow(ctx context.Context, in sqlDeleteUserFollow) (time.Time, error) {
-	const deleteUserFollow = `
-		DELETE FROM user_follows
-		WHERE follower_id = $1
-		AND followed_id = $2
-		RETURNING now()::timestamp AS deleted_at
-	`
-	var deletedAt time.Time
-	err := svc.DB.QueryRowContext(ctx, deleteUserFollow, in.FollowerID, in.FollowedID).Scan(&deletedAt)
-	if err != nil {
-		return time.Time{}, fmt.Errorf("sql delete user follow: %w", err)
-	}
-
-	return deletedAt, nil
 }
 
 func (svc *Service) sqlSelectUserFollowExists(ctx context.Context, in sqlSelectUserFollowExists) (bool, error) {
@@ -66,4 +57,20 @@ func (svc *Service) sqlSelectUserFollowExists(ctx context.Context, in sqlSelectU
 	}
 
 	return exists, nil
+}
+
+func (svc *Service) sqlDeleteUserFollow(ctx context.Context, in sqlDeleteUserFollow) (time.Time, error) {
+	const deleteUserFollow = `
+		DELETE FROM user_follows
+		WHERE follower_id = $1
+		AND followed_id = $2
+		RETURNING now()::timestamp AS deleted_at
+	`
+	var deletedAt time.Time
+	err := svc.DB.QueryRowContext(ctx, deleteUserFollow, in.FollowerID, in.FollowedID).Scan(&deletedAt)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("sql delete user follow: %w", err)
+	}
+
+	return deletedAt, nil
 }
