@@ -21,7 +21,7 @@ func genID() string {
 	return xid.New().String()
 }
 
-func isID(s string) bool {
+func validID(s string) bool {
 	_, err := xid.FromString(s)
 	return err == nil
 }

@@ -18,7 +18,7 @@ func (h *Handler) createComment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	_, err := h.Service.CreateComment(ctx, nakama.CreateCommentInput{
+	_, err := h.Service.CreateComment(ctx, nakama.CreateComment{
 		PostID:  r.PostFormValue("post_id"),
 		Content: r.PostFormValue("content"),
 	})

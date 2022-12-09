@@ -59,7 +59,7 @@ type UpdateUser struct {
 func (in *UpdateUser) Validate() error {
 	if in.Username != nil {
 		*in.Username = strings.TrimSpace(*in.Username)
-		if !isUsername(*in.Username) {
+		if !validUsername(*in.Username) {
 			return ErrInvalidUsername
 		}
 	}
@@ -87,7 +87,7 @@ func (svc *Service) User(ctx context.Context, username string) (User, error) {
 
 		q.UserID = usr.ID
 	} else {
-		if !isUsername(username) {
+		if !validUsername(username) {
 			return out, ErrInvalidUsername
 		}
 
@@ -162,10 +162,10 @@ func (svc *Service) UpdateAvatar(ctx context.Context, r io.Reader) (UpdatedAvata
 	return out, nil
 }
 
-func isEmail(s string) bool {
+func validEmail(s string) bool {
 	return reEmail.MatchString(s)
 }
 
-func isUsername(s string) bool {
+func validUsername(s string) bool {
 	return reUsername.MatchString(s)
 }

@@ -54,18 +54,17 @@ All methods are part of the `*Service` type and prefixed with `sql`.
 Now create a new exported method as part of the `nakama.Service` struct.
 
 When creating a new method, if the input data has many fields,
-then create a struct following the naming of `MethodInput`
-and output `MethodOutput`.
+then create a struct with the same name and the output in past-tense.
 
 Example:
 
 ```go
 package nakama
 
-type LoginInput struct {}
-type LoginOutput struct {}
+type CreatePost struct {}
+type CreatedPost struct {}
 
-func (*Service) Login(ctx context.Context, in LoginInput) (LoginOutput, error) {}
+func (*Service) CreatePost(ctx context.Context, in CreatePost) (CreatedPost, error) {}
 ```
 
 To register a new route, go to the `web` package

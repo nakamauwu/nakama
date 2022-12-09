@@ -25,23 +25,23 @@ func (u User) Identity() UserIdentity {
 	}
 }
 
-type LoginInput struct {
+type Login struct {
 	Email    string
 	Username *string
 }
 
-func (in *LoginInput) Validate() error {
+func (in *Login) Validate() error {
 	in.Email = strings.TrimSpace(in.Email)
 	in.Email = strings.ToLower(in.Email)
 	if in.Username != nil {
 		*in.Username = strings.TrimSpace(*in.Username)
 	}
 
-	if !isEmail(in.Email) {
+	if !validEmail(in.Email) {
 		return ErrInvalidEmail
 	}
 
-	if in.Username != nil && !isUsername(*in.Username) {
+	if in.Username != nil && !validUsername(*in.Username) {
 		return ErrInvalidUsername
 	}
 
@@ -50,7 +50,7 @@ func (in *LoginInput) Validate() error {
 
 // Login insecurely. Only for development purposes.
 // TODO: add 2nd factor.
-func (svc *Service) Login(ctx context.Context, in LoginInput) (UserIdentity, error) {
+func (svc *Service) Login(ctx context.Context, in Login) (UserIdentity, error) {
 	var out UserIdentity
 
 	if err := in.Validate(); err != nil {

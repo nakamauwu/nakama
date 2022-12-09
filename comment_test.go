@@ -12,14 +12,14 @@ func TestService_CreateComment(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("invalid_post_id", func(t *testing.T) {
-		_, err := testService.CreateComment(ctx, CreateCommentInput{
+		_, err := testService.CreateComment(ctx, CreateComment{
 			PostID: "@nope@",
 		})
 		assert.EqualError(t, err, "invalid post ID")
 	})
 
 	t.Run("empty_content", func(t *testing.T) {
-		_, err := testService.CreateComment(ctx, CreateCommentInput{
+		_, err := testService.CreateComment(ctx, CreateComment{
 			PostID:  genID(),
 			Content: "",
 		})
@@ -28,7 +28,7 @@ func TestService_CreateComment(t *testing.T) {
 
 	t.Run("too_long_content", func(t *testing.T) {
 		s := strings.Repeat("a", maxCommentContentLength+1)
-		_, err := testService.CreateComment(ctx, CreateCommentInput{
+		_, err := testService.CreateComment(ctx, CreateComment{
 			PostID:  genID(),
 			Content: s,
 		})
@@ -36,7 +36,7 @@ func TestService_CreateComment(t *testing.T) {
 	})
 
 	t.Run("unauthenticated", func(t *testing.T) {
-		_, err := testService.CreateComment(ctx, CreateCommentInput{
+		_, err := testService.CreateComment(ctx, CreateComment{
 			PostID:  genID(),
 			Content: genCommentContent(),
 		})
@@ -45,7 +45,7 @@ func TestService_CreateComment(t *testing.T) {
 
 	t.Run("post_not_found", func(t *testing.T) {
 		asUser := ContextWithUser(ctx, genUser(t).Identity())
-		_, err := testService.CreateComment(asUser, CreateCommentInput{
+		_, err := testService.CreateComment(asUser, CreateComment{
 			PostID:  genID(),
 			Content: genCommentContent(),
 		})
@@ -56,7 +56,7 @@ func TestService_CreateComment(t *testing.T) {
 		usr := genUser(t)
 		asUser := ContextWithUser(ctx, usr.Identity())
 		post := genPost(t, usr.ID)
-		got, err := testService.CreateComment(asUser, CreateCommentInput{
+		got, err := testService.CreateComment(asUser, CreateComment{
 			PostID:  post.ID,
 			Content: genCommentContent(),
 		})

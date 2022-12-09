@@ -13,8 +13,8 @@ type sqlInsertComment struct {
 	Content string
 }
 
-func (svc *Service) sqlInsertComment(ctx context.Context, in sqlInsertComment) (CreateCommentOutput, error) {
-	var out CreateCommentOutput
+func (svc *Service) sqlInsertComment(ctx context.Context, in sqlInsertComment) (CreatedComment, error) {
+	var out CreatedComment
 
 	const createComment = `
 		INSERT INTO comments (id, user_id, post_id, content)

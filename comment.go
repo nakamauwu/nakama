@@ -25,16 +25,16 @@ type Comment struct {
 	User      UserPreview
 }
 
-type CreateCommentInput struct {
+type CreateComment struct {
 	PostID  string
 	Content string
 }
 
-func (in *CreateCommentInput) Validate() error {
+func (in *CreateComment) Validate() error {
 	in.PostID = strings.TrimSpace(in.PostID)
 	in.Content = smartTrim(in.Content)
 
-	if !isID(in.PostID) {
+	if !validID(in.PostID) {
 		return ErrInvalidPostID
 	}
 
@@ -45,13 +45,13 @@ func (in *CreateCommentInput) Validate() error {
 	return nil
 }
 
-type CreateCommentOutput struct {
+type CreatedComment struct {
 	ID        string
 	CreatedAt time.Time
 }
 
-func (svc *Service) CreateComment(ctx context.Context, in CreateCommentInput) (CreateCommentOutput, error) {
-	var out CreateCommentOutput
+func (svc *Service) CreateComment(ctx context.Context, in CreateComment) (CreatedComment, error) {
+	var out CreatedComment
 
 	if err := in.Validate(); err != nil {
 		return out, err
@@ -84,7 +84,7 @@ func (svc *Service) CreateComment(ctx context.Context, in CreateCommentInput) (C
 }
 
 func (svc *Service) Comments(ctx context.Context, postID string) ([]Comment, error) {
-	if !isID(postID) {
+	if !validID(postID) {
 		return nil, ErrInvalidPostID
 	}
 	return svc.sqlSelectComments(ctx, postID)

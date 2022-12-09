@@ -42,7 +42,7 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	input := nakama.LoginInput{
+	input := nakama.Login{
 		Email:    r.PostFormValue("email"),
 		Username: formPtr(r.PostForm, "username"),
 	}

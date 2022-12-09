@@ -58,7 +58,7 @@ func (h *Handler) showUser(w http.ResponseWriter, r *http.Request) {
 
 	g.Go(func() error {
 		var err error
-		posts, err = h.Service.Posts(gctx, nakama.PostsInput{Username: username})
+		posts, err = h.Service.Posts(gctx, nakama.PostsParams{Username: username})
 		return err
 	})
 

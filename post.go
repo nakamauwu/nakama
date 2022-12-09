@@ -36,11 +36,11 @@ type Post struct {
 	User          UserPreview
 }
 
-type CreatePostInput struct {
+type CreatePost struct {
 	Content string
 }
 
-func (in *CreatePostInput) Validate() error {
+func (in *CreatePost) Validate() error {
 	in.Content = smartTrim(in.Content)
 
 	if in.Content == "" || !utf8.ValidString(in.Content) || utf8.RuneCountInString(in.Content) > maxPostContentLength {
@@ -50,29 +50,29 @@ func (in *CreatePostInput) Validate() error {
 	return nil
 }
 
-type CreatePostOutput struct {
+type CreatedPost struct {
 	ID        string
 	CreatedAt time.Time
 }
 
-type PostsInput struct {
+type PostsParams struct {
 	// Username is optional. If empty, all posts are returned.
 	// Otherwise, only posts created by this user are returned.
 	Username string
 }
 
-func (in *PostsInput) Validate() error {
+func (in *PostsParams) Validate() error {
 	in.Username = strings.TrimSpace(in.Username)
 
-	if in.Username != "" && !isUsername(in.Username) {
+	if in.Username != "" && !validUsername(in.Username) {
 		return ErrInvalidUsername
 	}
 
 	return nil
 }
 
-func (svc *Service) CreatePost(ctx context.Context, in CreatePostInput) (CreatePostOutput, error) {
-	var out CreatePostOutput
+func (svc *Service) CreatePost(ctx context.Context, in CreatePost) (CreatedPost, error) {
+	var out CreatedPost
 
 	if err := in.Validate(); err != nil {
 		return out, err
@@ -141,7 +141,7 @@ func (svc *Service) Timeline(ctx context.Context) ([]Post, error) {
 	return svc.sqlSelectTimeline(ctx, usr.ID)
 }
 
-func (svc *Service) Posts(ctx context.Context, in PostsInput) ([]Post, error) {
+func (svc *Service) Posts(ctx context.Context, in PostsParams) ([]Post, error) {
 	if err := in.Validate(); err != nil {
 		return nil, err
 	}
@@ -151,7 +151,7 @@ func (svc *Service) Posts(ctx context.Context, in PostsInput) ([]Post, error) {
 func (svc *Service) Post(ctx context.Context, postID string) (Post, error) {
 	var out Post
 
-	if !isID(postID) {
+	if !validID(postID) {
 		return out, ErrInvalidPostID
 	}
 

@@ -12,24 +12,24 @@ func TestService_CreatePost(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("empty_content", func(t *testing.T) {
-		_, err := testService.CreatePost(ctx, CreatePostInput{Content: ""})
+		_, err := testService.CreatePost(ctx, CreatePost{Content: ""})
 		assert.EqualError(t, err, "invalid post content")
 	})
 
 	t.Run("too_long_content", func(t *testing.T) {
 		s := strings.Repeat("x", maxPostContentLength+1)
-		_, err := testService.CreatePost(ctx, CreatePostInput{Content: s})
+		_, err := testService.CreatePost(ctx, CreatePost{Content: s})
 		assert.EqualError(t, err, "invalid post content")
 	})
 
 	t.Run("unauthenticated", func(t *testing.T) {
-		_, err := testService.CreatePost(ctx, CreatePostInput{Content: genPostContent()})
+		_, err := testService.CreatePost(ctx, CreatePost{Content: genPostContent()})
 		assert.EqualError(t, err, "unauthenticated")
 	})
 
 	t.Run("ok", func(t *testing.T) {
 		asUser := ContextWithUser(ctx, genUser(t).Identity())
-		got, err := testService.CreatePost(asUser, CreatePostInput{Content: genPostContent()})
+		got, err := testService.CreatePost(asUser, CreatePost{Content: genPostContent()})
 		assert.NoError(t, err)
 		assert.NotZero(t, got)
 	})
@@ -40,7 +40,7 @@ func TestService_CreatePost(t *testing.T) {
 
 		want := 5
 		for i := 0; i < want; i++ {
-			got, err := testService.CreatePost(asUser, CreatePostInput{Content: genPostContent()})
+			got, err := testService.CreatePost(asUser, CreatePost{Content: genPostContent()})
 			assert.NoError(t, err)
 			assert.NotZero(t, got)
 		}
@@ -60,7 +60,7 @@ func TestService_CreatePost(t *testing.T) {
 		assert.NoError(t, err)
 
 		asFollowed := ContextWithUser(ctx, followed.Identity())
-		post, err := testService.CreatePost(asFollowed, CreatePostInput{Content: genPostContent()})
+		post, err := testService.CreatePost(asFollowed, CreatePost{Content: genPostContent()})
 		assert.NoError(t, err)
 
 		// The post should have been added the the author's timeline.
@@ -87,12 +87,12 @@ func TestService_Posts(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("invalid_username", func(t *testing.T) {
-		_, err := testService.Posts(ctx, PostsInput{Username: "@nope@"})
+		_, err := testService.Posts(ctx, PostsParams{Username: "@nope@"})
 		assert.EqualError(t, err, "invalid username")
 	})
 
 	t.Run("optional_username", func(t *testing.T) {
-		_, err := testService.Posts(ctx, PostsInput{})
+		_, err := testService.Posts(ctx, PostsParams{})
 		assert.NoError(t, err)
 	})
 
@@ -102,7 +102,7 @@ func TestService_Posts(t *testing.T) {
 			genPost(t, genUser(t).ID)
 		}
 
-		got, err := testService.Posts(ctx, PostsInput{})
+		got, err := testService.Posts(ctx, PostsParams{})
 		assert.NoError(t, err)
 		assert.True(t, len(got) >= wantAtLeast, "got %d posts, want at least %d", len(got), wantAtLeast)
 		for _, p := range got {
@@ -118,7 +118,7 @@ func TestService_Posts(t *testing.T) {
 		}
 		genPost(t, genUser(t).ID) // additional post from another user
 
-		got, err := testService.Posts(ctx, PostsInput{Username: usr.Username})
+		got, err := testService.Posts(ctx, PostsParams{Username: usr.Username})
 		assert.NoError(t, err)
 		assert.Equal(t, want, len(got))
 		for _, p := range got {

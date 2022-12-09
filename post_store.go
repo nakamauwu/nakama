@@ -33,8 +33,8 @@ type sqlInsertedTimelineItem struct {
 	UserID string
 }
 
-func (svc *Service) sqlInsertPost(ctx context.Context, in sqlInsertPost) (CreatePostOutput, error) {
-	var out CreatePostOutput
+func (svc *Service) sqlInsertPost(ctx context.Context, in sqlInsertPost) (CreatedPost, error) {
+	var out CreatedPost
 
 	const query = `
 		INSERT INTO posts (id, user_id, content)

@@ -50,7 +50,7 @@ func (h *Handler) showPosts(w http.ResponseWriter, r *http.Request) {
 	if _, ok := nakama.UserFromContext(ctx); ok && mode != "global" {
 		posts, err = h.Service.Timeline(ctx)
 	} else {
-		posts, err = h.Service.Posts(ctx, nakama.PostsInput{})
+		posts, err = h.Service.Posts(ctx, nakama.PostsParams{})
 	}
 
 	if err != nil {
@@ -80,7 +80,7 @@ func (h *Handler) createPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	_, err := h.Service.CreatePost(ctx, nakama.CreatePostInput{
+	_, err := h.Service.CreatePost(ctx, nakama.CreatePost{
 		Content: r.PostFormValue("content"),
 	})
 	if err != nil {

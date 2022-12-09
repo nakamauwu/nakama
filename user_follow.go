@@ -19,7 +19,7 @@ type UserFollow struct {
 }
 
 func (svc *Service) FollowUser(ctx context.Context, followedUserID string) error {
-	if !isID(followedUserID) {
+	if !validID(followedUserID) {
 		return ErrInvalidUserID
 	}
 
@@ -74,7 +74,7 @@ func (svc *Service) FollowUser(ctx context.Context, followedUserID string) error
 }
 
 func (svc *Service) UnfollowUser(ctx context.Context, followedUserID string) error {
-	if !isID(followedUserID) {
+	if !validID(followedUserID) {
 		return ErrInvalidUserID
 	}
 
