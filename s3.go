@@ -8,15 +8,13 @@ import (
 	"github.com/minio/minio-go/v7"
 )
 
-type s3Bucket string
-
 const (
 	S3BucketAvatars = "avatars"
 )
 
 type s3StoreObject struct {
 	File        io.Reader
-	Bucket      s3Bucket
+	Bucket      string
 	Name        string
 	Size        uint64
 	ContentType string
