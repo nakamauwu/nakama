@@ -38,9 +38,9 @@ func (svc *Service) sqlSelectComments(ctx context.Context, postID string) ([]Com
 		return nil, fmt.Errorf("sql select comments: %w", err)
 	}
 
-	return db.Collect(rows, func(scanner db.Scanner) (Comment, error) {
+	return db.Collect(rows, func(scan db.ScanFunc) (Comment, error) {
 		var out Comment
-		return out, scanner.Scan(
+		return out, scan(
 			&out.ID,
 			&out.UserID,
 			&out.PostID,

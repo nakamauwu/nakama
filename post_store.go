@@ -79,9 +79,9 @@ func (svc *Service) sqlInsertTimeline(ctx context.Context, in sqlInsertTimeline)
 		return nil, fmt.Errorf("sql fanout timeline: %w", err)
 	}
 
-	return db.Collect(rows, func(scanner db.Scanner) (sqlInsertedTimelineItem, error) {
+	return db.Collect(rows, func(scan db.ScanFunc) (sqlInsertedTimelineItem, error) {
 		var out sqlInsertedTimelineItem
-		return out, scanner.Scan(&out.ID, &out.UserID)
+		return out, scan(&out.ID, &out.UserID)
 	})
 }
 
@@ -109,9 +109,9 @@ func (svc *Service) sqlSelectTimeline(ctx context.Context, userID string) ([]Pos
 		return nil, fmt.Errorf("sql select timeline: %w", err)
 	}
 
-	return db.Collect(rows, func(scanner db.Scanner) (Post, error) {
+	return db.Collect(rows, func(scan db.ScanFunc) (Post, error) {
 		var out Post
-		return out, scanner.Scan(
+		return out, scan(
 			&out.ID,
 			&out.UserID,
 			&out.Content,
@@ -190,9 +190,9 @@ func (svc *Service) sqlSelectPosts(ctx context.Context, username string) ([]Post
 		return nil, fmt.Errorf("sql select posts: %w", err)
 	}
 
-	return db.Collect(rows, func(scanner db.Scanner) (Post, error) {
+	return db.Collect(rows, func(scan db.ScanFunc) (Post, error) {
 		var out Post
-		return out, scanner.Scan(
+		return out, scan(
 			&out.ID,
 			&out.UserID,
 			&out.Content,

@@ -65,17 +65,18 @@ func (db *DB) RunTx(ctx context.Context, txFunc func(ctx context.Context) error)
 	})
 }
 
-type Scanner interface {
-	Scan(dest ...any) error
-}
+// ScanFunc copies the columns in the current row into the values pointed
+// at by dest. The number of values in dest must be the same as the
+// number of columns in the selected rows.
+type ScanFunc func(dest ...any) error
 
 // Collect rows into a slice.
-func Collect[T any](rows *sql.Rows, scanFunc func(scanner Scanner) (T, error)) ([]T, error) {
+func Collect[T any](rows *sql.Rows, scanFunc func(scan ScanFunc) (T, error)) ([]T, error) {
 	defer rows.Close()
 
 	var out []T
 	for rows.Next() {
-		item, err := scanFunc(rows)
+		item, err := scanFunc(rows.Scan)
 		if err != nil {
 			return out, err
 		}
