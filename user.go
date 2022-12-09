@@ -128,7 +128,7 @@ func (svc *Service) UpdateAvatar(ctx context.Context, r io.Reader) (UpdatedAvata
 		return out, err
 	}
 
-	now := time.Now().UTC().Truncate(time.Second)
+	now := time.Now().UTC()
 
 	name := fmt.Sprintf("%d/%d/%d/%s-%s.jpeg", now.Year(), now.Month(), now.Day(), usr.ID, genID())
 	err = svc.s3StoreObject(ctx, s3StoreObject{
@@ -151,7 +151,15 @@ func (svc *Service) UpdateAvatar(ctx context.Context, r io.Reader) (UpdatedAvata
 		UserID:       usr.ID,
 	})
 	if err != nil {
-		// TODO: delete object from s3 in case of error.
+		{
+			err := svc.s3RemoveObject(ctx, s3RemoveObject{
+				Bucket: S3BucketAvatars,
+				Name:   name,
+			})
+			if err != nil {
+				svc.Logger.Printf("could not remove avatar after user update failure: %v\n", err)
+			}
+		}
 		return out, err
 	}
 

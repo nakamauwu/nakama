@@ -22,6 +22,11 @@ type s3StoreObject struct {
 	Height      uint
 }
 
+type s3RemoveObject struct {
+	Bucket string
+	Name   string
+}
+
 func (svc *Service) s3StoreObject(ctx context.Context, in s3StoreObject) error {
 	usr, _ := UserFromContext(ctx)
 	_, err := svc.S3.PutObject(ctx, string(in.Bucket), in.Name, in.File, int64(in.Size), minio.PutObjectOptions{
@@ -35,4 +40,8 @@ func (svc *Service) s3StoreObject(ctx context.Context, in s3StoreObject) error {
 		},
 	})
 	return err
+}
+
+func (svc *Service) s3RemoveObject(ctx context.Context, in s3RemoveObject) error {
+	return svc.S3.RemoveObject(ctx, in.Bucket, in.Name, minio.RemoveObjectOptions{})
 }
