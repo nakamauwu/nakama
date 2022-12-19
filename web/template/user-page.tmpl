@@ -4,7 +4,7 @@
 <main>
     <div style="margin: 1rem 0" class="stack">
         <div class="big-avatar-wrapper">
-            {{template "avatar.tmpl" (dict "User" .Session.User)}}
+            {{template "avatar.tmpl" (dict "User" .User)}}
         </div>
         <h1 style="margin-top: 0">{{.User.Username}}</h1>
 
