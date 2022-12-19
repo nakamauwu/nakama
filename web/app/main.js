@@ -255,7 +255,7 @@ if (isHalloween) {
 const isChristmas = now.getMonth() === 11
 if (isChristmas) {
     const padoru = document.createElement("img")
-    padoru.src = "/images/padoru.webp"
+    padoru.src = "/images/padoru.gif"
     padoru.id = "padoru"
     const animation = document.createElement("style")
     animation.textContent = `
