@@ -254,5 +254,46 @@ if (isHalloween) {
 
 const isChristmas = now.getMonth() === 11
 if (isChristmas) {
-    // TODO: PADORU
+    const padoru = document.createElement("img")
+    padoru.src = "/images/padoru.webp"
+    padoru.id = "padoru"
+    const animation = document.createElement("style")
+    animation.textContent = `
+        @keyframes padoru {
+            to {
+                transform: translateX(calc(100vw + 3rem));
+            }
+        }
+    `
+    padoru.style.cssText = `
+        --y: 50%;
+        --size: 3rem;
+
+        width: var(--size);
+        height: var(--size);
+        position: fixed;
+        top: calc(var(--y) + var(--size));
+
+        user-select: none;
+        touch-action: none;
+
+        animation: padoru linear 5s;
+    `
+    padoru.addEventListener("load", () => {
+        document.head.appendChild(animation)
+        document.body.appendChild(padoru)
+
+        padoru.addEventListener("animationend", () => {
+            padoru.style.animationName = "none"
+            padoru.style.setProperty("--y", randNumberBetween(5, 95) + "%")
+            requestAnimationFrame(() => {
+                padoru.offsetHeight
+                padoru.style.animationName = "padoru"
+            })
+        })
+    }, { once: true })
+}
+
+function randNumberBetween(min, max) {
+    return Math.floor(Math.random() * (max - min + 1) + min)
 }
