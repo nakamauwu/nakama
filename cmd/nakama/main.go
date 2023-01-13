@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -13,6 +14,8 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
+	"github.com/minio/minio-go/v7/pkg/policy"
+	"github.com/minio/minio-go/v7/pkg/set"
 	"github.com/nakamauwu/nakama"
 	"github.com/nakamauwu/nakama/db"
 	"github.com/nakamauwu/nakama/web"
@@ -121,6 +124,26 @@ func ensureS3Buckets(ctx context.Context, s3 *minio.Client) error {
 		}
 
 		err = s3.MakeBucket(ctx, bucket, minio.MakeBucketOptions{})
+		if err != nil {
+			return err
+		}
+
+		// readonly on objects.
+		p := policy.BucketAccessPolicy{
+			Version: "2012-10-17", // See: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_version.html
+			Statements: []policy.Statement{{
+				Effect:    "Allow",
+				Actions:   set.CreateStringSet("s3:GetObject"),
+				Principal: policy.User{AWS: set.CreateStringSet("*")},
+				Resources: set.CreateStringSet(fmt.Sprintf("arn:aws:s3:::%s/*", bucket)),
+			}},
+		}
+		raw, err := json.Marshal(p)
+		if err != nil {
+			return err
+		}
+
+		err = s3.SetBucketPolicy(ctx, bucket, string(raw))
 		if err != nil {
 			return err
 		}

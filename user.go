@@ -115,7 +115,7 @@ func (svc *Service) UpdateUser(ctx context.Context, in UpdateUser) error {
 	return err
 }
 
-func (svc *Service) UpdateAvatar(ctx context.Context, r io.Reader) (UpdatedAvatar, error) {
+func (svc *Service) UpdateAvatar(ctx context.Context, avatar io.Reader) (UpdatedAvatar, error) {
 	var out UpdatedAvatar
 
 	usr, ok := UserFromContext(ctx)
@@ -123,53 +123,48 @@ func (svc *Service) UpdateAvatar(ctx context.Context, r io.Reader) (UpdatedAvata
 		return out, errs.Unauthenticated
 	}
 
-	resized, err := fillJPEG(r, avatarWidth, avatarHeight)
+	resized, err := fillJPEG(avatar, avatarWidth, avatarHeight)
 	if err != nil {
 		return out, err
 	}
 
 	now := time.Now().UTC()
-
-	name := fmt.Sprintf("%d/%d/%d/%s-%s.jpeg", now.Year(), now.Month(), now.Day(), usr.ID, genID())
+	path := fmt.Sprintf("%d/%d/%d/%s-%s.jpeg", now.Year(), now.Month(), now.Day(), usr.ID, genID())
 	err = svc.s3StoreObject(ctx, s3StoreObject{
 		File:        bytes.NewReader(resized),
 		Bucket:      S3BucketAvatars,
-		Name:        name,
+		Name:        path,
 		Size:        uint64(len(resized)),
 		ContentType: "image/jpeg",
-		Width:       avatarWidth,
-		Height:      avatarHeight,
 	})
 	if err != nil {
 		return out, err
 	}
 
 	_, err = svc.sqlUpdateUser(ctx, sqlUpdateUser{
-		AvatarPath:   &name,
+		AvatarPath:   &path,
 		AvatarWidth:  ptr(avatarWidth),
 		AvatarHeight: ptr(avatarHeight),
 		UserID:       usr.ID,
 	})
 	if err != nil {
-		{
-			err := svc.s3RemoveObject(ctx, s3RemoveObject{
-				Bucket: S3BucketAvatars,
-				Name:   name,
-			})
-			if err != nil {
-				svc.Logger.Printf("could not remove avatar after user update failure: %v\n", err)
-			}
+		errS3 := svc.s3RemoveObject(ctx, s3RemoveObject{
+			Bucket: S3BucketAvatars,
+			Name:   path,
+		})
+		if errS3 != nil {
+			svc.Logger.Printf("could not remove avatar after user update failure: %v\n", errS3)
 		}
+
 		return out, err
 	}
 
-	out.Path = svc.AvatarsPrefix + name
+	out.Path = svc.AvatarsPrefix + path
 	out.Width = avatarWidth
 	out.Height = avatarHeight
 
 	return out, nil
 }
-
 func validEmail(s string) bool {
 	return reEmail.MatchString(s)
 }
