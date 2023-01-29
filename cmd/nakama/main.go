@@ -128,28 +128,36 @@ func ensureS3Buckets(ctx context.Context, s3 *minio.Client) error {
 			return err
 		}
 
-		// readonly on objects.
-		p := policy.BucketAccessPolicy{
-			Version: "2012-10-17", // See: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_version.html
-			Statements: []policy.Statement{{
-				Effect:    "Allow",
-				Actions:   set.CreateStringSet("s3:GetObject"),
-				Principal: policy.User{AWS: set.CreateStringSet("*")},
-				Resources: set.CreateStringSet(fmt.Sprintf("arn:aws:s3:::%s/*", bucket)),
-			}},
-		}
-		raw, err := json.Marshal(p)
+		policy, err := s3MakeAllowGetObjectPolicy(bucket)
 		if err != nil {
 			return err
 		}
 
-		err = s3.SetBucketPolicy(ctx, bucket, string(raw))
+		err = s3.SetBucketPolicy(ctx, bucket, policy)
 		if err != nil {
 			return err
 		}
 	}
 
 	return nil
+}
+
+func s3MakeAllowGetObjectPolicy(bucket string) (string, error) {
+	p := policy.BucketAccessPolicy{
+		Version: "2012-10-17", // See: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_version.html
+		Statements: []policy.Statement{{
+			Effect:    "Allow",
+			Actions:   set.CreateStringSet("s3:GetObject"),
+			Principal: policy.User{AWS: set.CreateStringSet("*")},
+			Resources: set.CreateStringSet(fmt.Sprintf("arn:aws:s3:::%s/*", bucket)),
+		}},
+	}
+	raw, err := json.Marshal(p)
+	if err != nil {
+		return "", err
+	}
+
+	return string(raw), nil
 }
 
 func avatarsPrefix(useSSL bool, endpoint string) string {
