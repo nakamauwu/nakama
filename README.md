@@ -31,6 +31,14 @@ go build ./cmd/nakama
 Usage of nakama:
   -addr string
         HTTP service address (default ":4000")
+  -s3-access-key string
+        S3 access key (default "minioadmin")
+  -s3-endpoint string
+        S3 endpoint (default "localhost:9000")
+  -s3-secret-key string
+        S3 secret key (default "minioadmin")
+  -s3-secure
+        Enable S3 SSL
   -session-key string
         Session key (default "secretkeyyoushouldnotcommit")
   -sql-addr string
