@@ -1,0 +1,31 @@
+{{template "layout.tmpl" .}}
+
+{{define "content"}}
+<main>
+    <h1>Search</h1>
+
+    <form action="/search">
+        <div>
+            <label for="search_query">Search</label>
+            <input type="search" name="q" id="search_query" placeholder="Search..." value="{{.SearchQuery}}"
+                autocomplete="off">
+        </div>
+
+        <button>Search</button>
+    </form>
+
+    {{if .Users}}
+    <section>
+        <h3>User Results</h3>
+
+        <ul style="list-style: none; padding: 0; margin: 0;">
+            {{range .Users}}
+            <li>
+                {{template "user-item.tmpl" (dict "User" .)}}
+            </li>
+            {{end}}
+        </ul>
+    </section>
+    {{end}}
+</main>
+{{end}}

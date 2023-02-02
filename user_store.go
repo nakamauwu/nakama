@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/nakamauwu/nakama/db"
 )
 
 type sqlInsertUser struct {
@@ -13,15 +15,14 @@ type sqlInsertUser struct {
 	Username string
 }
 
-type sqlUpdateUser struct {
-	Username                 *string
-	AvatarPath               *string
-	AvatarWidth              *uint
-	AvatarHeight             *uint
-	IncreasePostsCountBy     int
-	IncreaseFollowersCountBy int
-	IncreaseFollowingCountBy int
-	UserID                   string
+type sqlInsertedUser struct {
+	ID        string
+	CreatedAt time.Time
+}
+
+type sqlSelectUsers struct {
+	FollowerID    string
+	UsernameQuery string
 }
 
 type sqlSelectUser struct {
@@ -37,9 +38,15 @@ type sqlSelectUserExists struct {
 	Username string
 }
 
-type sqlInsertedUser struct {
-	ID        string
-	CreatedAt time.Time
+type sqlUpdateUser struct {
+	Username                 *string
+	AvatarPath               *string
+	AvatarWidth              *uint
+	AvatarHeight             *uint
+	IncreasePostsCountBy     int
+	IncreaseFollowersCountBy int
+	IncreaseFollowingCountBy int
+	UserID                   string
 }
 
 func (svc *Service) sqlInsertUser(ctx context.Context, in sqlInsertUser) (sqlInsertedUser, error) {
@@ -59,6 +66,71 @@ func (svc *Service) sqlInsertUser(ctx context.Context, in sqlInsertUser) (sqlIns
 	out.ID = userID
 
 	return out, nil
+}
+
+func (svc *Service) sqlSelectUsers(ctx context.Context, in sqlSelectUsers) ([]User, error) {
+	const query = `
+		SELECT users.id
+			, users.email
+			, users.username
+			, (
+				CASE
+					WHEN $1::varchar != '' THEN similarity(username, $1::varchar)
+					ELSE 0
+				END
+			) AS similarity
+			, users.avatar_path
+			, users.avatar_width
+			, users.avatar_height
+			, users.posts_count
+			, users.followers_count
+			, users.following_count
+			, users.created_at
+			, users.updated_at
+			, (
+				CASE
+					WHEN $2::varchar != '' AND $2 != users.id THEN (
+						SELECT EXISTS (
+							SELECT 1 FROM user_follows
+							WHERE follower_id = $2::varchar
+							AND followed_id = users.id
+						)
+					)
+					ELSE false
+				END
+			) AS following
+		FROM users
+		WHERE CASE
+			WHEN $1::varchar != '' THEN LOWER(users.username) % LOWER($1::varchar)
+			ELSE false
+		END
+		ORDER BY similarity DESC, users.id DESC
+	`
+
+	rows, err := svc.DB.QueryContext(ctx, query, in.UsernameQuery, in.FollowerID)
+	if err != nil {
+		return nil, fmt.Errorf("sql select users: %w", err)
+	}
+
+	return db.Collect(rows, func(scan db.ScanFunc) (User, error) {
+		var u User
+		var sim float64 // unused
+		return u, scan(
+			&u.ID,
+			&u.Email,
+			&u.Username,
+			&sim,
+			svc.sqlScanAvatar(&u.AvatarPath),
+			&u.AvatarWidth,
+			&u.AvatarHeight,
+			&u.PostsCount,
+			&u.FollowersCount,
+			&u.FollowingCount,
+			&u.CreatedAt,
+			&u.UpdatedAt,
+			&u.Following,
+		)
+	})
 }
 
 func (svc *Service) sqlSelectUser(ctx context.Context, in sqlSelectUser) (User, error) {

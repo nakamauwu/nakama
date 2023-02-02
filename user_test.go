@@ -7,7 +7,36 @@ import (
 	"github.com/alecthomas/assert/v2"
 )
 
-func TestService_UserByUsername(t *testing.T) {
+func TestService_Users(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("invalid_username", func(t *testing.T) {
+		_, err := testService.Users(ctx, UsersParams{UsernameQuery: "@nope@"})
+		assert.EqualError(t, err, "invalid username")
+	})
+
+	t.Run("no_match", func(t *testing.T) {
+		genUser(t, func(in *sqlInsertUser) {
+			in.Username = "tomas"
+		})
+
+		got, err := testService.Users(ctx, UsersParams{UsernameQuery: "liz"})
+		assert.NoError(t, err)
+		assert.Zero(t, got)
+	})
+
+	t.Run("ok", func(t *testing.T) {
+		usr := genUser(t, func(in *sqlInsertUser) {
+			in.Username = "bob"
+		})
+
+		got, err := testService.Users(ctx, UsersParams{UsernameQuery: "boo"})
+		assert.NoError(t, err)
+		assert.Equal(t, usr, got[0])
+	})
+}
+
+func TestService_User(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("invalid_username", func(t *testing.T) {
@@ -62,7 +91,7 @@ func TestService_UserByUsername(t *testing.T) {
 	})
 }
 
-func genUser(t *testing.T) User {
+func genUser(t *testing.T, override ...func(in *sqlInsertUser)) User {
 	t.Helper()
 
 	ctx := context.Background()
@@ -70,8 +99,12 @@ func genUser(t *testing.T) User {
 		Email:    genEmail(),
 		Username: genUsername(),
 	}
+	for _, fn := range override {
+		fn(&in)
+	}
 	inserted, err := testService.sqlInsertUser(ctx, in)
 	assert.NoError(t, err)
+
 	return User{
 		ID:        inserted.ID,
 		Email:     in.Email,

@@ -26,8 +26,9 @@ const (
 )
 
 var (
-	reEmail    = regexp.MustCompile(`^[^\s@]+@[^\s@]+\.[^\s@]+$`)
-	reUsername = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_-]{0,17}$`)
+	reEmail         = regexp.MustCompile(`^[^\s@]+@[^\s@]+\.[^\s@]+$`)
+	reUsername      = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_-]{0,17}$`)
+	reUsernameQuery = regexp.MustCompile(`^[a-zA-Z0-9_-]{1,18}$`)
 )
 
 type User struct {
@@ -52,6 +53,21 @@ type UserPreview struct {
 	AvatarHeight *uint
 }
 
+type UsersParams struct {
+	UsernameQuery string
+}
+
+func (in *UsersParams) Validate() error {
+	in.UsernameQuery = strings.ToLower(in.UsernameQuery)
+	in.UsernameQuery = strings.TrimSpace(in.UsernameQuery)
+
+	if in.UsernameQuery != "" && !validUsernameQuery(in.UsernameQuery) {
+		return ErrInvalidUsername
+	}
+
+	return nil
+}
+
 type UpdateUser struct {
 	Username *string
 }
@@ -71,6 +87,18 @@ type UpdatedAvatar struct {
 	Path   string
 	Width  uint
 	Height uint
+}
+
+func (svc *Service) Users(ctx context.Context, in UsersParams) ([]User, error) {
+	if err := in.Validate(); err != nil {
+		return nil, err
+	}
+
+	usr, _ := UserFromContext(ctx)
+	return svc.sqlSelectUsers(ctx, sqlSelectUsers{
+		FollowerID:    usr.ID,
+		UsernameQuery: in.UsernameQuery,
+	})
 }
 
 func (svc *Service) User(ctx context.Context, username string) (User, error) {
@@ -171,4 +199,8 @@ func validEmail(s string) bool {
 
 func validUsername(s string) bool {
 	return reUsername.MatchString(s)
+}
+
+func validUsernameQuery(s string) bool {
+	return reUsernameQuery.MatchString(s)
 }

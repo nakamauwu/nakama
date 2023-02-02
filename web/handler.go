@@ -75,6 +75,10 @@ func (h *Handler) init() {
 		http.MethodPatch: h.updateUser,
 	})
 
+	r.Handle("/search", mux.MethodHandler{
+		http.MethodGet: h.showSearch,
+	})
+
 	r.Handle("/*", mux.MethodHandler{
 		http.MethodGet: h.staticHandler(),
 	})
