@@ -101,6 +101,7 @@ func (svc *Service) sqlSelectUsers(ctx context.Context, in sqlSelectUsers) ([]Us
 			) AS following
 		FROM users
 		WHERE CASE
+			-- Text search over a GiST index.
 			WHEN $1::varchar != '' THEN LOWER(users.username) % LOWER($1::varchar)
 			ELSE false
 		END
