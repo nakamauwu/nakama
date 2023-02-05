@@ -19,7 +19,7 @@ type (
 		Session
 		CreatePostErr  error
 		CreatePostForm url.Values
-		Posts          any
+		Posts          []nakama.Post
 		Mode           string
 	}
 	postData struct {
@@ -44,7 +44,7 @@ func (h *Handler) showPosts(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	mode := r.URL.Query().Get("mode")
 
-	var posts any
+	var posts []nakama.Post
 	var err error
 
 	if _, ok := nakama.UserFromContext(ctx); ok && mode != "global" {

@@ -18,9 +18,18 @@ CREATE TABLE IF NOT EXISTS posts (
     id VARCHAR NOT NULL PRIMARY KEY,
     user_id VARCHAR NOT NULL REFERENCES users ON DELETE CASCADE ON UPDATE CASCADE,
     content TEXT NOT NULL,
+    reactions_count JSON,
     comments_count INTEGER NOT NULL DEFAULT 0 CHECK (comments_count >= 0),
     created_at TIMESTAMP NOT NULL DEFAULT now(),
     updated_at TIMESTAMP NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS post_reactions (
+    user_id VARCHAR NOT NULL REFERENCES users ON DELETE CASCADE ON UPDATE CASCADE,
+    post_id VARCHAR NOT NULL REFERENCES posts ON DELETE CASCADE ON UPDATE CASCADE,
+    reaction VARCHAR NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT now(),
+    PRIMARY KEY (user_id, post_id, reaction)
 );
 
 CREATE TABLE IF NOT EXISTS comments (

@@ -27,13 +27,14 @@ const maxPostContentLength = 1000
 // }
 
 type Post struct {
-	ID            string
-	UserID        string
-	Content       string
-	CommentsCount int32
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
-	User          UserPreview
+	ID             string
+	UserID         string
+	Content        string
+	ReactionsCount ReactionsCount
+	CommentsCount  int32
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	User           UserPreview
 }
 
 type CreatePost struct {

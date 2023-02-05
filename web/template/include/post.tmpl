@@ -26,7 +26,13 @@
     {{/* linkify transforms urls into anchor tags */}}
     <p style="white-space: pre-line;">{{linkify .Post.Content}}</p>
 
-    <div>
+    <div class="stack">
+        {{$reactionAction := printf "/p/%s/reactions" .Post.ID}}
+        {{if .Session.IsLoggedIn}}
+        {{template "add-reaction-form.tmpl" (dict "Action" $reactionAction)}}
+        {{end}}
+        {{$rpip := dict "Session" .Session "Action" $reactionAction "ReactionsCount" .Post.ReactionsCount}}
+        {{template "reactions.tmpl" $rpip}}
         <a href="/p/{{.Post.ID}}" class="stack" style="text-decoration: none; color: inherit;"
             title="{{.Post.CommentsCount}} comments" aria-label="{{.Post.CommentsCount}} comments">
             <span>{{.Post.CommentsCount}}</span>

@@ -1,0 +1,20 @@
+{{if .Session.IsLoggedIn}}
+{{range .ReactionsCount}}
+<form action="{{$.Action}}" method="POST">
+    <input type="hidden" name="reaction" value="{{.Reaction}}">
+    <button>
+        <div class="stack">
+            <span>{{.Reaction}}</span>
+            <span>{{.Count}}</span>
+        </div>
+    </button>
+</form>
+{{end}}
+{{else}}
+{{range .ReactionsCount}}
+<div class="btn stack">
+    <span>{{.Reaction}}</span>
+    <span>{{.Count}}</span>
+</div>
+{{end}}
+{{end}}

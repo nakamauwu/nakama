@@ -98,11 +98,10 @@ svg {
     border-bottom-left-radius: 0;
 }
 
-a.btn {
+.btn {
     cursor: pointer;
 
     color: var(--form-text);
-    background-color: var(--background);
     font-family: inherit;
     font-size: inherit;
     margin-right: 6px;
@@ -115,8 +114,6 @@ a.btn {
     background-color: var(--button-base);
     padding-right: 30px;
     padding-left: 30px;
-
-    -webkit-appearance: none;
 }
 
 a.btn:hover {
@@ -141,4 +138,42 @@ a.btn:active {
     height: 7rem;
     object-fit: cover;
     border-radius: 50%;
+}
+
+.menu {
+    position: relative;
+}
+
+.menu-toggle {
+    display: none !important;
+}
+
+.menu-trigger {
+    user-select: none;
+    touch-action: manipulation;
+
+    -webkit-user-select: none;
+}
+
+.menu-toggle:checked~.menu-trigger::before {
+    content: "";
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+}
+
+.menu-toggle:not(:checked)~.menu-dropdown {
+    display: none;
+}
+
+.menu-toggle:checked~.menu-dropdown {
+    position: absolute;
+    top: 100%;
+    background-color: var(--background);
+    box-shadow: 0 0 1rem .5rem rgba(0, 0, 0, .2);
+    padding: 1rem;
+    padding-bottom: 0.5rem;
+    border-radius: 6px;
 }

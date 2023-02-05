@@ -2,7 +2,7 @@
 
 {{define "content"}}
 <main>
-    {{template "post.tmpl" (dict "Post" .Post)}}
+    {{template "post.tmpl" (dict "Session" .Session "Post" .Post)}}
 
     <h2>Comments</h2>
 

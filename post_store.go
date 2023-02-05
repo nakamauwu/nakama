@@ -2,6 +2,8 @@ package nakama
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -24,8 +26,9 @@ type sqlInsertTimeline struct {
 }
 
 type sqlUpdatePost struct {
-	IncreaseCommentsCountBy int32
 	PostID                  string
+	IncreaseCommentsCountBy int32
+	ReactionsCount          *ReactionsCount
 }
 
 type sqlInsertedTimelineItem struct {
@@ -95,6 +98,7 @@ func (svc *Service) sqlSelectPosts(ctx context.Context, username string) ([]Post
 			  posts.id
 			, posts.user_id
 			, posts.content
+			, posts.reactions_count
 			, posts.comments_count
 			, posts.created_at
 			, posts.updated_at
@@ -122,6 +126,7 @@ func (svc *Service) sqlSelectPosts(ctx context.Context, username string) ([]Post
 			&out.ID,
 			&out.UserID,
 			&out.Content,
+			&db.JSONValue{Dst: &out.ReactionsCount},
 			&out.CommentsCount,
 			&out.CreatedAt,
 			&out.UpdatedAt,
@@ -139,6 +144,7 @@ func (svc *Service) sqlSelectTimeline(ctx context.Context, userID string) ([]Pos
 			  posts.id
 			, posts.user_id
 			, posts.content
+			, posts.reactions_count
 			, posts.comments_count
 			, posts.created_at
 			, posts.updated_at
@@ -163,6 +169,7 @@ func (svc *Service) sqlSelectTimeline(ctx context.Context, userID string) ([]Pos
 			&out.ID,
 			&out.UserID,
 			&out.Content,
+			&db.JSONValue{Dst: &out.ReactionsCount},
 			&out.CommentsCount,
 			&out.CreatedAt,
 			&out.UpdatedAt,
@@ -180,6 +187,7 @@ func (svc *Service) sqlSelectPost(ctx context.Context, postID string) (Post, err
 			  posts.id
 			, posts.user_id
 			, posts.content
+			, posts.reactions_count
 			, posts.comments_count
 			, posts.created_at
 			, posts.updated_at
@@ -196,6 +204,7 @@ func (svc *Service) sqlSelectPost(ctx context.Context, postID string) (Post, err
 		&p.ID,
 		&p.UserID,
 		&p.Content,
+		&db.JSONValue{Dst: &p.ReactionsCount},
 		&p.CommentsCount,
 		&p.CreatedAt,
 		&p.UpdatedAt,
@@ -211,15 +220,41 @@ func (svc *Service) sqlSelectPost(ctx context.Context, postID string) (Post, err
 	return p, err
 }
 
+func (svc *Service) sqlSelectPostReactionsCount(ctx context.Context, postID string) (ReactionsCount, error) {
+	const query = `
+		SELECT reactions_count FROM posts WHERE id = $1
+	`
+
+	var out ReactionsCount
+	row := svc.DB.QueryRowContext(ctx, query, postID)
+	err := row.Scan(&db.JSONValue{Dst: &out})
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrPostNotFound
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("sql select post reaction counts: %w", err)
+	}
+
+	return out, nil
+}
+
 func (svc *Service) sqlUpdatePost(ctx context.Context, in sqlUpdatePost) (time.Time, error) {
 	const query = `
 		UPDATE posts
-		SET comments_count = comments_count + $1, updated_at = now()
-		WHERE id = $2
+		SET comments_count = comments_count + $1
+			, reactions_count = COALESCE($2, reactions_count)
+			, updated_at = now()
+		WHERE id = $3
 		RETURNING updated_at
 	`
 	var updatedAt time.Time
-	err := svc.DB.QueryRowContext(ctx, query, in.IncreaseCommentsCountBy, in.PostID).Scan(&updatedAt)
+	row := svc.DB.QueryRowContext(ctx, query,
+		in.IncreaseCommentsCountBy,
+		db.JSONValue{Dst: in.ReactionsCount},
+		in.PostID,
+	)
+	err := row.Scan(&updatedAt)
 	if err != nil {
 		return time.Time{}, fmt.Errorf("sql update post: %w", err)
 	}

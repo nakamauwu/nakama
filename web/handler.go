@@ -50,6 +50,10 @@ func (h *Handler) init() {
 		http.MethodGet: h.showPost,
 	})
 
+	r.Handle("/p/{postID}/reactions", mux.MethodHandler{
+		http.MethodPost: h.addPostReaction,
+	})
+
 	r.Handle("/comments", mux.MethodHandler{
 		http.MethodPost: h.createComment,
 	})
