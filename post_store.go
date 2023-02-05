@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/lib/pq"
 	"github.com/nakamauwu/nakama/db"
 )
 
@@ -23,6 +24,11 @@ type sqlInsertPost struct {
 type sqlInsertTimeline struct {
 	PostID     string
 	FollowedID string
+}
+
+type sqlSelectPosts struct {
+	AuthUserID string
+	Username   string
 }
 
 type sqlUpdatePost struct {
@@ -92,13 +98,14 @@ func (svc *Service) sqlInsertTimeline(ctx context.Context, in sqlInsertTimeline)
 	})
 }
 
-func (svc *Service) sqlSelectPosts(ctx context.Context, username string) ([]Post, error) {
+func (svc *Service) sqlSelectPosts(ctx context.Context, in sqlSelectPosts) ([]Post, error) {
 	const query = `
 		SELECT
 			  posts.id
 			, posts.user_id
 			, posts.content
 			, posts.reactions_count
+			, reactions
 			, posts.comments_count
 			, posts.created_at
 			, posts.updated_at
@@ -108,25 +115,33 @@ func (svc *Service) sqlSelectPosts(ctx context.Context, username string) ([]Post
 			, users.avatar_height
 		FROM posts
 		INNER JOIN users ON posts.user_id = users.id
+		LEFT JOIN (
+			SELECT post_id, array_agg(reaction) AS reactions
+			FROM post_reactions
+			WHERE post_reactions.user_id = $1
+			GROUP BY post_id
+		) AS post_reactions ON post_reactions.post_id = posts.id
 		WHERE
 			CASE
-				WHEN $1::varchar != '' THEN LOWER(users.username) = LOWER($1::varchar)
+				WHEN $2::varchar != '' THEN LOWER(users.username) = LOWER($2::varchar)
 				ELSE true
 			END
 		ORDER BY posts.id DESC
 	`
-	rows, err := svc.DB.QueryContext(ctx, query, username)
+	rows, err := svc.DB.QueryContext(ctx, query, in.AuthUserID, in.Username)
 	if err != nil {
 		return nil, fmt.Errorf("sql select posts: %w", err)
 	}
 
 	return db.Collect(rows, func(scan db.ScanFunc) (Post, error) {
 		var out Post
-		return out, scan(
+		var reactions []string
+		err := scan(
 			&out.ID,
 			&out.UserID,
 			&out.Content,
 			&db.JSONValue{Dst: &out.ReactionsCount},
+			pq.Array(&reactions),
 			&out.CommentsCount,
 			&out.CreatedAt,
 			&out.UpdatedAt,
@@ -135,6 +150,13 @@ func (svc *Service) sqlSelectPosts(ctx context.Context, username string) ([]Post
 			&out.User.AvatarWidth,
 			&out.User.AvatarHeight,
 		)
+		if err != nil {
+			return out, err
+		}
+
+		out.ReactionsCount.Apply(reactions)
+
+		return out, nil
 	})
 }
 
@@ -145,6 +167,7 @@ func (svc *Service) sqlSelectTimeline(ctx context.Context, userID string) ([]Pos
 			, posts.user_id
 			, posts.content
 			, posts.reactions_count
+			, reactions
 			, posts.comments_count
 			, posts.created_at
 			, posts.updated_at
@@ -155,6 +178,12 @@ func (svc *Service) sqlSelectTimeline(ctx context.Context, userID string) ([]Pos
 		FROM timeline
 		INNER JOIN posts ON timeline.post_id = posts.id
 		INNER JOIN users ON posts.user_id = users.id
+		LEFT JOIN (
+			SELECT post_id, array_agg(reaction) AS reactions
+			FROM post_reactions
+			WHERE post_reactions.user_id = $1
+			GROUP BY post_id
+		) AS post_reactions ON post_reactions.post_id = posts.id
 		WHERE timeline.user_id = $1
 		ORDER BY timeline.id DESC
 	`
@@ -165,11 +194,13 @@ func (svc *Service) sqlSelectTimeline(ctx context.Context, userID string) ([]Pos
 
 	return db.Collect(rows, func(scan db.ScanFunc) (Post, error) {
 		var out Post
-		return out, scan(
+		var reactions []string
+		err := scan(
 			&out.ID,
 			&out.UserID,
 			&out.Content,
 			&db.JSONValue{Dst: &out.ReactionsCount},
+			pq.Array(&reactions),
 			&out.CommentsCount,
 			&out.CreatedAt,
 			&out.UpdatedAt,
@@ -178,6 +209,13 @@ func (svc *Service) sqlSelectTimeline(ctx context.Context, userID string) ([]Pos
 			&out.User.AvatarWidth,
 			&out.User.AvatarHeight,
 		)
+		if err != nil {
+			return out, err
+		}
+
+		out.ReactionsCount.Apply(reactions)
+
+		return out, nil
 	})
 }
 

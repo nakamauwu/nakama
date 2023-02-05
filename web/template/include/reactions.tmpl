@@ -1,8 +1,11 @@
 {{if .Session.IsLoggedIn}}
 {{range .ReactionsCount}}
 <form action="{{$.Action}}" method="POST">
+    {{if .Reacted}}
+    <input type="hidden" name="_method" value="DELETE">
+    {{end}}
     <input type="hidden" name="reaction" value="{{.Reaction}}">
-    <button>
+    <button class="{{if .Reacted}}reacted{{end}}">
         <div class="stack">
             <span>{{.Reaction}}</span>
             <span class="muted">{{.Count}}</span>

@@ -17,11 +17,6 @@ type sqlSelectPostReactionExistence sqlInsertPostReaction
 
 type sqlDeletePostReaction sqlInsertPostReaction
 
-type sqlUpdatePostReactions struct {
-	PostID         string
-	ReactionsCount ReactionsCount
-}
-
 func (svc *Service) sqlInsertPostReaction(ctx context.Context, in sqlInsertPostReaction) error {
 	const query = `
 		INSERT INTO post_reactions (user_id, post_id, reaction)

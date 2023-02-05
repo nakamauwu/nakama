@@ -51,7 +51,8 @@ func (h *Handler) init() {
 	})
 
 	r.Handle("/p/{postID}/reactions", mux.MethodHandler{
-		http.MethodPost: h.addPostReaction,
+		http.MethodPost:   h.addPostReaction,
+		http.MethodDelete: h.removePostReaction,
 	})
 
 	r.Handle("/comments", mux.MethodHandler{

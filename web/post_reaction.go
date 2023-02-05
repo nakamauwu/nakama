@@ -24,3 +24,21 @@ func (h *Handler) addPostReaction(w http.ResponseWriter, r *http.Request) {
 
 	http.Redirect(w, r, r.Referer(), http.StatusFound)
 }
+
+// removePostReaction handles DELETE /p/{postID}/reactions.
+func (h *Handler) removePostReaction(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	postID := mux.URLParam(ctx, "postID")
+	reaction := r.PostFormValue("reaction")
+	err := h.Service.RemovePostReaction(ctx, nakama.RemovePostReaction{
+		PostID:   postID,
+		Reaction: reaction,
+	})
+	if err != nil {
+		// TODO: flash message
+		http.Redirect(w, r, r.Referer(), http.StatusFound)
+		return
+	}
+
+	http.Redirect(w, r, r.Referer(), http.StatusFound)
+}

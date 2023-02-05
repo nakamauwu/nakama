@@ -146,7 +146,12 @@ func (svc *Service) Posts(ctx context.Context, in PostsParams) ([]Post, error) {
 	if err := in.Validate(); err != nil {
 		return nil, err
 	}
-	return svc.sqlSelectPosts(ctx, in.Username)
+
+	usr, _ := UserFromContext(ctx)
+	return svc.sqlSelectPosts(ctx, sqlSelectPosts{
+		AuthUserID: usr.ID,
+		Username:   in.Username,
+	})
 }
 
 func (svc *Service) Post(ctx context.Context, postID string) (Post, error) {
