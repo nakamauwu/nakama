@@ -225,7 +225,7 @@ func (svc *Service) sqlSelectTimeline(ctx context.Context, userID string) ([]Pos
 }
 
 func (svc *Service) sqlSelectPost(ctx context.Context, in sqlSelectPost) (Post, error) {
-	const post = `
+	const query = `
 		SELECT
 			  posts.id
 			, posts.user_id
@@ -251,7 +251,7 @@ func (svc *Service) sqlSelectPost(ctx context.Context, in sqlSelectPost) (Post, 
 	`
 	var p Post
 	var reactions []string
-	err := svc.DB.QueryRowContext(ctx, post, in.AuthUserID, in.PostID).Scan(
+	err := svc.DB.QueryRowContext(ctx, query, in.AuthUserID, in.PostID).Scan(
 		&p.ID,
 		&p.UserID,
 		&p.Content,
@@ -291,7 +291,7 @@ func (svc *Service) sqlSelectPostReactionsCount(ctx context.Context, postID stri
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("sql select post reaction counts: %w", err)
+		return nil, fmt.Errorf("sql select post reactions count: %w", err)
 	}
 
 	return out, nil

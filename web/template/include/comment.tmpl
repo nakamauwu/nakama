@@ -21,7 +21,16 @@
     </div>
 
     {{/* linkify transforms urls into anchor tags */}}
-    <p style="white-space: pre-line; margin-bottom: 0;">{{linkify .Comment.Content}}</p>
+    <p style="white-space: pre-line;">{{linkify .Comment.Content}}</p>
+
+    <div class="stack">
+        {{$reactionAction := printf "/comments/%s/reactions" .Comment.ID}}
+        {{if .Session.IsLoggedIn}}
+        {{template "add-reaction-form.tmpl" (dict "Action" $reactionAction)}}
+        {{end}}
+        {{$rpip := dict "Session" .Session "Action" $reactionAction "ReactionsCount" .Comment.ReactionsCount}}
+        {{template "reactions.tmpl" $rpip}}
+    </div>
 </article>
 
 {{define "head"}}

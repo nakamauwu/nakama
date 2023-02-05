@@ -2,8 +2,6 @@ package nakama
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -163,13 +161,8 @@ func (svc *Service) Post(ctx context.Context, postID string) (Post, error) {
 
 	usr, _ := UserFromContext(ctx)
 
-	out, err := svc.sqlSelectPost(ctx, sqlSelectPost{
+	return svc.sqlSelectPost(ctx, sqlSelectPost{
 		PostID:     postID,
 		AuthUserID: usr.ID,
 	})
-	if errors.Is(err, sql.ErrNoRows) {
-		return out, ErrPostNotFound
-	}
-
-	return out, err
 }

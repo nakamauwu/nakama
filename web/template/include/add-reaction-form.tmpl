@@ -9,17 +9,17 @@
         </svg>
     </label>
     <div class="stack menu-dropdown">
-        <form action="{{.Action}}" method="POST" hx-post="{{.Action}}" hx-target="closest .post" hx-swap="outerHTML">
+        <form action="{{.Action}}" method="POST" hx-post="{{.Action}}" hx-target="closest article" hx-swap="outerHTML">
             <input type="hidden" name="reaction" value="❤️">
             <button>❤️</button>
         </form>
 
-        <form action="{{.Action}}" method="POST" hx-post="{{.Action}}" hx-target="closest .post" hx-swap="outerHTML">
+        <form action="{{.Action}}" method="POST" hx-post="{{.Action}}" hx-target="closest article" hx-swap="outerHTML">
             <input type="hidden" name="reaction" value="👍">
             <button>👍</button>
         </form>
 
-        <form action="{{.Action}}" method="POST" hx-post="{{.Action}}" hx-target="closest .post" hx-swap="outerHTML">
+        <form action="{{.Action}}" method="POST" hx-post="{{.Action}}" hx-target="closest article" hx-swap="outerHTML">
             <input type="hidden" name="reaction" value="👏">
             <button>👏</button>
         </form>

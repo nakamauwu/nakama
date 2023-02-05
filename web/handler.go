@@ -59,6 +59,11 @@ func (h *Handler) init() {
 		http.MethodPost: h.createComment,
 	})
 
+	r.Handle("/comments/{commentID}/reactions", mux.MethodHandler{
+		http.MethodPost:   h.addCommentReaction,
+		http.MethodDelete: h.removeCommentReaction,
+	})
+
 	r.Handle("/@{username}", mux.MethodHandler{
 		http.MethodGet: h.showUser,
 	})

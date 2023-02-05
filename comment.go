@@ -10,19 +10,22 @@ import (
 )
 
 const (
+	ErrInvalidCommentID      = errs.InvalidArgumentError("invalid comment ID")
 	ErrInvalidCommentContent = errs.InvalidArgumentError("invalid comment content")
+	ErrCommentNotFound       = errs.NotFoundError("comment not found")
 )
 
 const maxCommentContentLength = 1000
 
 type Comment struct {
-	ID        string
-	UserID    string
-	PostID    string
-	Content   string
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	User      UserPreview
+	ID             string
+	UserID         string
+	PostID         string
+	Content        string
+	ReactionsCount ReactionsCount
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	User           UserPreview
 }
 
 type CreateComment struct {
@@ -88,4 +91,19 @@ func (svc *Service) Comments(ctx context.Context, postID string) ([]Comment, err
 		return nil, ErrInvalidPostID
 	}
 	return svc.sqlSelectComments(ctx, postID)
+}
+
+func (svc *Service) Comment(ctx context.Context, commentID string) (Comment, error) {
+	var out Comment
+
+	if !validID(commentID) {
+		return out, ErrInvalidCommentID
+	}
+
+	usr, _ := UserFromContext(ctx)
+
+	return svc.sqlSelectComment(ctx, sqlSelectComment{
+		CommentID:  commentID,
+		AuthUserID: usr.ID,
+	})
 }

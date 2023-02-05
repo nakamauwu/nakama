@@ -11,7 +11,7 @@
     {{else}}
     <section style="display: flex; flex-direction: column; gap: 1rem;">
         {{range .Comments}}
-        {{template "comment.tmpl" (dict "Comment" .)}}
+        {{template "comment.tmpl" (dict "Session" $.Session "Comment" .)}}
         {{end}}
     </section>
     {{end}}

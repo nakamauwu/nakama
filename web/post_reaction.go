@@ -7,6 +7,15 @@ import (
 	"github.com/nicolasparada/go-mux"
 )
 
+type renderSinglePost struct {
+	Session
+	Post nakama.Post
+}
+
+func (h *Handler) renderSinglePost(w http.ResponseWriter, data renderSinglePost) {
+	h.renderNamedTmpl(w, postPageTmpl, "post.tmpl", data, http.StatusOK)
+}
+
 // addPostReaction handles POST /p/{postID}/reactions.
 func (h *Handler) addPostReaction(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -33,10 +42,10 @@ func (h *Handler) addPostReaction(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		h.renderNamedTmpl(w, postPageTmpl, "post.tmpl", postData{
+		h.renderSinglePost(w, renderSinglePost{
 			Session: h.sessionFromReq(r),
 			Post:    post,
-		}, http.StatusOK)
+		})
 		return
 	}
 
@@ -70,10 +79,10 @@ func (h *Handler) removePostReaction(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		h.renderNamedTmpl(w, postPageTmpl, "post.tmpl", postData{
+		h.renderSinglePost(w, renderSinglePost{
 			Session: h.sessionFromReq(r),
 			Post:    post,
-		}, http.StatusOK)
+		})
 		return
 	}
 

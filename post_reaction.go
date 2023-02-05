@@ -23,19 +23,7 @@ func (in *AddPostReaction) Validate() error {
 	return nil
 }
 
-type RemovePostReaction AddPostReaction
-
-func (in *RemovePostReaction) Validate() error {
-	if !validID(in.PostID) {
-		return ErrInvalidPostID
-	}
-
-	if !validEmoji(in.Reaction) {
-		return ErrInvalidEmoji
-	}
-
-	return nil
-}
+type RemovePostReaction = AddPostReaction
 
 func (svc *Service) AddPostReaction(ctx context.Context, in AddPostReaction) error {
 	if err := in.Validate(); err != nil {
