@@ -176,4 +176,9 @@ a.btn:active {
     padding: 1rem;
     padding-bottom: 0.5rem;
     border-radius: 6px;
+    z-index: 3;
+}
+
+.muted {
+    color: var(--text-muted);
 }

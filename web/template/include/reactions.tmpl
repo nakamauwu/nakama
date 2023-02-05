@@ -5,7 +5,7 @@
     <button>
         <div class="stack">
             <span>{{.Reaction}}</span>
-            <span>{{.Count}}</span>
+            <span class="muted">{{.Count}}</span>
         </div>
     </button>
 </form>
@@ -14,7 +14,7 @@
 {{range .ReactionsCount}}
 <div class="btn stack">
     <span>{{.Reaction}}</span>
-    <span>{{.Count}}</span>
+    <span class="muted">{{.Count}}</span>
 </div>
 {{end}}
 {{end}}
