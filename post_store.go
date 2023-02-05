@@ -37,6 +37,11 @@ type sqlUpdatePost struct {
 	ReactionsCount          *ReactionsCount
 }
 
+type sqlSelectPost struct {
+	PostID     string
+	AuthUserID string
+}
+
 type sqlInsertedTimelineItem struct {
 	ID     string
 	UserID string
@@ -219,13 +224,14 @@ func (svc *Service) sqlSelectTimeline(ctx context.Context, userID string) ([]Pos
 	})
 }
 
-func (svc *Service) sqlSelectPost(ctx context.Context, postID string) (Post, error) {
+func (svc *Service) sqlSelectPost(ctx context.Context, in sqlSelectPost) (Post, error) {
 	const post = `
 		SELECT
 			  posts.id
 			, posts.user_id
 			, posts.content
 			, posts.reactions_count
+			, reactions
 			, posts.comments_count
 			, posts.created_at
 			, posts.updated_at
@@ -235,14 +241,22 @@ func (svc *Service) sqlSelectPost(ctx context.Context, postID string) (Post, err
 			, users.avatar_height
 		FROM posts
 		INNER JOIN users ON posts.user_id = users.id
-		WHERE posts.id = $1
+		LEFT JOIN (
+			SELECT post_id, array_agg(reaction) AS reactions
+			FROM post_reactions
+			WHERE post_reactions.user_id = $1
+			GROUP BY post_id
+		) AS post_reactions ON post_reactions.post_id = posts.id
+		WHERE posts.id = $2
 	`
 	var p Post
-	err := svc.DB.QueryRowContext(ctx, post, postID).Scan(
+	var reactions []string
+	err := svc.DB.QueryRowContext(ctx, post, in.AuthUserID, in.PostID).Scan(
 		&p.ID,
 		&p.UserID,
 		&p.Content,
 		&db.JSONValue{Dst: &p.ReactionsCount},
+		pq.Array(&reactions),
 		&p.CommentsCount,
 		&p.CreatedAt,
 		&p.UpdatedAt,
@@ -251,11 +265,17 @@ func (svc *Service) sqlSelectPost(ctx context.Context, postID string) (Post, err
 		&p.User.AvatarWidth,
 		&p.User.AvatarHeight,
 	)
+	if errors.Is(err, sql.ErrNoRows) {
+		return Post{}, ErrPostNotFound
+	}
+
 	if err != nil {
 		return Post{}, fmt.Errorf("sql select post: %w", err)
 	}
 
-	return p, err
+	p.ReactionsCount.Apply(reactions)
+
+	return p, nil
 }
 
 func (svc *Service) sqlSelectPostReactionsCount(ctx context.Context, postID string) (ReactionsCount, error) {

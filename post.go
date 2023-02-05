@@ -161,7 +161,12 @@ func (svc *Service) Post(ctx context.Context, postID string) (Post, error) {
 		return out, ErrInvalidPostID
 	}
 
-	out, err := svc.sqlSelectPost(ctx, postID)
+	usr, _ := UserFromContext(ctx)
+
+	out, err := svc.sqlSelectPost(ctx, sqlSelectPost{
+		PostID:     postID,
+		AuthUserID: usr.ID,
+	})
 	if errors.Is(err, sql.ErrNoRows) {
 		return out, ErrPostNotFound
 	}

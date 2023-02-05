@@ -33,7 +33,7 @@
     {{else}}
     <section style="display: flex; flex-direction: column; gap: 1rem;">
         {{range .Posts}}
-        {{template "post.tmpl" (dict "Post" .)}}
+        {{template "post.tmpl" (dict "Session" $.Session "Post" .)}}
         {{end}}
     </section>
     {{end}}
