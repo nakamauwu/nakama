@@ -15,6 +15,8 @@ type sqlInsertPostReaction struct {
 
 type sqlSelectPostReactionExistence sqlInsertPostReaction
 
+type sqlDeletePostReaction sqlInsertPostReaction
+
 type sqlUpdatePostReactions struct {
 	PostID         string
 	ReactionsCount ReactionsCount
@@ -56,4 +58,20 @@ func (svc *Service) sqlSelectPostReactionExistence(ctx context.Context, in sqlSe
 	}
 
 	return exists, nil
+}
+
+func (svc *Service) sqlDeletePostReaction(ctx context.Context, in sqlDeletePostReaction) error {
+	const query = `
+		DELETE FROM post_reactions
+		WHERE user_id = $1
+			AND post_id = $2
+			AND reaction = $3
+	`
+
+	_, err := svc.DB.ExecContext(ctx, query, in.UserID, in.PostID, in.Reaction)
+	if err != nil {
+		return fmt.Errorf("sql delete post reaction: %w", err)
+	}
+
+	return nil
 }

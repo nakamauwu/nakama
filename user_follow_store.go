@@ -13,15 +13,9 @@ type sqlInsertUserFollow struct {
 	FollowedID string
 }
 
-type sqlDeleteUserFollow struct {
-	FollowerID string
-	FollowedID string
-}
+type sqlDeleteUserFollow sqlInsertUserFollow
 
-type sqlSelectUserFollowExists struct {
-	FollowerID string
-	FollowedID string
-}
+type sqlSelectUserFollowExists sqlInsertUserFollow
 
 func (svc *Service) sqlInsertUserFollow(ctx context.Context, in sqlInsertUserFollow) (time.Time, error) {
 	const createUserFollow = `
