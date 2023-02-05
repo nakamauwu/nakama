@@ -22,6 +22,24 @@ func (h *Handler) addPostReaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// render just partial <article class="post"> element
+	// that will be swapped by HTMX.
+	if isHXReq(r) {
+		post, err := h.Service.Post(ctx, postID)
+		if err != nil {
+			h.log(err)
+			// TODO: flash message
+			http.Redirect(w, r, r.Referer(), http.StatusFound)
+			return
+		}
+
+		h.renderNamedTmpl(w, postPageTmpl, "post.tmpl", postData{
+			Session: h.sessionFromReq(r),
+			Post:    post,
+		}, http.StatusOK)
+		return
+	}
+
 	http.Redirect(w, r, r.Referer(), http.StatusFound)
 }
 
@@ -35,8 +53,27 @@ func (h *Handler) removePostReaction(w http.ResponseWriter, r *http.Request) {
 		Reaction: reaction,
 	})
 	if err != nil {
+		h.log(err)
 		// TODO: flash message
 		http.Redirect(w, r, r.Referer(), http.StatusFound)
+		return
+	}
+
+	// render just partial <article class="post"> element
+	// that will be swapped by HTMX.
+	if isHXReq(r) {
+		post, err := h.Service.Post(ctx, postID)
+		if err != nil {
+			h.log(err)
+			// TODO: flash message
+			http.Redirect(w, r, r.Referer(), http.StatusFound)
+			return
+		}
+
+		h.renderNamedTmpl(w, postPageTmpl, "post.tmpl", postData{
+			Session: h.sessionFromReq(r),
+			Post:    post,
+		}, http.StatusOK)
 		return
 	}
 

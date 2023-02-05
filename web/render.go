@@ -43,6 +43,23 @@ func (h *Handler) renderTmpl(w http.ResponseWriter, tmpl *template.Template, dat
 	}
 }
 
+func (h *Handler) renderNamedTmpl(w http.ResponseWriter, tmpl *template.Template, name string, data any, statusCode int) {
+	var buff bytes.Buffer
+	err := tmpl.ExecuteTemplate(&buff, name, data)
+	if err != nil {
+		_ = h.Logger.Output(2, fmt.Sprintf("could not render %q: %v\n", tmpl.Name(), err))
+		http.Error(w, fmt.Sprintf("could not render %q", tmpl.Name()), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(statusCode)
+	_, err = buff.WriteTo(w)
+	if err != nil {
+		_ = h.Logger.Output(2, fmt.Sprintf("could not send %q: %v\n", tmpl.Name(), err))
+	}
+}
+
 // linkify transforms URLs in the given text to HTML anchor tags.
 func linkify(s string) template.HTML {
 	s = template.HTMLEscapeString(s)
