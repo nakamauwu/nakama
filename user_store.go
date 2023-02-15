@@ -6,51 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"time"
-
-	"github.com/nakamauwu/nakama/db"
 )
 
-type sqlInsertUser struct {
-	Email    string
-	Username string
-}
-
-type sqlInsertedUser struct {
-	ID        string
-	CreatedAt time.Time
-}
-
-type sqlSelectUsers struct {
-	FollowerID    string
-	UsernameQuery string
-}
-
-type sqlSelectUser struct {
-	FollowerID string
-	UserID     string
-	Email      string
-	Username   string
-}
-
-type sqlSelectUserExists struct {
-	UserID   string
-	Email    string
-	Username string
-}
-
-type sqlUpdateUser struct {
-	Username                 *string
-	AvatarPath               *string
-	AvatarWidth              *uint
-	AvatarHeight             *uint
-	IncreasePostsCountBy     int
-	IncreaseFollowersCountBy int
-	IncreaseFollowingCountBy int
-	UserID                   string
-}
-
-func (svc *Service) sqlInsertUser(ctx context.Context, in sqlInsertUser) (sqlInsertedUser, error) {
-	var out sqlInsertedUser
+func (db *Store) CreateUser(ctx context.Context, in CreateUser) (CreatedUser, error) {
+	var out CreatedUser
 
 	const query = `
 		INSERT INTO users (id, email, username)
@@ -58,7 +17,7 @@ func (svc *Service) sqlInsertUser(ctx context.Context, in sqlInsertUser) (sqlIns
 		RETURNING created_at
 	`
 	userID := genID()
-	err := svc.DB.QueryRowContext(ctx, query, userID, in.Email, in.Username).Scan(&out.CreatedAt)
+	err := db.QueryRowContext(ctx, query, userID, in.Email, in.Username).Scan(&out.CreatedAt)
 	if err != nil {
 		return out, fmt.Errorf("sql insert user: %w", err)
 	}
@@ -68,7 +27,7 @@ func (svc *Service) sqlInsertUser(ctx context.Context, in sqlInsertUser) (sqlIns
 	return out, nil
 }
 
-func (svc *Service) sqlSelectUsers(ctx context.Context, in sqlSelectUsers) ([]User, error) {
+func (db *Store) Users(ctx context.Context, in UsersParams) ([]User, error) {
 	const query = `
 		SELECT users.id
 			, users.email
@@ -108,20 +67,20 @@ func (svc *Service) sqlSelectUsers(ctx context.Context, in sqlSelectUsers) ([]Us
 		ORDER BY similarity DESC, users.id DESC
 	`
 
-	rows, err := svc.DB.QueryContext(ctx, query, in.UsernameQuery, in.FollowerID)
+	rows, err := db.QueryContext(ctx, query, in.UsernameQuery, in.authUserID)
 	if err != nil {
 		return nil, fmt.Errorf("sql select users: %w", err)
 	}
 
-	return db.Collect(rows, func(scan db.ScanFunc) (User, error) {
+	return collect(rows, func(scanner scanner) (User, error) {
 		var u User
 		var sim float64 // unused
-		return u, scan(
+		return u, scanner.Scan(
 			&u.ID,
 			&u.Email,
 			&u.Username,
 			&sim,
-			svc.sqlScanAvatar(&u.AvatarPath),
+			db.AvatarScanFunc(&u.AvatarPath),
 			&u.AvatarWidth,
 			&u.AvatarHeight,
 			&u.PostsCount,
@@ -134,7 +93,7 @@ func (svc *Service) sqlSelectUsers(ctx context.Context, in sqlSelectUsers) ([]Us
 	})
 }
 
-func (svc *Service) sqlSelectUser(ctx context.Context, in sqlSelectUser) (User, error) {
+func (db *Store) User(ctx context.Context, in RetrieveUser) (User, error) {
 	const query = `
 		SELECT users.id
 			, users.email
@@ -168,7 +127,7 @@ func (svc *Service) sqlSelectUser(ctx context.Context, in sqlSelectUser) (User, 
 		END
 	`
 	var usr User
-	err := svc.DB.QueryRowContext(ctx, query,
+	err := db.QueryRowContext(ctx, query,
 		in.FollowerID,
 		in.UserID,
 		in.Email,
@@ -177,7 +136,7 @@ func (svc *Service) sqlSelectUser(ctx context.Context, in sqlSelectUser) (User, 
 		&usr.ID,
 		&usr.Email,
 		&usr.Username,
-		svc.sqlScanAvatar(&usr.AvatarPath),
+		db.AvatarScanFunc(&usr.AvatarPath),
 		&usr.AvatarWidth,
 		&usr.AvatarHeight,
 		&usr.PostsCount,
@@ -197,7 +156,7 @@ func (svc *Service) sqlSelectUser(ctx context.Context, in sqlSelectUser) (User, 
 	return usr, nil
 }
 
-func (svc *Service) sqlSelectUserExists(ctx context.Context, in sqlSelectUserExists) (bool, error) {
+func (db *Store) UserExists(ctx context.Context, in UserExistsParams) (bool, error) {
 	const query = `
 		SELECT EXISTS (
 			SELECT 1 FROM users WHERE CASE
@@ -209,7 +168,7 @@ func (svc *Service) sqlSelectUserExists(ctx context.Context, in sqlSelectUserExi
 		)
 	`
 	var exists bool
-	err := svc.DB.QueryRowContext(ctx, query, in.UserID, in.Email, in.Username).Scan(&exists)
+	err := db.QueryRowContext(ctx, query, in.UserID, in.Email, in.Username).Scan(&exists)
 	if err != nil {
 		return false, fmt.Errorf("sql select user exists: %w", err)
 	}
@@ -217,7 +176,7 @@ func (svc *Service) sqlSelectUserExists(ctx context.Context, in sqlSelectUserExi
 	return exists, nil
 }
 
-func (svc *Service) sqlUpdateUser(ctx context.Context, in sqlUpdateUser) (time.Time, error) {
+func (db *Store) UpdateUser(ctx context.Context, in UpdateUser) (time.Time, error) {
 	const query = `
 		UPDATE users SET
 			   username = COALESCE($1, username)
@@ -232,15 +191,15 @@ func (svc *Service) sqlUpdateUser(ctx context.Context, in sqlUpdateUser) (time.T
 		RETURNING updated_at
 	`
 	var updatedAt time.Time
-	err := svc.DB.QueryRowContext(ctx, query,
+	err := db.QueryRowContext(ctx, query,
 		in.Username,
-		in.AvatarPath,
-		in.AvatarWidth,
-		in.AvatarHeight,
-		in.IncreasePostsCountBy,
-		in.IncreaseFollowersCountBy,
-		in.IncreaseFollowingCountBy,
-		in.UserID,
+		in.avatarPath,
+		in.avatarWidth,
+		in.avatarHeight,
+		in.increasePostsCountBy,
+		in.increaseFollowersCountBy,
+		in.increaseFollowingCountBy,
+		in.userID,
 	).Scan(&updatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return time.Time{}, ErrUserNotFound
@@ -251,23 +210,4 @@ func (svc *Service) sqlUpdateUser(ctx context.Context, in sqlUpdateUser) (time.T
 	}
 
 	return updatedAt, nil
-}
-
-func (svc Service) sqlScanAvatar(dst **string) sql.Scanner {
-	return &sqlAvatarScanner{Prefix: svc.AvatarsPrefix, Destination: dst}
-}
-
-type sqlAvatarScanner struct {
-	Prefix      string
-	Destination **string
-}
-
-func (s *sqlAvatarScanner) Scan(src any) error {
-	str, ok := src.(string)
-	if !ok {
-		return nil
-	}
-
-	*s.Destination = ptr(s.Prefix + str)
-	return nil
 }

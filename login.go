@@ -57,14 +57,14 @@ func (svc *Service) Login(ctx context.Context, in Login) (UserIdentity, error) {
 		return out, err
 	}
 
-	return out, svc.DB.RunTx(ctx, func(ctx context.Context) error {
-		exists, err := svc.sqlSelectUserExists(ctx, sqlSelectUserExists{Email: in.Email})
+	return out, svc.Store.RunTx(ctx, func(ctx context.Context) error {
+		exists, err := svc.Store.UserExists(ctx, UserExistsParams{Email: in.Email})
 		if err != nil {
 			return err
 		}
 
 		if exists {
-			usr, err := svc.sqlSelectUser(ctx, sqlSelectUser{Email: in.Email})
+			usr, err := svc.Store.User(ctx, RetrieveUser{Email: in.Email})
 			if err != nil {
 				return err
 			}
@@ -83,7 +83,7 @@ func (svc *Service) Login(ctx context.Context, in Login) (UserIdentity, error) {
 			return ErrUserNotFound
 		}
 
-		exists, err = svc.sqlSelectUserExists(ctx, sqlSelectUserExists{Username: *in.Username})
+		exists, err = svc.Store.UserExists(ctx, UserExistsParams{Username: *in.Username})
 		if err != nil {
 			return err
 		}
@@ -92,7 +92,7 @@ func (svc *Service) Login(ctx context.Context, in Login) (UserIdentity, error) {
 			return ErrUsernameTaken
 		}
 
-		inserted, err := svc.sqlInsertUser(ctx, sqlInsertUser{
+		inserted, err := svc.Store.CreateUser(ctx, CreateUser{
 			Email:    in.Email,
 			Username: *in.Username,
 		})

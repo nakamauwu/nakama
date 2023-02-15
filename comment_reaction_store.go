@@ -3,28 +3,16 @@ package nakama
 import (
 	"context"
 	"fmt"
-
-	"github.com/nakamauwu/nakama/db"
 )
 
-type sqlInsertCommentReaction struct {
-	UserID    string
-	CommentID string
-	Reaction  string
-}
-
-type sqlSelectCommentReactionExistence sqlInsertCommentReaction
-
-type sqlDeleteCommentReaction sqlInsertCommentReaction
-
-func (svc *Service) sqlInsertCommentReaction(ctx context.Context, in sqlInsertCommentReaction) error {
+func (db *Store) CreateCommentReaction(ctx context.Context, in CommentReaction) error {
 	const query = `
 		INSERT INTO comment_reactions (user_id, comment_id, reaction)
 		VALUES ($1, $2, $3)
 	`
 
-	_, err := svc.DB.ExecContext(ctx, query, in.UserID, in.CommentID, in.Reaction)
-	if db.IsPqForeignKeyViolationError(err, "comment_id") {
+	_, err := db.ExecContext(ctx, query, in.userID, in.CommentID, in.Reaction)
+	if isPqForeignKeyViolationError(err, "comment_id") {
 		return ErrCommentNotFound
 	}
 
@@ -35,7 +23,7 @@ func (svc *Service) sqlInsertCommentReaction(ctx context.Context, in sqlInsertCo
 	return nil
 }
 
-func (svc *Service) sqlSelectCommentReactionExistence(ctx context.Context, in sqlSelectCommentReactionExistence) (bool, error) {
+func (db *Store) CommentReactionExists(ctx context.Context, in CommentReaction) (bool, error) {
 	const query = `
 		SELECT EXISTS (
 			SELECT 1 FROM comment_reactions
@@ -46,7 +34,7 @@ func (svc *Service) sqlSelectCommentReactionExistence(ctx context.Context, in sq
 	`
 
 	var exists bool
-	row := svc.DB.QueryRowContext(ctx, query, in.UserID, in.CommentID, in.Reaction)
+	row := db.QueryRowContext(ctx, query, in.userID, in.CommentID, in.Reaction)
 	err := row.Scan(&exists)
 	if err != nil {
 		return false, fmt.Errorf("sql select comment reaction existence: %w", err)
@@ -55,7 +43,7 @@ func (svc *Service) sqlSelectCommentReactionExistence(ctx context.Context, in sq
 	return exists, nil
 }
 
-func (svc *Service) sqlDeleteCommentReaction(ctx context.Context, in sqlDeleteCommentReaction) error {
+func (db *Store) DeleteCommentReaction(ctx context.Context, in CommentReaction) error {
 	const query = `
 		DELETE FROM comment_reactions
 		WHERE user_id = $1
@@ -63,7 +51,7 @@ func (svc *Service) sqlDeleteCommentReaction(ctx context.Context, in sqlDeleteCo
 			AND reaction = $3
 	`
 
-	_, err := svc.DB.ExecContext(ctx, query, in.UserID, in.CommentID, in.Reaction)
+	_, err := db.ExecContext(ctx, query, in.userID, in.CommentID, in.Reaction)
 	if err != nil {
 		return fmt.Errorf("sql delete comment reaction: %w", err)
 	}

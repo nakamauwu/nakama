@@ -6,12 +6,14 @@ import (
 	"github.com/nicolasparada/go-errs"
 )
 
-type AddCommentReaction struct {
+type CommentReaction struct {
 	CommentID string
 	Reaction  string
+
+	userID string
 }
 
-func (in *AddCommentReaction) Validate() error {
+func (in *CommentReaction) Validate() error {
 	if !validID(in.CommentID) {
 		return ErrInvalidCommentID
 	}
@@ -23,24 +25,20 @@ func (in *AddCommentReaction) Validate() error {
 	return nil
 }
 
-type RemoveCommentReaction = AddCommentReaction
-
-func (svc *Service) AddCommentReaction(ctx context.Context, in AddCommentReaction) error {
+func (svc *Service) CreateCommentReaction(ctx context.Context, in CommentReaction) error {
 	if err := in.Validate(); err != nil {
 		return err
 	}
 
-	usr, ok := UserFromContext(ctx)
+	user, ok := UserFromContext(ctx)
 	if !ok {
 		return errs.Unauthenticated
 	}
 
-	return svc.DB.RunTx(ctx, func(ctx context.Context) error {
-		exists, err := svc.sqlSelectCommentReactionExistence(ctx, sqlSelectCommentReactionExistence{
-			UserID:    usr.ID,
-			CommentID: in.CommentID,
-			Reaction:  in.Reaction,
-		})
+	in.userID = user.ID
+
+	return svc.Store.RunTx(ctx, func(ctx context.Context) error {
+		exists, err := svc.Store.CommentReactionExists(ctx, in)
 		if err != nil {
 			return err
 		}
@@ -49,23 +47,19 @@ func (svc *Service) AddCommentReaction(ctx context.Context, in AddCommentReactio
 			return nil
 		}
 
-		err = svc.sqlInsertCommentReaction(ctx, sqlInsertCommentReaction{
-			UserID:    usr.ID,
-			CommentID: in.CommentID,
-			Reaction:  in.Reaction,
-		})
+		err = svc.Store.CreateCommentReaction(ctx, in)
 		if err != nil {
 			return err
 		}
 
-		reactionsCount, err := svc.sqlSelectCommentReactionsCount(ctx, in.CommentID)
+		reactionsCount, err := svc.Store.CommentReactionsCount(ctx, in.CommentID)
 		if err != nil {
 			return err
 		}
 
 		reactionsCount.Inc(in.Reaction)
 
-		_, err = svc.sqlUpdateComment(ctx, sqlUpdateComment{
+		_, err = svc.Store.UpdateComment(ctx, UpdateComment{
 			CommentID:      in.CommentID,
 			ReactionsCount: &reactionsCount,
 		})
@@ -73,22 +67,20 @@ func (svc *Service) AddCommentReaction(ctx context.Context, in AddCommentReactio
 	})
 }
 
-func (svc *Service) RemoveCommentReaction(ctx context.Context, in RemoveCommentReaction) error {
+func (svc *Service) DeleteCommentReaction(ctx context.Context, in CommentReaction) error {
 	if err := in.Validate(); err != nil {
 		return err
 	}
 
-	usr, ok := UserFromContext(ctx)
+	user, ok := UserFromContext(ctx)
 	if !ok {
 		return errs.Unauthenticated
 	}
 
-	return svc.DB.RunTx(ctx, func(ctx context.Context) error {
-		exists, err := svc.sqlSelectCommentReactionExistence(ctx, sqlSelectCommentReactionExistence{
-			UserID:    usr.ID,
-			CommentID: in.CommentID,
-			Reaction:  in.Reaction,
-		})
+	in.userID = user.ID
+
+	return svc.Store.RunTx(ctx, func(ctx context.Context) error {
+		exists, err := svc.Store.CommentReactionExists(ctx, in)
 		if err != nil {
 			return err
 		}
@@ -97,23 +89,19 @@ func (svc *Service) RemoveCommentReaction(ctx context.Context, in RemoveCommentR
 			return nil
 		}
 
-		err = svc.sqlDeleteCommentReaction(ctx, sqlDeleteCommentReaction{
-			UserID:    usr.ID,
-			CommentID: in.CommentID,
-			Reaction:  in.Reaction,
-		})
+		err = svc.Store.DeleteCommentReaction(ctx, in)
 		if err != nil {
 			return err
 		}
 
-		reactionsCount, err := svc.sqlSelectCommentReactionsCount(ctx, in.CommentID)
+		reactionsCount, err := svc.Store.CommentReactionsCount(ctx, in.CommentID)
 		if err != nil {
 			return err
 		}
 
 		reactionsCount.Dec(in.Reaction)
 
-		_, err = svc.sqlUpdateComment(ctx, sqlUpdateComment{
+		_, err = svc.Store.UpdateComment(ctx, UpdateComment{
 			CommentID:      in.CommentID,
 			ReactionsCount: &reactionsCount,
 		})

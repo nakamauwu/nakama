@@ -37,6 +37,8 @@ type Post struct {
 
 type CreatePost struct {
 	Content string
+
+	userID string
 }
 
 func (in *CreatePost) Validate() error {
@@ -49,6 +51,21 @@ func (in *CreatePost) Validate() error {
 	return nil
 }
 
+type CreateTimelineItem struct {
+	userID string
+	postID string
+}
+
+type CreateTimeline struct {
+	postID     string
+	followedID string
+}
+
+type CreatedTimelineItem struct {
+	ID     string
+	UserID string
+}
+
 type CreatedPost struct {
 	ID        string
 	CreatedAt time.Time
@@ -58,6 +75,8 @@ type PostsParams struct {
 	// Username is optional. If empty, all posts are returned.
 	// Otherwise, only posts created by this user are returned.
 	Username string
+
+	authUserID string
 }
 
 func (in *PostsParams) Validate() error {
@@ -70,6 +89,17 @@ func (in *PostsParams) Validate() error {
 	return nil
 }
 
+type RetrievePost struct {
+	PostID     string
+	authUserID string
+}
+
+type UpdatePost struct {
+	PostID                  string
+	IncreaseCommentsCountBy int32
+	ReactionsCount          *ReactionsCount
+}
+
 func (svc *Service) CreatePost(ctx context.Context, in CreatePost) (CreatedPost, error) {
 	var out CreatedPost
 
@@ -77,34 +107,33 @@ func (svc *Service) CreatePost(ctx context.Context, in CreatePost) (CreatedPost,
 		return out, err
 	}
 
-	usr, ok := UserFromContext(ctx)
+	user, ok := UserFromContext(ctx)
 	if !ok {
 		return out, errs.Unauthenticated
 	}
 
+	in.userID = user.ID
+
 	var err error
-	out, err = svc.sqlInsertPost(ctx, sqlInsertPost{
-		UserID:  usr.ID,
-		Content: in.Content,
-	})
+	out, err = svc.Store.CreatePost(ctx, in)
 	if err != nil {
 		return out, err
 	}
 
 	// Side-effect: increase user's posts count on inserts
 	// so we don't have to compute it on each read.
-	_, err = svc.sqlUpdateUser(ctx, sqlUpdateUser{
-		UserID:               usr.ID,
-		IncreasePostsCountBy: 1,
+	_, err = svc.Store.UpdateUser(ctx, UpdateUser{
+		userID:               user.ID,
+		increasePostsCountBy: 1,
 	})
 	if err != nil {
 		return out, err
 	}
 
 	// Side-effect: add the post to the user's timeline.
-	_, err = svc.sqlInsertTimelineItem(ctx, sqlInsertTimelineItem{
-		UserID: usr.ID,
-		PostID: out.ID,
+	_, err = svc.Store.CreateTimelineItem(ctx, CreateTimelineItem{
+		userID: user.ID,
+		postID: out.ID,
 	})
 	if err != nil {
 		return out, err
@@ -113,9 +142,9 @@ func (svc *Service) CreatePost(ctx context.Context, in CreatePost) (CreatedPost,
 	// Side-effect: add the post to all followers' timelines.
 	go func() {
 		ctx := svc.BaseContext()
-		_, err := svc.sqlInsertTimeline(ctx, sqlInsertTimeline{
-			PostID:     out.ID,
-			FollowedID: usr.ID,
+		_, err := svc.Store.CreateTimeline(ctx, CreateTimeline{
+			postID:     out.ID,
+			followedID: user.ID,
 		})
 		if err != nil {
 			svc.Logger.Printf("failed to fanout timeline: %v\n", err)
@@ -137,7 +166,7 @@ func (svc *Service) Timeline(ctx context.Context) ([]Post, error) {
 		return nil, errs.Unauthenticated
 	}
 
-	return svc.sqlSelectTimeline(ctx, usr.ID)
+	return svc.Store.Timeline(ctx, usr.ID)
 }
 
 func (svc *Service) Posts(ctx context.Context, in PostsParams) ([]Post, error) {
@@ -145,11 +174,10 @@ func (svc *Service) Posts(ctx context.Context, in PostsParams) ([]Post, error) {
 		return nil, err
 	}
 
-	usr, _ := UserFromContext(ctx)
-	return svc.sqlSelectPosts(ctx, sqlSelectPosts{
-		AuthUserID: usr.ID,
-		Username:   in.Username,
-	})
+	user, _ := UserFromContext(ctx)
+	in.authUserID = user.ID
+
+	return svc.Store.Posts(ctx, in)
 }
 
 func (svc *Service) Post(ctx context.Context, postID string) (Post, error) {
@@ -159,10 +187,10 @@ func (svc *Service) Post(ctx context.Context, postID string) (Post, error) {
 		return out, ErrInvalidPostID
 	}
 
-	usr, _ := UserFromContext(ctx)
+	user, _ := UserFromContext(ctx)
 
-	return svc.sqlSelectPost(ctx, sqlSelectPost{
+	return svc.Store.Post(ctx, RetrievePost{
 		PostID:     postID,
-		AuthUserID: usr.ID,
+		authUserID: user.ID,
 	})
 }

@@ -5,14 +5,13 @@ import (
 	"log"
 
 	"github.com/minio/minio-go/v7"
-	"github.com/nakamauwu/nakama/db"
 	"github.com/rs/xid"
 )
 
 type Service struct {
-	Logger        *log.Logger
-	DB            *db.DB
+	Store         *Store
 	S3            *minio.Client
+	Logger        *log.Logger
 	AvatarsPrefix string
 	BaseContext   func() context.Context
 }

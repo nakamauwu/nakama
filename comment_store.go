@@ -8,26 +8,9 @@ import (
 	"time"
 
 	"github.com/lib/pq"
-	"github.com/nakamauwu/nakama/db"
 )
 
-type sqlInsertComment struct {
-	UserID  string
-	PostID  string
-	Content string
-}
-
-type sqlSelectComment struct {
-	CommentID  string
-	AuthUserID string
-}
-
-type sqlUpdateComment struct {
-	CommentID      string
-	ReactionsCount *ReactionsCount
-}
-
-func (svc *Service) sqlInsertComment(ctx context.Context, in sqlInsertComment) (CreatedComment, error) {
+func (db *Store) CreateComment(ctx context.Context, in CreateComment) (CreatedComment, error) {
 	var out CreatedComment
 
 	const createComment = `
@@ -36,13 +19,13 @@ func (svc *Service) sqlInsertComment(ctx context.Context, in sqlInsertComment) (
 		RETURNING created_at
 	`
 	commentID := genID()
-	err := svc.DB.QueryRowContext(ctx, createComment,
+	err := db.QueryRowContext(ctx, createComment,
 		commentID,
-		in.UserID,
+		in.userID,
 		in.PostID,
 		in.Content,
 	).Scan(&out.CreatedAt)
-	if db.IsPqForeignKeyViolationError(err, "post_id") {
+	if isPqForeignKeyViolationError(err, "post_id") {
 		return out, ErrPostNotFound
 	}
 
@@ -55,7 +38,7 @@ func (svc *Service) sqlInsertComment(ctx context.Context, in sqlInsertComment) (
 	return out, nil
 }
 
-func (svc *Service) sqlSelectComments(ctx context.Context, postID string) ([]Comment, error) {
+func (db *Store) Comments(ctx context.Context, postID string) ([]Comment, error) {
 	const comments = `
 		SELECT
 			  comments.id
@@ -73,14 +56,14 @@ func (svc *Service) sqlSelectComments(ctx context.Context, postID string) ([]Com
 		WHERE comments.post_id = $1
 		ORDER BY comments.id DESC
 	`
-	rows, err := svc.DB.QueryContext(ctx, comments, postID)
+	rows, err := db.QueryContext(ctx, comments, postID)
 	if err != nil {
 		return nil, fmt.Errorf("sql select comments: %w", err)
 	}
 
-	return db.Collect(rows, func(scan db.ScanFunc) (Comment, error) {
+	return collect(rows, func(scanner scanner) (Comment, error) {
 		var out Comment
-		return out, scan(
+		return out, scanner.Scan(
 			&out.ID,
 			&out.UserID,
 			&out.PostID,
@@ -88,14 +71,14 @@ func (svc *Service) sqlSelectComments(ctx context.Context, postID string) ([]Com
 			&out.CreatedAt,
 			&out.UpdatedAt,
 			&out.User.Username,
-			svc.sqlScanAvatar(&out.User.AvatarPath),
+			db.AvatarScanFunc(&out.User.AvatarPath),
 			&out.User.AvatarWidth,
 			&out.User.AvatarHeight,
 		)
 	})
 }
 
-func (svc *Service) sqlSelectComment(ctx context.Context, in sqlSelectComment) (Comment, error) {
+func (db *Store) Comment(ctx context.Context, in RetrieveComment) (Comment, error) {
 	const query = `
 		SELECT
 			  comments.id
@@ -122,17 +105,17 @@ func (svc *Service) sqlSelectComment(ctx context.Context, in sqlSelectComment) (
 	`
 	var c Comment
 	var reactions []string
-	err := svc.DB.QueryRowContext(ctx, query, in.AuthUserID, in.CommentID).Scan(
+	err := db.QueryRowContext(ctx, query, in.authUserID, in.CommentID).Scan(
 		&c.ID,
 		&c.UserID,
 		&c.PostID,
 		&c.Content,
-		&db.JSONValue{Dst: &c.ReactionsCount},
+		&jsonValue{Dst: &c.ReactionsCount},
 		pq.Array(&reactions),
 		&c.CreatedAt,
 		&c.UpdatedAt,
 		&c.User.Username,
-		svc.sqlScanAvatar(&c.User.AvatarPath),
+		db.AvatarScanFunc(&c.User.AvatarPath),
 		&c.User.AvatarWidth,
 		&c.User.AvatarHeight,
 	)
@@ -149,14 +132,14 @@ func (svc *Service) sqlSelectComment(ctx context.Context, in sqlSelectComment) (
 	return c, nil
 }
 
-func (svc *Service) sqlSelectCommentReactionsCount(ctx context.Context, commentID string) (ReactionsCount, error) {
+func (db *Store) CommentReactionsCount(ctx context.Context, commentID string) (ReactionsCount, error) {
 	const query = `
 		SELECT reactions_count FROM comments WHERE id = $1
 	`
 
 	var out ReactionsCount
-	row := svc.DB.QueryRowContext(ctx, query, commentID)
-	err := row.Scan(&db.JSONValue{Dst: &out})
+	row := db.QueryRowContext(ctx, query, commentID)
+	err := row.Scan(&jsonValue{Dst: &out})
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrCommentNotFound
 	}
@@ -168,7 +151,7 @@ func (svc *Service) sqlSelectCommentReactionsCount(ctx context.Context, commentI
 	return out, nil
 }
 
-func (svc *Service) sqlUpdateComment(ctx context.Context, in sqlUpdateComment) (time.Time, error) {
+func (db *Store) UpdateComment(ctx context.Context, in UpdateComment) (time.Time, error) {
 	const query = `
 		UPDATE comments
 		SET reactions_count = COALESCE($1, reactions_count)
@@ -177,8 +160,8 @@ func (svc *Service) sqlUpdateComment(ctx context.Context, in sqlUpdateComment) (
 		RETURNING updated_at
 	`
 	var updatedAt time.Time
-	row := svc.DB.QueryRowContext(ctx, query,
-		db.JSONValue{Dst: in.ReactionsCount},
+	row := db.QueryRowContext(ctx, query,
+		jsonValue{Dst: in.ReactionsCount},
 		in.CommentID,
 	)
 	err := row.Scan(&updatedAt)

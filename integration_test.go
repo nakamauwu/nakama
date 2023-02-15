@@ -11,7 +11,6 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
-	"github.com/nakamauwu/nakama/db"
 	"github.com/ory/dockertest/v3"
 )
 
@@ -55,7 +54,7 @@ func setupT(m *testing.M) (int, error) {
 	}
 
 	testService = &Service{
-		DB:          db.New(dbPool),
+		Store:       NewStore(dbPool),
 		Logger:      log.Default(),
 		BaseContext: context.Background,
 	}

@@ -6,12 +6,14 @@ import (
 	"github.com/nicolasparada/go-errs"
 )
 
-type AddPostReaction struct {
+type PostReaction struct {
 	PostID   string
 	Reaction string
+
+	userID string
 }
 
-func (in *AddPostReaction) Validate() error {
+func (in *PostReaction) Validate() error {
 	if !validID(in.PostID) {
 		return ErrInvalidPostID
 	}
@@ -23,24 +25,20 @@ func (in *AddPostReaction) Validate() error {
 	return nil
 }
 
-type RemovePostReaction = AddPostReaction
-
-func (svc *Service) AddPostReaction(ctx context.Context, in AddPostReaction) error {
+func (svc *Service) CreatePostReaction(ctx context.Context, in PostReaction) error {
 	if err := in.Validate(); err != nil {
 		return err
 	}
 
-	usr, ok := UserFromContext(ctx)
+	user, ok := UserFromContext(ctx)
 	if !ok {
 		return errs.Unauthenticated
 	}
 
-	return svc.DB.RunTx(ctx, func(ctx context.Context) error {
-		exists, err := svc.sqlSelectPostReactionExistence(ctx, sqlSelectPostReactionExistence{
-			UserID:   usr.ID,
-			PostID:   in.PostID,
-			Reaction: in.Reaction,
-		})
+	in.userID = user.ID
+
+	return svc.Store.RunTx(ctx, func(ctx context.Context) error {
+		exists, err := svc.Store.PostReactionExists(ctx, in)
 		if err != nil {
 			return err
 		}
@@ -49,23 +47,19 @@ func (svc *Service) AddPostReaction(ctx context.Context, in AddPostReaction) err
 			return nil
 		}
 
-		err = svc.sqlInsertPostReaction(ctx, sqlInsertPostReaction{
-			UserID:   usr.ID,
-			PostID:   in.PostID,
-			Reaction: in.Reaction,
-		})
+		err = svc.Store.CreatePostReaction(ctx, in)
 		if err != nil {
 			return err
 		}
 
-		reactionsCount, err := svc.sqlSelectPostReactionsCount(ctx, in.PostID)
+		reactionsCount, err := svc.Store.PostReactionsCount(ctx, in.PostID)
 		if err != nil {
 			return err
 		}
 
 		reactionsCount.Inc(in.Reaction)
 
-		_, err = svc.sqlUpdatePost(ctx, sqlUpdatePost{
+		_, err = svc.Store.UpdatePost(ctx, UpdatePost{
 			PostID:         in.PostID,
 			ReactionsCount: &reactionsCount,
 		})
@@ -73,22 +67,20 @@ func (svc *Service) AddPostReaction(ctx context.Context, in AddPostReaction) err
 	})
 }
 
-func (svc *Service) RemovePostReaction(ctx context.Context, in RemovePostReaction) error {
+func (svc *Service) DeletePostReaction(ctx context.Context, in PostReaction) error {
 	if err := in.Validate(); err != nil {
 		return err
 	}
 
-	usr, ok := UserFromContext(ctx)
+	user, ok := UserFromContext(ctx)
 	if !ok {
 		return errs.Unauthenticated
 	}
 
-	return svc.DB.RunTx(ctx, func(ctx context.Context) error {
-		exists, err := svc.sqlSelectPostReactionExistence(ctx, sqlSelectPostReactionExistence{
-			UserID:   usr.ID,
-			PostID:   in.PostID,
-			Reaction: in.Reaction,
-		})
+	in.userID = user.ID
+
+	return svc.Store.RunTx(ctx, func(ctx context.Context) error {
+		exists, err := svc.Store.PostReactionExists(ctx, in)
 		if err != nil {
 			return err
 		}
@@ -97,23 +89,19 @@ func (svc *Service) RemovePostReaction(ctx context.Context, in RemovePostReactio
 			return nil
 		}
 
-		err = svc.sqlDeletePostReaction(ctx, sqlDeletePostReaction{
-			UserID:   usr.ID,
-			PostID:   in.PostID,
-			Reaction: in.Reaction,
-		})
+		err = svc.Store.DeletePostReaction(ctx, in)
 		if err != nil {
 			return err
 		}
 
-		reactionsCount, err := svc.sqlSelectPostReactionsCount(ctx, in.PostID)
+		reactionsCount, err := svc.Store.PostReactionsCount(ctx, in.PostID)
 		if err != nil {
 			return err
 		}
 
 		reactionsCount.Dec(in.Reaction)
 
-		_, err = svc.sqlUpdatePost(ctx, sqlUpdatePost{
+		_, err = svc.Store.UpdatePost(ctx, UpdatePost{
 			PostID:         in.PostID,
 			ReactionsCount: &reactionsCount,
 		})

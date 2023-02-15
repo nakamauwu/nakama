@@ -8,46 +8,9 @@ import (
 	"time"
 
 	"github.com/lib/pq"
-	"github.com/nakamauwu/nakama/db"
 )
 
-type sqlInsertTimelineItem struct {
-	UserID string
-	PostID string
-}
-
-type sqlInsertPost struct {
-	UserID  string
-	Content string
-}
-
-type sqlInsertTimeline struct {
-	PostID     string
-	FollowedID string
-}
-
-type sqlSelectPosts struct {
-	AuthUserID string
-	Username   string
-}
-
-type sqlUpdatePost struct {
-	PostID                  string
-	IncreaseCommentsCountBy int32
-	ReactionsCount          *ReactionsCount
-}
-
-type sqlSelectPost struct {
-	PostID     string
-	AuthUserID string
-}
-
-type sqlInsertedTimelineItem struct {
-	ID     string
-	UserID string
-}
-
-func (svc *Service) sqlInsertPost(ctx context.Context, in sqlInsertPost) (CreatedPost, error) {
+func (db *Store) CreatePost(ctx context.Context, in CreatePost) (CreatedPost, error) {
 	var out CreatedPost
 
 	const query = `
@@ -56,7 +19,7 @@ func (svc *Service) sqlInsertPost(ctx context.Context, in sqlInsertPost) (Create
 		RETURNING created_at
 	`
 	postID := genID()
-	err := svc.DB.QueryRowContext(ctx, query, postID, in.UserID, in.Content).Scan(&out.CreatedAt)
+	err := db.QueryRowContext(ctx, query, postID, in.userID, in.Content).Scan(&out.CreatedAt)
 	if err != nil {
 		return out, fmt.Errorf("sql insert post: %w", err)
 	}
@@ -66,14 +29,14 @@ func (svc *Service) sqlInsertPost(ctx context.Context, in sqlInsertPost) (Create
 	return out, nil
 }
 
-func (svc *Service) sqlInsertTimelineItem(ctx context.Context, in sqlInsertTimelineItem) (string, error) {
+func (db *Store) CreateTimelineItem(ctx context.Context, in CreateTimelineItem) (string, error) {
 	const query = `
 		INSERT INTO timeline (user_id, post_id)
 		VALUES ($1, $2)
 		RETURNING id
 	`
 	var id string
-	err := svc.DB.QueryRowContext(ctx, query, in.UserID, in.PostID).Scan(&id)
+	err := db.QueryRowContext(ctx, query, in.userID, in.postID).Scan(&id)
 	if err != nil {
 		return "", fmt.Errorf("sql insert timeline item: %w", err)
 	}
@@ -81,7 +44,7 @@ func (svc *Service) sqlInsertTimelineItem(ctx context.Context, in sqlInsertTimel
 	return id, nil
 }
 
-func (svc *Service) sqlInsertTimeline(ctx context.Context, in sqlInsertTimeline) ([]sqlInsertedTimelineItem, error) {
+func (db *Store) CreateTimeline(ctx context.Context, in CreateTimeline) ([]CreatedTimelineItem, error) {
 	const query = `
 		INSERT INTO timeline (user_id, post_id)
 		SELECT user_follows.follower_id, $1
@@ -92,18 +55,18 @@ func (svc *Service) sqlInsertTimeline(ctx context.Context, in sqlInsertTimeline)
 		RETURNING id, user_id
 	`
 
-	rows, err := svc.DB.QueryContext(ctx, query, in.PostID, in.FollowedID)
+	rows, err := db.QueryContext(ctx, query, in.postID, in.followedID)
 	if err != nil {
 		return nil, fmt.Errorf("sql fanout timeline: %w", err)
 	}
 
-	return db.Collect(rows, func(scan db.ScanFunc) (sqlInsertedTimelineItem, error) {
-		var out sqlInsertedTimelineItem
-		return out, scan(&out.ID, &out.UserID)
+	return collect(rows, func(scanner scanner) (CreatedTimelineItem, error) {
+		var out CreatedTimelineItem
+		return out, scanner.Scan(&out.ID, &out.UserID)
 	})
 }
 
-func (svc *Service) sqlSelectPosts(ctx context.Context, in sqlSelectPosts) ([]Post, error) {
+func (db *Store) Posts(ctx context.Context, in PostsParams) ([]Post, error) {
 	const query = `
 		SELECT
 			  posts.id
@@ -133,25 +96,25 @@ func (svc *Service) sqlSelectPosts(ctx context.Context, in sqlSelectPosts) ([]Po
 			END
 		ORDER BY posts.id DESC
 	`
-	rows, err := svc.DB.QueryContext(ctx, query, in.AuthUserID, in.Username)
+	rows, err := db.QueryContext(ctx, query, in.authUserID, in.Username)
 	if err != nil {
 		return nil, fmt.Errorf("sql select posts: %w", err)
 	}
 
-	return db.Collect(rows, func(scan db.ScanFunc) (Post, error) {
+	return collect(rows, func(scanner scanner) (Post, error) {
 		var out Post
 		var reactions []string
-		err := scan(
+		err := scanner.Scan(
 			&out.ID,
 			&out.UserID,
 			&out.Content,
-			&db.JSONValue{Dst: &out.ReactionsCount},
+			&jsonValue{Dst: &out.ReactionsCount},
 			pq.Array(&reactions),
 			&out.CommentsCount,
 			&out.CreatedAt,
 			&out.UpdatedAt,
 			&out.User.Username,
-			svc.sqlScanAvatar(&out.User.AvatarPath),
+			db.AvatarScanFunc(&out.User.AvatarPath),
 			&out.User.AvatarWidth,
 			&out.User.AvatarHeight,
 		)
@@ -165,7 +128,7 @@ func (svc *Service) sqlSelectPosts(ctx context.Context, in sqlSelectPosts) ([]Po
 	})
 }
 
-func (svc *Service) sqlSelectTimeline(ctx context.Context, userID string) ([]Post, error) {
+func (db *Store) Timeline(ctx context.Context, userID string) ([]Post, error) {
 	const query = `
 		SELECT
 			  posts.id
@@ -192,25 +155,25 @@ func (svc *Service) sqlSelectTimeline(ctx context.Context, userID string) ([]Pos
 		WHERE timeline.user_id = $1
 		ORDER BY timeline.id DESC
 	`
-	rows, err := svc.DB.QueryContext(ctx, query, userID)
+	rows, err := db.QueryContext(ctx, query, userID)
 	if err != nil {
 		return nil, fmt.Errorf("sql select timeline: %w", err)
 	}
 
-	return db.Collect(rows, func(scan db.ScanFunc) (Post, error) {
+	return collect(rows, func(scanner scanner) (Post, error) {
 		var out Post
 		var reactions []string
-		err := scan(
+		err := scanner.Scan(
 			&out.ID,
 			&out.UserID,
 			&out.Content,
-			&db.JSONValue{Dst: &out.ReactionsCount},
+			&jsonValue{Dst: &out.ReactionsCount},
 			pq.Array(&reactions),
 			&out.CommentsCount,
 			&out.CreatedAt,
 			&out.UpdatedAt,
 			&out.User.Username,
-			svc.sqlScanAvatar(&out.User.AvatarPath),
+			db.AvatarScanFunc(&out.User.AvatarPath),
 			&out.User.AvatarWidth,
 			&out.User.AvatarHeight,
 		)
@@ -224,7 +187,7 @@ func (svc *Service) sqlSelectTimeline(ctx context.Context, userID string) ([]Pos
 	})
 }
 
-func (svc *Service) sqlSelectPost(ctx context.Context, in sqlSelectPost) (Post, error) {
+func (db *Store) Post(ctx context.Context, in RetrievePost) (Post, error) {
 	const query = `
 		SELECT
 			  posts.id
@@ -251,17 +214,17 @@ func (svc *Service) sqlSelectPost(ctx context.Context, in sqlSelectPost) (Post, 
 	`
 	var p Post
 	var reactions []string
-	err := svc.DB.QueryRowContext(ctx, query, in.AuthUserID, in.PostID).Scan(
+	err := db.QueryRowContext(ctx, query, in.authUserID, in.PostID).Scan(
 		&p.ID,
 		&p.UserID,
 		&p.Content,
-		&db.JSONValue{Dst: &p.ReactionsCount},
+		&jsonValue{Dst: &p.ReactionsCount},
 		pq.Array(&reactions),
 		&p.CommentsCount,
 		&p.CreatedAt,
 		&p.UpdatedAt,
 		&p.User.Username,
-		svc.sqlScanAvatar(&p.User.AvatarPath),
+		db.AvatarScanFunc(&p.User.AvatarPath),
 		&p.User.AvatarWidth,
 		&p.User.AvatarHeight,
 	)
@@ -278,14 +241,14 @@ func (svc *Service) sqlSelectPost(ctx context.Context, in sqlSelectPost) (Post, 
 	return p, nil
 }
 
-func (svc *Service) sqlSelectPostReactionsCount(ctx context.Context, postID string) (ReactionsCount, error) {
+func (db *Store) PostReactionsCount(ctx context.Context, postID string) (ReactionsCount, error) {
 	const query = `
 		SELECT reactions_count FROM posts WHERE id = $1
 	`
 
 	var out ReactionsCount
-	row := svc.DB.QueryRowContext(ctx, query, postID)
-	err := row.Scan(&db.JSONValue{Dst: &out})
+	row := db.QueryRowContext(ctx, query, postID)
+	err := row.Scan(&jsonValue{Dst: &out})
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrPostNotFound
 	}
@@ -297,7 +260,7 @@ func (svc *Service) sqlSelectPostReactionsCount(ctx context.Context, postID stri
 	return out, nil
 }
 
-func (svc *Service) sqlUpdatePost(ctx context.Context, in sqlUpdatePost) (time.Time, error) {
+func (db *Store) UpdatePost(ctx context.Context, in UpdatePost) (time.Time, error) {
 	const query = `
 		UPDATE posts
 		SET comments_count = comments_count + $1
@@ -307,9 +270,9 @@ func (svc *Service) sqlUpdatePost(ctx context.Context, in sqlUpdatePost) (time.T
 		RETURNING updated_at
 	`
 	var updatedAt time.Time
-	row := svc.DB.QueryRowContext(ctx, query,
+	row := db.QueryRowContext(ctx, query,
 		in.IncreaseCommentsCountBy,
-		db.JSONValue{Dst: in.ReactionsCount},
+		jsonValue{Dst: in.ReactionsCount},
 		in.PostID,
 	)
 	err := row.Scan(&updatedAt)

@@ -45,7 +45,7 @@ func TestService_CreatePost(t *testing.T) {
 			assert.NotZero(t, got)
 		}
 
-		got, err := testService.sqlSelectUser(ctx, sqlSelectUser{Username: usr.Username})
+		got, err := testService.Store.User(ctx, RetrieveUser{Username: usr.Username})
 		assert.NoError(t, err)
 		assert.Equal(t, want, int(got.PostsCount))
 	})
@@ -152,15 +152,15 @@ func genPost(t *testing.T, userID string) Post {
 	t.Helper()
 
 	ctx := context.Background()
-	in := sqlInsertPost{
-		UserID:  userID,
+	in := CreatePost{
+		userID:  userID,
 		Content: genPostContent(),
 	}
-	inserted, err := testService.sqlInsertPost(ctx, in)
+	inserted, err := testService.Store.CreatePost(ctx, in)
 	assert.NoError(t, err)
 	return Post{
 		ID:        inserted.ID,
-		UserID:    in.UserID,
+		UserID:    in.userID,
 		Content:   in.Content,
 		CreatedAt: inserted.CreatedAt,
 		UpdatedAt: inserted.CreatedAt,

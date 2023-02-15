@@ -21,7 +21,7 @@ func (h *Handler) addPostReaction(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	postID := mux.URLParam(ctx, "postID")
 	reaction := r.PostFormValue("reaction")
-	err := h.Service.AddPostReaction(ctx, nakama.AddPostReaction{
+	err := h.Service.CreatePostReaction(ctx, nakama.PostReaction{
 		PostID:   postID,
 		Reaction: reaction,
 	})
@@ -57,7 +57,7 @@ func (h *Handler) removePostReaction(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	postID := mux.URLParam(ctx, "postID")
 	reaction := r.PostFormValue("reaction")
-	err := h.Service.RemovePostReaction(ctx, nakama.RemovePostReaction{
+	err := h.Service.DeletePostReaction(ctx, nakama.PostReaction{
 		PostID:   postID,
 		Reaction: reaction,
 	})

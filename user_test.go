@@ -16,7 +16,7 @@ func TestService_Users(t *testing.T) {
 	})
 
 	t.Run("no_match", func(t *testing.T) {
-		genUser(t, func(in *sqlInsertUser) {
+		genUser(t, func(in *CreateUser) {
 			in.Username = "tomas"
 		})
 
@@ -26,7 +26,7 @@ func TestService_Users(t *testing.T) {
 	})
 
 	t.Run("ok", func(t *testing.T) {
-		usr := genUser(t, func(in *sqlInsertUser) {
+		usr := genUser(t, func(in *CreateUser) {
 			in.Username = "bob"
 		})
 
@@ -91,18 +91,18 @@ func TestService_User(t *testing.T) {
 	})
 }
 
-func genUser(t *testing.T, override ...func(in *sqlInsertUser)) User {
+func genUser(t *testing.T, override ...func(in *CreateUser)) User {
 	t.Helper()
 
 	ctx := context.Background()
-	in := sqlInsertUser{
+	in := CreateUser{
 		Email:    genEmail(),
 		Username: genUsername(),
 	}
 	for _, fn := range override {
 		fn(&in)
 	}
-	inserted, err := testService.sqlInsertUser(ctx, in)
+	inserted, err := testService.Store.CreateUser(ctx, in)
 	assert.NoError(t, err)
 
 	return User{

@@ -31,6 +31,8 @@ type Comment struct {
 type CreateComment struct {
 	PostID  string
 	Content string
+
+	userID string
 }
 
 func (in *CreateComment) Validate() error {
@@ -53,6 +55,17 @@ type CreatedComment struct {
 	CreatedAt time.Time
 }
 
+type RetrieveComment struct {
+	CommentID string
+
+	authUserID string
+}
+
+type UpdateComment struct {
+	CommentID      string
+	ReactionsCount *ReactionsCount
+}
+
 func (svc *Service) CreateComment(ctx context.Context, in CreateComment) (CreatedComment, error) {
 	var out CreatedComment
 
@@ -60,25 +73,23 @@ func (svc *Service) CreateComment(ctx context.Context, in CreateComment) (Create
 		return out, err
 	}
 
-	usr, ok := UserFromContext(ctx)
+	user, ok := UserFromContext(ctx)
 	if !ok {
 		return out, errs.Unauthenticated
 	}
 
-	return out, svc.DB.RunTx(ctx, func(ctx context.Context) error {
+	in.userID = user.ID
+
+	return out, svc.Store.RunTx(ctx, func(ctx context.Context) error {
 		var err error
-		out, err = svc.sqlInsertComment(ctx, sqlInsertComment{
-			UserID:  usr.ID,
-			PostID:  in.PostID,
-			Content: in.Content,
-		})
+		out, err = svc.Store.CreateComment(ctx, in)
 		if err != nil {
 			return err
 		}
 
 		// Side-effect: increase post's comments count on inserts
 		// so we don't have to compute it on each read.
-		_, err = svc.sqlUpdatePost(ctx, sqlUpdatePost{
+		_, err = svc.Store.UpdatePost(ctx, UpdatePost{
 			PostID:                  in.PostID,
 			IncreaseCommentsCountBy: 1,
 		})
@@ -90,7 +101,8 @@ func (svc *Service) Comments(ctx context.Context, postID string) ([]Comment, err
 	if !validID(postID) {
 		return nil, ErrInvalidPostID
 	}
-	return svc.sqlSelectComments(ctx, postID)
+
+	return svc.Store.Comments(ctx, postID)
 }
 
 func (svc *Service) Comment(ctx context.Context, commentID string) (Comment, error) {
@@ -100,10 +112,10 @@ func (svc *Service) Comment(ctx context.Context, commentID string) (Comment, err
 		return out, ErrInvalidCommentID
 	}
 
-	usr, _ := UserFromContext(ctx)
+	user, _ := UserFromContext(ctx)
 
-	return svc.sqlSelectComment(ctx, sqlSelectComment{
+	return svc.Store.Comment(ctx, RetrieveComment{
 		CommentID:  commentID,
-		AuthUserID: usr.ID,
+		authUserID: user.ID,
 	})
 }

@@ -3,28 +3,16 @@ package nakama
 import (
 	"context"
 	"fmt"
-
-	"github.com/nakamauwu/nakama/db"
 )
 
-type sqlInsertPostReaction struct {
-	UserID   string
-	PostID   string
-	Reaction string
-}
-
-type sqlSelectPostReactionExistence sqlInsertPostReaction
-
-type sqlDeletePostReaction sqlInsertPostReaction
-
-func (svc *Service) sqlInsertPostReaction(ctx context.Context, in sqlInsertPostReaction) error {
+func (db *Store) CreatePostReaction(ctx context.Context, in PostReaction) error {
 	const query = `
 		INSERT INTO post_reactions (user_id, post_id, reaction)
 		VALUES ($1, $2, $3)
 	`
 
-	_, err := svc.DB.ExecContext(ctx, query, in.UserID, in.PostID, in.Reaction)
-	if db.IsPqForeignKeyViolationError(err, "post_id") {
+	_, err := db.ExecContext(ctx, query, in.userID, in.PostID, in.Reaction)
+	if isPqForeignKeyViolationError(err, "post_id") {
 		return ErrPostNotFound
 	}
 
@@ -35,7 +23,7 @@ func (svc *Service) sqlInsertPostReaction(ctx context.Context, in sqlInsertPostR
 	return nil
 }
 
-func (svc *Service) sqlSelectPostReactionExistence(ctx context.Context, in sqlSelectPostReactionExistence) (bool, error) {
+func (db *Store) PostReactionExists(ctx context.Context, in PostReaction) (bool, error) {
 	const query = `
 		SELECT EXISTS (
 			SELECT 1 FROM post_reactions
@@ -46,7 +34,7 @@ func (svc *Service) sqlSelectPostReactionExistence(ctx context.Context, in sqlSe
 	`
 
 	var exists bool
-	row := svc.DB.QueryRowContext(ctx, query, in.UserID, in.PostID, in.Reaction)
+	row := db.QueryRowContext(ctx, query, in.userID, in.PostID, in.Reaction)
 	err := row.Scan(&exists)
 	if err != nil {
 		return false, fmt.Errorf("sql select post reaction existence: %w", err)
@@ -55,7 +43,7 @@ func (svc *Service) sqlSelectPostReactionExistence(ctx context.Context, in sqlSe
 	return exists, nil
 }
 
-func (svc *Service) sqlDeletePostReaction(ctx context.Context, in sqlDeletePostReaction) error {
+func (db *Store) DeletePostReaction(ctx context.Context, in PostReaction) error {
 	const query = `
 		DELETE FROM post_reactions
 		WHERE user_id = $1
@@ -63,7 +51,7 @@ func (svc *Service) sqlDeletePostReaction(ctx context.Context, in sqlDeletePostR
 			AND reaction = $3
 	`
 
-	_, err := svc.DB.ExecContext(ctx, query, in.UserID, in.PostID, in.Reaction)
+	_, err := db.ExecContext(ctx, query, in.userID, in.PostID, in.Reaction)
 	if err != nil {
 		return fmt.Errorf("sql delete post reaction: %w", err)
 	}

@@ -53,8 +53,20 @@ type UserPreview struct {
 	AvatarHeight *uint
 }
 
+type CreateUser struct {
+	Email    string
+	Username string
+}
+
+type CreatedUser struct {
+	ID        string
+	CreatedAt time.Time
+}
+
 type UsersParams struct {
 	UsernameQuery string
+
+	authUserID string
 }
 
 func (in *UsersParams) Validate() error {
@@ -68,8 +80,29 @@ func (in *UsersParams) Validate() error {
 	return nil
 }
 
+type RetrieveUser struct {
+	FollowerID string
+	UserID     string
+	Email      string
+	Username   string
+}
+
+type UserExistsParams struct {
+	UserID   string
+	Email    string
+	Username string
+}
+
 type UpdateUser struct {
 	Username *string
+
+	avatarPath               *string
+	avatarWidth              *uint
+	avatarHeight             *uint
+	increasePostsCountBy     int
+	increaseFollowersCountBy int
+	increaseFollowingCountBy int
+	userID                   string
 }
 
 func (in *UpdateUser) Validate() error {
@@ -94,26 +127,25 @@ func (svc *Service) Users(ctx context.Context, in UsersParams) ([]User, error) {
 		return nil, err
 	}
 
-	usr, _ := UserFromContext(ctx)
-	return svc.sqlSelectUsers(ctx, sqlSelectUsers{
-		FollowerID:    usr.ID,
-		UsernameQuery: in.UsernameQuery,
-	})
+	user, _ := UserFromContext(ctx)
+	in.authUserID = user.ID
+
+	return svc.Store.Users(ctx, in)
 }
 
 func (svc *Service) User(ctx context.Context, username string) (User, error) {
 	var out User
 
-	usr, authenticated := UserFromContext(ctx)
+	user, authenticated := UserFromContext(ctx)
 
-	q := sqlSelectUser{FollowerID: usr.ID}
+	q := RetrieveUser{FollowerID: user.ID}
 
 	if username == "" {
 		if !authenticated {
 			return out, errs.Unauthenticated
 		}
 
-		q.UserID = usr.ID
+		q.UserID = user.ID
 	} else {
 		if !validUsername(username) {
 			return out, ErrInvalidUsername
@@ -122,11 +154,11 @@ func (svc *Service) User(ctx context.Context, username string) (User, error) {
 		q.Username = username
 	}
 
-	return svc.sqlSelectUser(ctx, q)
+	return svc.Store.User(ctx, q)
 }
 
 func (svc *Service) UpdateUser(ctx context.Context, in UpdateUser) error {
-	usr, ok := UserFromContext(ctx)
+	user, ok := UserFromContext(ctx)
 	if !ok {
 		return errs.Unauthenticated
 	}
@@ -135,8 +167,8 @@ func (svc *Service) UpdateUser(ctx context.Context, in UpdateUser) error {
 		return err
 	}
 
-	_, err := svc.sqlUpdateUser(ctx, sqlUpdateUser{
-		UserID:   usr.ID,
+	_, err := svc.Store.UpdateUser(ctx, UpdateUser{
+		userID:   user.ID,
 		Username: in.Username,
 	})
 
@@ -146,7 +178,7 @@ func (svc *Service) UpdateUser(ctx context.Context, in UpdateUser) error {
 func (svc *Service) UpdateAvatar(ctx context.Context, avatar io.Reader) (UpdatedAvatar, error) {
 	var out UpdatedAvatar
 
-	usr, ok := UserFromContext(ctx)
+	user, ok := UserFromContext(ctx)
 	if !ok {
 		return out, errs.Unauthenticated
 	}
@@ -157,7 +189,7 @@ func (svc *Service) UpdateAvatar(ctx context.Context, avatar io.Reader) (Updated
 	}
 
 	now := time.Now().UTC()
-	path := fmt.Sprintf("%d/%d/%d/%s-%s.jpeg", now.Year(), now.Month(), now.Day(), usr.ID, genID())
+	path := fmt.Sprintf("%d/%d/%d/%s-%s.jpeg", now.Year(), now.Month(), now.Day(), user.ID, genID())
 	err = svc.s3StoreObject(ctx, s3StoreObject{
 		File:        bytes.NewReader(resized),
 		Bucket:      S3BucketAvatars,
@@ -169,11 +201,11 @@ func (svc *Service) UpdateAvatar(ctx context.Context, avatar io.Reader) (Updated
 		return out, err
 	}
 
-	_, err = svc.sqlUpdateUser(ctx, sqlUpdateUser{
-		AvatarPath:   &path,
-		AvatarWidth:  ptr(avatarWidth),
-		AvatarHeight: ptr(avatarHeight),
-		UserID:       usr.ID,
+	_, err = svc.Store.UpdateUser(ctx, UpdateUser{
+		avatarPath:   &path,
+		avatarWidth:  ptr(avatarWidth),
+		avatarHeight: ptr(avatarHeight),
+		userID:       user.ID,
 	})
 	if err != nil {
 		errS3 := svc.s3RemoveObject(ctx, s3RemoveObject{
@@ -193,6 +225,7 @@ func (svc *Service) UpdateAvatar(ctx context.Context, avatar io.Reader) (Updated
 
 	return out, nil
 }
+
 func validEmail(s string) bool {
 	return reEmail.MatchString(s)
 }

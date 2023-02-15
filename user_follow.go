@@ -23,18 +23,18 @@ func (svc *Service) FollowUser(ctx context.Context, followedUserID string) error
 		return ErrInvalidUserID
 	}
 
-	usr, ok := UserFromContext(ctx)
+	user, ok := UserFromContext(ctx)
 	if !ok {
 		return errs.Unauthenticated
 	}
 
-	if usr.ID == followedUserID {
+	if user.ID == followedUserID {
 		return ErrCannotFollowSelf
 	}
 
-	return svc.DB.RunTx(ctx, func(ctx context.Context) error {
-		exists, err := svc.sqlSelectUserFollowExists(ctx, sqlSelectUserFollowExists{
-			FollowerID: usr.ID,
+	return svc.Store.RunTx(ctx, func(ctx context.Context) error {
+		exists, err := svc.Store.UserFollowExists(ctx, UserFollow{
+			FollowerID: user.ID,
 			FollowedID: followedUserID,
 		})
 		if err != nil {
@@ -46,8 +46,8 @@ func (svc *Service) FollowUser(ctx context.Context, followedUserID string) error
 			return nil
 		}
 
-		_, err = svc.sqlInsertUserFollow(ctx, sqlInsertUserFollow{
-			FollowerID: usr.ID,
+		_, err = svc.Store.CreateUserFollow(ctx, UserFollow{
+			FollowerID: user.ID,
 			FollowedID: followedUserID,
 		})
 		if err != nil {
@@ -57,17 +57,17 @@ func (svc *Service) FollowUser(ctx context.Context, followedUserID string) error
 		// Side-effect: increase user's follow counts on inserts
 		// so we don't have to compute them on each read.
 
-		_, err = svc.sqlUpdateUser(ctx, sqlUpdateUser{
-			UserID:                   usr.ID,
-			IncreaseFollowingCountBy: 1,
+		_, err = svc.Store.UpdateUser(ctx, UpdateUser{
+			userID:                   user.ID,
+			increaseFollowingCountBy: 1,
 		})
 		if err != nil {
 			return err
 		}
 
-		_, err = svc.sqlUpdateUser(ctx, sqlUpdateUser{
-			UserID:                   followedUserID,
-			IncreaseFollowersCountBy: 1,
+		_, err = svc.Store.UpdateUser(ctx, UpdateUser{
+			userID:                   followedUserID,
+			increaseFollowersCountBy: 1,
 		})
 		return err
 	})
@@ -78,17 +78,17 @@ func (svc *Service) UnfollowUser(ctx context.Context, followedUserID string) err
 		return ErrInvalidUserID
 	}
 
-	usr, ok := UserFromContext(ctx)
+	user, ok := UserFromContext(ctx)
 	if !ok {
 		return errs.Unauthenticated
 	}
 
-	if usr.ID == followedUserID {
+	if user.ID == followedUserID {
 		return ErrCannotFollowSelf
 	}
 
-	return svc.DB.RunTx(ctx, func(ctx context.Context) error {
-		exists, err := svc.sqlSelectUserExists(ctx, sqlSelectUserExists{UserID: followedUserID})
+	return svc.Store.RunTx(ctx, func(ctx context.Context) error {
+		exists, err := svc.Store.UserExists(ctx, UserExistsParams{UserID: followedUserID})
 		if err != nil {
 			return err
 		}
@@ -97,8 +97,8 @@ func (svc *Service) UnfollowUser(ctx context.Context, followedUserID string) err
 			return ErrUserNotFound
 		}
 
-		exists, err = svc.sqlSelectUserFollowExists(ctx, sqlSelectUserFollowExists{
-			FollowerID: usr.ID,
+		exists, err = svc.Store.UserFollowExists(ctx, UserFollow{
+			FollowerID: user.ID,
 			FollowedID: followedUserID,
 		})
 		if err != nil {
@@ -110,8 +110,8 @@ func (svc *Service) UnfollowUser(ctx context.Context, followedUserID string) err
 			return nil
 		}
 
-		_, err = svc.sqlDeleteUserFollow(ctx, sqlDeleteUserFollow{
-			FollowerID: usr.ID,
+		_, err = svc.Store.DeleteUserFollow(ctx, UserFollow{
+			FollowerID: user.ID,
 			FollowedID: followedUserID,
 		})
 		if err != nil {
@@ -121,17 +121,17 @@ func (svc *Service) UnfollowUser(ctx context.Context, followedUserID string) err
 		// Side-effect: increase user's follow counts on inserts
 		// so we don't have to compute them on each read.
 
-		_, err = svc.sqlUpdateUser(ctx, sqlUpdateUser{
-			UserID:                   usr.ID,
-			IncreaseFollowingCountBy: -1,
+		_, err = svc.Store.UpdateUser(ctx, UpdateUser{
+			userID:                   user.ID,
+			increaseFollowingCountBy: -1,
 		})
 		if err != nil {
 			return err
 		}
 
-		_, err = svc.sqlUpdateUser(ctx, sqlUpdateUser{
-			UserID:                   followedUserID,
-			IncreaseFollowersCountBy: -1,
+		_, err = svc.Store.UpdateUser(ctx, UpdateUser{
+			userID:                   followedUserID,
+			increaseFollowersCountBy: -1,
 		})
 		return err
 	})

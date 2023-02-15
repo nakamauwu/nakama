@@ -17,7 +17,6 @@ import (
 	"github.com/minio/minio-go/v7/pkg/policy"
 	"github.com/minio/minio-go/v7/pkg/set"
 	"github.com/nakamauwu/nakama"
-	"github.com/nakamauwu/nakama/db"
 	"github.com/nakamauwu/nakama/web"
 )
 
@@ -68,6 +67,11 @@ func run() error {
 		return fmt.Errorf("migrate sql: %w", err)
 	}
 
+	avatarsPrefix := avatarsPrefix(s3Secure, s3Endpoint)
+
+	store := nakama.NewStore(pool)
+	store.AvatarScanFunc = nakama.MakePrefixedNullStringScanner(avatarsPrefix)
+
 	s3, err := minio.New(s3Endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(s3AccessKey, s3SecretKey, ""),
 		Secure: s3Secure,
@@ -82,10 +86,10 @@ func run() error {
 
 	logger := log.New(os.Stderr, "", log.Ldate|log.Ltime|log.Llongfile)
 	svc := &nakama.Service{
-		Logger:        logger,
-		DB:            db.New(pool),
+		Store:         store,
 		S3:            s3,
-		AvatarsPrefix: avatarsPrefix(s3Secure, s3Endpoint),
+		Logger:        logger,
+		AvatarsPrefix: avatarsPrefix,
 		BaseContext:   func() context.Context { return ctx },
 	}
 
