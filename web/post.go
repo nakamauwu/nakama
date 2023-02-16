@@ -59,7 +59,7 @@ func (h *Handler) showPosts(w http.ResponseWriter, r *http.Request) {
 	if _, ok := nakama.UserFromContext(ctx); ok && mode != "global" {
 		posts, err = h.Service.Timeline(ctx)
 	} else {
-		posts, err = h.Service.Posts(ctx, nakama.PostsParams{})
+		posts, err = h.Service.Posts(ctx, nakama.ListPosts{})
 	}
 
 	if err != nil {
@@ -115,13 +115,13 @@ func (h *Handler) showPost(w http.ResponseWriter, r *http.Request) {
 
 	g.Go(func() error {
 		var err error
-		post, err = h.Service.Post(gctx, postID)
+		post, err = h.Service.Post(gctx, nakama.RetrievePost{ID: postID})
 		return err
 	})
 
 	g.Go(func() error {
 		var err error
-		comments, err = h.Service.Comments(gctx, nakama.CommentsParams{PostID: postID})
+		comments, err = h.Service.Comments(gctx, nakama.ListComments{PostID: postID})
 		return err
 	})
 

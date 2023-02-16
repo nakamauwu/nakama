@@ -69,12 +69,12 @@ func TestService_Comments(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("invalid_post_id", func(t *testing.T) {
-		_, err := testService.Comments(ctx, CommentsParams{PostID: "@nope@"})
+		_, err := testService.Comments(ctx, ListComments{PostID: "@nope@"})
 		assert.EqualError(t, err, "invalid post ID")
 	})
 
 	t.Run("empty", func(t *testing.T) {
-		got, err := testService.Comments(ctx, CommentsParams{PostID: genID()})
+		got, err := testService.Comments(ctx, ListComments{PostID: genID()})
 		assert.NoError(t, err)
 		assert.Zero(t, got)
 	})
@@ -88,7 +88,7 @@ func TestService_Comments(t *testing.T) {
 			genComment(t, usr.ID, post.ID)
 		}
 
-		got, err := testService.Comments(ctx, CommentsParams{PostID: post.ID})
+		got, err := testService.Comments(ctx, ListComments{PostID: post.ID})
 		assert.NoError(t, err)
 		assert.Equal(t, want, len(got))
 		for _, p := range got {

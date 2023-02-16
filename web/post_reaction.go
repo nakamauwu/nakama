@@ -25,7 +25,7 @@ func (h *Handler) addPostReaction(w http.ResponseWriter, r *http.Request) {
 	// render just partial <article class="post"> element
 	// that will be swapped by HTMX.
 	if isHXReq(r) {
-		post, err := h.Service.Post(ctx, postID)
+		post, err := h.Service.Post(ctx, nakama.RetrievePost{ID: postID})
 		if err != nil {
 			h.log(err)
 			// TODO: flash message
@@ -62,7 +62,7 @@ func (h *Handler) removePostReaction(w http.ResponseWriter, r *http.Request) {
 	// render just partial <article class="post"> element
 	// that will be swapped by HTMX.
 	if isHXReq(r) {
-		post, err := h.Service.Post(ctx, postID)
+		post, err := h.Service.Post(ctx, nakama.RetrievePost{ID: postID})
 		if err != nil {
 			h.log(err)
 			// TODO: flash message

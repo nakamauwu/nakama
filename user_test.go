@@ -11,7 +11,7 @@ func TestService_Users(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("invalid_username", func(t *testing.T) {
-		_, err := testService.Users(ctx, UsersParams{UsernameQuery: "@nope@"})
+		_, err := testService.Users(ctx, ListUsers{UsernameQuery: "@nope@"})
 		assert.EqualError(t, err, "invalid username")
 	})
 
@@ -20,7 +20,7 @@ func TestService_Users(t *testing.T) {
 			in.Username = "tomas"
 		})
 
-		got, err := testService.Users(ctx, UsersParams{UsernameQuery: "liz"})
+		got, err := testService.Users(ctx, ListUsers{UsernameQuery: "liz"})
 		assert.NoError(t, err)
 		assert.Zero(t, got)
 	})
@@ -30,7 +30,7 @@ func TestService_Users(t *testing.T) {
 			in.Username = "bob"
 		})
 
-		got, err := testService.Users(ctx, UsersParams{UsernameQuery: "boo"})
+		got, err := testService.Users(ctx, ListUsers{UsernameQuery: "boo"})
 		assert.NoError(t, err)
 		assert.Equal(t, usr, got[0])
 	})
@@ -40,18 +40,18 @@ func TestService_User(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("invalid_username", func(t *testing.T) {
-		_, err := testService.User(ctx, "@nope@")
+		_, err := testService.User(ctx, RetrieveUser{Username: "@nope@"})
 		assert.EqualError(t, err, "invalid username")
 	})
 
 	t.Run("not_found", func(t *testing.T) {
-		_, err := testService.User(ctx, genUsername())
+		_, err := testService.User(ctx, RetrieveUser{Username: genUsername()})
 		assert.EqualError(t, err, "user not found")
 	})
 
 	t.Run("ok", func(t *testing.T) {
 		usr := genUser(t)
-		got, err := testService.User(ctx, usr.Username)
+		got, err := testService.User(ctx, RetrieveUser{Username: usr.Username})
 		assert.NoError(t, err)
 		assert.Equal(t, usr.ID, got.ID)
 		assert.Equal(t, usr.Email, got.Email)
@@ -62,7 +62,7 @@ func TestService_User(t *testing.T) {
 
 	t.Run("following", func(t *testing.T) {
 		{
-			usr, err := testService.User(ctx, genUser(t).Username)
+			usr, err := testService.User(ctx, RetrieveUser{Username: genUser(t).Username})
 			assert.NoError(t, err)
 			assert.False(t, usr.Following)
 		}
@@ -75,7 +75,7 @@ func TestService_User(t *testing.T) {
 			err := testService.FollowUser(asFollower, followed.ID)
 			assert.NoError(t, err)
 
-			usr, err := testService.User(asFollower, followed.Username)
+			usr, err := testService.User(asFollower, RetrieveUser{Username: followed.Username})
 			assert.NoError(t, err)
 			assert.True(t, usr.Following)
 		}
@@ -84,7 +84,7 @@ func TestService_User(t *testing.T) {
 			err := testService.UnfollowUser(asFollower, followed.ID)
 			assert.NoError(t, err)
 
-			usr, err := testService.User(asFollower, followed.Username)
+			usr, err := testService.User(asFollower, RetrieveUser{Username: followed.Username})
 			assert.NoError(t, err)
 			assert.False(t, usr.Following)
 		}

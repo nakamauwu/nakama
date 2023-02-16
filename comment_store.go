@@ -10,8 +10,8 @@ import (
 	"github.com/lib/pq"
 )
 
-func (db *Store) CreateComment(ctx context.Context, in CreateComment) (CreatedComment, error) {
-	var out CreatedComment
+func (db *Store) CreateComment(ctx context.Context, in CreateComment) (Created, error) {
+	var out Created
 
 	const createComment = `
 		INSERT INTO comments (id, user_id, post_id, content)
@@ -38,7 +38,7 @@ func (db *Store) CreateComment(ctx context.Context, in CreateComment) (CreatedCo
 	return out, nil
 }
 
-func (db *Store) Comments(ctx context.Context, in CommentsParams) ([]Comment, error) {
+func (db *Store) Comments(ctx context.Context, in ListComments) ([]Comment, error) {
 	const comments = `
 		SELECT
 			  comments.id
@@ -98,12 +98,11 @@ func (db *Store) Comments(ctx context.Context, in CommentsParams) ([]Comment, er
 func (db *Store) Comment(ctx context.Context, in RetrieveComment) (Comment, error) {
 	const query = `
 		SELECT
-			  comments.id
-			, comments.user_id
+			  comments.user_id
 			, comments.post_id
 			, comments.content
 			, comments.reactions_count
-			, reactions
+			, comment_reactions.reactions
 			, comments.created_at
 			, comments.updated_at
 			, users.username
@@ -122,8 +121,7 @@ func (db *Store) Comment(ctx context.Context, in RetrieveComment) (Comment, erro
 	`
 	var c Comment
 	var reactions []string
-	err := db.QueryRowContext(ctx, query, in.authUserID, in.CommentID).Scan(
-		&c.ID,
+	err := db.QueryRowContext(ctx, query, in.authUserID, in.ID).Scan(
 		&c.UserID,
 		&c.PostID,
 		&c.Content,
@@ -144,6 +142,7 @@ func (db *Store) Comment(ctx context.Context, in RetrieveComment) (Comment, erro
 		return Comment{}, fmt.Errorf("sql select comment: %w", err)
 	}
 
+	c.ID = in.ID
 	c.ReactionsCount.Apply(reactions)
 
 	return c, nil
@@ -179,7 +178,7 @@ func (db *Store) UpdateComment(ctx context.Context, in UpdateComment) (time.Time
 	var updatedAt time.Time
 	row := db.QueryRowContext(ctx, query,
 		jsonValue{Dst: in.ReactionsCount},
-		in.CommentID,
+		in.ID,
 	)
 	err := row.Scan(&updatedAt)
 	if err != nil {

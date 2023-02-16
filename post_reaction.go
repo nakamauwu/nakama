@@ -2,6 +2,7 @@ package nakama
 
 import (
 	"context"
+	"strings"
 
 	"github.com/nicolasparada/go-errs"
 )
@@ -14,6 +15,9 @@ type PostReaction struct {
 }
 
 func (in *PostReaction) Validate() error {
+	in.PostID = strings.TrimSpace(in.PostID)
+	in.Reaction = strings.TrimSpace(in.Reaction)
+
 	if !validID(in.PostID) {
 		return ErrInvalidPostID
 	}

@@ -58,18 +58,13 @@ type CreateUser struct {
 	Username string
 }
 
-type CreatedUser struct {
-	ID        string
-	CreatedAt time.Time
-}
-
-type UsersParams struct {
+type ListUsers struct {
 	UsernameQuery string
 
 	authUserID string
 }
 
-func (in *UsersParams) Validate() error {
+func (in *ListUsers) Validate() error {
 	in.UsernameQuery = strings.ToLower(in.UsernameQuery)
 	in.UsernameQuery = strings.TrimSpace(in.UsernameQuery)
 
@@ -81,13 +76,24 @@ func (in *UsersParams) Validate() error {
 }
 
 type RetrieveUser struct {
-	FollowerID string
-	UserID     string
-	Email      string
-	Username   string
+	Username string
+
+	authUserID string
+	id         string
+	email      string
 }
 
-type UserExistsParams struct {
+func (in *RetrieveUser) Validate() error {
+	in.Username = strings.TrimSpace(in.Username)
+
+	if !validUsername(in.Username) {
+		return ErrInvalidUsername
+	}
+
+	return nil
+}
+
+type RetrieveUserExists struct {
 	UserID   string
 	Email    string
 	Username string
@@ -122,7 +128,7 @@ type UpdatedAvatar struct {
 	Height uint
 }
 
-func (svc *Service) Users(ctx context.Context, in UsersParams) ([]User, error) {
+func (svc *Service) Users(ctx context.Context, in ListUsers) ([]User, error) {
 	if err := in.Validate(); err != nil {
 		return nil, err
 	}
@@ -133,28 +139,35 @@ func (svc *Service) Users(ctx context.Context, in UsersParams) ([]User, error) {
 	return svc.Store.Users(ctx, in)
 }
 
-func (svc *Service) User(ctx context.Context, username string) (User, error) {
+func (svc *Service) User(ctx context.Context, in RetrieveUser) (User, error) {
 	var out User
 
 	user, authenticated := UserFromContext(ctx)
+	in.authUserID = user.ID
 
-	q := RetrieveUser{FollowerID: user.ID}
-
-	if username == "" {
+	if in.Username == "" {
 		if !authenticated {
 			return out, errs.Unauthenticated
 		}
 
-		q.UserID = user.ID
-	} else {
-		if !validUsername(username) {
-			return out, ErrInvalidUsername
-		}
-
-		q.Username = username
+		in.id = user.ID
 	}
 
-	return svc.Store.User(ctx, q)
+	return svc.Store.User(ctx, in)
+}
+
+func (svc *Service) CurrentUser(ctx context.Context) (User, error) {
+	var out User
+
+	user, ok := UserFromContext(ctx)
+	if !ok {
+		return out, errs.Unauthenticated
+	}
+
+	return svc.Store.User(ctx, RetrieveUser{
+		id:         user.ID,
+		authUserID: user.ID,
+	})
 }
 
 func (svc *Service) UpdateUser(ctx context.Context, in UpdateUser) error {

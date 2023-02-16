@@ -3,6 +3,7 @@ package nakama
 import (
 	"context"
 	"log"
+	"time"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/rs/xid"
@@ -23,4 +24,9 @@ func genID() string {
 func validID(s string) bool {
 	_, err := xid.FromString(s)
 	return err == nil
+}
+
+type Created struct {
+	ID        string
+	CreatedAt time.Time
 }

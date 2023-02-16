@@ -52,13 +52,13 @@ func (h *Handler) showUser(w http.ResponseWriter, r *http.Request) {
 
 	g.Go(func() error {
 		var err error
-		user, err = h.Service.User(gctx, username)
+		user, err = h.Service.User(gctx, nakama.RetrieveUser{Username: username})
 		return err
 	})
 
 	g.Go(func() error {
 		var err error
-		posts, err = h.Service.Posts(gctx, nakama.PostsParams{Username: username})
+		posts, err = h.Service.Posts(gctx, nakama.ListPosts{Username: username})
 		return err
 	})
 
@@ -79,7 +79,7 @@ func (h *Handler) showUser(w http.ResponseWriter, r *http.Request) {
 // showSettings handles GET /settings.
 func (h *Handler) showSettings(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	user, err := h.Service.User(ctx, "")
+	user, err := h.Service.CurrentUser(ctx)
 	if err != nil {
 		h.log(err)
 		h.renderErr(w, r, err)

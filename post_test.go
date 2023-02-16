@@ -87,12 +87,12 @@ func TestService_Posts(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("invalid_username", func(t *testing.T) {
-		_, err := testService.Posts(ctx, PostsParams{Username: "@nope@"})
+		_, err := testService.Posts(ctx, ListPosts{Username: "@nope@"})
 		assert.EqualError(t, err, "invalid username")
 	})
 
 	t.Run("optional_username", func(t *testing.T) {
-		_, err := testService.Posts(ctx, PostsParams{})
+		_, err := testService.Posts(ctx, ListPosts{})
 		assert.NoError(t, err)
 	})
 
@@ -102,7 +102,7 @@ func TestService_Posts(t *testing.T) {
 			genPost(t, genUser(t).ID)
 		}
 
-		got, err := testService.Posts(ctx, PostsParams{})
+		got, err := testService.Posts(ctx, ListPosts{})
 		assert.NoError(t, err)
 		assert.True(t, len(got) >= wantAtLeast, "got %d posts, want at least %d", len(got), wantAtLeast)
 		for _, p := range got {
@@ -118,7 +118,7 @@ func TestService_Posts(t *testing.T) {
 		}
 		genPost(t, genUser(t).ID) // additional post from another user
 
-		got, err := testService.Posts(ctx, PostsParams{Username: usr.Username})
+		got, err := testService.Posts(ctx, ListPosts{Username: usr.Username})
 		assert.NoError(t, err)
 		assert.Equal(t, want, len(got))
 		for _, p := range got {
@@ -131,18 +131,18 @@ func TestService_Post(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("invalid_id", func(t *testing.T) {
-		_, err := testService.Post(ctx, "@nope@")
+		_, err := testService.Post(ctx, RetrievePost{ID: "@nope@"})
 		assert.EqualError(t, err, "invalid post ID")
 	})
 
 	t.Run("not_found", func(t *testing.T) {
-		_, err := testService.Post(ctx, genID())
+		_, err := testService.Post(ctx, RetrievePost{ID: genID()})
 		assert.EqualError(t, err, "post not found")
 	})
 
 	t.Run("ok", func(t *testing.T) {
 		post := genPost(t, genUser(t).ID)
-		got, err := testService.Post(ctx, post.ID)
+		got, err := testService.Post(ctx, RetrievePost{ID: post.ID})
 		assert.NoError(t, err)
 		assert.NotZero(t, got)
 	})

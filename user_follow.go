@@ -32,11 +32,13 @@ func (svc *Service) FollowUser(ctx context.Context, followedUserID string) error
 		return ErrCannotFollowSelf
 	}
 
+	follow := UserFollow{
+		FollowerID: user.ID,
+		FollowedID: followedUserID,
+	}
+
 	return svc.Store.RunTx(ctx, func(ctx context.Context) error {
-		exists, err := svc.Store.UserFollowExists(ctx, UserFollow{
-			FollowerID: user.ID,
-			FollowedID: followedUserID,
-		})
+		exists, err := svc.Store.UserFollowExists(ctx, follow)
 		if err != nil {
 			return err
 		}
@@ -46,10 +48,7 @@ func (svc *Service) FollowUser(ctx context.Context, followedUserID string) error
 			return nil
 		}
 
-		_, err = svc.Store.CreateUserFollow(ctx, UserFollow{
-			FollowerID: user.ID,
-			FollowedID: followedUserID,
-		})
+		_, err = svc.Store.CreateUserFollow(ctx, follow)
 		if err != nil {
 			return err
 		}
@@ -87,8 +86,13 @@ func (svc *Service) UnfollowUser(ctx context.Context, followedUserID string) err
 		return ErrCannotFollowSelf
 	}
 
+	follow := UserFollow{
+		FollowerID: user.ID,
+		FollowedID: followedUserID,
+	}
+
 	return svc.Store.RunTx(ctx, func(ctx context.Context) error {
-		exists, err := svc.Store.UserExists(ctx, UserExistsParams{UserID: followedUserID})
+		exists, err := svc.Store.UserExists(ctx, RetrieveUserExists{UserID: followedUserID})
 		if err != nil {
 			return err
 		}
@@ -97,10 +101,7 @@ func (svc *Service) UnfollowUser(ctx context.Context, followedUserID string) err
 			return ErrUserNotFound
 		}
 
-		exists, err = svc.Store.UserFollowExists(ctx, UserFollow{
-			FollowerID: user.ID,
-			FollowedID: followedUserID,
-		})
+		exists, err = svc.Store.UserFollowExists(ctx, follow)
 		if err != nil {
 			return err
 		}
@@ -110,10 +111,7 @@ func (svc *Service) UnfollowUser(ctx context.Context, followedUserID string) err
 			return nil
 		}
 
-		_, err = svc.Store.DeleteUserFollow(ctx, UserFollow{
-			FollowerID: user.ID,
-			FollowedID: followedUserID,
-		})
+		_, err = svc.Store.DeleteUserFollow(ctx, follow)
 		if err != nil {
 			return err
 		}

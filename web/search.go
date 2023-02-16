@@ -27,7 +27,7 @@ func (h *Handler) showSearch(w http.ResponseWriter, r *http.Request) {
 	if searchQuery != "" {
 		var err error
 		ctx := r.Context()
-		users, err = h.Service.Users(ctx, nakama.UsersParams{
+		users, err = h.Service.Users(ctx, nakama.ListUsers{
 			UsernameQuery: searchQuery,
 		})
 		if err != nil {

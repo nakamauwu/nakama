@@ -25,7 +25,7 @@ func (h *Handler) addCommentReaction(w http.ResponseWriter, r *http.Request) {
 	// render just partial <article class="comment"> element
 	// that will be swapped by HTMX.
 	if isHXReq(r) {
-		comment, err := h.Service.Comment(ctx, commentID)
+		comment, err := h.Service.Comment(ctx, nakama.RetrieveComment{ID: commentID})
 		if err != nil {
 			h.log(err)
 			// TODO: flash message
@@ -62,7 +62,7 @@ func (h *Handler) removeCommentReaction(w http.ResponseWriter, r *http.Request) 
 	// render just partial <article class="comment"> element
 	// that will be swapped by HTMX.
 	if isHXReq(r) {
-		comment, err := h.Service.Comment(ctx, commentID)
+		comment, err := h.Service.Comment(ctx, nakama.RetrieveComment{ID: commentID})
 		if err != nil {
 			h.log(err)
 			// TODO: flash message

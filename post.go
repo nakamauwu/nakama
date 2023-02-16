@@ -66,12 +66,7 @@ type CreatedTimelineItem struct {
 	UserID string
 }
 
-type CreatedPost struct {
-	ID        string
-	CreatedAt time.Time
-}
-
-type PostsParams struct {
+type ListPosts struct {
 	// Username is optional. If empty, all posts are returned.
 	// Otherwise, only posts created by this user are returned.
 	Username string
@@ -79,7 +74,7 @@ type PostsParams struct {
 	authUserID string
 }
 
-func (in *PostsParams) Validate() error {
+func (in *ListPosts) Validate() error {
 	in.Username = strings.TrimSpace(in.Username)
 
 	if in.Username != "" && !validUsername(in.Username) {
@@ -90,8 +85,19 @@ func (in *PostsParams) Validate() error {
 }
 
 type RetrievePost struct {
-	PostID     string
+	ID string
+
 	authUserID string
+}
+
+func (in *RetrievePost) Validate() error {
+	in.ID = strings.TrimSpace(in.ID)
+
+	if !validID(in.ID) {
+		return ErrInvalidPostID
+	}
+
+	return nil
 }
 
 type UpdatePost struct {
@@ -100,8 +106,8 @@ type UpdatePost struct {
 	ReactionsCount          *ReactionsCount
 }
 
-func (svc *Service) CreatePost(ctx context.Context, in CreatePost) (CreatedPost, error) {
-	var out CreatedPost
+func (svc *Service) CreatePost(ctx context.Context, in CreatePost) (Created, error) {
+	var out Created
 
 	if err := in.Validate(); err != nil {
 		return out, err
@@ -161,15 +167,15 @@ func (svc *Service) CreatePost(ctx context.Context, in CreatePost) (CreatedPost,
 // doing a JOIN with the user_follows table.
 // We can query the timeline table of each user directly.
 func (svc *Service) Timeline(ctx context.Context) ([]Post, error) {
-	usr, ok := UserFromContext(ctx)
+	user, ok := UserFromContext(ctx)
 	if !ok {
 		return nil, errs.Unauthenticated
 	}
 
-	return svc.Store.Timeline(ctx, usr.ID)
+	return svc.Store.Timeline(ctx, user.ID)
 }
 
-func (svc *Service) Posts(ctx context.Context, in PostsParams) ([]Post, error) {
+func (svc *Service) Posts(ctx context.Context, in ListPosts) ([]Post, error) {
 	if err := in.Validate(); err != nil {
 		return nil, err
 	}
@@ -180,17 +186,15 @@ func (svc *Service) Posts(ctx context.Context, in PostsParams) ([]Post, error) {
 	return svc.Store.Posts(ctx, in)
 }
 
-func (svc *Service) Post(ctx context.Context, postID string) (Post, error) {
+func (svc *Service) Post(ctx context.Context, in RetrievePost) (Post, error) {
 	var out Post
 
-	if !validID(postID) {
-		return out, ErrInvalidPostID
+	if err := in.Validate(); err != nil {
+		return out, err
 	}
 
 	user, _ := UserFromContext(ctx)
+	in.authUserID = user.ID
 
-	return svc.Store.Post(ctx, RetrievePost{
-		PostID:     postID,
-		authUserID: user.ID,
-	})
+	return svc.Store.Post(ctx, in)
 }

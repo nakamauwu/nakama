@@ -58,13 +58,13 @@ func (svc *Service) Login(ctx context.Context, in Login) (UserIdentity, error) {
 	}
 
 	return out, svc.Store.RunTx(ctx, func(ctx context.Context) error {
-		exists, err := svc.Store.UserExists(ctx, UserExistsParams{Email: in.Email})
+		exists, err := svc.Store.UserExists(ctx, RetrieveUserExists{Email: in.Email})
 		if err != nil {
 			return err
 		}
 
 		if exists {
-			usr, err := svc.Store.User(ctx, RetrieveUser{Email: in.Email})
+			usr, err := svc.Store.User(ctx, RetrieveUser{email: in.Email})
 			if err != nil {
 				return err
 			}
@@ -83,7 +83,7 @@ func (svc *Service) Login(ctx context.Context, in Login) (UserIdentity, error) {
 			return ErrUserNotFound
 		}
 
-		exists, err = svc.Store.UserExists(ctx, UserExistsParams{Username: *in.Username})
+		exists, err = svc.Store.UserExists(ctx, RetrieveUserExists{Username: *in.Username})
 		if err != nil {
 			return err
 		}

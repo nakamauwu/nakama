@@ -50,30 +50,45 @@ func (in *CreateComment) Validate() error {
 	return nil
 }
 
-type CreatedComment struct {
-	ID        string
-	CreatedAt time.Time
-}
-
-type CommentsParams struct {
+type ListComments struct {
 	PostID string
 
 	authUserID string
 }
 
+func (in *ListComments) Validate() error {
+	in.PostID = strings.TrimSpace(in.PostID)
+
+	if !validID(in.PostID) {
+		return ErrInvalidPostID
+	}
+
+	return nil
+}
+
 type RetrieveComment struct {
-	CommentID string
+	ID string
 
 	authUserID string
 }
 
+func (in *RetrieveComment) Validate() error {
+	in.ID = strings.TrimSpace(in.ID)
+
+	if !validID(in.ID) {
+		return ErrInvalidCommentID
+	}
+
+	return nil
+}
+
 type UpdateComment struct {
-	CommentID      string
+	ID             string
 	ReactionsCount *ReactionsCount
 }
 
-func (svc *Service) CreateComment(ctx context.Context, in CreateComment) (CreatedComment, error) {
-	var out CreatedComment
+func (svc *Service) CreateComment(ctx context.Context, in CreateComment) (Created, error) {
+	var out Created
 
 	if err := in.Validate(); err != nil {
 		return out, err
@@ -103,29 +118,26 @@ func (svc *Service) CreateComment(ctx context.Context, in CreateComment) (Create
 	})
 }
 
-func (svc *Service) Comments(ctx context.Context, in CommentsParams) ([]Comment, error) {
-	if !validID(in.PostID) {
-		return nil, ErrInvalidPostID
+func (svc *Service) Comments(ctx context.Context, in ListComments) ([]Comment, error) {
+	if err := in.Validate(); err != nil {
+		return nil, err
 	}
 
 	user, _ := UserFromContext(ctx)
-
 	in.authUserID = user.ID
 
 	return svc.Store.Comments(ctx, in)
 }
 
-func (svc *Service) Comment(ctx context.Context, commentID string) (Comment, error) {
+func (svc *Service) Comment(ctx context.Context, in RetrieveComment) (Comment, error) {
 	var out Comment
 
-	if !validID(commentID) {
-		return out, ErrInvalidCommentID
+	if err := in.Validate(); err != nil {
+		return out, err
 	}
 
 	user, _ := UserFromContext(ctx)
+	in.authUserID = user.ID
 
-	return svc.Store.Comment(ctx, RetrieveComment{
-		CommentID:  commentID,
-		authUserID: user.ID,
-	})
+	return svc.Store.Comment(ctx, in)
 }

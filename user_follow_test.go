@@ -58,13 +58,13 @@ func TestService_FollowUser(t *testing.T) {
 		assert.NoError(t, err)
 
 		{
-			follower, err := testService.User(ctx, follower.Username)
+			follower, err := testService.User(ctx, RetrieveUser{Username: follower.Username})
 			assert.NoError(t, err)
 			assert.Equal(t, 1, follower.FollowingCount)
 		}
 
 		{
-			followed, err := testService.User(ctx, followed.Username)
+			followed, err := testService.User(ctx, RetrieveUser{Username: followed.Username})
 			assert.NoError(t, err)
 			assert.Equal(t, 1, followed.FollowersCount)
 		}
@@ -132,13 +132,13 @@ func TestService_UnfollowUser(t *testing.T) {
 		assert.NoError(t, err)
 
 		{
-			follower, err := testService.User(ctx, follower.Username)
+			follower, err := testService.User(ctx, RetrieveUser{Username: follower.Username})
 			assert.NoError(t, err)
 			assert.Equal(t, 0, follower.FollowingCount)
 		}
 
 		{
-			followed, err := testService.User(ctx, followed.Username)
+			followed, err := testService.User(ctx, RetrieveUser{Username: followed.Username})
 			assert.NoError(t, err)
 			assert.Equal(t, 0, followed.FollowersCount)
 		}

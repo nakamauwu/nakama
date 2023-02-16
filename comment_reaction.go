@@ -2,6 +2,7 @@ package nakama
 
 import (
 	"context"
+	"strings"
 
 	"github.com/nicolasparada/go-errs"
 )
@@ -14,6 +15,9 @@ type CommentReaction struct {
 }
 
 func (in *CommentReaction) Validate() error {
+	in.CommentID = strings.TrimSpace(in.CommentID)
+	in.Reaction = strings.TrimSpace(in.Reaction)
+
 	if !validID(in.CommentID) {
 		return ErrInvalidCommentID
 	}
@@ -60,7 +64,7 @@ func (svc *Service) CreateCommentReaction(ctx context.Context, in CommentReactio
 		reactionsCount.Inc(in.Reaction)
 
 		_, err = svc.Store.UpdateComment(ctx, UpdateComment{
-			CommentID:      in.CommentID,
+			ID:             in.CommentID,
 			ReactionsCount: &reactionsCount,
 		})
 		return err
@@ -102,7 +106,7 @@ func (svc *Service) DeleteCommentReaction(ctx context.Context, in CommentReactio
 		reactionsCount.Dec(in.Reaction)
 
 		_, err = svc.Store.UpdateComment(ctx, UpdateComment{
-			CommentID:      in.CommentID,
+			ID:             in.CommentID,
 			ReactionsCount: &reactionsCount,
 		})
 		return err

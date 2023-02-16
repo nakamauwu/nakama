@@ -10,8 +10,8 @@ import (
 	"github.com/lib/pq"
 )
 
-func (db *Store) CreatePost(ctx context.Context, in CreatePost) (CreatedPost, error) {
-	var out CreatedPost
+func (db *Store) CreatePost(ctx context.Context, in CreatePost) (Created, error) {
+	var out Created
 
 	const query = `
 		INSERT INTO posts (id, user_id, content)
@@ -66,7 +66,7 @@ func (db *Store) CreateTimeline(ctx context.Context, in CreateTimeline) ([]Creat
 	})
 }
 
-func (db *Store) Posts(ctx context.Context, in PostsParams) ([]Post, error) {
+func (db *Store) Posts(ctx context.Context, in ListPosts) ([]Post, error) {
 	const query = `
 		SELECT
 			  posts.id
@@ -214,7 +214,7 @@ func (db *Store) Post(ctx context.Context, in RetrievePost) (Post, error) {
 	`
 	var p Post
 	var reactions []string
-	err := db.QueryRowContext(ctx, query, in.authUserID, in.PostID).Scan(
+	err := db.QueryRowContext(ctx, query, in.authUserID, in.ID).Scan(
 		&p.ID,
 		&p.UserID,
 		&p.Content,

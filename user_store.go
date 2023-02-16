@@ -8,8 +8,8 @@ import (
 	"time"
 )
 
-func (db *Store) CreateUser(ctx context.Context, in CreateUser) (CreatedUser, error) {
-	var out CreatedUser
+func (db *Store) CreateUser(ctx context.Context, in CreateUser) (Created, error) {
+	var out Created
 
 	const query = `
 		INSERT INTO users (id, email, username)
@@ -27,7 +27,7 @@ func (db *Store) CreateUser(ctx context.Context, in CreateUser) (CreatedUser, er
 	return out, nil
 }
 
-func (db *Store) Users(ctx context.Context, in UsersParams) ([]User, error) {
+func (db *Store) Users(ctx context.Context, in ListUsers) ([]User, error) {
 	const query = `
 		SELECT users.id
 			, users.email
@@ -128,9 +128,9 @@ func (db *Store) User(ctx context.Context, in RetrieveUser) (User, error) {
 	`
 	var usr User
 	err := db.QueryRowContext(ctx, query,
-		in.FollowerID,
-		in.UserID,
-		in.Email,
+		in.authUserID,
+		in.id,
+		in.email,
 		in.Username,
 	).Scan(
 		&usr.ID,
@@ -156,7 +156,7 @@ func (db *Store) User(ctx context.Context, in RetrieveUser) (User, error) {
 	return usr, nil
 }
 
-func (db *Store) UserExists(ctx context.Context, in UserExistsParams) (bool, error) {
+func (db *Store) UserExists(ctx context.Context, in RetrieveUserExists) (bool, error) {
 	const query = `
 		SELECT EXISTS (
 			SELECT 1 FROM users WHERE CASE
