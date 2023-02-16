@@ -10,7 +10,7 @@ import (
 
 const sessionKeyUser = "user"
 
-var loginPageTmpl = parseTmpl("login-page.tmpl")
+var loginPage = parsePage("login-page.tmpl")
 
 type loginData struct {
 	Session
@@ -19,7 +19,7 @@ type loginData struct {
 }
 
 func (h *Handler) renderLogin(w http.ResponseWriter, data loginData, statusCode int) {
-	h.renderTmpl(w, loginPageTmpl, data, statusCode)
+	h.render(w, loginPage, data, statusCode)
 }
 
 // showLogin handles GET /login.

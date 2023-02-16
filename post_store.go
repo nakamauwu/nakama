@@ -73,7 +73,7 @@ func (db *Store) Posts(ctx context.Context, in PostsParams) ([]Post, error) {
 			, posts.user_id
 			, posts.content
 			, posts.reactions_count
-			, reactions
+			, post_reactions.reactions
 			, posts.comments_count
 			, posts.created_at
 			, posts.updated_at
@@ -135,7 +135,7 @@ func (db *Store) Timeline(ctx context.Context, userID string) ([]Post, error) {
 			, posts.user_id
 			, posts.content
 			, posts.reactions_count
-			, reactions
+			, post_reactions.reactions
 			, posts.comments_count
 			, posts.created_at
 			, posts.updated_at
@@ -194,7 +194,7 @@ func (db *Store) Post(ctx context.Context, in RetrievePost) (Post, error) {
 			, posts.user_id
 			, posts.content
 			, posts.reactions_count
-			, reactions
+			, post_reactions.reactions
 			, posts.comments_count
 			, posts.created_at
 			, posts.updated_at

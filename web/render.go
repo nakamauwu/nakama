@@ -20,32 +20,21 @@ var tmplFuncs = template.FuncMap{
 
 var reURL = xurls.Relaxed()
 
-func parseTmpl(name string) *template.Template {
+func parsePage(name string) *template.Template {
 	tmpl := template.New(name).Funcs(sprig.FuncMap()).Funcs(tmplFuncs)
 	tmpl = template.Must(tmpl.ParseFS(templateFS, "template/include/*.tmpl"))
 	return template.Must(tmpl.ParseFS(templateFS, "template/"+name))
 }
 
-func (h *Handler) renderTmpl(w http.ResponseWriter, tmpl *template.Template, data any, statusCode int) {
-	var buff bytes.Buffer
-	err := tmpl.Execute(&buff, data)
-	if err != nil {
-		_ = h.Logger.Output(2, fmt.Sprintf("could not render %q: %v\n", tmpl.Name(), err))
-		http.Error(w, fmt.Sprintf("could not render %q", tmpl.Name()), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.WriteHeader(statusCode)
-	_, err = buff.WriteTo(w)
-	if err != nil {
-		_ = h.Logger.Output(2, fmt.Sprintf("could not send %q: %v\n", tmpl.Name(), err))
-	}
+func parseInclude(name string) *template.Template {
+	tmpl := template.New(name).Funcs(sprig.FuncMap()).Funcs(tmplFuncs)
+	tmpl = template.Must(tmpl.ParseFS(templateFS, "template/include/*.tmpl"))
+	return template.Must(tmpl.ParseFS(templateFS, "template/include/"+name))
 }
 
-func (h *Handler) renderNamedTmpl(w http.ResponseWriter, tmpl *template.Template, name string, data any, statusCode int) {
+func (h *Handler) render(w http.ResponseWriter, tmpl *template.Template, data any, statusCode int) {
 	var buff bytes.Buffer
-	err := tmpl.ExecuteTemplate(&buff, name, data)
+	err := tmpl.Execute(&buff, data)
 	if err != nil {
 		_ = h.Logger.Output(2, fmt.Sprintf("could not render %q: %v\n", tmpl.Name(), err))
 		http.Error(w, fmt.Sprintf("could not render %q", tmpl.Name()), http.StatusInternalServerError)

@@ -38,13 +38,14 @@ func (db *Store) CreateComment(ctx context.Context, in CreateComment) (CreatedCo
 	return out, nil
 }
 
-func (db *Store) Comments(ctx context.Context, postID string) ([]Comment, error) {
+func (db *Store) Comments(ctx context.Context, in CommentsParams) ([]Comment, error) {
 	const comments = `
 		SELECT
 			  comments.id
 			, comments.user_id
-			, comments.post_id
 			, comments.content
+			, comments.reactions_count
+			, comment_reactions.reactions
 			, comments.created_at
 			, comments.updated_at
 			, users.username
@@ -53,21 +54,29 @@ func (db *Store) Comments(ctx context.Context, postID string) ([]Comment, error)
 			, users.avatar_height
 		FROM comments
 		INNER JOIN users ON comments.user_id = users.id
-		WHERE comments.post_id = $1
+		LEFT JOIN (
+			SELECT comment_id, array_agg(reaction) AS reactions
+			FROM comment_reactions
+			WHERE comment_reactions.user_id = $1
+			GROUP BY comment_id
+		) AS comment_reactions ON comment_reactions.comment_id = comments.id
+		WHERE comments.post_id = $2
 		ORDER BY comments.id DESC
 	`
-	rows, err := db.QueryContext(ctx, comments, postID)
+	rows, err := db.QueryContext(ctx, comments, in.authUserID, in.PostID)
 	if err != nil {
 		return nil, fmt.Errorf("sql select comments: %w", err)
 	}
 
 	return collect(rows, func(scanner scanner) (Comment, error) {
 		var out Comment
-		return out, scanner.Scan(
+		var reactions []string
+		err := scanner.Scan(
 			&out.ID,
 			&out.UserID,
-			&out.PostID,
 			&out.Content,
+			&jsonValue{Dst: &out.ReactionsCount},
+			pq.Array(&reactions),
 			&out.CreatedAt,
 			&out.UpdatedAt,
 			&out.User.Username,
@@ -75,6 +84,14 @@ func (db *Store) Comments(ctx context.Context, postID string) ([]Comment, error)
 			&out.User.AvatarWidth,
 			&out.User.AvatarHeight,
 		)
+		if err != nil {
+			return out, err
+		}
+
+		out.PostID = in.PostID
+		out.ReactionsCount.Apply(reactions)
+
+		return out, nil
 	})
 }
 

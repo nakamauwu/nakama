@@ -10,8 +10,9 @@ import (
 )
 
 var (
-	postsPageTmpl = parseTmpl("posts-page.tmpl")
-	postPageTmpl  = parseTmpl("post-page.tmpl")
+	postsPage   = parsePage("posts-page.tmpl")
+	postPage    = parsePage("post-page.tmpl")
+	postPartial = parseInclude("post.tmpl")
 )
 
 type (
@@ -29,14 +30,22 @@ type (
 		CreateCommentForm url.Values
 		CreateCommentErr  error
 	}
+	postPartialData struct {
+		Session
+		Post nakama.Post
+	}
 )
 
 func (h *Handler) renderPosts(w http.ResponseWriter, data postsData, statusCode int) {
-	h.renderTmpl(w, postsPageTmpl, data, statusCode)
+	h.render(w, postsPage, data, statusCode)
 }
 
 func (h *Handler) renderPost(w http.ResponseWriter, data postData, statusCode int) {
-	h.renderTmpl(w, postPageTmpl, data, statusCode)
+	h.render(w, postPage, data, statusCode)
+}
+
+func (h *Handler) renderPostPartial(w http.ResponseWriter, data postPartialData, statusCode int) {
+	h.render(w, postPartial, data, statusCode)
 }
 
 // showPosts handles GET /.
@@ -112,7 +121,7 @@ func (h *Handler) showPost(w http.ResponseWriter, r *http.Request) {
 
 	g.Go(func() error {
 		var err error
-		comments, err = h.Service.Comments(gctx, postID)
+		comments, err = h.Service.Comments(gctx, nakama.CommentsParams{PostID: postID})
 		return err
 	})
 

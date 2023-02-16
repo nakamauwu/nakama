@@ -6,7 +6,7 @@ import (
 	"github.com/nakamauwu/nakama"
 )
 
-var searchTmpl = parseTmpl("search-page.tmpl")
+var searchPage = parsePage("search-page.tmpl")
 
 type searchData struct {
 	Session
@@ -16,7 +16,7 @@ type searchData struct {
 }
 
 func (h *Handler) renderSearch(w http.ResponseWriter, data searchData, statusCode int) {
-	h.renderTmpl(w, searchTmpl, data, statusCode)
+	h.render(w, searchPage, data, statusCode)
 }
 
 // showSearch handles GET /search.

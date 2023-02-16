@@ -9,7 +9,7 @@ import (
 
 var errInternalServerError = errors.New("internal server error")
 
-var errorPageTmpl = parseTmpl("error-page.tmpl")
+var errorPage = parsePage("error-page.tmpl")
 
 type errData struct {
 	Session
@@ -17,7 +17,7 @@ type errData struct {
 }
 
 func (h *Handler) renderErr(w http.ResponseWriter, r *http.Request, err error) {
-	h.renderTmpl(w, errorPageTmpl, errData{
+	h.render(w, errorPage, errData{
 		Session: h.sessionFromReq(r),
 		Err:     maskErr(err),
 	}, httperrs.Code(err))

@@ -7,15 +7,6 @@ import (
 	"github.com/nicolasparada/go-mux"
 )
 
-type renderSingleComment struct {
-	Session
-	Comment nakama.Comment
-}
-
-func (h *Handler) renderSingleComment(w http.ResponseWriter, data renderSingleComment) {
-	h.renderNamedTmpl(w, postPageTmpl, "comment.tmpl", data, http.StatusOK)
-}
-
 // addCommentReaction handles POST /comments/{commentID}/reactions.
 func (h *Handler) addCommentReaction(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -42,10 +33,10 @@ func (h *Handler) addCommentReaction(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		h.renderSingleComment(w, renderSingleComment{
+		h.renderCommentPartial(w, commentPartialData{
 			Session: h.sessionFromReq(r),
 			Comment: comment,
-		})
+		}, http.StatusOK)
 		return
 	}
 
@@ -79,10 +70,10 @@ func (h *Handler) removeCommentReaction(w http.ResponseWriter, r *http.Request) 
 			return
 		}
 
-		h.renderSingleComment(w, renderSingleComment{
+		h.renderCommentPartial(w, commentPartialData{
 			Session: h.sessionFromReq(r),
 			Comment: comment,
-		})
+		}, http.StatusOK)
 		return
 	}
 

@@ -55,6 +55,12 @@ type CreatedComment struct {
 	CreatedAt time.Time
 }
 
+type CommentsParams struct {
+	PostID string
+
+	authUserID string
+}
+
 type RetrieveComment struct {
 	CommentID string
 
@@ -97,12 +103,16 @@ func (svc *Service) CreateComment(ctx context.Context, in CreateComment) (Create
 	})
 }
 
-func (svc *Service) Comments(ctx context.Context, postID string) ([]Comment, error) {
-	if !validID(postID) {
+func (svc *Service) Comments(ctx context.Context, in CommentsParams) ([]Comment, error) {
+	if !validID(in.PostID) {
 		return nil, ErrInvalidPostID
 	}
 
-	return svc.Store.Comments(ctx, postID)
+	user, _ := UserFromContext(ctx)
+
+	in.authUserID = user.ID
+
+	return svc.Store.Comments(ctx, in)
 }
 
 func (svc *Service) Comment(ctx context.Context, commentID string) (Comment, error) {

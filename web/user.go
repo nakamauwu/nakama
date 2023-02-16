@@ -12,8 +12,8 @@ import (
 )
 
 var (
-	userPageTmpl     = parseTmpl("user-page.tmpl")
-	settingsPageTmpl = parseTmpl("settings-page.tmpl")
+	userPage     = parsePage("user-page.tmpl")
+	settingsPage = parsePage("settings-page.tmpl")
 )
 
 type (
@@ -33,11 +33,11 @@ type (
 )
 
 func (h *Handler) renderUser(w http.ResponseWriter, data userData, statusCode int) {
-	h.renderTmpl(w, userPageTmpl, data, statusCode)
+	h.render(w, userPage, data, statusCode)
 }
 
 func (h *Handler) renderSettings(w http.ResponseWriter, data settingsData, statusCode int) {
-	h.renderTmpl(w, settingsPageTmpl, data, statusCode)
+	h.render(w, settingsPage, data, statusCode)
 }
 
 // showUser handles GET /@{username}.
