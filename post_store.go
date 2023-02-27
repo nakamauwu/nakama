@@ -2,12 +2,11 @@ package nakama
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"time"
 
-	"github.com/lib/pq"
+	"github.com/jackc/pgx/v5"
 )
 
 func (db *Store) CreatePost(ctx context.Context, in CreatePost) (Created, error) {
@@ -19,9 +18,9 @@ func (db *Store) CreatePost(ctx context.Context, in CreatePost) (Created, error)
 		RETURNING created_at
 	`
 	postID := genID()
-	err := db.QueryRowContext(ctx, query, postID, in.userID, in.Content).Scan(&out.CreatedAt)
+	err := db.QueryRow(ctx, query, postID, in.userID, in.Content).Scan(&out.CreatedAt)
 	if err != nil {
-		return out, fmt.Errorf("sql insert post: %w", err)
+		return out, fmt.Errorf("sql scan inserted post: %w", err)
 	}
 
 	out.ID = postID
@@ -36,7 +35,7 @@ func (db *Store) CreateTimelineItem(ctx context.Context, in CreateTimelineItem) 
 		RETURNING id
 	`
 	var id string
-	err := db.QueryRowContext(ctx, query, in.userID, in.postID).Scan(&id)
+	err := db.QueryRow(ctx, query, in.userID, in.postID).Scan(&id)
 	if err != nil {
 		return "", fmt.Errorf("sql insert timeline item: %w", err)
 	}
@@ -55,14 +54,18 @@ func (db *Store) CreateTimeline(ctx context.Context, in CreateTimeline) ([]Creat
 		RETURNING id, user_id
 	`
 
-	rows, err := db.QueryContext(ctx, query, in.postID, in.followedID)
+	rows, err := db.Query(ctx, query, in.postID, in.followedID)
 	if err != nil {
 		return nil, fmt.Errorf("sql fanout timeline: %w", err)
 	}
 
-	return collect(rows, func(scanner scanner) (CreatedTimelineItem, error) {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (CreatedTimelineItem, error) {
 		var out CreatedTimelineItem
-		return out, scanner.Scan(&out.ID, &out.UserID)
+		if err := row.Scan(&out.ID, &out.UserID); err != nil {
+			return out, fmt.Errorf("sql scan fanout timeline: %w", err)
+		}
+
+		return out, nil
 	})
 }
 
@@ -96,20 +99,20 @@ func (db *Store) Posts(ctx context.Context, in ListPosts) ([]Post, error) {
 			END
 		ORDER BY posts.id DESC
 	`
-	rows, err := db.QueryContext(ctx, query, in.authUserID, in.Username)
+	rows, err := db.Query(ctx, query, in.authUserID, in.Username)
 	if err != nil {
 		return nil, fmt.Errorf("sql select posts: %w", err)
 	}
 
-	return collect(rows, func(scanner scanner) (Post, error) {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (Post, error) {
 		var out Post
 		var reactions []string
-		err := scanner.Scan(
+		err := row.Scan(
 			&out.ID,
 			&out.UserID,
 			&out.Content,
-			&jsonValue{Dst: &out.ReactionsCount},
-			pq.Array(&reactions),
+			&out.ReactionsCount,
+			&reactions,
 			&out.CommentsCount,
 			&out.CreatedAt,
 			&out.UpdatedAt,
@@ -119,7 +122,7 @@ func (db *Store) Posts(ctx context.Context, in ListPosts) ([]Post, error) {
 			&out.User.AvatarHeight,
 		)
 		if err != nil {
-			return out, err
+			return out, fmt.Errorf("sql scan posts: %w", err)
 		}
 
 		out.ReactionsCount.Apply(reactions)
@@ -155,20 +158,20 @@ func (db *Store) Timeline(ctx context.Context, userID string) ([]Post, error) {
 		WHERE timeline.user_id = $1
 		ORDER BY timeline.id DESC
 	`
-	rows, err := db.QueryContext(ctx, query, userID)
+	rows, err := db.Query(ctx, query, userID)
 	if err != nil {
 		return nil, fmt.Errorf("sql select timeline: %w", err)
 	}
 
-	return collect(rows, func(scanner scanner) (Post, error) {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (Post, error) {
 		var out Post
 		var reactions []string
-		err := scanner.Scan(
+		err := row.Scan(
 			&out.ID,
 			&out.UserID,
 			&out.Content,
-			&jsonValue{Dst: &out.ReactionsCount},
-			pq.Array(&reactions),
+			&out.ReactionsCount,
+			&reactions,
 			&out.CommentsCount,
 			&out.CreatedAt,
 			&out.UpdatedAt,
@@ -178,7 +181,7 @@ func (db *Store) Timeline(ctx context.Context, userID string) ([]Post, error) {
 			&out.User.AvatarHeight,
 		)
 		if err != nil {
-			return out, err
+			return out, fmt.Errorf("sql scan timeline items: %w", err)
 		}
 
 		out.ReactionsCount.Apply(reactions)
@@ -214,12 +217,12 @@ func (db *Store) Post(ctx context.Context, in RetrievePost) (Post, error) {
 	`
 	var p Post
 	var reactions []string
-	err := db.QueryRowContext(ctx, query, in.authUserID, in.ID).Scan(
+	err := db.QueryRow(ctx, query, in.authUserID, in.ID).Scan(
 		&p.ID,
 		&p.UserID,
 		&p.Content,
-		&jsonValue{Dst: &p.ReactionsCount},
-		pq.Array(&reactions),
+		&p.ReactionsCount,
+		&reactions,
 		&p.CommentsCount,
 		&p.CreatedAt,
 		&p.UpdatedAt,
@@ -228,12 +231,12 @@ func (db *Store) Post(ctx context.Context, in RetrievePost) (Post, error) {
 		&p.User.AvatarWidth,
 		&p.User.AvatarHeight,
 	)
-	if errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return Post{}, ErrPostNotFound
 	}
 
 	if err != nil {
-		return Post{}, fmt.Errorf("sql select post: %w", err)
+		return Post{}, fmt.Errorf("sql scan selected post: %w", err)
 	}
 
 	p.ReactionsCount.Apply(reactions)
@@ -247,14 +250,14 @@ func (db *Store) PostReactionsCount(ctx context.Context, postID string) (Reactio
 	`
 
 	var out ReactionsCount
-	row := db.QueryRowContext(ctx, query, postID)
-	err := row.Scan(&jsonValue{Dst: &out})
-	if errors.Is(err, sql.ErrNoRows) {
+	row := db.QueryRow(ctx, query, postID)
+	err := row.Scan(&out)
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrPostNotFound
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("sql select post reactions count: %w", err)
+		return nil, fmt.Errorf("sql scan selected post reactions count: %w", err)
 	}
 
 	return out, nil
@@ -270,14 +273,14 @@ func (db *Store) UpdatePost(ctx context.Context, in UpdatePost) (time.Time, erro
 		RETURNING updated_at
 	`
 	var updatedAt time.Time
-	row := db.QueryRowContext(ctx, query,
+	row := db.QueryRow(ctx, query,
 		in.IncreaseCommentsCountBy,
-		jsonValue{Dst: in.ReactionsCount},
+		in.ReactionsCount,
 		in.PostID,
 	)
 	err := row.Scan(&updatedAt)
 	if err != nil {
-		return time.Time{}, fmt.Errorf("sql update post: %w", err)
+		return time.Time{}, fmt.Errorf("sql scan updated post: %w", err)
 	}
 
 	return updatedAt, nil

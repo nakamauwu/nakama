@@ -13,8 +13,8 @@ func (db *Store) CreateUserFollow(ctx context.Context, in UserFollow) (time.Time
 		RETURNING created_at
 	`
 	var createdAt time.Time
-	err := db.QueryRowContext(ctx, createUserFollow, in.FollowerID, in.FollowedID).Scan(&createdAt)
-	if isPqForeignKeyViolationError(err, "followed_id") {
+	err := db.QueryRow(ctx, createUserFollow, in.FollowerID, in.FollowedID).Scan(&createdAt)
+	if isForeignKeyViolationError(err, "followed_id") {
 		return time.Time{}, ErrUserNotFound
 	}
 
@@ -34,7 +34,7 @@ func (db *Store) UserFollowExists(ctx context.Context, in UserFollow) (bool, err
 		)
 	`
 	var exists bool
-	err := db.QueryRowContext(ctx, userFollowExists, in.FollowerID, in.FollowedID).Scan(&exists)
+	err := db.QueryRow(ctx, userFollowExists, in.FollowerID, in.FollowedID).Scan(&exists)
 	if err != nil {
 		return false, fmt.Errorf("sql select user follow exists: %w", err)
 	}
@@ -50,9 +50,9 @@ func (db *Store) DeleteUserFollow(ctx context.Context, in UserFollow) (time.Time
 		RETURNING now()::timestamp AS deleted_at
 	`
 	var deletedAt time.Time
-	err := db.QueryRowContext(ctx, deleteUserFollow, in.FollowerID, in.FollowedID).Scan(&deletedAt)
+	err := db.QueryRow(ctx, deleteUserFollow, in.FollowerID, in.FollowedID).Scan(&deletedAt)
 	if err != nil {
-		return time.Time{}, fmt.Errorf("sql delete user follow: %w", err)
+		return deletedAt, fmt.Errorf("sql scan deleted user follow: %w", err)
 	}
 
 	return deletedAt, nil

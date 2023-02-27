@@ -1,65 +1,64 @@
 package nakama
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
-	"database/sql/driver"
-	"encoding/json"
 	"errors"
-	"fmt"
 	"strings"
 
-	"github.com/cockroachdb/cockroach-go/v2/crdb"
-	"github.com/lib/pq"
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/nakamauwu/nakama/crdbpgx"
 )
 
 var ctxKeyTx = struct{ name string }{"ctx-key-tx"}
 
-func contextWithTx(ctx context.Context, tx *sql.Tx) context.Context {
+func contextWithTx(ctx context.Context, tx pgx.Tx) context.Context {
 	return context.WithValue(ctx, ctxKeyTx, tx)
 }
 
-func txFromContext(ctx context.Context) (*sql.Tx, bool) {
-	tx, ok := ctx.Value(ctxKeyTx).(*sql.Tx)
+func txFromContext(ctx context.Context) (pgx.Tx, bool) {
+	tx, ok := ctx.Value(ctxKeyTx).(pgx.Tx)
 	return tx, ok
 }
 
 // Store wrapper for SQL database with better semantics to run transactions.
 type Store struct {
-	pool           *sql.DB
+	pool           *pgxpool.Pool
 	AvatarScanFunc func(dest **string) sql.Scanner
 }
 
-func NewStore(pool *sql.DB) *Store {
+func NewStore(pool *pgxpool.Pool) *Store {
 	return &Store{
 		pool:           pool,
 		AvatarScanFunc: MakePrefixedNullStringScanner(""),
 	}
 }
 
-// QueryRowContext executes a query that is expected to return at most one row.
-func (db *Store) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
+// QueryRow executes a query that is expected to return at most one row.
+func (db *Store) QueryRow(ctx context.Context, query string, args ...any) pgx.Row {
 	if tx, ok := txFromContext(ctx); ok {
-		return tx.QueryRowContext(ctx, query, args...)
+		return tx.QueryRow(ctx, query, args...)
 	}
-	return db.pool.QueryRowContext(ctx, query, args...)
+	return db.pool.QueryRow(ctx, query, args...)
 }
 
-// QueryContext executes a query that returns rows, typically a SELECT.
-func (db *Store) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
+// Query executes a query that returns rows, typically a SELECT.
+func (db *Store) Query(ctx context.Context, query string, args ...any) (pgx.Rows, error) {
 	if tx, ok := txFromContext(ctx); ok {
-		return tx.QueryContext(ctx, query, args...)
+		return tx.Query(ctx, query, args...)
 	}
-	return db.pool.QueryContext(ctx, query, args...)
+	return db.pool.Query(ctx, query, args...)
 }
 
-// ExecContext executes a query without returning any rows.
-func (db *Store) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
+// Exec executes a query without returning any rows.
+func (db *Store) Exec(ctx context.Context, query string, args ...any) (pgconn.CommandTag, error) {
 	if tx, ok := txFromContext(ctx); ok {
-		return tx.ExecContext(ctx, query, args...)
+		return tx.Exec(ctx, query, args...)
 	}
-	return db.pool.ExecContext(ctx, query, args...)
+	return db.pool.Exec(ctx, query, args...)
 }
 
 // RunTx will start a new SQL transaction and hold a reference
@@ -70,42 +69,18 @@ func (db *Store) RunTx(ctx context.Context, txFunc func(ctx context.Context) err
 		return txFunc(ctx)
 	}
 
-	return crdb.ExecuteTx(ctx, db.pool, nil, func(tx *sql.Tx) error {
+	return crdbpgx.ExecuteTx(ctx, db.pool, func(tx pgx.Tx) error {
 		return txFunc(contextWithTx(ctx, tx))
 	})
 }
 
-// scanner copies the columns in the current row into the values pointed
-// at by dest. The number of values in dest must be the same as the
-// number of columns in the selected rows.
-type scanner interface {
-	Scan(dest ...any) error
-}
-
-// collect rows into a slice.
-func collect[T any](rows *sql.Rows, fn func(scanner scanner) (T, error)) ([]T, error) {
-	defer rows.Close()
-
-	var out []T
-	for rows.Next() {
-		item, err := fn(rows)
-		if err != nil {
-			return out, err
-		}
-
-		out = append(out, item)
-	}
-
-	return out, rows.Err()
-}
-
-func isPqError(err error, codeName string, columns ...string) bool {
-	var e *pq.Error
+func isPgError(err error, code string, columns ...string) bool {
+	var e *pgconn.PgError
 	if !errors.As(err, &e) {
 		return false
 	}
 
-	if e.Code.Name() != codeName {
+	if e.Code != code {
 		return false
 	}
 
@@ -122,51 +97,8 @@ func isPqError(err error, codeName string, columns ...string) bool {
 	return false
 }
 
-// func isPqNotNullViolationError(err error, columns ...string) bool {
-// 	return isPqError(err, "not_null_violation", columns...)
-// }
-
-func isPqForeignKeyViolationError(err error, columns ...string) bool {
-	return isPqError(err, "foreign_key_violation", columns...)
-}
-
-// func isPqUniqueViolationError(err error, columns ...string) bool {
-// 	return isPqError(err, "unique_violation", columns...)
-// }
-
-type jsonValue struct {
-	Dst any
-}
-
-// Value implements sql driver Valuer interface.
-func (jv jsonValue) Value() (driver.Value, error) {
-	if jv.Dst == nil {
-		return nil, nil
-	}
-
-	var buff bytes.Buffer
-	enc := json.NewEncoder(&buff)
-	enc.SetEscapeHTML(false)
-	err := enc.Encode(jv.Dst)
-	if err != nil {
-		return nil, err
-	}
-
-	return buff.Bytes(), err
-}
-
-// Scan implements sql driver scanner interface.
-func (jv *jsonValue) Scan(value any) error {
-	if value == nil {
-		return nil
-	}
-
-	b, ok := value.([]byte)
-	if !ok {
-		return fmt.Errorf("unexpected json, got %T", value)
-	}
-
-	return json.Unmarshal(b, &jv.Dst)
+func isForeignKeyViolationError(err error, columns ...string) bool {
+	return isPgError(err, pgerrcode.ForeignKeyViolation, columns...)
 }
 
 func MakePrefixedNullStringScanner(prefix string) func(**string) sql.Scanner {

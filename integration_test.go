@@ -2,7 +2,6 @@ package nakama
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"log"
 	mathrand "math/rand"
@@ -10,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	_ "github.com/lib/pq"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ory/dockertest/v3"
 )
 
@@ -74,16 +73,18 @@ func setupCockroach(pool *dockertest.Pool) (*dockertest.Resource, error) {
 	})
 }
 
-func setupDB(cockroach *dockertest.Resource, retry func(op func() error) error) (*sql.DB, error) {
-	var db *sql.DB
+func setupDB(cockroach *dockertest.Resource, retry func(op func() error) error) (*pgxpool.Pool, error) {
+	ctx := context.Background()
+
+	var db *pgxpool.Pool
 	return db, retry(func() (err error) {
 		hostPort := cockroach.GetHostPort("26257/tcp")
-		db, err = sql.Open("postgres", "postgresql://root@"+hostPort+"/defaultdb?sslmode=disable")
+		db, err = pgxpool.New(ctx, "postgresql://root@"+hostPort+"/defaultdb?sslmode=disable")
 		if err != nil {
 			return err
 		}
 
-		return db.Ping()
+		return db.Ping(ctx)
 	})
 }
 

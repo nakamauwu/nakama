@@ -2,14 +2,15 @@ package nakama
 
 import (
 	"context"
-	"database/sql"
 	_ "embed"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 //go:embed schema.sql
 var sqlSchema string
 
-func MigrateSQL(ctx context.Context, db *sql.DB) error {
-	_, err := db.ExecContext(ctx, sqlSchema)
+func MigrateSQL(ctx context.Context, db *pgxpool.Pool) error {
+	_, err := db.Exec(ctx, sqlSchema)
 	return err
 }

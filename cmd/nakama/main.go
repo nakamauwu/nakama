@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -11,7 +10,7 @@ import (
 	"net/http"
 	"os"
 
-	_ "github.com/lib/pq"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/minio/minio-go/v7/pkg/policy"
@@ -52,14 +51,14 @@ func run() error {
 		return fmt.Errorf("parse flags: %w", err)
 	}
 
-	pool, err := sql.Open("postgres", sqlAddr)
+	pool, err := pgxpool.New(ctx, sqlAddr)
 	if err != nil {
 		return fmt.Errorf("open pool: %w", err)
 	}
 
 	defer pool.Close()
 
-	if err := pool.PingContext(ctx); err != nil {
+	if err := pool.Ping(ctx); err != nil {
 		return fmt.Errorf("ping db: %w", err)
 	}
 

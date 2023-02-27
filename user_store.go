@@ -2,10 +2,11 @@ package nakama
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 )
 
 func (db *Store) CreateUser(ctx context.Context, in CreateUser) (Created, error) {
@@ -17,9 +18,9 @@ func (db *Store) CreateUser(ctx context.Context, in CreateUser) (Created, error)
 		RETURNING created_at
 	`
 	userID := genID()
-	err := db.QueryRowContext(ctx, query, userID, in.Email, in.Username).Scan(&out.CreatedAt)
+	err := db.QueryRow(ctx, query, userID, in.Email, in.Username).Scan(&out.CreatedAt)
 	if err != nil {
-		return out, fmt.Errorf("sql insert user: %w", err)
+		return out, fmt.Errorf("sql scan inserted user: %w", err)
 	}
 
 	out.ID = userID
@@ -67,15 +68,15 @@ func (db *Store) Users(ctx context.Context, in ListUsers) ([]User, error) {
 		ORDER BY similarity DESC, users.id DESC
 	`
 
-	rows, err := db.QueryContext(ctx, query, in.UsernameQuery, in.authUserID)
+	rows, err := db.Query(ctx, query, in.UsernameQuery, in.authUserID)
 	if err != nil {
 		return nil, fmt.Errorf("sql select users: %w", err)
 	}
 
-	return collect(rows, func(scanner scanner) (User, error) {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (User, error) {
 		var u User
 		var sim float64 // unused
-		return u, scanner.Scan(
+		err := row.Scan(
 			&u.ID,
 			&u.Email,
 			&u.Username,
@@ -90,6 +91,11 @@ func (db *Store) Users(ctx context.Context, in ListUsers) ([]User, error) {
 			&u.UpdatedAt,
 			&u.Following,
 		)
+		if err != nil {
+			return u, fmt.Errorf("sql scan users: %w", err)
+		}
+
+		return u, nil
 	})
 }
 
@@ -127,7 +133,7 @@ func (db *Store) User(ctx context.Context, in RetrieveUser) (User, error) {
 		END
 	`
 	var usr User
-	err := db.QueryRowContext(ctx, query,
+	err := db.QueryRow(ctx, query,
 		in.authUserID,
 		in.id,
 		in.email,
@@ -146,11 +152,11 @@ func (db *Store) User(ctx context.Context, in RetrieveUser) (User, error) {
 		&usr.UpdatedAt,
 		&usr.Following,
 	)
-	if errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return usr, ErrUserNotFound
 	}
 	if err != nil {
-		return usr, fmt.Errorf("sql select user: %w", err)
+		return usr, fmt.Errorf("sql scan selected user: %w", err)
 	}
 
 	return usr, nil
@@ -168,9 +174,9 @@ func (db *Store) UserExists(ctx context.Context, in RetrieveUserExists) (bool, e
 		)
 	`
 	var exists bool
-	err := db.QueryRowContext(ctx, query, in.UserID, in.Email, in.Username).Scan(&exists)
+	err := db.QueryRow(ctx, query, in.UserID, in.Email, in.Username).Scan(&exists)
 	if err != nil {
-		return false, fmt.Errorf("sql select user exists: %w", err)
+		return false, fmt.Errorf("sql scan user existence: %w", err)
 	}
 
 	return exists, nil
@@ -191,7 +197,7 @@ func (db *Store) UpdateUser(ctx context.Context, in UpdateUser) (time.Time, erro
 		RETURNING updated_at
 	`
 	var updatedAt time.Time
-	err := db.QueryRowContext(ctx, query,
+	err := db.QueryRow(ctx, query,
 		in.Username,
 		in.avatarPath,
 		in.avatarWidth,
@@ -201,12 +207,12 @@ func (db *Store) UpdateUser(ctx context.Context, in UpdateUser) (time.Time, erro
 		in.increaseFollowingCountBy,
 		in.userID,
 	).Scan(&updatedAt)
-	if errors.Is(err, sql.ErrNoRows) {
-		return time.Time{}, ErrUserNotFound
+	if errors.Is(err, pgx.ErrNoRows) {
+		return updatedAt, ErrUserNotFound
 	}
 
 	if err != nil {
-		return time.Time{}, fmt.Errorf("sql update user: %w", err)
+		return updatedAt, fmt.Errorf("sql scan updated user: %w", err)
 	}
 
 	return updatedAt, nil

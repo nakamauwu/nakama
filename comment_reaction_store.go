@@ -11,8 +11,8 @@ func (db *Store) CreateCommentReaction(ctx context.Context, in CommentReaction) 
 		VALUES ($1, $2, $3)
 	`
 
-	_, err := db.ExecContext(ctx, query, in.userID, in.CommentID, in.Reaction)
-	if isPqForeignKeyViolationError(err, "comment_id") {
+	_, err := db.Exec(ctx, query, in.userID, in.CommentID, in.Reaction)
+	if isForeignKeyViolationError(err, "comment_id") {
 		return ErrCommentNotFound
 	}
 
@@ -34,10 +34,10 @@ func (db *Store) CommentReactionExists(ctx context.Context, in CommentReaction) 
 	`
 
 	var exists bool
-	row := db.QueryRowContext(ctx, query, in.userID, in.CommentID, in.Reaction)
+	row := db.QueryRow(ctx, query, in.userID, in.CommentID, in.Reaction)
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, fmt.Errorf("sql select comment reaction existence: %w", err)
+		return false, fmt.Errorf("sql scan selected comment reaction existence: %w", err)
 	}
 
 	return exists, nil
@@ -51,7 +51,7 @@ func (db *Store) DeleteCommentReaction(ctx context.Context, in CommentReaction) 
 			AND reaction = $3
 	`
 
-	_, err := db.ExecContext(ctx, query, in.userID, in.CommentID, in.Reaction)
+	_, err := db.Exec(ctx, query, in.userID, in.CommentID, in.Reaction)
 	if err != nil {
 		return fmt.Errorf("sql delete comment reaction: %w", err)
 	}
