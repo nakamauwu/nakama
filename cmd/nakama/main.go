@@ -6,8 +6,11 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
+	"os/signal"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/minio/minio-go/v7"
@@ -27,7 +30,8 @@ func main() {
 }
 
 func run() error {
-	ctx := context.Background()
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
+	defer stop()
 
 	var (
 		addr        string
@@ -100,11 +104,27 @@ func run() error {
 	}
 
 	srv := &http.Server{
-		Handler: handler,
-		Addr:    addr,
+		Handler:     handler,
+		Addr:        addr,
+		BaseContext: func(net.Listener) context.Context { return ctx },
 	}
 
 	defer srv.Close()
+
+	go func() {
+		<-ctx.Done()
+		fmt.Println()
+		logger.Info("shutting down server")
+
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+		defer cancel()
+
+		err := srv.Shutdown(ctx)
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+			logger.Error("shutdown server", err)
+			os.Exit(1)
+		}
+	}()
 
 	logger.Info("starting server", slog.String("addr", srv.Addr))
 
