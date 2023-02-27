@@ -2,6 +2,7 @@ package nakama
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -146,16 +147,17 @@ func (svc *Service) CreatePost(ctx context.Context, in CreatePost) (Created, err
 	}
 
 	// Side-effect: add the post to all followers' timelines.
-	go func() {
-		ctx := svc.BaseContext()
+	svc.background(func(ctx context.Context) error {
 		_, err := svc.Store.CreateTimeline(ctx, CreateTimeline{
 			postID:     out.ID,
 			followedID: user.ID,
 		})
 		if err != nil {
-			svc.Logger.Error("fanout timeline", err)
+			return fmt.Errorf("fanout timeline: %w", err)
 		}
-	}()
+
+		return nil
+	})
 
 	return out, nil
 }

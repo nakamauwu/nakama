@@ -2,6 +2,7 @@ package nakama
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/minio/minio-go/v7"
@@ -15,6 +16,22 @@ type Service struct {
 	Logger        *slog.Logger
 	AvatarsPrefix string
 	BaseContext   func() context.Context
+}
+
+// background runs a function in a goroutine,
+// recovering from panics and logging errors.
+func (svc *Service) background(fn func(ctx context.Context) error) {
+	go func() {
+		defer func() {
+			if err := recover(); err != nil {
+				svc.Logger.Error("recover", fmt.Errorf("%v", err))
+			}
+		}()
+
+		if err := fn(svc.BaseContext()); err != nil {
+			svc.Logger.Error("background", err)
+		}
+	}()
 }
 
 func genID() string {
