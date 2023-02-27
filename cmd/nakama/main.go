@@ -120,7 +120,7 @@ func run() error {
 		defer cancel()
 
 		err := srv.Shutdown(ctx)
-		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+		if err != nil {
 			logger.Error("shutdown server", err)
 			os.Exit(1)
 		}
