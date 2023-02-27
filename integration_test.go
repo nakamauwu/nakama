@@ -3,7 +3,7 @@ package nakama
 import (
 	"context"
 	"fmt"
-	"log"
+	"io"
 	mathrand "math/rand"
 	"os"
 	"testing"
@@ -11,6 +11,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ory/dockertest/v3"
+	"golang.org/x/exp/slog"
 )
 
 var testService *Service
@@ -54,7 +55,7 @@ func setupT(m *testing.M) (int, error) {
 
 	testService = &Service{
 		Store:       NewStore(dbPool),
-		Logger:      log.Default(),
+		Logger:      slog.New(slog.NewTextHandler(io.Discard)),
 		BaseContext: context.Background,
 	}
 

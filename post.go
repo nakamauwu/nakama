@@ -153,7 +153,7 @@ func (svc *Service) CreatePost(ctx context.Context, in CreatePost) (Created, err
 			followedID: user.ID,
 		})
 		if err != nil {
-			svc.Logger.Printf("failed to fanout timeline: %v\n", err)
+			svc.Logger.Error("fanout timeline", err)
 		}
 	}()
 

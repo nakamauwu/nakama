@@ -6,7 +6,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 
@@ -17,6 +16,7 @@ import (
 	"github.com/minio/minio-go/v7/pkg/set"
 	"github.com/nakamauwu/nakama"
 	"github.com/nakamauwu/nakama/web"
+	"golang.org/x/exp/slog"
 )
 
 func main() {
@@ -83,7 +83,8 @@ func run() error {
 		return fmt.Errorf("s3: ensure buckets: %w", err)
 	}
 
-	logger := log.New(os.Stderr, "", log.Ldate|log.Ltime|log.Llongfile)
+	loggerOpts := slog.HandlerOptions{AddSource: true}
+	logger := slog.New(loggerOpts.NewTextHandler(os.Stderr))
 	svc := &nakama.Service{
 		Store:         store,
 		S3:            s3,
@@ -105,7 +106,7 @@ func run() error {
 
 	defer srv.Close()
 
-	logger.Printf("listening on %s", addr)
+	logger.Info("starting server", slog.String("addr", srv.Addr))
 
 	err = srv.ListenAndServe()
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {

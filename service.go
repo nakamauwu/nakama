@@ -2,17 +2,17 @@ package nakama
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/rs/xid"
+	"golang.org/x/exp/slog"
 )
 
 type Service struct {
 	Store         *Store
 	S3            *minio.Client
-	Logger        *log.Logger
+	Logger        *slog.Logger
 	AvatarsPrefix string
 	BaseContext   func() context.Context
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/gob"
 	"errors"
-	"log"
 	"net/http"
 	"net/url"
 	"sync"
@@ -13,10 +12,11 @@ import (
 	"github.com/nakamauwu/nakama"
 	"github.com/nicolasparada/go-errs/httperrs"
 	"github.com/nicolasparada/go-mux"
+	"golang.org/x/exp/slog"
 )
 
 type Handler struct {
-	Logger     *log.Logger
+	Logger     *slog.Logger
 	Service    *nakama.Service
 	SessionKey []byte
 
@@ -113,7 +113,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // log an error only if it's an internal error.
 func (h *Handler) log(err error) {
 	if httperrs.IsInternalServerError(err) && !errors.Is(err, context.Canceled) {
-		_ = h.Logger.Output(2, err.Error())
+		h.Logger.Error("error", err)
 	}
 }
 
