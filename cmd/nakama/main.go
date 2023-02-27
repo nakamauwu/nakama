@@ -19,7 +19,6 @@ import (
 	"github.com/minio/minio-go/v7/pkg/set"
 	"github.com/nakamauwu/nakama"
 	"github.com/nakamauwu/nakama/web"
-	"github.com/opentracing/opentracing-go/log"
 	"golang.org/x/exp/slog"
 )
 
@@ -93,13 +92,13 @@ func run() error {
 	svc := &nakama.Service{
 		Store:         store,
 		S3:            s3,
-		Logger:        logger.With(log.String("component", "service")),
+		Logger:        logger.With(slog.String("component", "service")),
 		AvatarsPrefix: avatarsPrefix,
 		BaseContext:   func() context.Context { return ctx },
 	}
 
 	handler := &web.Handler{
-		Logger:     logger.With(log.String("component", "web")),
+		Logger:     logger.With(slog.String("component", "web")),
 		Service:    svc,
 		SessionKey: []byte(sessionKey),
 	}
