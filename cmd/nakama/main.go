@@ -42,7 +42,7 @@ func run() error {
 	fs := flag.NewFlagSet("nakama", flag.ExitOnError)
 	fs.StringVar(&addr, "addr", ":4000", "HTTP service address")
 	fs.StringVar(&sqlAddr, "sql-addr", "postgresql://root@127.0.0.1:26257/defaultdb?sslmode=disable", "SQL address")
-	fs.StringVar(&sessionKey, "session-key", "secretkeyyoushouldnotcommit", "Session key")
+	fs.StringVar(&sessionKey, "session-key", "secretkeyyoushouldnotcommit", "Session key used to authenticate and encrypt cookies")
 	fs.StringVar(&s3Endpoint, "s3-endpoint", "localhost:9000", "S3 endpoint")
 	fs.StringVar(&s3AccessKey, "s3-access-key", "minioadmin", "S3 access key")
 	fs.StringVar(&s3SecretKey, "s3-secret-key", "minioadmin", "S3 secret key")

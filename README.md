@@ -40,7 +40,7 @@ Usage of nakama:
   -s3-secure
         Enable S3 SSL
   -session-key string
-        Session key (default "secretkeyyoushouldnotcommit")
+        Session key used to authenticate and encrypt cookies (default "secretkeyyoushouldnotcommit")
   -sql-addr string
         SQL address (default "postgresql://root@127.0.0.1:26257/defaultdb?sslmode=disable")
 ```
