@@ -48,7 +48,7 @@ jobs:
           build-args: VAPID_PUBLIC_KEY=${{ secrets.VAPID_PUBLIC_KEY }}
 
       - name: Secure copy
-        uses: appleboy/scp-action@v0
+        uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.REMOTE_HOST }}
           username: ${{ secrets.REMOTE_USER }}
@@ -57,7 +57,7 @@ jobs:
           target: ./
 
       - name: SSH & docker-compose up
-        uses: appleboy/ssh-action@v0
+        uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.REMOTE_HOST }}
           username: ${{ secrets.REMOTE_USER }}
