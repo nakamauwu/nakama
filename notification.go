@@ -9,7 +9,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/cockroachdb/cockroach-go/crdb"
+	"github.com/cockroachdb/cockroach-go/v2/crdb"
 	"github.com/lib/pq"
 )
 

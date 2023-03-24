@@ -15,10 +15,10 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/cockroachdb/cockroach-go/crdb"
+	"github.com/cockroachdb/cockroach-go/v2/crdb"
 	"github.com/go-kit/log/level"
 	"github.com/lib/pq"
-	gonanoid "github.com/matoous/go-nanoid"
+	gonanoid "github.com/matoous/go-nanoid/v2"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/nakamauwu/nakama/storage"
@@ -104,7 +104,7 @@ func (s *Service) CreateTimelineItem(ctx context.Context, content string, spoile
 				return ti, fmt.Errorf("could not encode post media item: %w", err)
 			}
 
-			fileName, err := gonanoid.Nanoid()
+			fileName, err := gonanoid.New()
 			if err != nil {
 				return ti, fmt.Errorf("could not generate media item filename: %w", err)
 			}

@@ -6,11 +6,10 @@ package transport
 import (
 	"context"
 	"encoding/json"
+	"github.com/nakamauwu/nakama"
 	"io"
 	"net/url"
 	"sync"
-
-	"github.com/nakamauwu/nakama"
 )
 
 // Ensure, that ServiceMock does implement Service.

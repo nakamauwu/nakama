@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"testing"
 
-	gonanoid "github.com/matoous/go-nanoid"
+	gonanoid "github.com/matoous/go-nanoid/v2"
 )
 
 // WantEq -

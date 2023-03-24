@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/cockroach-go/crdb"
+	"github.com/cockroachdb/cockroach-go/v2/crdb"
 	"github.com/hako/branca"
 	"github.com/hako/durafmt"
 

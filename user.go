@@ -13,9 +13,9 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/cockroachdb/cockroach-go/crdb"
+	"github.com/cockroachdb/cockroach-go/v2/crdb"
 	"github.com/disintegration/imaging"
-	gonanoid "github.com/matoous/go-nanoid"
+	gonanoid "github.com/matoous/go-nanoid/v2"
 
 	"github.com/nakamauwu/nakama/storage"
 )
@@ -434,7 +434,7 @@ func (s *Service) UpdateAvatar(ctx context.Context, r io.Reader) (string, error)
 		return "", fmt.Errorf("could not resize avatar: %w", err)
 	}
 
-	avatarFileName, err := gonanoid.Nanoid()
+	avatarFileName, err := gonanoid.New()
 	if err != nil {
 		return "", fmt.Errorf("could not generate avatar filename: %w", err)
 	}
@@ -513,7 +513,7 @@ func (s *Service) UpdateCover(ctx context.Context, r io.Reader) (string, error) 
 		return "", fmt.Errorf("could not resize cover: %w", err)
 	}
 
-	coverFileName, err := gonanoid.Nanoid()
+	coverFileName, err := gonanoid.New()
 	if err != nil {
 		return "", fmt.Errorf("could not generate cover filename: %w", err)
 	}
