@@ -63,7 +63,7 @@ func TestService_CreatePost(t *testing.T) {
 		post, err := testService.CreatePost(asFollowed, CreatePost{Content: genPostContent()})
 		assert.NoError(t, err)
 
-		// The post should have been added the the author's timeline.
+		// The post should have been added to the author's timeline.
 		timeline, err := testService.Timeline(asFollowed)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(timeline))

@@ -69,7 +69,7 @@ func (h *Handler) logout(w http.ResponseWriter, r *http.Request) {
 
 // withUser middleware places the user from the session
 // into the request's context.
-// It continues to the next handler if user does not exists in session.
+// It continues to the next handler if user does not exist in session.
 func (h *Handler) withUser(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !h.session.Exists(r, sessionKeyUser) {

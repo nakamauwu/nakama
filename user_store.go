@@ -9,7 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-func (db *Store) CreateUser(ctx context.Context, in CreateUser) (Created, error) {
+func (s *Store) CreateUser(ctx context.Context, in CreateUser) (Created, error) {
 	var out Created
 
 	const query = `
@@ -18,7 +18,7 @@ func (db *Store) CreateUser(ctx context.Context, in CreateUser) (Created, error)
 		RETURNING created_at
 	`
 	userID := genID()
-	err := db.QueryRow(ctx, query, userID, in.Email, in.Username).Scan(&out.CreatedAt)
+	err := s.db.QueryRow(ctx, query, userID, in.Email, in.Username).Scan(&out.CreatedAt)
 	if err != nil {
 		return out, fmt.Errorf("sql scan inserted user: %w", err)
 	}
@@ -28,7 +28,7 @@ func (db *Store) CreateUser(ctx context.Context, in CreateUser) (Created, error)
 	return out, nil
 }
 
-func (db *Store) Users(ctx context.Context, in ListUsers) ([]User, error) {
+func (s *Store) Users(ctx context.Context, in ListUsers) ([]User, error) {
 	const query = `
 		SELECT users.id
 			, users.email
@@ -68,7 +68,7 @@ func (db *Store) Users(ctx context.Context, in ListUsers) ([]User, error) {
 		ORDER BY similarity DESC, users.id DESC
 	`
 
-	rows, err := db.Query(ctx, query, in.UsernameQuery, in.authUserID)
+	rows, err := s.db.Query(ctx, query, in.UsernameQuery, in.authUserID)
 	if err != nil {
 		return nil, fmt.Errorf("sql select users: %w", err)
 	}
@@ -81,7 +81,7 @@ func (db *Store) Users(ctx context.Context, in ListUsers) ([]User, error) {
 			&u.Email,
 			&u.Username,
 			&sim,
-			db.AvatarScanFunc(&u.AvatarPath),
+			s.AvatarScanFunc(&u.AvatarPath),
 			&u.AvatarWidth,
 			&u.AvatarHeight,
 			&u.PostsCount,
@@ -99,7 +99,7 @@ func (db *Store) Users(ctx context.Context, in ListUsers) ([]User, error) {
 	})
 }
 
-func (db *Store) User(ctx context.Context, in RetrieveUser) (User, error) {
+func (s *Store) User(ctx context.Context, in RetrieveUser) (User, error) {
 	const query = `
 		SELECT users.id
 			, users.email
@@ -133,7 +133,7 @@ func (db *Store) User(ctx context.Context, in RetrieveUser) (User, error) {
 		END
 	`
 	var usr User
-	err := db.QueryRow(ctx, query,
+	err := s.db.QueryRow(ctx, query,
 		in.authUserID,
 		in.id,
 		in.email,
@@ -142,7 +142,7 @@ func (db *Store) User(ctx context.Context, in RetrieveUser) (User, error) {
 		&usr.ID,
 		&usr.Email,
 		&usr.Username,
-		db.AvatarScanFunc(&usr.AvatarPath),
+		s.AvatarScanFunc(&usr.AvatarPath),
 		&usr.AvatarWidth,
 		&usr.AvatarHeight,
 		&usr.PostsCount,
@@ -162,7 +162,7 @@ func (db *Store) User(ctx context.Context, in RetrieveUser) (User, error) {
 	return usr, nil
 }
 
-func (db *Store) UserExists(ctx context.Context, in RetrieveUserExists) (bool, error) {
+func (s *Store) UserExists(ctx context.Context, in RetrieveUserExists) (bool, error) {
 	const query = `
 		SELECT EXISTS (
 			SELECT 1 FROM users WHERE CASE
@@ -174,7 +174,7 @@ func (db *Store) UserExists(ctx context.Context, in RetrieveUserExists) (bool, e
 		)
 	`
 	var exists bool
-	err := db.QueryRow(ctx, query, in.UserID, in.Email, in.Username).Scan(&exists)
+	err := s.db.QueryRow(ctx, query, in.UserID, in.Email, in.Username).Scan(&exists)
 	if err != nil {
 		return false, fmt.Errorf("sql scan user existence: %w", err)
 	}
@@ -182,7 +182,7 @@ func (db *Store) UserExists(ctx context.Context, in RetrieveUserExists) (bool, e
 	return exists, nil
 }
 
-func (db *Store) UpdateUser(ctx context.Context, in UpdateUser) (time.Time, error) {
+func (s *Store) UpdateUser(ctx context.Context, in UpdateUser) (time.Time, error) {
 	const query = `
 		UPDATE users SET
 			   username = COALESCE($1, username)
@@ -197,7 +197,7 @@ func (db *Store) UpdateUser(ctx context.Context, in UpdateUser) (time.Time, erro
 		RETURNING updated_at
 	`
 	var updatedAt time.Time
-	err := db.QueryRow(ctx, query,
+	err := s.db.QueryRow(ctx, query,
 		in.Username,
 		in.avatarPath,
 		in.avatarWidth,

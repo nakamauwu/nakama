@@ -9,7 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-func (db *Store) CreatePost(ctx context.Context, in CreatePost) (Created, error) {
+func (s *Store) CreatePost(ctx context.Context, in CreatePost) (Created, error) {
 	var out Created
 
 	const query = `
@@ -18,7 +18,7 @@ func (db *Store) CreatePost(ctx context.Context, in CreatePost) (Created, error)
 		RETURNING created_at
 	`
 	postID := genID()
-	err := db.QueryRow(ctx, query, postID, in.userID, in.Content).Scan(&out.CreatedAt)
+	err := s.db.QueryRow(ctx, query, postID, in.userID, in.Content).Scan(&out.CreatedAt)
 	if err != nil {
 		return out, fmt.Errorf("sql scan inserted post: %w", err)
 	}
@@ -28,14 +28,14 @@ func (db *Store) CreatePost(ctx context.Context, in CreatePost) (Created, error)
 	return out, nil
 }
 
-func (db *Store) CreateTimelineItem(ctx context.Context, in CreateTimelineItem) (string, error) {
+func (s *Store) CreateTimelineItem(ctx context.Context, in CreateTimelineItem) (string, error) {
 	const query = `
 		INSERT INTO timeline (user_id, post_id)
 		VALUES ($1, $2)
 		RETURNING id
 	`
 	var id string
-	err := db.QueryRow(ctx, query, in.userID, in.postID).Scan(&id)
+	err := s.db.QueryRow(ctx, query, in.userID, in.postID).Scan(&id)
 	if err != nil {
 		return "", fmt.Errorf("sql insert timeline item: %w", err)
 	}
@@ -43,7 +43,7 @@ func (db *Store) CreateTimelineItem(ctx context.Context, in CreateTimelineItem) 
 	return id, nil
 }
 
-func (db *Store) CreateTimeline(ctx context.Context, in CreateTimeline) ([]CreatedTimelineItem, error) {
+func (s *Store) CreateTimeline(ctx context.Context, in CreateTimeline) ([]CreatedTimelineItem, error) {
 	const query = `
 		INSERT INTO timeline (user_id, post_id)
 		SELECT user_follows.follower_id, $1
@@ -54,7 +54,7 @@ func (db *Store) CreateTimeline(ctx context.Context, in CreateTimeline) ([]Creat
 		RETURNING id, user_id
 	`
 
-	rows, err := db.Query(ctx, query, in.postID, in.followedID)
+	rows, err := s.db.Query(ctx, query, in.postID, in.followedID)
 	if err != nil {
 		return nil, fmt.Errorf("sql fanout timeline: %w", err)
 	}
@@ -69,7 +69,7 @@ func (db *Store) CreateTimeline(ctx context.Context, in CreateTimeline) ([]Creat
 	})
 }
 
-func (db *Store) Posts(ctx context.Context, in ListPosts) ([]Post, error) {
+func (s *Store) Posts(ctx context.Context, in ListPosts) ([]Post, error) {
 	const query = `
 		SELECT
 			  posts.id
@@ -99,7 +99,7 @@ func (db *Store) Posts(ctx context.Context, in ListPosts) ([]Post, error) {
 			END
 		ORDER BY posts.id DESC
 	`
-	rows, err := db.Query(ctx, query, in.authUserID, in.Username)
+	rows, err := s.db.Query(ctx, query, in.authUserID, in.Username)
 	if err != nil {
 		return nil, fmt.Errorf("sql select posts: %w", err)
 	}
@@ -117,7 +117,7 @@ func (db *Store) Posts(ctx context.Context, in ListPosts) ([]Post, error) {
 			&out.CreatedAt,
 			&out.UpdatedAt,
 			&out.User.Username,
-			db.AvatarScanFunc(&out.User.AvatarPath),
+			s.AvatarScanFunc(&out.User.AvatarPath),
 			&out.User.AvatarWidth,
 			&out.User.AvatarHeight,
 		)
@@ -131,7 +131,7 @@ func (db *Store) Posts(ctx context.Context, in ListPosts) ([]Post, error) {
 	})
 }
 
-func (db *Store) Timeline(ctx context.Context, userID string) ([]Post, error) {
+func (s *Store) Timeline(ctx context.Context, userID string) ([]Post, error) {
 	const query = `
 		SELECT
 			  posts.id
@@ -158,7 +158,7 @@ func (db *Store) Timeline(ctx context.Context, userID string) ([]Post, error) {
 		WHERE timeline.user_id = $1
 		ORDER BY timeline.id DESC
 	`
-	rows, err := db.Query(ctx, query, userID)
+	rows, err := s.db.Query(ctx, query, userID)
 	if err != nil {
 		return nil, fmt.Errorf("sql select timeline: %w", err)
 	}
@@ -176,7 +176,7 @@ func (db *Store) Timeline(ctx context.Context, userID string) ([]Post, error) {
 			&out.CreatedAt,
 			&out.UpdatedAt,
 			&out.User.Username,
-			db.AvatarScanFunc(&out.User.AvatarPath),
+			s.AvatarScanFunc(&out.User.AvatarPath),
 			&out.User.AvatarWidth,
 			&out.User.AvatarHeight,
 		)
@@ -190,7 +190,7 @@ func (db *Store) Timeline(ctx context.Context, userID string) ([]Post, error) {
 	})
 }
 
-func (db *Store) Post(ctx context.Context, in RetrievePost) (Post, error) {
+func (s *Store) Post(ctx context.Context, in RetrievePost) (Post, error) {
 	const query = `
 		SELECT
 			  posts.id
@@ -217,7 +217,7 @@ func (db *Store) Post(ctx context.Context, in RetrievePost) (Post, error) {
 	`
 	var p Post
 	var reactions []string
-	err := db.QueryRow(ctx, query, in.authUserID, in.ID).Scan(
+	err := s.db.QueryRow(ctx, query, in.authUserID, in.ID).Scan(
 		&p.ID,
 		&p.UserID,
 		&p.Content,
@@ -227,7 +227,7 @@ func (db *Store) Post(ctx context.Context, in RetrievePost) (Post, error) {
 		&p.CreatedAt,
 		&p.UpdatedAt,
 		&p.User.Username,
-		db.AvatarScanFunc(&p.User.AvatarPath),
+		s.AvatarScanFunc(&p.User.AvatarPath),
 		&p.User.AvatarWidth,
 		&p.User.AvatarHeight,
 	)
@@ -244,13 +244,13 @@ func (db *Store) Post(ctx context.Context, in RetrievePost) (Post, error) {
 	return p, nil
 }
 
-func (db *Store) PostReactionsCount(ctx context.Context, postID string) (ReactionsCount, error) {
+func (s *Store) PostReactionsCount(ctx context.Context, postID string) (ReactionsCount, error) {
 	const query = `
 		SELECT reactions_count FROM posts WHERE id = $1
 	`
 
 	var out ReactionsCount
-	row := db.QueryRow(ctx, query, postID)
+	row := s.db.QueryRow(ctx, query, postID)
 	err := row.Scan(&out)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrPostNotFound
@@ -263,7 +263,7 @@ func (db *Store) PostReactionsCount(ctx context.Context, postID string) (Reactio
 	return out, nil
 }
 
-func (db *Store) UpdatePost(ctx context.Context, in UpdatePost) (time.Time, error) {
+func (s *Store) UpdatePost(ctx context.Context, in UpdatePost) (time.Time, error) {
 	const query = `
 		UPDATE posts
 		SET comments_count = comments_count + $1
@@ -273,7 +273,7 @@ func (db *Store) UpdatePost(ctx context.Context, in UpdatePost) (time.Time, erro
 		RETURNING updated_at
 	`
 	var updatedAt time.Time
-	row := db.QueryRow(ctx, query,
+	row := s.db.QueryRow(ctx, query,
 		in.IncreaseCommentsCountBy,
 		in.ReactionsCount,
 		in.PostID,

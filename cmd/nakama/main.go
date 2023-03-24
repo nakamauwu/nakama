@@ -24,7 +24,7 @@ import (
 
 func main() {
 	if err := run(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		_, _ = fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
@@ -133,6 +133,8 @@ func run() error {
 		return fmt.Errorf("listen and serve: %w", err)
 	}
 
+	svc.Wait()
+
 	return nil
 }
 
@@ -152,12 +154,12 @@ func ensureS3Buckets(ctx context.Context, s3 *minio.Client) error {
 			return err
 		}
 
-		policy, err := s3MakeAllowGetObjectPolicy(bucket)
+		pol, err := s3MakeAllowGetObjectPolicy(bucket)
 		if err != nil {
 			return err
 		}
 
-		err = s3.SetBucketPolicy(ctx, bucket, policy)
+		err = s3.SetBucketPolicy(ctx, bucket, pol)
 		if err != nil {
 			return err
 		}

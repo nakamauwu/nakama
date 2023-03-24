@@ -7,9 +7,10 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/nicolasparada/go-db"
 )
 
-func (db *Store) CreateComment(ctx context.Context, in CreateComment) (Created, error) {
+func (s *Store) CreateComment(ctx context.Context, in CreateComment) (Created, error) {
 	var out Created
 
 	const createComment = `
@@ -18,13 +19,13 @@ func (db *Store) CreateComment(ctx context.Context, in CreateComment) (Created, 
 		RETURNING created_at
 	`
 	commentID := genID()
-	err := db.QueryRow(ctx, createComment,
+	err := s.db.QueryRow(ctx, createComment,
 		commentID,
 		in.userID,
 		in.PostID,
 		in.Content,
 	).Scan(&out.CreatedAt)
-	if isForeignKeyViolationError(err, "post_id") {
+	if db.IsForeignKeyViolationError(err, "post_id") {
 		return out, ErrPostNotFound
 	}
 
@@ -37,7 +38,7 @@ func (db *Store) CreateComment(ctx context.Context, in CreateComment) (Created, 
 	return out, nil
 }
 
-func (db *Store) Comments(ctx context.Context, in ListComments) ([]Comment, error) {
+func (s *Store) Comments(ctx context.Context, in ListComments) ([]Comment, error) {
 	const comments = `
 		SELECT
 			  comments.id
@@ -62,7 +63,7 @@ func (db *Store) Comments(ctx context.Context, in ListComments) ([]Comment, erro
 		WHERE comments.post_id = $2
 		ORDER BY comments.id DESC
 	`
-	rows, err := db.Query(ctx, comments, in.authUserID, in.PostID)
+	rows, err := s.db.Query(ctx, comments, in.authUserID, in.PostID)
 	if err != nil {
 		return nil, fmt.Errorf("sql select comments: %w", err)
 	}
@@ -79,7 +80,7 @@ func (db *Store) Comments(ctx context.Context, in ListComments) ([]Comment, erro
 			&out.CreatedAt,
 			&out.UpdatedAt,
 			&out.User.Username,
-			db.AvatarScanFunc(&out.User.AvatarPath),
+			s.AvatarScanFunc(&out.User.AvatarPath),
 			&out.User.AvatarWidth,
 			&out.User.AvatarHeight,
 		)
@@ -94,7 +95,7 @@ func (db *Store) Comments(ctx context.Context, in ListComments) ([]Comment, erro
 	})
 }
 
-func (db *Store) Comment(ctx context.Context, in RetrieveComment) (Comment, error) {
+func (s *Store) Comment(ctx context.Context, in RetrieveComment) (Comment, error) {
 	const query = `
 		SELECT
 			  comments.user_id
@@ -120,7 +121,7 @@ func (db *Store) Comment(ctx context.Context, in RetrieveComment) (Comment, erro
 	`
 	var c Comment
 	var reactions []string
-	err := db.QueryRow(ctx, query, in.authUserID, in.ID).Scan(
+	err := s.db.QueryRow(ctx, query, in.authUserID, in.ID).Scan(
 		&c.UserID,
 		&c.PostID,
 		&c.Content,
@@ -129,7 +130,7 @@ func (db *Store) Comment(ctx context.Context, in RetrieveComment) (Comment, erro
 		&c.CreatedAt,
 		&c.UpdatedAt,
 		&c.User.Username,
-		db.AvatarScanFunc(&c.User.AvatarPath),
+		s.AvatarScanFunc(&c.User.AvatarPath),
 		&c.User.AvatarWidth,
 		&c.User.AvatarHeight,
 	)
@@ -147,13 +148,13 @@ func (db *Store) Comment(ctx context.Context, in RetrieveComment) (Comment, erro
 	return c, nil
 }
 
-func (db *Store) CommentReactionsCount(ctx context.Context, commentID string) (ReactionsCount, error) {
+func (s *Store) CommentReactionsCount(ctx context.Context, commentID string) (ReactionsCount, error) {
 	const query = `
 		SELECT reactions_count FROM comments WHERE id = $1
 	`
 
 	var out ReactionsCount
-	row := db.QueryRow(ctx, query, commentID)
+	row := s.db.QueryRow(ctx, query, commentID)
 	err := row.Scan(&out)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrCommentNotFound
@@ -166,7 +167,7 @@ func (db *Store) CommentReactionsCount(ctx context.Context, commentID string) (R
 	return out, nil
 }
 
-func (db *Store) UpdateComment(ctx context.Context, in UpdateComment) (time.Time, error) {
+func (s *Store) UpdateComment(ctx context.Context, in UpdateComment) (time.Time, error) {
 	const query = `
 		UPDATE comments
 		SET reactions_count = COALESCE($1, reactions_count)
@@ -175,7 +176,7 @@ func (db *Store) UpdateComment(ctx context.Context, in UpdateComment) (time.Time
 		RETURNING updated_at
 	`
 	var updatedAt time.Time
-	row := db.QueryRow(ctx, query,
+	row := s.db.QueryRow(ctx, query,
 		in.ReactionsCount,
 		in.ID,
 	)

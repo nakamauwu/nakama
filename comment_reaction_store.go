@@ -3,16 +3,18 @@ package nakama
 import (
 	"context"
 	"fmt"
+
+	"github.com/nicolasparada/go-db"
 )
 
-func (db *Store) CreateCommentReaction(ctx context.Context, in CommentReaction) error {
+func (s *Store) CreateCommentReaction(ctx context.Context, in CommentReaction) error {
 	const query = `
 		INSERT INTO comment_reactions (user_id, comment_id, reaction)
 		VALUES ($1, $2, $3)
 	`
 
-	_, err := db.Exec(ctx, query, in.userID, in.CommentID, in.Reaction)
-	if isForeignKeyViolationError(err, "comment_id") {
+	_, err := s.db.Exec(ctx, query, in.userID, in.CommentID, in.Reaction)
+	if db.IsForeignKeyViolationError(err, "comment_id") {
 		return ErrCommentNotFound
 	}
 
@@ -23,7 +25,7 @@ func (db *Store) CreateCommentReaction(ctx context.Context, in CommentReaction) 
 	return nil
 }
 
-func (db *Store) CommentReactionExists(ctx context.Context, in CommentReaction) (bool, error) {
+func (s *Store) CommentReactionExists(ctx context.Context, in CommentReaction) (bool, error) {
 	const query = `
 		SELECT EXISTS (
 			SELECT 1 FROM comment_reactions
@@ -34,7 +36,7 @@ func (db *Store) CommentReactionExists(ctx context.Context, in CommentReaction) 
 	`
 
 	var exists bool
-	row := db.QueryRow(ctx, query, in.userID, in.CommentID, in.Reaction)
+	row := s.db.QueryRow(ctx, query, in.userID, in.CommentID, in.Reaction)
 	err := row.Scan(&exists)
 	if err != nil {
 		return false, fmt.Errorf("sql scan selected comment reaction existence: %w", err)
@@ -43,7 +45,7 @@ func (db *Store) CommentReactionExists(ctx context.Context, in CommentReaction) 
 	return exists, nil
 }
 
-func (db *Store) DeleteCommentReaction(ctx context.Context, in CommentReaction) error {
+func (s *Store) DeleteCommentReaction(ctx context.Context, in CommentReaction) error {
 	const query = `
 		DELETE FROM comment_reactions
 		WHERE user_id = $1
@@ -51,7 +53,7 @@ func (db *Store) DeleteCommentReaction(ctx context.Context, in CommentReaction) 
 			AND reaction = $3
 	`
 
-	_, err := db.Exec(ctx, query, in.userID, in.CommentID, in.Reaction)
+	_, err := s.db.Exec(ctx, query, in.userID, in.CommentID, in.Reaction)
 	if err != nil {
 		return fmt.Errorf("sql delete comment reaction: %w", err)
 	}

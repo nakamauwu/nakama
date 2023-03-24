@@ -19,7 +19,7 @@ var testService *Service
 func TestMain(m *testing.M) {
 	code, err := setupT(m)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "setupT() failed: %v\n", err)
+		_, _ = fmt.Fprintf(os.Stderr, "setupT() failed: %v\n", err)
 		os.Exit(1)
 	}
 	os.Exit(code)

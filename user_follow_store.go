@@ -4,17 +4,19 @@ import (
 	"context"
 	"fmt"
 	"time"
+
+	"github.com/nicolasparada/go-db"
 )
 
-func (db *Store) CreateUserFollow(ctx context.Context, in UserFollow) (time.Time, error) {
+func (s *Store) CreateUserFollow(ctx context.Context, in UserFollow) (time.Time, error) {
 	const createUserFollow = `
 		INSERT INTO user_follows (follower_id, followed_id)
 		VALUES ($1, $2)
 		RETURNING created_at
 	`
 	var createdAt time.Time
-	err := db.QueryRow(ctx, createUserFollow, in.FollowerID, in.FollowedID).Scan(&createdAt)
-	if isForeignKeyViolationError(err, "followed_id") {
+	err := s.db.QueryRow(ctx, createUserFollow, in.FollowerID, in.FollowedID).Scan(&createdAt)
+	if db.IsForeignKeyViolationError(err, "followed_id") {
 		return time.Time{}, ErrUserNotFound
 	}
 
@@ -25,7 +27,7 @@ func (db *Store) CreateUserFollow(ctx context.Context, in UserFollow) (time.Time
 	return createdAt, nil
 }
 
-func (db *Store) UserFollowExists(ctx context.Context, in UserFollow) (bool, error) {
+func (s *Store) UserFollowExists(ctx context.Context, in UserFollow) (bool, error) {
 	const userFollowExists = `
 		SELECT EXISTS (
 			SELECT 1 FROM user_follows
@@ -34,7 +36,7 @@ func (db *Store) UserFollowExists(ctx context.Context, in UserFollow) (bool, err
 		)
 	`
 	var exists bool
-	err := db.QueryRow(ctx, userFollowExists, in.FollowerID, in.FollowedID).Scan(&exists)
+	err := s.db.QueryRow(ctx, userFollowExists, in.FollowerID, in.FollowedID).Scan(&exists)
 	if err != nil {
 		return false, fmt.Errorf("sql select user follow exists: %w", err)
 	}
@@ -42,7 +44,7 @@ func (db *Store) UserFollowExists(ctx context.Context, in UserFollow) (bool, err
 	return exists, nil
 }
 
-func (db *Store) DeleteUserFollow(ctx context.Context, in UserFollow) (time.Time, error) {
+func (s *Store) DeleteUserFollow(ctx context.Context, in UserFollow) (time.Time, error) {
 	const deleteUserFollow = `
 		DELETE FROM user_follows
 		WHERE follower_id = $1
@@ -50,7 +52,7 @@ func (db *Store) DeleteUserFollow(ctx context.Context, in UserFollow) (time.Time
 		RETURNING now()::timestamp AS deleted_at
 	`
 	var deletedAt time.Time
-	err := db.QueryRow(ctx, deleteUserFollow, in.FollowerID, in.FollowedID).Scan(&deletedAt)
+	err := s.db.QueryRow(ctx, deleteUserFollow, in.FollowerID, in.FollowedID).Scan(&deletedAt)
 	if err != nil {
 		return deletedAt, fmt.Errorf("sql scan deleted user follow: %w", err)
 	}

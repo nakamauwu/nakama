@@ -25,7 +25,7 @@ type s3RemoveObject struct {
 }
 
 func (svc *Service) s3StoreObject(ctx context.Context, in s3StoreObject) error {
-	_, err := svc.S3.PutObject(ctx, string(in.Bucket), in.Name, in.File, int64(in.Size), minio.PutObjectOptions{
+	_, err := svc.S3.PutObject(ctx, in.Bucket, in.Name, in.File, int64(in.Size), minio.PutObjectOptions{
 		ContentType: in.ContentType,
 	})
 	return err

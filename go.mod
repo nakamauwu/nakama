@@ -4,19 +4,23 @@ go 1.20
 
 require (
 	github.com/Masterminds/sprig/v3 v3.2.3
-	github.com/alecthomas/assert/v2 v2.2.1
-	github.com/cockroachdb/cockroach-go/v2 v2.2.20
+	github.com/alecthomas/assert/v2 v2.2.2
 	github.com/disintegration/imaging v1.6.2
 	github.com/golangcollege/sessions v1.2.0
-	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa
-	github.com/jackc/pgx/v5 v5.3.0
+	github.com/jackc/pgx/v5 v5.3.1
 	github.com/minio/minio-go/v7 v7.0.49
+	github.com/nicolasparada/go-db v0.2.0
 	github.com/nicolasparada/go-errs v0.3.0
 	github.com/nicolasparada/go-mux v0.3.1
 	github.com/ory/dockertest/v3 v3.9.1
 	github.com/rs/xid v1.4.0
 	golang.org/x/sync v0.1.0
 	mvdan.cc/xurls/v2 v2.4.0
+)
+
+require (
+	github.com/cockroachdb/cockroach-go/v2 v2.3.2 // indirect
+	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa // indirect
 )
 
 require (
@@ -63,14 +67,14 @@ require (
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
-	golang.org/x/crypto v0.6.0 // indirect
+	golang.org/x/crypto v0.7.0 // indirect
 	golang.org/x/exp v0.0.0-20230224173230-c95f2b4c22f2
 	golang.org/x/image v0.5.0 // indirect
-	golang.org/x/mod v0.8.0 // indirect
-	golang.org/x/net v0.7.0 // indirect
-	golang.org/x/sys v0.5.0 // indirect
-	golang.org/x/text v0.7.0 // indirect
-	golang.org/x/tools v0.6.0 // indirect
+	golang.org/x/mod v0.9.0 // indirect
+	golang.org/x/net v0.8.0 // indirect
+	golang.org/x/sys v0.6.0 // indirect
+	golang.org/x/text v0.8.0 // indirect
+	golang.org/x/tools v0.7.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

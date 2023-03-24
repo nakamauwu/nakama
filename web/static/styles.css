@@ -106,14 +106,12 @@ svg {
     font-size: inherit;
     margin-right: 6px;
     margin-bottom: 6px;
-    padding: 10px;
+    padding: 10px 30px;
     border: none;
     border-radius: 6px;
     outline: none;
 
     background-color: var(--button-base);
-    padding-right: 30px;
-    padding-left: 30px;
 }
 
 a.btn:hover {
@@ -173,8 +171,7 @@ a.btn:active {
     top: 100%;
     background-color: var(--background);
     box-shadow: 0 0 1rem .5rem rgba(0, 0, 0, .2);
-    padding: 1rem;
-    padding-bottom: 0.5rem;
+    padding: 1rem 1rem 0.5rem 1rem;
     border-radius: 6px;
     z-index: 3;
 }

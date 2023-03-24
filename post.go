@@ -18,13 +18,6 @@ const (
 
 const maxPostContentLength = 1000
 
-// type TimelineItem struct {
-// 	ID     string
-// 	UserID string
-// 	PostID string
-// 	Post   Post
-// }
-
 type Post struct {
 	ID             string
 	UserID         string
@@ -127,7 +120,7 @@ func (svc *Service) CreatePost(ctx context.Context, in CreatePost) (Created, err
 		return out, err
 	}
 
-	// Side-effect: increase user's posts count on inserts
+	// Side effect: increase user's posts count on inserts,
 	// so we don't have to compute it on each read.
 	_, err = svc.Store.UpdateUser(ctx, UpdateUser{
 		userID:               user.ID,
@@ -137,7 +130,7 @@ func (svc *Service) CreatePost(ctx context.Context, in CreatePost) (Created, err
 		return out, err
 	}
 
-	// Side-effect: add the post to the user's timeline.
+	// Side effect: add the post to the user's timeline.
 	_, err = svc.Store.CreateTimelineItem(ctx, CreateTimelineItem{
 		userID: user.ID,
 		postID: out.ID,
@@ -146,7 +139,7 @@ func (svc *Service) CreatePost(ctx context.Context, in CreatePost) (Created, err
 		return out, err
 	}
 
-	// Side-effect: add the post to all followers' timelines.
+	// Side effect: add the post to all followers' timelines.
 	svc.background(func(ctx context.Context) error {
 		_, err := svc.Store.CreateTimeline(ctx, CreateTimeline{
 			postID:     out.ID,

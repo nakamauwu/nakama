@@ -53,7 +53,7 @@ func (svc *Service) FollowUser(ctx context.Context, followedUserID string) error
 			return err
 		}
 
-		// Side-effect: increase user's follow counts on inserts
+		// Side effect: increase user's follow counts on inserts,
 		// so we don't have to compute them on each read.
 
 		_, err = svc.Store.UpdateUser(ctx, UpdateUser{
@@ -116,7 +116,7 @@ func (svc *Service) UnfollowUser(ctx context.Context, followedUserID string) err
 			return err
 		}
 
-		// Side-effect: increase user's follow counts on inserts
+		// Side effect: increase user's follow counts on inserts,
 		// so we don't have to compute them on each read.
 
 		_, err = svc.Store.UpdateUser(ctx, UpdateUser{

@@ -3,16 +3,18 @@ package nakama
 import (
 	"context"
 	"fmt"
+
+	"github.com/nicolasparada/go-db"
 )
 
-func (db *Store) CreatePostReaction(ctx context.Context, in PostReaction) error {
+func (s *Store) CreatePostReaction(ctx context.Context, in PostReaction) error {
 	const query = `
 		INSERT INTO post_reactions (user_id, post_id, reaction)
 		VALUES ($1, $2, $3)
 	`
 
-	_, err := db.Exec(ctx, query, in.userID, in.PostID, in.Reaction)
-	if isForeignKeyViolationError(err, "post_id") {
+	_, err := s.db.Exec(ctx, query, in.userID, in.PostID, in.Reaction)
+	if db.IsForeignKeyViolationError(err, "post_id") {
 		return ErrPostNotFound
 	}
 
@@ -23,7 +25,7 @@ func (db *Store) CreatePostReaction(ctx context.Context, in PostReaction) error 
 	return nil
 }
 
-func (db *Store) PostReactionExists(ctx context.Context, in PostReaction) (bool, error) {
+func (s *Store) PostReactionExists(ctx context.Context, in PostReaction) (bool, error) {
 	const query = `
 		SELECT EXISTS (
 			SELECT 1 FROM post_reactions
@@ -34,7 +36,7 @@ func (db *Store) PostReactionExists(ctx context.Context, in PostReaction) (bool,
 	`
 
 	var exists bool
-	row := db.QueryRow(ctx, query, in.userID, in.PostID, in.Reaction)
+	row := s.db.QueryRow(ctx, query, in.userID, in.PostID, in.Reaction)
 	err := row.Scan(&exists)
 	if err != nil {
 		return false, fmt.Errorf("sql scan selected post reaction existence: %w", err)
@@ -43,7 +45,7 @@ func (db *Store) PostReactionExists(ctx context.Context, in PostReaction) (bool,
 	return exists, nil
 }
 
-func (db *Store) DeletePostReaction(ctx context.Context, in PostReaction) error {
+func (s *Store) DeletePostReaction(ctx context.Context, in PostReaction) error {
 	const query = `
 		DELETE FROM post_reactions
 		WHERE user_id = $1
@@ -51,7 +53,7 @@ func (db *Store) DeletePostReaction(ctx context.Context, in PostReaction) error 
 			AND reaction = $3
 	`
 
-	_, err := db.Exec(ctx, query, in.userID, in.PostID, in.Reaction)
+	_, err := s.db.Exec(ctx, query, in.userID, in.PostID, in.Reaction)
 	if err != nil {
 		return fmt.Errorf("sql delete post reaction: %w", err)
 	}

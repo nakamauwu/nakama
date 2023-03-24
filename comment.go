@@ -108,7 +108,7 @@ func (svc *Service) CreateComment(ctx context.Context, in CreateComment) (Create
 			return err
 		}
 
-		// Side-effect: increase post's comments count on inserts
+		// Side effect: increase post's comments count on inserts,
 		// so we don't have to compute it on each read.
 		_, err = svc.Store.UpdatePost(ctx, UpdatePost{
 			PostID:                  in.PostID,
