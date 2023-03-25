@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/charmbracelet/log"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ory/dockertest/v3"
-	"golang.org/x/exp/slog"
 )
 
 var testService *Service
@@ -55,7 +55,7 @@ func setupT(m *testing.M) (int, error) {
 
 	testService = &Service{
 		Store:       NewStore(dbPool),
-		Logger:      slog.New(slog.NewTextHandler(io.Discard)),
+		Logger:      log.New(io.Discard),
 		BaseContext: context.Background,
 	}
 

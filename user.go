@@ -226,7 +226,7 @@ func (svc *Service) UpdateAvatar(ctx context.Context, avatar io.Reader) (Updated
 			Name:   path,
 		})
 		if errS3 != nil {
-			svc.Logger.Error("remove avatar after user update failure", errS3)
+			svc.Logger.Error("remove avatar after user update failure", "err", errS3)
 		}
 
 		return out, err

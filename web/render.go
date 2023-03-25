@@ -8,7 +8,6 @@ import (
 	"net/http"
 
 	"github.com/Masterminds/sprig/v3"
-	"golang.org/x/exp/slog"
 	"mvdan.cc/xurls/v2"
 )
 
@@ -37,7 +36,8 @@ func (h *Handler) render(w http.ResponseWriter, tmpl *template.Template, data an
 	var buff bytes.Buffer
 	err := tmpl.Execute(&buff, data)
 	if err != nil {
-		h.Logger.Error("render", err, slog.String("tmpl", tmpl.Name()))
+		h.Logger.Helper()
+		h.Logger.Error("render", "tmpl", tmpl.Name(), "err", err)
 		http.Error(w, fmt.Sprintf("could not render %q", tmpl.Name()), http.StatusInternalServerError)
 		return
 	}
@@ -46,7 +46,8 @@ func (h *Handler) render(w http.ResponseWriter, tmpl *template.Template, data an
 	w.WriteHeader(statusCode)
 	_, err = buff.WriteTo(w)
 	if err != nil {
-		h.Logger.Error("http write", err, slog.String("tmpl", tmpl.Name()))
+		h.Logger.Helper()
+		h.Logger.Error("http write", "tmpl", tmpl.Name(), "err", err)
 	}
 }
 

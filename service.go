@@ -6,15 +6,15 @@ import (
 	"sync"
 	"time"
 
+	"github.com/charmbracelet/log"
 	"github.com/minio/minio-go/v7"
 	"github.com/rs/xid"
-	"golang.org/x/exp/slog"
 )
 
 type Service struct {
 	Store         *Store
 	S3            *minio.Client
-	Logger        *slog.Logger
+	Logger        *log.Logger
 	AvatarsPrefix string
 	BaseContext   func() context.Context
 	wg            sync.WaitGroup
@@ -29,12 +29,12 @@ func (svc *Service) background(fn func(ctx context.Context) error) {
 
 		defer func() {
 			if err := recover(); err != nil {
-				svc.Logger.Error("recover", fmt.Errorf("%v", err))
+				svc.Logger.Error("recover", "err", fmt.Errorf("%v", err))
 			}
 		}()
 
 		if err := fn(svc.BaseContext()); err != nil {
-			svc.Logger.Error("background", err)
+			svc.Logger.Error("background", "err", err)
 		}
 	}()
 }

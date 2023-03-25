@@ -13,6 +13,13 @@ import (
 
 const ErrUnsupportedImageFormat = errs.InvalidArgumentError("unsupported image format")
 
+type Image struct {
+	Path      string `json:"path"`
+	Width     uint   `json:"width"`
+	Height    uint   `json:"height"`
+	ThumbHash []byte `json:"thumbHash"`
+}
+
 // fillJPEG image with the specified dimensions
 // to achieve the correct aspect ratio without stretching.
 func fillJPEG(r io.Reader, w, h uint) ([]byte, error) {

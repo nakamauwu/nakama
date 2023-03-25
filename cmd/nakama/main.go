@@ -12,6 +12,7 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/charmbracelet/log"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -19,17 +20,20 @@ import (
 	"github.com/minio/minio-go/v7/pkg/set"
 	"github.com/nakamauwu/nakama"
 	"github.com/nakamauwu/nakama/web"
-	"golang.org/x/exp/slog"
 )
 
 func main() {
-	if err := run(); err != nil {
+	logger := log.NewWithOptions(os.Stderr, log.Options{
+		ReportCaller:    true,
+		ReportTimestamp: true,
+	})
+	if err := run(logger); err != nil {
 		_, _ = fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
 
-func run() error {
+func run(logger *log.Logger) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 	defer stop()
 
@@ -87,18 +91,16 @@ func run() error {
 		return fmt.Errorf("s3: ensure buckets: %w", err)
 	}
 
-	loggerOpts := slog.HandlerOptions{AddSource: true}
-	logger := slog.New(loggerOpts.NewTextHandler(os.Stderr))
 	svc := &nakama.Service{
 		Store:         store,
 		S3:            s3,
-		Logger:        logger.With(slog.String("component", "service")),
+		Logger:        logger.With("component", "service"),
 		AvatarsPrefix: avatarsPrefix,
 		BaseContext:   func() context.Context { return ctx },
 	}
 
 	handler := &web.Handler{
-		Logger:     logger.With(slog.String("component", "web")),
+		Logger:     logger.With("component", "web"),
 		Service:    svc,
 		SessionKey: []byte(sessionKey),
 	}
@@ -121,12 +123,12 @@ func run() error {
 
 		err := srv.Shutdown(ctx)
 		if err != nil {
-			logger.Error("shutdown server", err)
+			logger.Error("shutdown server", "err", err)
 			os.Exit(1)
 		}
 	}()
 
-	logger.Info("starting server", slog.String("addr", srv.Addr))
+	logger.Info("starting server", "addr", srv.Addr)
 
 	err = srv.ListenAndServe()
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
