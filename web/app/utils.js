@@ -8,7 +8,7 @@ import { find as findURLs } from "linkifyjs"
  */
 export function linkify(s) {
     return linkifyString(s, {
-        truncate: 10,
+        truncate: 42,
         defaultProtocol: "https",
         target: (_, type) => {
             if (type === "mention" || type === "hashtag") {
