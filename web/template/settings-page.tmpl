@@ -56,11 +56,15 @@
     const avatarInput = document.getElementById("avatar_input")
 
     avatarInput.addEventListener("change", () => {
-        if (avatarInput.files.length === 0) {
+        {
+            // Remove any previous preview.
             const avatarPreview = document.getElementById("avatar_preview")
             if (avatarPreview !== null) {
                 avatarPreview.remove()
             }
+        }
+
+        if (avatarInput.files.length === 0) {
             return
         }
 
@@ -70,7 +74,7 @@
         const avatarPreview = document.createElement("img")
 
         avatarPreview.addEventListener("load", () => {
-            window.URL.revokeObjectURL(avatarPreview.src)
+            window.URL.revokeObjectURL(src)
         }, { once: true })
 
         avatarPreview.id = "avatar_preview"

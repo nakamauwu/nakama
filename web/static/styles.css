@@ -114,6 +114,10 @@ svg {
     background-color: var(--button-base);
 }
 
+.stack .btn {
+    margin: 0;
+}
+
 a.btn:hover {
     background: var(--button-hover);
 }

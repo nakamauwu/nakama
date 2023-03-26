@@ -10,14 +10,14 @@ import (
 
 // Store wrapper for SQL database with better semantics to run transactions.
 type Store struct {
-	db             *db.DB
-	AvatarScanFunc func(dest **string) sql.Scanner
+	db       *db.DB
+	s3Prefix string
 }
 
-func NewStore(pool *pgxpool.Pool) *Store {
+func NewStore(pool *pgxpool.Pool, s3Prefix string) *Store {
 	return &Store{
-		db:             db.New(pool),
-		AvatarScanFunc: MakePrefixedNullStringScanner(""),
+		db:       db.New(pool),
+		s3Prefix: s3Prefix,
 	}
 }
 
@@ -25,9 +25,10 @@ func (s *Store) RunTx(ctx context.Context, fn func(ctx context.Context) error) e
 	return s.db.RunTx(ctx, fn)
 }
 
-func MakePrefixedNullStringScanner(prefix string) func(**string) sql.Scanner {
-	return func(dest **string) sql.Scanner {
-		return &prefixedNullStringScanner{Prefix: prefix, Dest: dest}
+func (s *Store) scanAvatar(dest **string) sql.Scanner {
+	return &prefixedNullStringScanner{
+		Prefix: s.s3Prefix + S3BucketAvatars + "/",
+		Dest:   dest,
 	}
 }
 

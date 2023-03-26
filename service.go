@@ -12,12 +12,12 @@ import (
 )
 
 type Service struct {
-	Store         *Store
-	S3            *minio.Client
-	Logger        *log.Logger
-	AvatarsPrefix string
-	BaseContext   func() context.Context
-	wg            sync.WaitGroup
+	Store       *Store
+	S3          *minio.Client
+	Logger      *log.Logger
+	S3Prefix    string
+	BaseContext func() context.Context
+	wg          sync.WaitGroup
 }
 
 // background runs a function in a goroutine,

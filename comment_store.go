@@ -80,7 +80,7 @@ func (s *Store) Comments(ctx context.Context, in ListComments) ([]Comment, error
 			&out.CreatedAt,
 			&out.UpdatedAt,
 			&out.User.Username,
-			s.AvatarScanFunc(&out.User.AvatarPath),
+			s.scanAvatar(&out.User.AvatarPath),
 			&out.User.AvatarWidth,
 			&out.User.AvatarHeight,
 		)
@@ -130,7 +130,7 @@ func (s *Store) Comment(ctx context.Context, in RetrieveComment) (Comment, error
 		&c.CreatedAt,
 		&c.UpdatedAt,
 		&c.User.Username,
-		s.AvatarScanFunc(&c.User.AvatarPath),
+		s.scanAvatar(&c.User.AvatarPath),
 		&c.User.AvatarWidth,
 		&c.User.AvatarHeight,
 	)

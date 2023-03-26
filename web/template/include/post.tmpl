@@ -26,7 +26,7 @@
     {{/* linkify transforms urls into anchor tags */}}
     <p style="white-space: pre-line;">{{linkify .Post.Content}}</p>
 
-    <div class="stack">
+    <div class="stack" style="gap: 1rem">
         {{$reactionAction := printf "/p/%s/reactions" .Post.ID}}
         {{if .Session.IsLoggedIn}}
         {{template "add-reaction-form.tmpl" (dict "Action" $reactionAction)}}

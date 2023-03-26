@@ -74,10 +74,8 @@ func run(logger *log.Logger) error {
 		return fmt.Errorf("migrate sql: %w", err)
 	}
 
-	avatarsPrefix := avatarsPrefix(s3Secure, s3Endpoint)
-
-	store := nakama.NewStore(pool)
-	store.AvatarScanFunc = nakama.MakePrefixedNullStringScanner(avatarsPrefix)
+	s3Prefix := s3Prefix(s3Secure, s3Endpoint)
+	store := nakama.NewStore(pool, s3Prefix)
 
 	s3, err := minio.New(s3Endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(s3AccessKey, s3SecretKey, ""),
@@ -92,11 +90,11 @@ func run(logger *log.Logger) error {
 	}
 
 	svc := &nakama.Service{
-		Store:         store,
-		S3:            s3,
-		Logger:        logger.With("component", "service"),
-		AvatarsPrefix: avatarsPrefix,
-		BaseContext:   func() context.Context { return ctx },
+		Store:       store,
+		S3:          s3,
+		Logger:      logger.With("component", "service"),
+		S3Prefix:    s3Prefix,
+		BaseContext: func() context.Context { return ctx },
 	}
 
 	handler := &web.Handler{
@@ -188,10 +186,10 @@ func s3MakeAllowGetObjectPolicy(bucket string) (string, error) {
 	return string(raw), nil
 }
 
-func avatarsPrefix(useSSL bool, endpoint string) string {
+func s3Prefix(useSSL bool, endpoint string) string {
 	out := "http"
 	if useSSL {
 		out += "s"
 	}
-	return out + "://" + endpoint + "/" + nakama.S3BucketAvatars + "/"
+	return out + "://" + endpoint + "/"
 }

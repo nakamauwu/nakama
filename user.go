@@ -196,7 +196,7 @@ func (svc *Service) UpdateAvatar(ctx context.Context, avatar io.Reader) (Updated
 		return out, errs.Unauthenticated
 	}
 
-	resized, err := fillJPEG(avatar, avatarWidth, avatarHeight)
+	resized, err := resizeImage(avatar, avatarWidth, avatarHeight)
 	if err != nil {
 		return out, err
 	}
@@ -232,7 +232,7 @@ func (svc *Service) UpdateAvatar(ctx context.Context, avatar io.Reader) (Updated
 		return out, err
 	}
 
-	out.Path = svc.AvatarsPrefix + path
+	out.Path = svc.S3Prefix + S3BucketAvatars + "/" + path
 	out.Width = avatarWidth
 	out.Height = avatarHeight
 

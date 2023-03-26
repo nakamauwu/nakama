@@ -117,7 +117,7 @@ func (s *Store) Posts(ctx context.Context, in ListPosts) ([]Post, error) {
 			&out.CreatedAt,
 			&out.UpdatedAt,
 			&out.User.Username,
-			s.AvatarScanFunc(&out.User.AvatarPath),
+			s.scanAvatar(&out.User.AvatarPath),
 			&out.User.AvatarWidth,
 			&out.User.AvatarHeight,
 		)
@@ -176,7 +176,7 @@ func (s *Store) Timeline(ctx context.Context, userID string) ([]Post, error) {
 			&out.CreatedAt,
 			&out.UpdatedAt,
 			&out.User.Username,
-			s.AvatarScanFunc(&out.User.AvatarPath),
+			s.scanAvatar(&out.User.AvatarPath),
 			&out.User.AvatarWidth,
 			&out.User.AvatarHeight,
 		)
@@ -227,7 +227,7 @@ func (s *Store) Post(ctx context.Context, in RetrievePost) (Post, error) {
 		&p.CreatedAt,
 		&p.UpdatedAt,
 		&p.User.Username,
-		s.AvatarScanFunc(&p.User.AvatarPath),
+		s.scanAvatar(&p.User.AvatarPath),
 		&p.User.AvatarWidth,
 		&p.User.AvatarHeight,
 	)

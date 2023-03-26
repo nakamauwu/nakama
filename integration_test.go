@@ -54,7 +54,7 @@ func setupT(m *testing.M) (int, error) {
 	}
 
 	testService = &Service{
-		Store:       NewStore(dbPool),
+		Store:       NewStore(dbPool, "localhost/"),
 		Logger:      log.New(io.Discard),
 		BaseContext: context.Background,
 	}
