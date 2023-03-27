@@ -1,6 +1,8 @@
 /cockroach-data/
 /minio-data/
 /nakama
+/tmp
+/bin
 
 # Created by https://www.toptal.com/developers/gitignore/api/macos,windows,linux,visualstudiocode,vim,goland,git,go,database,dotenv,executable
 # Edit at https://www.toptal.com/developers/gitignore?templates=macos,windows,linux,visualstudiocode,vim,goland,git,go,database,dotenv,executable
