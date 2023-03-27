@@ -125,17 +125,17 @@ func (h *Handler) updateUser(w http.ResponseWriter, r *http.Request) {
 
 // updateAvatar handles PUT /avatar.
 func (h *Handler) updateAvatar(w http.ResponseWriter, r *http.Request) {
-	avatar, _, err := r.FormFile("avatar")
-	if errors.Is(err, http.ErrMissingFile) {
-		err = errs.InvalidArgumentError("missing avatar file")
-	}
+	defer r.Body.Close()
 
+	avatar, close, err := parseMedia(r, "avatar")
 	if err != nil {
 		h.log(err)
 		h.putErr(r, "update_avatar_err", err)
 		http.Redirect(w, r, r.Referer(), http.StatusFound)
 		return
 	}
+
+	defer close()
 
 	ctx := r.Context()
 	out, err := h.Service.UpdateAvatar(ctx, avatar)
@@ -154,4 +154,27 @@ func (h *Handler) updateAvatar(w http.ResponseWriter, r *http.Request) {
 
 	h.session.Put(r, sessionKeyUser, usr)
 	http.Redirect(w, r, r.Referer(), http.StatusFound)
+}
+
+func parseMedia(r *http.Request, key string) (nakama.Media, func() error, error) {
+	var out nakama.Media
+
+	// Check that request is of multipart/form-data content type.
+
+	file, fileHeader, err := r.FormFile(key)
+	if errors.Is(err, http.ErrMissingFile) {
+		return out, nil, errs.InvalidArgumentError("missing media file")
+	}
+
+	if err != nil {
+		return out, nil, err
+	}
+
+	media, err := nakama.ParseMedia(fileHeader.Filename, file)
+	if err != nil {
+		_ = file.Close()
+		return out, nil, err
+	}
+
+	return media, file.Close, nil
 }

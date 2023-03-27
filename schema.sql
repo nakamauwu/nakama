@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS posts (
     id VARCHAR NOT NULL PRIMARY KEY,
     user_id VARCHAR NOT NULL REFERENCES users ON DELETE CASCADE ON UPDATE CASCADE,
     content TEXT NOT NULL,
+    media JSONB,
     reactions_count JSON,
     comments_count INTEGER NOT NULL DEFAULT 0 CHECK (comments_count >= 0),
     created_at TIMESTAMP NOT NULL DEFAULT now(),

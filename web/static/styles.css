@@ -183,3 +183,19 @@ a.btn:active {
 .muted {
     color: var(--text-muted);
 }
+
+.media-preview {
+    display: block;
+    margin-top: 1rem;
+    height: 7rem;
+    object-fit: cover;
+    border-radius: 6px;
+}
+
+.media-image {
+    display: block;
+    margin: 1rem 0;
+    height: 16rem;
+    object-fit: cover;
+    border-radius: 6px;
+}

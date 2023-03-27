@@ -1,5 +1,9 @@
 {{template "layout.tmpl" .}}
 
+{{define "head"}}
+<script src="/thumbhash.js" type="module"></script>
+{{end}}
+
 {{define "content"}}
 <main>
     {{template "post.tmpl" (dict "Session" .Session "Post" .Post)}}

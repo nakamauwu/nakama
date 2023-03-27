@@ -22,6 +22,7 @@ type Post struct {
 	ID             string
 	UserID         string
 	Content        string
+	Media          []Media
 	ReactionsCount ReactionsCount
 	CommentsCount  int32
 	CreatedAt      time.Time
@@ -31,6 +32,7 @@ type Post struct {
 
 type CreatePost struct {
 	Content string
+	Media   []Media
 
 	userID string
 }
@@ -40,6 +42,12 @@ func (in *CreatePost) Validate() error {
 
 	if in.Content == "" || !utf8.ValidString(in.Content) || utf8.RuneCountInString(in.Content) > maxPostContentLength {
 		return ErrInvalidPostContent
+	}
+
+	for _, media := range in.Media {
+		if err := media.Validate(); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -114,26 +122,46 @@ func (svc *Service) CreatePost(ctx context.Context, in CreatePost) (Created, err
 
 	in.userID = user.ID
 
-	var err error
-	out, err = svc.Store.CreatePost(ctx, in)
-	if err != nil {
-		return out, err
+	for _, media := range in.Media {
+		switch {
+		case media.IsImage():
+			img := *media.AsImage
+			err := svc.s3StoreObject(ctx, s3StoreObject{
+				File:        img,
+				Bucket:      S3BucketMedia,
+				Name:        img.Path,
+				Size:        img.byteSize,
+				ContentType: img.contentType,
+			})
+			if err != nil {
+				return out, err
+			}
+		}
 	}
 
-	// Side effect: increase user's posts count on inserts,
-	// so we don't have to compute it on each read.
-	_, err = svc.Store.UpdateUser(ctx, UpdateUser{
-		userID:               user.ID,
-		increasePostsCountBy: 1,
-	})
-	if err != nil {
-		return out, err
-	}
+	err := svc.Store.RunTx(ctx, func(ctx context.Context) error {
+		var err error
+		out, err = svc.Store.CreatePost(ctx, in)
+		if err != nil {
+			return err
+		}
 
-	// Side effect: add the post to the user's timeline.
-	_, err = svc.Store.CreateTimelineItem(ctx, CreateTimelineItem{
-		userID: user.ID,
-		postID: out.ID,
+		// Side effect: increase user's posts count on inserts,
+		// so we don't have to compute it on each read.
+		_, err = svc.Store.UpdateUser(ctx, UpdateUser{
+			userID:               user.ID,
+			increasePostsCountBy: 1,
+		})
+		if err != nil {
+			return err
+		}
+
+		// Side effect: add the post to the user's timeline.
+		_, err = svc.Store.CreateTimelineItem(ctx, CreateTimelineItem{
+			userID: user.ID,
+			postID: out.ID,
+		})
+		return err
 	})
 	if err != nil {
 		return out, err
@@ -167,7 +195,18 @@ func (svc *Service) Timeline(ctx context.Context) ([]Post, error) {
 		return nil, errs.Unauthenticated
 	}
 
-	return svc.Store.Timeline(ctx, user.ID)
+	pp, err := svc.Store.Timeline(ctx, user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, p := range pp {
+		for _, m := range p.Media {
+			svc.Logger.Info("media", "kind", m.Kind, "image", *m.AsImage)
+		}
+	}
+
+	return pp, nil
 }
 
 func (svc *Service) Posts(ctx context.Context, in ListPosts) ([]Post, error) {

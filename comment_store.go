@@ -80,7 +80,7 @@ func (s *Store) Comments(ctx context.Context, in ListComments) ([]Comment, error
 			&out.CreatedAt,
 			&out.UpdatedAt,
 			&out.User.Username,
-			s.scanAvatar(&out.User.AvatarPath),
+			&out.User.AvatarPath,
 			&out.User.AvatarWidth,
 			&out.User.AvatarHeight,
 		)
@@ -90,6 +90,7 @@ func (s *Store) Comments(ctx context.Context, in ListComments) ([]Comment, error
 
 		out.PostID = in.PostID
 		out.ReactionsCount.Apply(reactions)
+		s.applyAvatarPrefix(&out.User.AvatarPath)
 
 		return out, nil
 	})
@@ -112,11 +113,11 @@ func (s *Store) Comment(ctx context.Context, in RetrieveComment) (Comment, error
 		FROM comments
 		INNER JOIN users ON comments.user_id = users.id
 		LEFT JOIN (
-			SELECT comment_id, array_agg(reaction) AS reactions
+			SELECT array_agg(reaction) AS reactions
 			FROM comment_reactions
 			WHERE comment_reactions.user_id = $1
-			GROUP BY comment_id
-		) AS comment_reactions ON comment_reactions.comment_id = comments.id
+				AND comment_reactions.comment_id = $2
+		) AS comment_reactions ON true
 		WHERE comments.id = $2
 	`
 	var c Comment
@@ -130,7 +131,7 @@ func (s *Store) Comment(ctx context.Context, in RetrieveComment) (Comment, error
 		&c.CreatedAt,
 		&c.UpdatedAt,
 		&c.User.Username,
-		s.scanAvatar(&c.User.AvatarPath),
+		&c.User.AvatarPath,
 		&c.User.AvatarWidth,
 		&c.User.AvatarHeight,
 	)
@@ -144,6 +145,7 @@ func (s *Store) Comment(ctx context.Context, in RetrieveComment) (Comment, error
 
 	c.ID = in.ID
 	c.ReactionsCount.Apply(reactions)
+	s.applyAvatarPrefix(&c.User.AvatarPath)
 
 	return c, nil
 }

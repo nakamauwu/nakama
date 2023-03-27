@@ -13,12 +13,13 @@ func (s *Store) CreatePost(ctx context.Context, in CreatePost) (Created, error) 
 	var out Created
 
 	const query = `
-		INSERT INTO posts (id, user_id, content)
-		VALUES ($1, $2, $3)
+		INSERT INTO posts (id, user_id, content, media)
+		VALUES ($1, $2, $3, $4)
 		RETURNING created_at
 	`
 	postID := genID()
-	err := s.db.QueryRow(ctx, query, postID, in.userID, in.Content).Scan(&out.CreatedAt)
+	row := s.db.QueryRow(ctx, query, postID, in.userID, in.Content, in.Media)
+	err := row.Scan(&out.CreatedAt)
 	if err != nil {
 		return out, fmt.Errorf("sql scan inserted post: %w", err)
 	}
@@ -35,7 +36,8 @@ func (s *Store) CreateTimelineItem(ctx context.Context, in CreateTimelineItem) (
 		RETURNING id
 	`
 	var id string
-	err := s.db.QueryRow(ctx, query, in.userID, in.postID).Scan(&id)
+	row := s.db.QueryRow(ctx, query, in.userID, in.postID)
+	err := row.Scan(&id)
 	if err != nil {
 		return "", fmt.Errorf("sql insert timeline item: %w", err)
 	}
@@ -75,6 +77,7 @@ func (s *Store) Posts(ctx context.Context, in ListPosts) ([]Post, error) {
 			  posts.id
 			, posts.user_id
 			, posts.content
+			, posts.media
 			, posts.reactions_count
 			, post_reactions.reactions
 			, posts.comments_count
@@ -111,13 +114,14 @@ func (s *Store) Posts(ctx context.Context, in ListPosts) ([]Post, error) {
 			&out.ID,
 			&out.UserID,
 			&out.Content,
+			&out.Media,
 			&out.ReactionsCount,
 			&reactions,
 			&out.CommentsCount,
 			&out.CreatedAt,
 			&out.UpdatedAt,
 			&out.User.Username,
-			s.scanAvatar(&out.User.AvatarPath),
+			&out.User.AvatarPath,
 			&out.User.AvatarWidth,
 			&out.User.AvatarHeight,
 		)
@@ -125,7 +129,9 @@ func (s *Store) Posts(ctx context.Context, in ListPosts) ([]Post, error) {
 			return out, fmt.Errorf("sql scan posts: %w", err)
 		}
 
+		s.applyMediaPrefix(&out.Media)
 		out.ReactionsCount.Apply(reactions)
+		s.applyAvatarPrefix(&out.User.AvatarPath)
 
 		return out, nil
 	})
@@ -137,6 +143,7 @@ func (s *Store) Timeline(ctx context.Context, userID string) ([]Post, error) {
 			  posts.id
 			, posts.user_id
 			, posts.content
+			, posts.media
 			, posts.reactions_count
 			, post_reactions.reactions
 			, posts.comments_count
@@ -170,13 +177,14 @@ func (s *Store) Timeline(ctx context.Context, userID string) ([]Post, error) {
 			&out.ID,
 			&out.UserID,
 			&out.Content,
+			&out.Media,
 			&out.ReactionsCount,
 			&reactions,
 			&out.CommentsCount,
 			&out.CreatedAt,
 			&out.UpdatedAt,
 			&out.User.Username,
-			s.scanAvatar(&out.User.AvatarPath),
+			&out.User.AvatarPath,
 			&out.User.AvatarWidth,
 			&out.User.AvatarHeight,
 		)
@@ -184,7 +192,9 @@ func (s *Store) Timeline(ctx context.Context, userID string) ([]Post, error) {
 			return out, fmt.Errorf("sql scan timeline items: %w", err)
 		}
 
+		s.applyMediaPrefix(&out.Media)
 		out.ReactionsCount.Apply(reactions)
+		s.applyAvatarPrefix(&out.User.AvatarPath)
 
 		return out, nil
 	})
@@ -196,6 +206,7 @@ func (s *Store) Post(ctx context.Context, in RetrievePost) (Post, error) {
 			  posts.id
 			, posts.user_id
 			, posts.content
+			, posts.media
 			, posts.reactions_count
 			, post_reactions.reactions
 			, posts.comments_count
@@ -208,11 +219,11 @@ func (s *Store) Post(ctx context.Context, in RetrievePost) (Post, error) {
 		FROM posts
 		INNER JOIN users ON posts.user_id = users.id
 		LEFT JOIN (
-			SELECT post_id, array_agg(reaction) AS reactions
+			SELECT array_agg(reaction) AS reactions
 			FROM post_reactions
 			WHERE post_reactions.user_id = $1
-			GROUP BY post_id
-		) AS post_reactions ON post_reactions.post_id = posts.id
+				AND post_reactions.post_id = $2
+		) AS post_reactions ON true
 		WHERE posts.id = $2
 	`
 	var p Post
@@ -221,13 +232,14 @@ func (s *Store) Post(ctx context.Context, in RetrievePost) (Post, error) {
 		&p.ID,
 		&p.UserID,
 		&p.Content,
+		&p.Media,
 		&p.ReactionsCount,
 		&reactions,
 		&p.CommentsCount,
 		&p.CreatedAt,
 		&p.UpdatedAt,
 		&p.User.Username,
-		s.scanAvatar(&p.User.AvatarPath),
+		&p.User.AvatarPath,
 		&p.User.AvatarWidth,
 		&p.User.AvatarHeight,
 	)
@@ -239,7 +251,9 @@ func (s *Store) Post(ctx context.Context, in RetrievePost) (Post, error) {
 		return Post{}, fmt.Errorf("sql scan selected post: %w", err)
 	}
 
+	s.applyMediaPrefix(&p.Media)
 	p.ReactionsCount.Apply(reactions)
+	s.applyAvatarPrefix(&p.User.AvatarPath)
 
 	return p, nil
 }

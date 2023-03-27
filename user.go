@@ -1,10 +1,7 @@
 package nakama
 
 import (
-	"bytes"
 	"context"
-	"fmt"
-	"io"
 	"regexp"
 	"strings"
 	"time"
@@ -188,7 +185,7 @@ func (svc *Service) UpdateUser(ctx context.Context, in UpdateUser) error {
 	return err
 }
 
-func (svc *Service) UpdateAvatar(ctx context.Context, avatar io.Reader) (UpdatedAvatar, error) {
+func (svc *Service) UpdateAvatar(ctx context.Context, media Media) (UpdatedAvatar, error) {
 	var out UpdatedAvatar
 
 	user, ok := UserFromContext(ctx)
@@ -196,34 +193,40 @@ func (svc *Service) UpdateAvatar(ctx context.Context, avatar io.Reader) (Updated
 		return out, errs.Unauthenticated
 	}
 
-	resized, err := resizeImage(avatar, avatarWidth, avatarHeight)
-	if err != nil {
+	if err := media.Validate(); err != nil {
 		return out, err
 	}
 
-	now := time.Now().UTC()
-	path := fmt.Sprintf("%d/%d/%d/%s-%s.jpeg", now.Year(), now.Month(), now.Day(), user.ID, genID())
-	err = svc.s3StoreObject(ctx, s3StoreObject{
-		File:        bytes.NewReader(resized),
+	if !media.IsImage() {
+		return out, errs.InvalidArgumentError("media is not an image")
+	}
+
+	img := *media.AsImage
+	if err := img.Resize(avatarWidth, avatarHeight); err != nil {
+		return out, err
+	}
+
+	err := svc.s3StoreObject(ctx, s3StoreObject{
+		File:        img,
 		Bucket:      S3BucketAvatars,
-		Name:        path,
-		Size:        uint64(len(resized)),
-		ContentType: "image/jpeg",
+		Name:        img.Path,
+		Size:        img.byteSize,
+		ContentType: img.contentType,
 	})
 	if err != nil {
 		return out, err
 	}
 
 	_, err = svc.Store.UpdateUser(ctx, UpdateUser{
-		avatarPath:   &path,
-		avatarWidth:  ptr(avatarWidth),
-		avatarHeight: ptr(avatarHeight),
+		avatarPath:   &img.Path,
+		avatarWidth:  &img.Width,
+		avatarHeight: &img.Height,
 		userID:       user.ID,
 	})
 	if err != nil {
 		errS3 := svc.s3RemoveObject(ctx, s3RemoveObject{
 			Bucket: S3BucketAvatars,
-			Name:   path,
+			Name:   img.Path,
 		})
 		if errS3 != nil {
 			svc.Logger.Error("remove avatar after user update failure", "err", errS3)
@@ -232,7 +235,7 @@ func (svc *Service) UpdateAvatar(ctx context.Context, avatar io.Reader) (Updated
 		return out, err
 	}
 
-	out.Path = svc.S3Prefix + S3BucketAvatars + "/" + path
+	out.Path = img.Path
 	out.Width = avatarWidth
 	out.Height = avatarHeight
 

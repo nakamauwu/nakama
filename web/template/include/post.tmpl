@@ -26,6 +26,19 @@
     {{/* linkify transforms urls into anchor tags */}}
     <p style="white-space: pre-line;">{{linkify .Post.Content}}</p>
 
+    {{if .Post.Media}}
+    <div class="media-list stack">
+        {{range .Post.Media}}
+        {{if .IsImage}}
+        <a href="{{.AsImage.Path}}" target="_blank" rel="noopener noreferrer">
+            <img src="{{.AsImage.Path}}" data-thumbhash="{{btoa .AsImage.ThumbHash}}" width="{{.AsImage.Width}}"
+                height="{{.AsImage.Height}}" alt="{{.AsImage.AltText}}" class="media-image">
+        </a>
+        {{end}}
+        {{end}}
+    </div>
+    {{end}}
+
     <div class="stack" style="gap: 1rem">
         {{$reactionAction := printf "/p/%s/reactions" .Post.ID}}
         {{if .Session.IsLoggedIn}}

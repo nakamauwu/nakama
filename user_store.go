@@ -81,7 +81,7 @@ func (s *Store) Users(ctx context.Context, in ListUsers) ([]User, error) {
 			&u.Email,
 			&u.Username,
 			&sim,
-			s.scanAvatar(&u.AvatarPath),
+			&u.AvatarPath,
 			&u.AvatarWidth,
 			&u.AvatarHeight,
 			&u.PostsCount,
@@ -94,6 +94,8 @@ func (s *Store) Users(ctx context.Context, in ListUsers) ([]User, error) {
 		if err != nil {
 			return u, fmt.Errorf("sql scan users: %w", err)
 		}
+
+		s.applyAvatarPrefix(&u.AvatarPath)
 
 		return u, nil
 	})
@@ -142,7 +144,7 @@ func (s *Store) User(ctx context.Context, in RetrieveUser) (User, error) {
 		&usr.ID,
 		&usr.Email,
 		&usr.Username,
-		s.scanAvatar(&usr.AvatarPath),
+		&usr.AvatarPath,
 		&usr.AvatarWidth,
 		&usr.AvatarHeight,
 		&usr.PostsCount,
@@ -158,6 +160,8 @@ func (s *Store) User(ctx context.Context, in RetrieveUser) (User, error) {
 	if err != nil {
 		return usr, fmt.Errorf("sql scan selected user: %w", err)
 	}
+
+	s.applyAvatarPrefix(&usr.AvatarPath)
 
 	return usr, nil
 }

@@ -1,13 +1,22 @@
-<form action="/posts" method="POST">
+<form action="/posts" method="POST" enctype="multipart/form-data">
     <textarea name="content" aria-label="content" placeholder="Write something..." rows="3" maxlength="1000" required>
         {{- .CreatePostForm.Get "content" -}}
     </textarea>
+
+    <div>
+        <label id="media_label" for="media_input">Media:</label>
+        <input id="media_input" type="file" name="media" aria-labelledby="media_label media_help" accept="image/*"
+            multiple>
+        <small id="media_help" class="muted">Max size: 16MiB.</small>
+
+        <div class="stack media-preview-list"></div>
+    </div>
 
     {{if .CreatePostErr}}
     <p role="alert">Could not create post: <code>{{.CreatePostErr}}</code></p>
     {{end}}
 
-    <button class="stack">
+    <button class="stack" style="margin-top: 1rem">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
             class="w-6 h-6">
             <path stroke-linecap="round" stroke-linejoin="round"
@@ -16,3 +25,36 @@
         <span>Post</span>
     </button>
 </form>
+
+<script>
+    /** @type {HTMLInputElement} */
+    const mediaInput = document.getElementById("media_input")
+
+    /** @type {HTMLDivElement} */
+    const mediaPreviewList = document.querySelector(".media-preview-list")
+
+    mediaInput.addEventListener("change", () => {
+        {
+            // Remove any previous preview.
+            const mediaPreviews = mediaPreviewList.querySelectorAll(".media-preview")
+            for (const mediaPreview of mediaPreviews) {
+                mediaPreview.remove()
+            }
+        }
+
+        for (const file of mediaInput.files) {
+            const src = window.URL.createObjectURL(file)
+
+            const preview = document.createElement("img")
+
+            preview.addEventListener("load", () => {
+                window.URL.revokeObjectURL(src)
+            }, { once: true })
+
+            preview.className = "media-preview"
+            preview.src = src
+
+            mediaPreviewList.appendChild(preview)
+        }
+    })
+</script>

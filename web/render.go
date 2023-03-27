@@ -3,6 +3,7 @@ package web
 import (
 	"bytes"
 	"embed"
+	"encoding/base64"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -16,6 +17,7 @@ var templateFS embed.FS
 
 var tmplFuncs = template.FuncMap{
 	"linkify": linkify,
+	"btoa":    btoa,
 }
 
 var reURL = xurls.Relaxed()
@@ -58,4 +60,8 @@ func linkify(s string) template.HTML {
 		`<a href="$0" target="_blank" rel="noopener noreferrer">$0</a>`,
 	)
 	return template.HTML(s)
+}
+
+func btoa(b []byte) string {
+	return base64.RawStdEncoding.EncodeToString(b)
 }

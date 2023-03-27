@@ -5,7 +5,7 @@
     <input type="hidden" name="_method" value="DELETE">
     {{end}}
     <input type="hidden" name="reaction" value="{{.Reaction}}">
-    <button class="{{if .Reacted}}reacted{{end}}">
+    <button class="{{if .Reacted}}reacted{{end}}" style="margin: 0">
         <div class="stack">
             <span>{{.Reaction}}</span>
             <span class="muted">{{.Count}}</span>
@@ -15,7 +15,7 @@
 {{end}}
 {{else}}
 {{range .ReactionsCount}}
-<div class="btn stack">
+<div class="btn stack" style="margin: 0">
     <span>{{.Reaction}}</span>
     <span class="muted">{{.Count}}</span>
 </div>

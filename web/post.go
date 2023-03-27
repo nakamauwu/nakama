@@ -1,10 +1,12 @@
 package web
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 
 	"github.com/nakamauwu/nakama"
+	"github.com/nicolasparada/go-errs"
 	"github.com/nicolasparada/go-mux"
 	"golang.org/x/sync/errgroup"
 )
@@ -81,16 +83,21 @@ func (h *Handler) showPosts(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) createPost(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	if err := r.ParseForm(); err != nil {
+	media, close, err := parseMediaList(r, "media")
+	if err != nil {
 		h.log(err)
 		h.putErr(r, "create_post_err", err)
+		h.session.Put(r, "create_post_form", r.PostForm)
 		http.Redirect(w, r, "/", http.StatusFound)
 		return
 	}
 
+	defer close()
+
 	ctx := r.Context()
-	_, err := h.Service.CreatePost(ctx, nakama.CreatePost{
+	_, err = h.Service.CreatePost(ctx, nakama.CreatePost{
 		Content: r.PostFormValue("content"),
+		Media:   media,
 	})
 	if err != nil {
 		h.log(err)
@@ -140,4 +147,51 @@ func (h *Handler) showPost(w http.ResponseWriter, r *http.Request) {
 		CreateCommentForm: h.popForm(r, "create_comment_form"),
 		CreateCommentErr:  h.popErr(r, "create_comment_err"),
 	}, http.StatusOK)
+}
+
+func parseMediaList(r *http.Request, key string) ([]nakama.Media, func() error, error) {
+	// Check that request is of multipart/form-data content type.
+
+	if r.MultipartForm == nil {
+		if err := r.ParseMultipartForm(32 << 20); err != nil { // 32 MB
+			return nil, nil, err
+		}
+	}
+
+	if r.MultipartForm.File == nil {
+		return nil, nil, errs.InvalidArgumentError("missing multipart form files")
+	}
+
+	m, ok := r.MultipartForm.File[key]
+	if !ok {
+		return nil, nil, errs.InvalidArgumentError(fmt.Sprintf("missing multipart form %s file", key))
+	}
+
+	var closeFuncs []func() error
+
+	var out []nakama.Media
+	for _, fh := range m {
+		f, err := fh.Open()
+		if err != nil {
+			return nil, nil, err
+		}
+
+		media, err := nakama.ParseMedia(fh.Filename, f)
+		if err != nil {
+			_ = f.Close()
+			return nil, nil, err
+		}
+
+		closeFuncs = append(closeFuncs, f.Close)
+		out = append(out, media)
+	}
+
+	return out, func() error {
+		for _, f := range closeFuncs {
+			if err := f(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}, nil
 }

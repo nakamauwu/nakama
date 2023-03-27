@@ -1,0 +1,8 @@
+# Config file for [Task](https://github.com/go-task/task)
+
+version: "3"
+
+tasks:
+    dev:
+        cmds:
+            - go run github.com/cosmtrek/air -c .air.toml

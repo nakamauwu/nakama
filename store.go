@@ -2,7 +2,6 @@ package nakama
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nicolasparada/go-db"
@@ -25,24 +24,24 @@ func (s *Store) RunTx(ctx context.Context, fn func(ctx context.Context) error) e
 	return s.db.RunTx(ctx, fn)
 }
 
-func (s *Store) scanAvatar(dest **string) sql.Scanner {
-	return &prefixedNullStringScanner{
-		Prefix: s.s3Prefix + S3BucketAvatars + "/",
-		Dest:   dest,
-	}
-}
-
-type prefixedNullStringScanner struct {
-	Prefix string
-	Dest   **string
-}
-
-func (s *prefixedNullStringScanner) Scan(src any) error {
-	str, ok := src.(string)
-	if !ok {
-		return nil
+func (s *Store) applyAvatarPrefix(dest **string) {
+	if dest == nil || *dest == nil {
+		return
 	}
 
-	*s.Dest = ptr(s.Prefix + str)
-	return nil
+	*dest = ptr(s.s3Prefix + S3BucketAvatars + **dest)
+}
+
+func (s *Store) applyMediaPrefix(dest *[]Media) {
+	for i, m := range *dest {
+		if m.IsImage() {
+			img := m.AsImage
+			if img.Path == "" {
+				continue
+			}
+
+			img.Path = s.s3Prefix + S3BucketMedia + img.Path
+			(*dest)[i].AsImage = img
+		}
+	}
 }

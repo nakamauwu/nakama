@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -16,8 +15,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
-	"github.com/minio/minio-go/v7/pkg/policy"
-	"github.com/minio/minio-go/v7/pkg/set"
 	"github.com/nakamauwu/nakama"
 	"github.com/nakamauwu/nakama/web"
 )
@@ -85,7 +82,7 @@ func run(logger *log.Logger) error {
 		return fmt.Errorf("s3: %w", err)
 	}
 
-	if err := ensureS3Buckets(ctx, s3); err != nil {
+	if err := nakama.EnsureS3Buckets(ctx, s3); err != nil {
 		return fmt.Errorf("s3: ensure buckets: %w", err)
 	}
 
@@ -136,54 +133,6 @@ func run(logger *log.Logger) error {
 	svc.Wait()
 
 	return nil
-}
-
-func ensureS3Buckets(ctx context.Context, s3 *minio.Client) error {
-	for _, bucket := range [...]string{nakama.S3BucketAvatars} {
-		ok, err := s3.BucketExists(ctx, bucket)
-		if err != nil {
-			return err
-		}
-
-		if ok {
-			continue
-		}
-
-		err = s3.MakeBucket(ctx, bucket, minio.MakeBucketOptions{})
-		if err != nil {
-			return err
-		}
-
-		pol, err := s3MakeAllowGetObjectPolicy(bucket)
-		if err != nil {
-			return err
-		}
-
-		err = s3.SetBucketPolicy(ctx, bucket, pol)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func s3MakeAllowGetObjectPolicy(bucket string) (string, error) {
-	p := policy.BucketAccessPolicy{
-		Version: "2012-10-17", // See: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_version.html
-		Statements: []policy.Statement{{
-			Effect:    "Allow",
-			Actions:   set.CreateStringSet("s3:GetObject"),
-			Principal: policy.User{AWS: set.CreateStringSet("*")},
-			Resources: set.CreateStringSet(fmt.Sprintf("arn:aws:s3:::%s/*", bucket)),
-		}},
-	}
-	raw, err := json.Marshal(p)
-	if err != nil {
-		return "", err
-	}
-
-	return string(raw), nil
 }
 
 func s3Prefix(useSSL bool, endpoint string) string {
