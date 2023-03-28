@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 	"sync"
 	"time"
 
@@ -82,7 +83,9 @@ func (svc *Service) sendWebPushNotifications(n Notification) {
 
 	var topic string
 	if n.PostID != nil {
-		topic = "post." + *n.PostID
+		// Topic can have only 32 characters.
+		// By removing the dashes from the UUID we can go from 36 to 32 characters.
+		topic = strings.ReplaceAll(*n.PostID, "-", "")
 	}
 
 	var wg sync.WaitGroup
