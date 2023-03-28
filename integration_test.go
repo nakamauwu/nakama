@@ -38,6 +38,12 @@ func testMain(m *testing.M) int {
 		return 1
 	}
 
+	_, err = testDB.Exec(Schema)
+	if err != nil {
+		fmt.Printf("could not exec schema: %v\n", err)
+		return 1
+	}
+
 	defer func() {
 		if err := cleanup(); err != nil {
 			fmt.Printf("could not cleanup cockroach container: %v\n", err)
@@ -69,11 +75,6 @@ func setupTestDB(pool *dockertest.Pool) (*sql.DB, func() error, error) {
 
 		if err = db.Ping(); err != nil {
 			return fmt.Errorf("could not ping db: %w", err)
-		}
-
-		_, err = db.Exec(Schema)
-		if err != nil {
-			return fmt.Errorf("could not exec schema: %w", err)
 		}
 
 		return nil
