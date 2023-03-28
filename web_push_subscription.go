@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"sync"
 	"time"
 
@@ -114,7 +115,15 @@ func (svc *Service) sendWebPushNotification(sub webpush.Subscription, message []
 		return fmt.Errorf("could not send web push notification: %w", err)
 	}
 
-	_ = resp.Body.Close()
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		if b, err := io.ReadAll(resp.Body); err == nil {
+			return fmt.Errorf("web push notification send failed with status code %d: %s", resp.StatusCode, string(b))
+		}
+
+		return fmt.Errorf("web push notification send failed with status code %d", resp.StatusCode)
+	}
 
 	return nil
 }
