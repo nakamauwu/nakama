@@ -23,7 +23,7 @@ func (svc *Service) AddWebPushSubscription(ctx context.Context, sub webpush.Subs
 	}
 
 	query := "INSERT INTO user_web_push_subscriptions (user_id, sub) VALUES ($1, $2)"
-	_, err := svc.DB.ExecContext(ctx, query, uid, sub)
+	_, err := svc.DB.ExecContext(ctx, query, uid, jsonValue{sub})
 	if isUniqueViolation(err) {
 		return nil
 	}
@@ -47,7 +47,7 @@ func (svc *Service) webPushSubscriptions(ctx context.Context, userID string) ([]
 	var subs []webpush.Subscription
 	for rows.Next() {
 		var sub webpush.Subscription
-		err := rows.Scan(&sub)
+		err := rows.Scan(&jsonValue{&sub})
 		if err != nil {
 			return nil, fmt.Errorf("could not sql scan user web push subscription: %w", err)
 		}
