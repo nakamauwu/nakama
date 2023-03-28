@@ -147,8 +147,7 @@ function NotificationsPage() {
             reg.pushManager.getSubscription().then(sub => {
                 if (sub === null) {
                     reg.pushManager.subscribe({
-                        // vapidPublicKey defined at index.html head.
-                        applicationServerKey: import.meta.env && import.meta.env?.["VITE_VAPID_PUBLIC_KEY"],
+                        applicationServerKey: import.meta.env.VITE_VAPID_PUBLIC_KEY,
                         userVisibleOnly: true,
                     }).then(sub => {
                         addWebPushSubscription(sub).catch(addWebPushSubscriptionErrorHandler)

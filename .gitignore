@@ -1,4 +1,5 @@
 /cockroach-data/**
+/minio-data/**
 /grafana-data/**
 /loki-data/**
 /prometheus-data/**
@@ -6,6 +7,7 @@
 /nakama
 !/web/dist/keepme
 /web/dist
+/tmp/**
 
 # Created by https://www.toptal.com/developers/gitignore/api/go,windows,macos,linux,visualstudiocode,goland,vim,git,dotenv,node,database,executable
 # Edit at https://www.toptal.com/developers/gitignore?templates=go,windows,macos,linux,visualstudiocode,goland,vim,git,dotenv,node,database,executable
