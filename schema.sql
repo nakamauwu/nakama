@@ -109,11 +109,10 @@ CREATE TABLE IF NOT EXISTS notifications (
 CREATE TABLE IF NOT EXISTS user_web_push_subscriptions (
     id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users ON DELETE CASCADE,
-    sub BYTEA NOT NULL,
+    sub JSONB NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE INDEX unique_user_web_push_subscriptions (user_id, sub)
 );
-
 
 -- INSERT INTO users (id, email, username) VALUES
 --     ('24ca6ce6-b3e9-4276-a99a-45c77115cc9f', 'shinji@example.org', 'shinji'),

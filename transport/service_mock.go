@@ -5,7 +5,7 @@ package transport
 
 import (
 	"context"
-	"encoding/json"
+	"github.com/SherClockHolmes/webpush-go"
 	"github.com/nakamauwu/nakama"
 	"io"
 	"net/url"
@@ -22,7 +22,7 @@ var _ Service = &ServiceMock{}
 //
 //		// make and configure a mocked Service
 //		mockedService := &ServiceMock{
-//			AddWebPushSubscriptionFunc: func(ctx context.Context, sub json.RawMessage) error {
+//			AddWebPushSubscriptionFunc: func(ctx context.Context, sub webpush.Subscription) error {
 //				panic("mock out the AddWebPushSubscription method")
 //			},
 //			AuthUserFunc: func(ctx context.Context) (nakama.User, error) {
@@ -144,7 +144,7 @@ var _ Service = &ServiceMock{}
 //	}
 type ServiceMock struct {
 	// AddWebPushSubscriptionFunc mocks the AddWebPushSubscription method.
-	AddWebPushSubscriptionFunc func(ctx context.Context, sub json.RawMessage) error
+	AddWebPushSubscriptionFunc func(ctx context.Context, sub webpush.Subscription) error
 
 	// AuthUserFunc mocks the AuthUser method.
 	AuthUserFunc func(ctx context.Context) (nakama.User, error)
@@ -264,7 +264,7 @@ type ServiceMock struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// Sub is the sub argument value.
-			Sub json.RawMessage
+			Sub webpush.Subscription
 		}
 		// AuthUser holds details about calls to the AuthUser method.
 		AuthUser []struct {
@@ -595,10 +595,10 @@ type ServiceMock struct {
 }
 
 // AddWebPushSubscription calls AddWebPushSubscriptionFunc.
-func (mock *ServiceMock) AddWebPushSubscription(ctx context.Context, sub json.RawMessage) error {
+func (mock *ServiceMock) AddWebPushSubscription(ctx context.Context, sub webpush.Subscription) error {
 	callInfo := struct {
 		Ctx context.Context
-		Sub json.RawMessage
+		Sub webpush.Subscription
 	}{
 		Ctx: ctx,
 		Sub: sub,
@@ -621,11 +621,11 @@ func (mock *ServiceMock) AddWebPushSubscription(ctx context.Context, sub json.Ra
 //	len(mockedService.AddWebPushSubscriptionCalls())
 func (mock *ServiceMock) AddWebPushSubscriptionCalls() []struct {
 	Ctx context.Context
-	Sub json.RawMessage
+	Sub webpush.Subscription
 } {
 	var calls []struct {
 		Ctx context.Context
-		Sub json.RawMessage
+		Sub webpush.Subscription
 	}
 	mock.lockAddWebPushSubscription.RLock()
 	calls = mock.calls.AddWebPushSubscription

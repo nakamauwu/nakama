@@ -15,7 +15,7 @@ const (
 	webPushNoticationContact     = "contact@nakama.social"
 )
 
-func (svc *Service) AddWebPushSubscription(ctx context.Context, sub json.RawMessage) error {
+func (svc *Service) AddWebPushSubscription(ctx context.Context, sub webpush.Subscription) error {
 	uid, ok := ctx.Value(KeyAuthUserID).(string)
 	if !ok {
 		return ErrUnauthenticated
@@ -34,7 +34,7 @@ func (svc *Service) AddWebPushSubscription(ctx context.Context, sub json.RawMess
 	return nil
 }
 
-func (svc *Service) webPushSubscriptions(ctx context.Context, userID string) ([]json.RawMessage, error) {
+func (svc *Service) webPushSubscriptions(ctx context.Context, userID string) ([]webpush.Subscription, error) {
 	query := "SELECT sub FROM user_web_push_subscriptions WHERE user_id = $1 ORDER BY created_at DESC"
 	rows, err := svc.DB.QueryContext(ctx, query, userID)
 	if err != nil {
@@ -43,9 +43,9 @@ func (svc *Service) webPushSubscriptions(ctx context.Context, userID string) ([]
 
 	defer rows.Close()
 
-	var subs []json.RawMessage
+	var subs []webpush.Subscription
 	for rows.Next() {
-		var sub json.RawMessage
+		var sub webpush.Subscription
 		err := rows.Scan(&sub)
 		if err != nil {
 			return nil, fmt.Errorf("could not sql scan user web push subscription: %w", err)
@@ -102,14 +102,8 @@ func (svc *Service) sendWebPushNotifications(n Notification) {
 	wg.Wait()
 }
 
-func (svc *Service) sendWebPushNotification(rawSub json.RawMessage, message []byte, topic string) error {
-	sub := &webpush.Subscription{}
-	err := json.Unmarshal(rawSub, sub)
-	if err != nil {
-		return fmt.Errorf("could not json unmarshal web push subscription: %w", err)
-	}
-
-	resp, err := webpush.SendNotification(message, sub, &webpush.Options{
+func (svc *Service) sendWebPushNotification(sub webpush.Subscription, message []byte, topic string) error {
+	resp, err := webpush.SendNotification(message, &sub, &webpush.Options{
 		Subscriber:      webPushNoticationContact,
 		Topic:           topic,
 		VAPIDPrivateKey: svc.VAPIDPrivateKey,

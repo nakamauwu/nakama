@@ -2,11 +2,11 @@ package transport
 
 import (
 	"context"
-	"encoding/json"
 	"io"
 	"net/url"
 	"time"
 
+	"github.com/SherClockHolmes/webpush-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -317,7 +317,7 @@ func (mw *ServiceWithInstrumentation) Followees(ctx context.Context, username st
 	return mw.Next.Followees(ctx, username, first, after)
 }
 
-func (mw *ServiceWithInstrumentation) AddWebPushSubscription(ctx context.Context, sub json.RawMessage) error {
+func (mw *ServiceWithInstrumentation) AddWebPushSubscription(ctx context.Context, sub webpush.Subscription) error {
 	defer func(begin time.Time) {
 		reqDur_AddWebPushSubscription.Observe(float64(time.Since(begin)) / float64(time.Millisecond))
 	}(time.Now())
