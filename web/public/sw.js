@@ -135,7 +135,7 @@ function notificationTitle(n) {
         case "follow":
             return "New follow"
         case "comment":
-            return "New commented"
+            return "New comment"
         case "post_mention":
             return "New post mention"
         case "comment_mention":
