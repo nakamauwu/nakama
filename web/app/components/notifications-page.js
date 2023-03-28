@@ -140,24 +140,28 @@ function NotificationsPage() {
 
     useEffect(() => {
         if (!notificationsEnabled || typeof window.Notification === "undefined" || Notification.permission !== "granted") {
+            setNotificationsEnabled(false)
             return
         }
 
         navigator.serviceWorker.ready.then(reg => {
+            if (reg.pushManager === undefined) {
+                setNotificationsEnabled(false)
+                return
+            }
+
             reg.pushManager.getSubscription().then(sub => {
-                if (sub === null) {
-                    reg.pushManager.subscribe({
-                        applicationServerKey: import.meta.env.VITE_VAPID_PUBLIC_KEY,
-                        userVisibleOnly: true,
-                    }).then(sub => {
-                        addWebPushSubscription(sub).catch(addWebPushSubscriptionErrorHandler)
-                    }).catch(() => {
-                        setNotificationsEnabled(false)
-                    })
-                    return
+                if (sub !== null) {
+                    return sub
                 }
 
-                addWebPushSubscription(sub).catch(addWebPushSubscriptionErrorHandler)
+                return reg.pushManager.subscribe({
+                    applicationServerKey: import.meta.env.VITE_VAPID_PUBLIC_KEY,
+                    userVisibleOnly: true,
+                })
+            }).then(addWebPushSubscription).catch(err => {
+                addWebPushSubscriptionErrorHandler(err)
+                setNotificationsEnabled(false)
             })
         })
     }, [notificationsEnabled])
