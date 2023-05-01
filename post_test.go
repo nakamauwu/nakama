@@ -23,13 +23,13 @@ func TestService_CreatePost(t *testing.T) {
 	})
 
 	t.Run("unauthenticated", func(t *testing.T) {
-		_, err := testService.CreatePost(ctx, CreatePost{Content: genPostContent()})
+		_, err := testService.CreatePost(ctx, CreatePost{Content: randString(10)})
 		assert.EqualError(t, err, "unauthenticated")
 	})
 
 	t.Run("ok", func(t *testing.T) {
 		asUser := ContextWithUser(ctx, genUser(t).Identity())
-		got, err := testService.CreatePost(asUser, CreatePost{Content: genPostContent()})
+		got, err := testService.CreatePost(asUser, CreatePost{Content: randString(10)})
 		assert.NoError(t, err)
 		assert.NotZero(t, got)
 	})
@@ -40,7 +40,7 @@ func TestService_CreatePost(t *testing.T) {
 
 		want := 5
 		for i := 0; i < want; i++ {
-			got, err := testService.CreatePost(asUser, CreatePost{Content: genPostContent()})
+			got, err := testService.CreatePost(asUser, CreatePost{Content: randString(10)})
 			assert.NoError(t, err)
 			assert.NotZero(t, got)
 		}
@@ -60,7 +60,7 @@ func TestService_CreatePost(t *testing.T) {
 		assert.NoError(t, err)
 
 		asFollowed := ContextWithUser(ctx, followed.Identity())
-		post, err := testService.CreatePost(asFollowed, CreatePost{Content: genPostContent()})
+		post, err := testService.CreatePost(asFollowed, CreatePost{Content: randString(10)})
 		assert.NoError(t, err)
 
 		// The post should have been added to the author's timeline.
@@ -154,7 +154,7 @@ func genPost(t *testing.T, userID string) Post {
 	ctx := context.Background()
 	in := CreatePost{
 		userID:  userID,
-		Content: genPostContent(),
+		Content: randString(10),
 	}
 	inserted, err := testService.Store.CreatePost(ctx, in)
 	assert.NoError(t, err)
@@ -165,8 +165,4 @@ func genPost(t *testing.T, userID string) Post {
 		CreatedAt: inserted.CreatedAt,
 		UpdatedAt: inserted.CreatedAt,
 	}
-}
-
-func genPostContent() string {
-	return randString(10)
 }

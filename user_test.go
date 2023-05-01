@@ -45,7 +45,7 @@ func TestService_User(t *testing.T) {
 	})
 
 	t.Run("not_found", func(t *testing.T) {
-		_, err := testService.User(ctx, RetrieveUser{Username: genUsername()})
+		_, err := testService.User(ctx, RetrieveUser{Username: randString(10)})
 		assert.EqualError(t, err, "user not found")
 	})
 
@@ -97,7 +97,7 @@ func genUser(t *testing.T, override ...func(in *CreateUser)) User {
 	ctx := context.Background()
 	in := CreateUser{
 		Email:    genEmail(),
-		Username: genUsername(),
+		Username: randString(10),
 	}
 	for _, fn := range override {
 		fn(&in)
@@ -116,8 +116,4 @@ func genUser(t *testing.T, override ...func(in *CreateUser)) User {
 
 func genEmail() string {
 	return randString(10) + "@example.org"
-}
-
-func genUsername() string {
-	return randString(10)
 }

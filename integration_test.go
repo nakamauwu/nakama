@@ -89,9 +89,9 @@ func setupDB(cockroach *dockertest.Resource, retry func(op func() error) error) 
 	})
 }
 
-var letterRunes = []rune("abcdefghijklmnopqrstuvwxyz")
-
 func randString(n int) string {
+	letterRunes := []rune("abcdefghijklmnopqrstuvwxyz")
+
 	r := mathrand.New(mathrand.NewSource(time.Now().UnixNano()))
 	b := make([]rune, n)
 	for i := range b {

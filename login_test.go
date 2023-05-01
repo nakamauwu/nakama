@@ -27,7 +27,7 @@ func TestService_Login(t *testing.T) {
 	})
 
 	t.Run("username_taken", func(t *testing.T) {
-		sameUsername := genUsername()
+		sameUsername := randString(10)
 		_, err := testService.Login(ctx, Login{Email: genEmail(), Username: ptr(sameUsername)})
 		assert.NoError(t, err)
 
@@ -37,7 +37,7 @@ func TestService_Login(t *testing.T) {
 
 	t.Run("ok", func(t *testing.T) {
 		email := genEmail()
-		got, err := testService.Login(ctx, Login{Email: email, Username: ptr(genUsername())})
+		got, err := testService.Login(ctx, Login{Email: email, Username: ptr(randString(10))})
 		assert.NoError(t, err)
 		assert.NotZero(t, got)
 		assert.Equal(t, email, got.Email)
@@ -49,7 +49,7 @@ func TestService_Login(t *testing.T) {
 
 	t.Run("lowercase_email", func(t *testing.T) {
 		email := genEmail()
-		got, err := testService.Login(ctx, Login{Email: strings.ToUpper(email), Username: ptr(genUsername())})
+		got, err := testService.Login(ctx, Login{Email: strings.ToUpper(email), Username: ptr(randString(10))})
 		assert.NoError(t, err)
 		assert.Equal(t, strings.ToLower(email), got.Email)
 

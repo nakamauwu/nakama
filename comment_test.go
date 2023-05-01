@@ -38,7 +38,7 @@ func TestService_CreateComment(t *testing.T) {
 	t.Run("unauthenticated", func(t *testing.T) {
 		_, err := testService.CreateComment(ctx, CreateComment{
 			PostID:  genID(),
-			Content: genCommentContent(),
+			Content: randString(10),
 		})
 		assert.EqualError(t, err, "unauthenticated")
 	})
@@ -47,7 +47,7 @@ func TestService_CreateComment(t *testing.T) {
 		asUser := ContextWithUser(ctx, genUser(t).Identity())
 		_, err := testService.CreateComment(asUser, CreateComment{
 			PostID:  genID(),
-			Content: genCommentContent(),
+			Content: randString(10),
 		})
 		assert.EqualError(t, err, "post not found")
 	})
@@ -58,7 +58,7 @@ func TestService_CreateComment(t *testing.T) {
 		post := genPost(t, usr.ID)
 		got, err := testService.CreateComment(asUser, CreateComment{
 			PostID:  post.ID,
-			Content: genCommentContent(),
+			Content: randString(10),
 		})
 		assert.NoError(t, err)
 		assert.NotZero(t, got)
@@ -102,7 +102,7 @@ func genComment(t *testing.T, userID, postID string) Comment {
 
 	in := CreateComment{
 		PostID:  postID,
-		Content: genCommentContent(),
+		Content: randString(10),
 
 		userID: userID,
 	}
@@ -116,8 +116,4 @@ func genComment(t *testing.T, userID, postID string) Comment {
 		CreatedAt: inserted.CreatedAt,
 		UpdatedAt: inserted.CreatedAt,
 	}
-}
-
-func genCommentContent() string {
-	return randString(10)
 }
