@@ -28,10 +28,8 @@ func (h *handler) createTimelineItem(w http.ResponseWriter, r *http.Request) {
 	var closeFuncs []func() error
 
 	defer func() {
-		if closeFuncs != nil {
-			for _, f := range closeFuncs {
-				f()
-			}
+		for _, f := range closeFuncs {
+			_ = f()
 		}
 	}()
 
