@@ -195,18 +195,7 @@ func (svc *Service) Timeline(ctx context.Context) ([]Post, error) {
 		return nil, errs.Unauthenticated
 	}
 
-	pp, err := svc.Store.Timeline(ctx, user.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, p := range pp {
-		for _, m := range p.Media {
-			svc.Logger.Info("media", "kind", m.Kind, "image", *m.AsImage)
-		}
-	}
-
-	return pp, nil
+	return svc.Store.Timeline(ctx, user.ID)
 }
 
 func (svc *Service) Posts(ctx context.Context, in ListPosts) ([]Post, error) {
