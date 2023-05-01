@@ -403,14 +403,22 @@ func (s *Service) UpdateUser(ctx context.Context, params UpdateUserParams) error
 
 // UpdateAvatar of the authenticated user returning the new avatar URL.
 // Please limit the reader before hand using MaxAvatarBytes.
-func (s *Service) UpdateAvatar(ctx context.Context, r io.Reader) (string, error) {
+func (s *Service) UpdateAvatar(ctx context.Context, r io.ReadSeeker) (string, error) {
 	uid, ok := ctx.Value(KeyAuthUserID).(string)
 	if !ok {
 		return "", ErrUnauthenticated
 	}
 
-	// r = io.LimitReader(r, MaxAvatarBytes)
-	img, format, err := image.Decode(r)
+	ct, err := detectContentType(r)
+	if err != nil {
+		return "", fmt.Errorf("update avatar: detect content type: %w", err)
+	}
+
+	if ct != "image/png" && ct != "image/jpeg" {
+		return "", ErrUnsupportedAvatarFormat
+	}
+
+	img, err := imaging.Decode(io.LimitReader(r, MaxAvatarBytes), imaging.AutoOrientation(true))
 	if err == image.ErrFormat {
 		return "", ErrUnsupportedAvatarFormat
 	}
@@ -419,13 +427,9 @@ func (s *Service) UpdateAvatar(ctx context.Context, r io.Reader) (string, error)
 		return "", fmt.Errorf("could not read avatar: %w", err)
 	}
 
-	if format != "png" && format != "jpeg" {
-		return "", ErrUnsupportedAvatarFormat
-	}
-
 	buf := &bytes.Buffer{}
 	img = imaging.Fill(img, 400, 400, imaging.Center, imaging.CatmullRom)
-	if format == "png" {
+	if ct == "image/png" {
 		err = png.Encode(buf, img)
 	} else {
 		err = jpeg.Encode(buf, img, nil)
@@ -439,13 +443,13 @@ func (s *Service) UpdateAvatar(ctx context.Context, r io.Reader) (string, error)
 		return "", fmt.Errorf("could not generate avatar filename: %w", err)
 	}
 
-	if format == "png" {
+	if ct == "image/png" {
 		avatarFileName += ".png"
 	} else {
 		avatarFileName += ".jpg"
 	}
 
-	err = s.Store.Store(ctx, AvatarsBucket, avatarFileName, buf.Bytes(), storage.StoreWithContentType("image/"+format))
+	err = s.Store.Store(ctx, AvatarsBucket, avatarFileName, buf.Bytes(), storage.StoreWithContentType(ct))
 	if err != nil {
 		return "", fmt.Errorf("could not store avatar file: %w", err)
 	}
@@ -482,14 +486,22 @@ func (s *Service) UpdateAvatar(ctx context.Context, r io.Reader) (string, error)
 
 // UpdateCover of the authenticated user returning the new cover URL.
 // Please limit the reader before hand using MaxCoverBytes.
-func (s *Service) UpdateCover(ctx context.Context, r io.Reader) (string, error) {
+func (s *Service) UpdateCover(ctx context.Context, r io.ReadSeeker) (string, error) {
 	uid, ok := ctx.Value(KeyAuthUserID).(string)
 	if !ok {
 		return "", ErrUnauthenticated
 	}
 
-	// r = io.LimitReader(r, MaxCoverBytes)
-	img, format, err := image.Decode(r)
+	ct, err := detectContentType(r)
+	if err != nil {
+		return "", fmt.Errorf("update cover: detect content type: %w", err)
+	}
+
+	if ct != "image/png" && ct != "image/jpeg" {
+		return "", ErrUnsupportedAvatarFormat
+	}
+
+	img, err := imaging.Decode(io.LimitReader(r, MaxCoverBytes), imaging.AutoOrientation(true))
 	if err == image.ErrFormat {
 		return "", ErrUnsupportedCoverFormat
 	}
@@ -498,13 +510,9 @@ func (s *Service) UpdateCover(ctx context.Context, r io.Reader) (string, error) 
 		return "", fmt.Errorf("could not read cover: %w", err)
 	}
 
-	if format != "png" && format != "jpeg" {
-		return "", ErrUnsupportedCoverFormat
-	}
-
 	buf := &bytes.Buffer{}
 	img = imaging.CropCenter(img, 2560, 423)
-	if format == "png" {
+	if ct == "image/png" {
 		err = png.Encode(buf, img)
 	} else {
 		err = jpeg.Encode(buf, img, nil)
@@ -518,13 +526,13 @@ func (s *Service) UpdateCover(ctx context.Context, r io.Reader) (string, error) 
 		return "", fmt.Errorf("could not generate cover filename: %w", err)
 	}
 
-	if format == "png" {
+	if ct == "image/png" {
 		coverFileName += ".png"
 	} else {
 		coverFileName += ".jpg"
 	}
 
-	err = s.Store.Store(ctx, CoversBucket, coverFileName, buf.Bytes(), storage.StoreWithContentType("image/"+format))
+	err = s.Store.Store(ctx, CoversBucket, coverFileName, buf.Bytes(), storage.StoreWithContentType(ct))
 	if err != nil {
 		return "", fmt.Errorf("could not store cover file: %w", err)
 	}

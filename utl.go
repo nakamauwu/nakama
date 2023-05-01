@@ -5,6 +5,9 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"io"
+	"mime"
+	"net/http"
 	"net/url"
 	"regexp"
 	"strings"
@@ -173,6 +176,28 @@ func decodeSimpleCursor(s string) (string, error) {
 	}
 
 	return string(b), nil
+}
+
+func detectContentType(r io.ReadSeeker) (string, error) {
+	// http.DetectContentType uses at most 512 bytes to make its decision.
+	h := make([]byte, 512)
+	_, err := r.Read(h)
+	if err != nil {
+		return "", fmt.Errorf("detect content type: read head: %w", err)
+	}
+
+	// Reset the reader so it can be used again.
+	_, err = r.Seek(0, io.SeekStart)
+	if err != nil {
+		return "", fmt.Errorf("detect content type: seek to start: %w", err)
+	}
+
+	mt, _, err := mime.ParseMediaType(http.DetectContentType(h))
+	if err != nil {
+		return "", fmt.Errorf("detect content type: %w", err)
+	}
+
+	return mt, nil
 }
 
 func ptrString(v string) *string {

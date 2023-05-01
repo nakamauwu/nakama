@@ -44,7 +44,7 @@ type Service interface {
 	TogglePostReaction(ctx context.Context, postID string, in nakama.ReactionInput) ([]nakama.Reaction, error)
 	TogglePostSubscription(ctx context.Context, postID string) (nakama.ToggleSubscriptionOutput, error)
 
-	CreateTimelineItem(ctx context.Context, content string, spoilerOf *string, nsfw bool, media []io.Reader) (nakama.TimelineItem, error)
+	CreateTimelineItem(ctx context.Context, content string, spoilerOf *string, nsfw bool, media []io.ReadSeeker) (nakama.TimelineItem, error)
 	Timeline(ctx context.Context, last uint64, before *string) (nakama.Timeline, error)
 	TimelineItemStream(ctx context.Context) (<-chan nakama.TimelineItem, error)
 	DeleteTimelineItem(ctx context.Context, timelineItemID string) error
@@ -53,8 +53,8 @@ type Service interface {
 	Usernames(ctx context.Context, startingWith string, first uint64, after *string) (nakama.Usernames, error)
 	User(ctx context.Context, username string) (nakama.UserProfile, error)
 	UpdateUser(ctx context.Context, params nakama.UpdateUserParams) error
-	UpdateAvatar(ctx context.Context, r io.Reader) (string, error)
-	UpdateCover(ctx context.Context, r io.Reader) (string, error)
+	UpdateAvatar(ctx context.Context, r io.ReadSeeker) (string, error)
+	UpdateCover(ctx context.Context, r io.ReadSeeker) (string, error)
 	ToggleFollow(ctx context.Context, username string) (nakama.ToggleFollowOutput, error)
 	Followers(ctx context.Context, username string, first uint64, after *string) (nakama.UserProfiles, error)
 	Followees(ctx context.Context, username string, first uint64, after *string) (nakama.UserProfiles, error)

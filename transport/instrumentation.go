@@ -226,7 +226,7 @@ func (mw *ServiceWithInstrumentation) TogglePostSubscription(ctx context.Context
 	return mw.Next.TogglePostSubscription(ctx, postID)
 }
 
-func (mw *ServiceWithInstrumentation) CreateTimelineItem(ctx context.Context, content string, spoilerOf *string, nsfw bool, media []io.Reader) (nakama.TimelineItem, error) {
+func (mw *ServiceWithInstrumentation) CreateTimelineItem(ctx context.Context, content string, spoilerOf *string, nsfw bool, media []io.ReadSeeker) (nakama.TimelineItem, error) {
 	defer func(begin time.Time) {
 		reqDur_CreateTimelineItem.Observe(float64(time.Since(begin)) / float64(time.Millisecond))
 	}(time.Now())
@@ -282,14 +282,14 @@ func (mw *ServiceWithInstrumentation) UpdateUser(ctx context.Context, params nak
 	return mw.Next.UpdateUser(ctx, params)
 }
 
-func (mw *ServiceWithInstrumentation) UpdateAvatar(ctx context.Context, r io.Reader) (string, error) {
+func (mw *ServiceWithInstrumentation) UpdateAvatar(ctx context.Context, r io.ReadSeeker) (string, error) {
 	defer func(begin time.Time) {
 		reqDur_UpdateAvatar.Observe(float64(time.Since(begin)) / float64(time.Millisecond))
 	}(time.Now())
 	return mw.Next.UpdateAvatar(ctx, r)
 }
 
-func (mw *ServiceWithInstrumentation) UpdateCover(ctx context.Context, r io.Reader) (string, error) {
+func (mw *ServiceWithInstrumentation) UpdateCover(ctx context.Context, r io.ReadSeeker) (string, error) {
 	defer func(begin time.Time) {
 		reqDur_UpdateCover.Observe(float64(time.Since(begin)) / float64(time.Millisecond))
 	}(time.Now())

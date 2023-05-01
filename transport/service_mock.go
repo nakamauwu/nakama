@@ -40,7 +40,7 @@ var _ Service = &ServiceMock{}
 //			CreateCommentFunc: func(ctx context.Context, postID string, content string) (nakama.Comment, error) {
 //				panic("mock out the CreateComment method")
 //			},
-//			CreateTimelineItemFunc: func(ctx context.Context, content string, spoilerOf *string, nsfw bool, media []io.Reader) (nakama.TimelineItem, error) {
+//			CreateTimelineItemFunc: func(ctx context.Context, content string, spoilerOf *string, nsfw bool, media []io.ReadSeeker) (nakama.TimelineItem, error) {
 //				panic("mock out the CreateTimelineItem method")
 //			},
 //			DeleteCommentFunc: func(ctx context.Context, commentID string) error {
@@ -115,10 +115,10 @@ var _ Service = &ServiceMock{}
 //			TokenFunc: func(ctx context.Context) (nakama.TokenOutput, error) {
 //				panic("mock out the Token method")
 //			},
-//			UpdateAvatarFunc: func(ctx context.Context, r io.Reader) (string, error) {
+//			UpdateAvatarFunc: func(ctx context.Context, r io.ReadSeeker) (string, error) {
 //				panic("mock out the UpdateAvatar method")
 //			},
-//			UpdateCoverFunc: func(ctx context.Context, r io.Reader) (string, error) {
+//			UpdateCoverFunc: func(ctx context.Context, r io.ReadSeeker) (string, error) {
 //				panic("mock out the UpdateCover method")
 //			},
 //			UpdateUserFunc: func(ctx context.Context, params nakama.UpdateUserParams) error {
@@ -162,7 +162,7 @@ type ServiceMock struct {
 	CreateCommentFunc func(ctx context.Context, postID string, content string) (nakama.Comment, error)
 
 	// CreateTimelineItemFunc mocks the CreateTimelineItem method.
-	CreateTimelineItemFunc func(ctx context.Context, content string, spoilerOf *string, nsfw bool, media []io.Reader) (nakama.TimelineItem, error)
+	CreateTimelineItemFunc func(ctx context.Context, content string, spoilerOf *string, nsfw bool, media []io.ReadSeeker) (nakama.TimelineItem, error)
 
 	// DeleteCommentFunc mocks the DeleteComment method.
 	DeleteCommentFunc func(ctx context.Context, commentID string) error
@@ -237,10 +237,10 @@ type ServiceMock struct {
 	TokenFunc func(ctx context.Context) (nakama.TokenOutput, error)
 
 	// UpdateAvatarFunc mocks the UpdateAvatar method.
-	UpdateAvatarFunc func(ctx context.Context, r io.Reader) (string, error)
+	UpdateAvatarFunc func(ctx context.Context, r io.ReadSeeker) (string, error)
 
 	// UpdateCoverFunc mocks the UpdateCover method.
-	UpdateCoverFunc func(ctx context.Context, r io.Reader) (string, error)
+	UpdateCoverFunc func(ctx context.Context, r io.ReadSeeker) (string, error)
 
 	// UpdateUserFunc mocks the UpdateUser method.
 	UpdateUserFunc func(ctx context.Context, params nakama.UpdateUserParams) error
@@ -314,7 +314,7 @@ type ServiceMock struct {
 			// Nsfw is the nsfw argument value.
 			Nsfw bool
 			// Media is the media argument value.
-			Media []io.Reader
+			Media []io.ReadSeeker
 		}
 		// DeleteComment holds details about calls to the DeleteComment method.
 		DeleteComment []struct {
@@ -497,14 +497,14 @@ type ServiceMock struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// R is the r argument value.
-			R io.Reader
+			R io.ReadSeeker
 		}
 		// UpdateCover holds details about calls to the UpdateCover method.
 		UpdateCover []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// R is the r argument value.
-			R io.Reader
+			R io.ReadSeeker
 		}
 		// UpdateUser holds details about calls to the UpdateUser method.
 		UpdateUser []struct {
@@ -838,13 +838,13 @@ func (mock *ServiceMock) CreateCommentCalls() []struct {
 }
 
 // CreateTimelineItem calls CreateTimelineItemFunc.
-func (mock *ServiceMock) CreateTimelineItem(ctx context.Context, content string, spoilerOf *string, nsfw bool, media []io.Reader) (nakama.TimelineItem, error) {
+func (mock *ServiceMock) CreateTimelineItem(ctx context.Context, content string, spoilerOf *string, nsfw bool, media []io.ReadSeeker) (nakama.TimelineItem, error) {
 	callInfo := struct {
 		Ctx       context.Context
 		Content   string
 		SpoilerOf *string
 		Nsfw      bool
-		Media     []io.Reader
+		Media     []io.ReadSeeker
 	}{
 		Ctx:       ctx,
 		Content:   content,
@@ -874,14 +874,14 @@ func (mock *ServiceMock) CreateTimelineItemCalls() []struct {
 	Content   string
 	SpoilerOf *string
 	Nsfw      bool
-	Media     []io.Reader
+	Media     []io.ReadSeeker
 } {
 	var calls []struct {
 		Ctx       context.Context
 		Content   string
 		SpoilerOf *string
 		Nsfw      bool
-		Media     []io.Reader
+		Media     []io.ReadSeeker
 	}
 	mock.lockCreateTimelineItem.RLock()
 	calls = mock.calls.CreateTimelineItem
@@ -1860,10 +1860,10 @@ func (mock *ServiceMock) TokenCalls() []struct {
 }
 
 // UpdateAvatar calls UpdateAvatarFunc.
-func (mock *ServiceMock) UpdateAvatar(ctx context.Context, r io.Reader) (string, error) {
+func (mock *ServiceMock) UpdateAvatar(ctx context.Context, r io.ReadSeeker) (string, error) {
 	callInfo := struct {
 		Ctx context.Context
-		R   io.Reader
+		R   io.ReadSeeker
 	}{
 		Ctx: ctx,
 		R:   r,
@@ -1887,11 +1887,11 @@ func (mock *ServiceMock) UpdateAvatar(ctx context.Context, r io.Reader) (string,
 //	len(mockedService.UpdateAvatarCalls())
 func (mock *ServiceMock) UpdateAvatarCalls() []struct {
 	Ctx context.Context
-	R   io.Reader
+	R   io.ReadSeeker
 } {
 	var calls []struct {
 		Ctx context.Context
-		R   io.Reader
+		R   io.ReadSeeker
 	}
 	mock.lockUpdateAvatar.RLock()
 	calls = mock.calls.UpdateAvatar
@@ -1900,10 +1900,10 @@ func (mock *ServiceMock) UpdateAvatarCalls() []struct {
 }
 
 // UpdateCover calls UpdateCoverFunc.
-func (mock *ServiceMock) UpdateCover(ctx context.Context, r io.Reader) (string, error) {
+func (mock *ServiceMock) UpdateCover(ctx context.Context, r io.ReadSeeker) (string, error) {
 	callInfo := struct {
 		Ctx context.Context
-		R   io.Reader
+		R   io.ReadSeeker
 	}{
 		Ctx: ctx,
 		R:   r,
@@ -1927,11 +1927,11 @@ func (mock *ServiceMock) UpdateCover(ctx context.Context, r io.Reader) (string, 
 //	len(mockedService.UpdateCoverCalls())
 func (mock *ServiceMock) UpdateCoverCalls() []struct {
 	Ctx context.Context
-	R   io.Reader
+	R   io.ReadSeeker
 } {
 	var calls []struct {
 		Ctx context.Context
-		R   io.Reader
+		R   io.ReadSeeker
 	}
 	mock.lockUpdateCover.RLock()
 	calls = mock.calls.UpdateCover

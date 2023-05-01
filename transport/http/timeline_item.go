@@ -14,16 +14,26 @@ import (
 )
 
 type createTimelineItemInput struct {
-	Content   string      `json:"content"`
-	SpoilerOf *string     `json:"spoilerOf"`
-	NSFW      bool        `json:"nsfw"`
-	Media     []io.Reader `json:"-"`
+	Content   string          `json:"content"`
+	SpoilerOf *string         `json:"spoilerOf"`
+	NSFW      bool            `json:"nsfw"`
+	Media     []io.ReadSeeker `json:"-"`
 }
 
 func (h *handler) createTimelineItem(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	var in createTimelineItemInput
+
+	var closeFuncs []func() error
+
+	defer func() {
+		if closeFuncs != nil {
+			for _, f := range closeFuncs {
+				f()
+			}
+		}
+	}()
 
 	mediatype, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
 	if err == nil && strings.Contains(strings.ToLower(mediatype), "multipart/form-data") {
@@ -47,7 +57,7 @@ func (h *handler) createTimelineItem(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 
-				defer f.Close()
+				closeFuncs = append(closeFuncs, f.Close)
 
 				in.Media = append(in.Media, f)
 			}

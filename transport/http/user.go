@@ -1,8 +1,10 @@
 package http
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 
@@ -90,10 +92,13 @@ func (h *handler) updateUser(w http.ResponseWriter, r *http.Request) {
 func (h *handler) updateAvatar(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	reader := http.MaxBytesReader(w, r.Body, nakama.MaxAvatarBytes)
-	defer reader.Close()
+	b, err := io.ReadAll(http.MaxBytesReader(w, r.Body, nakama.MaxAvatarBytes))
+	if err != nil {
+		h.respondErr(w, errBadRequest)
+		return
+	}
 
-	avatarURL, err := h.svc.UpdateAvatar(r.Context(), reader)
+	avatarURL, err := h.svc.UpdateAvatar(r.Context(), bytes.NewReader(b))
 	if err != nil {
 		h.respondErr(w, err)
 		return
@@ -105,10 +110,13 @@ func (h *handler) updateAvatar(w http.ResponseWriter, r *http.Request) {
 func (h *handler) updateCover(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	reader := http.MaxBytesReader(w, r.Body, nakama.MaxCoverBytes)
-	defer reader.Close()
+	b, err := io.ReadAll(http.MaxBytesReader(w, r.Body, nakama.MaxAvatarBytes))
+	if err != nil {
+		h.respondErr(w, errBadRequest)
+		return
+	}
 
-	coverURL, err := h.svc.UpdateCover(r.Context(), reader)
+	coverURL, err := h.svc.UpdateCover(r.Context(), bytes.NewReader(b))
 	if err != nil {
 		h.respondErr(w, err)
 		return

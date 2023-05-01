@@ -12,10 +12,12 @@ import (
 	"image/png"
 	"io"
 	"strings"
+	"sync"
 	"time"
 	"unicode/utf8"
 
 	"github.com/cockroachdb/cockroach-go/v2/crdb"
+	"github.com/disintegration/imaging"
 	"github.com/go-kit/log/level"
 	"github.com/lib/pq"
 	gonanoid "github.com/matoous/go-nanoid/v2"
@@ -49,7 +51,7 @@ type TimelineItem struct {
 }
 
 // CreateTimelineItem publishes a post to the user timeline and fan-outs it to his followers.
-func (s *Service) CreateTimelineItem(ctx context.Context, content string, spoilerOf *string, nsfw bool, media []io.Reader) (TimelineItem, error) {
+func (s *Service) CreateTimelineItem(ctx context.Context, content string, spoilerOf *string, nsfw bool, media []io.ReadSeeker) (TimelineItem, error) {
 	var ti TimelineItem
 	uid, ok := ctx.Value(KeyAuthUserID).(string)
 	if !ok {
@@ -71,57 +73,74 @@ func (s *Service) CreateTimelineItem(ctx context.Context, content string, spoile
 	tags := collectTags(content)
 
 	var files map[string]struct {
-		format   string
-		contents []byte
+		contentType string
+		contents    []byte
 	}
 
 	if len(media) != 0 {
+		g := errgroup.Group{}
+		var mu sync.Mutex
 		files = map[string]struct {
-			format   string
-			contents []byte
+			contentType string
+			contents    []byte
 		}{}
 		for _, mediaItem := range media {
-			img, format, err := image.Decode(io.LimitReader(mediaItem, MaxMediaItemBytes))
-			if err == image.ErrFormat {
-				return ti, ErrUnsupportedMediaItemFormat
-			}
+			mediaItem := mediaItem
+			g.Go(func() error {
+				ct, err := detectContentType(mediaItem)
+				if err != nil {
+					return fmt.Errorf("create timeline item: detect media content type: %w", err)
+				}
 
-			if err != nil {
-				return ti, fmt.Errorf("could not image decode post media item: %w", err)
-			}
+				if ct != "image/png" && ct != "image/jpeg" {
+					return ErrUnsupportedAvatarFormat
+				}
 
-			if format != "png" && format != "jpeg" {
-				return ti, ErrUnsupportedMediaItemFormat
-			}
+				img, err := imaging.Decode(io.LimitReader(mediaItem, MaxMediaItemBytes), imaging.AutoOrientation(true))
+				if err == image.ErrFormat {
+					return ErrUnsupportedMediaItemFormat
+				}
 
-			buf := &bytes.Buffer{}
-			if format == "png" {
-				err = png.Encode(buf, img)
-			} else {
-				err = jpeg.Encode(buf, img, nil)
-			}
-			if err != nil {
-				return ti, fmt.Errorf("could not encode post media item: %w", err)
-			}
+				if err != nil {
+					return fmt.Errorf("could not image decode post media item: %w", err)
+				}
 
-			fileName, err := gonanoid.New()
-			if err != nil {
-				return ti, fmt.Errorf("could not generate media item filename: %w", err)
-			}
+				buf := &bytes.Buffer{}
+				if ct == "image/png" {
+					err = png.Encode(buf, img)
+				} else {
+					err = jpeg.Encode(buf, img, nil)
+				}
+				if err != nil {
+					return fmt.Errorf("could not encode post media item: %w", err)
+				}
 
-			if format == "png" {
-				fileName += ".png"
-			} else {
-				fileName += ".jpg"
-			}
+				fileName, err := gonanoid.New()
+				if err != nil {
+					return fmt.Errorf("could not generate media item filename: %w", err)
+				}
 
-			files[fileName] = struct {
-				format   string
-				contents []byte
-			}{
-				format:   format,
-				contents: buf.Bytes(),
-			}
+				if ct == "image/png" {
+					fileName += ".png"
+				} else {
+					fileName += ".jpg"
+				}
+
+				mu.Lock()
+				files[fileName] = struct {
+					contentType string
+					contents    []byte
+				}{
+					contentType: ct,
+					contents:    buf.Bytes(),
+				}
+				mu.Unlock()
+				return nil
+			})
+		}
+
+		if err := g.Wait(); err != nil {
+			return ti, err
 		}
 	}
 
@@ -142,7 +161,7 @@ func (s *Service) CreateTimelineItem(ctx context.Context, content string, spoile
 			fileName := fileName
 			data := data
 			g.Go(func() error {
-				err := s.Store.Store(gctx, MediaBucket, fileName, data.contents, storage.StoreWithContentType("image/"+data.format))
+				err := s.Store.Store(gctx, MediaBucket, fileName, data.contents, storage.StoreWithContentType(data.contentType))
 				if err != nil {
 					return fmt.Errorf("could not store post media item: %w", err)
 				}
