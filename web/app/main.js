@@ -247,25 +247,37 @@ function markNotificationAsRead(notificationID) {
 }
 
 const now = new Date()
-const isHalloween = now.getMonth() === 9 && now.getDate() === 31
+const isHalloween = now.getMonth() + 1 === 10 && now.getDate() === 31
 if (isHalloween) {
     document.documentElement.classList.add("halloween")
 }
 
-const isChristmas = now.getMonth() === 11
+const isChristmas = now.getMonth() + 1 === 12
 if (isChristmas) {
-    const padoru = document.createElement("img")
-    padoru.src = "/images/padoru.gif"
-    padoru.id = "padoru"
+    animateImage("/images/padoru.gif")
+}
+
+const isAnniversary = now.getMonth() + 1 === 5 && now.getDate() === 4
+if (isAnniversary) {
+    animateImage("/images/trunks_party.gif")
+}
+
+/**
+ * @param {string} src
+ */
+function animateImage(src) {
+    const img = document.createElement("img")
+    img.src = src
+    img.id = "animateimage"
     const animation = document.createElement("style")
     animation.textContent = `
-        @keyframes padoru {
+        @keyframes animateimage {
             to {
                 transform: translateX(calc(100vw + 3rem));
             }
         }
     `
-    padoru.style.cssText = `
+    img.style.cssText = `
         --y: 50%;
         --size: 3rem;
 
@@ -277,18 +289,18 @@ if (isChristmas) {
         user-select: none;
         touch-action: none;
 
-        animation: padoru linear 5s;
+        animation: animateimage linear 5s;
     `
-    padoru.addEventListener("load", () => {
+    img.addEventListener("load", () => {
         document.head.appendChild(animation)
-        document.body.appendChild(padoru)
+        document.body.appendChild(img)
 
-        padoru.addEventListener("animationend", () => {
-            padoru.style.animationName = "none"
-            padoru.style.setProperty("--y", randNumberBetween(5, 95) + "%")
+        img.addEventListener("animationend", () => {
+            img.style.animationName = "none"
+            img.style.setProperty("--y", randNumberBetween(5, 95) + "%")
             requestAnimationFrame(() => {
-                padoru.offsetHeight
-                padoru.style.animationName = "padoru"
+                img.offsetHeight
+                img.style.animationName = "animateimage"
             })
         })
     }, { once: true })
