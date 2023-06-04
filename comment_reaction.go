@@ -64,7 +64,7 @@ func (svc *Service) CreateCommentReaction(ctx context.Context, in CommentReactio
 		reactionsCount.Inc(in.Reaction)
 
 		_, err = svc.Store.UpdateComment(ctx, UpdateComment{
-			ID:             in.CommentID,
+			CommentID:      in.CommentID,
 			ReactionsCount: &reactionsCount,
 		})
 		return err
@@ -106,7 +106,7 @@ func (svc *Service) DeleteCommentReaction(ctx context.Context, in CommentReactio
 		reactionsCount.Dec(in.Reaction)
 
 		_, err = svc.Store.UpdateComment(ctx, UpdateComment{
-			ID:             in.CommentID,
+			CommentID:      in.CommentID,
 			ReactionsCount: &reactionsCount,
 		})
 		return err

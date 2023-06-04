@@ -189,19 +189,20 @@ func (s *Store) UserExists(ctx context.Context, in RetrieveUserExists) (bool, er
 func (s *Store) UpdateUser(ctx context.Context, in UpdateUser) (time.Time, error) {
 	const query = `
 		UPDATE users SET
-			   username = COALESCE($1, username)
-			,  avatar_path = COALESCE($2, avatar_path)
-			, avatar_width = COALESCE($3, avatar_width)
-			, avatar_height = COALESCE($4, avatar_height)
-			, posts_count = posts_count + $5
-			, followers_count = followers_count + $6
-			, following_count = following_count + $7
+			   username = COALESCE($2, username)
+			,  avatar_path = COALESCE($3, avatar_path)
+			, avatar_width = COALESCE($4, avatar_width)
+			, avatar_height = COALESCE($5, avatar_height)
+			, posts_count = posts_count + $6
+			, followers_count = followers_count + $7
+			, following_count = following_count + $8
 			, updated_at = now()
-		WHERE id = $8
+		WHERE id = $1
 		RETURNING updated_at
 	`
 	var updatedAt time.Time
 	err := s.db.QueryRow(ctx, query,
+		in.userID,
 		in.Username,
 		in.avatarPath,
 		in.avatarWidth,
@@ -209,7 +210,6 @@ func (s *Store) UpdateUser(ctx context.Context, in UpdateUser) (time.Time, error
 		in.increasePostsCountBy,
 		in.increaseFollowersCountBy,
 		in.increaseFollowingCountBy,
-		in.userID,
 	).Scan(&updatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return updatedAt, ErrUserNotFound

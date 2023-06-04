@@ -171,16 +171,16 @@ func (s *Store) CommentReactionsCount(ctx context.Context, commentID string) (Re
 
 func (s *Store) UpdateComment(ctx context.Context, in UpdateComment) (time.Time, error) {
 	const query = `
-		UPDATE comments
-		SET reactions_count = COALESCE($1, reactions_count)
+		UPDATE comments SET
+			  reactions_count = COALESCE($2, reactions_count)
 			, updated_at = now()
-		WHERE id = $2
+		WHERE id = $1
 		RETURNING updated_at
 	`
 	var updatedAt time.Time
 	row := s.db.QueryRow(ctx, query,
+		in.CommentID,
 		in.ReactionsCount,
-		in.ID,
 	)
 	err := row.Scan(&updatedAt)
 	if err != nil {

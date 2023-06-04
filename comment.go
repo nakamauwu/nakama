@@ -83,7 +83,7 @@ func (in *RetrieveComment) Validate() error {
 }
 
 type UpdateComment struct {
-	ID             string
+	CommentID      string
 	ReactionsCount *ReactionsCount
 }
 
