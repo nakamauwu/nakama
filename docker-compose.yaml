@@ -56,7 +56,7 @@ services:
         loki-url: http://localhost:3100/loki/api/v1/push
 
   cockroach:
-    image: "cockroachdb/cockroach:latest"
+    image: "cockroachdb/cockroach:v22.2.9"
     command: "start-single-node --insecure --log-file-verbosity=NONE --logtostderr=ERROR"
     volumes:
       - "./cockroach-data:/cockroach/cockroach-data"
