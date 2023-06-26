@@ -416,6 +416,19 @@ function MediaScroller({ urls }) {
                 }
 
                 {
+                    const vimeoID = findVimeoID(url)
+                    if (vimeoID !== null) {
+                        items.push(html`<iframe
+                            src="https://player.vimeo.com/video/${vimeoID}?byline=0&portrait=0"
+                            title="Vimeo video player"
+                            frameborder="0"
+                            allow="autoplay; fullscreen; picture-in-picture"
+                            allowfullscreen></iframe>`)
+                        continue
+                    }
+                }
+
+                {
                     const tweetID = findTweetID(url)
                     if (tweetID !== null) {
                         try {
@@ -610,6 +623,25 @@ function findYouTubeID(url) {
     }
 
     return { id, seconds }
+}
+
+/**
+ * @param {URL} url
+ */
+function findVimeoID(url) {
+    if (url.hostname !== "vimeo.com") {
+        return null
+    }
+
+    if (url.pathname.match(/^\/\d+$/)) {
+        return url.pathname.substring(1)
+    }
+
+    if (url.pathname.match(/^\/video\/\d+$/)) {
+        return url.pathname.substring(7)
+    }
+
+    return null
 }
 
 /**
