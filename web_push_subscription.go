@@ -3,8 +3,10 @@ package nakama
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"strings"
 	"sync"
 	"time"
@@ -15,6 +17,10 @@ import (
 const (
 	webPushNoticationSendTimeout = time.Second * 30
 	webPushNoticationContact     = "contact@nakama.social"
+)
+
+var (
+	errWebPushSubscriptionGone = GoneError("web push subscription gone")
 )
 
 func (svc *Service) AddWebPushSubscription(ctx context.Context, sub webpush.Subscription) error {
@@ -97,6 +103,10 @@ func (svc *Service) sendWebPushNotifications(n Notification) {
 			defer wg.Done()
 
 			err := svc.sendWebPushNotification(sub, message, topic)
+			if errors.Is(err, errWebPushSubscriptionGone) {
+				err = svc.deleteWebPushSubscription(ctx, n.UserID, sub)
+			}
+
 			if err != nil {
 				_ = svc.Logger.Log("err", err)
 			}
@@ -121,11 +131,26 @@ func (svc *Service) sendWebPushNotification(sub webpush.Subscription, message []
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
+		// subscription has been removed.
+		if resp.StatusCode == http.StatusGone {
+			return errWebPushSubscriptionGone
+		}
+
 		if b, err := io.ReadAll(resp.Body); err == nil {
 			return fmt.Errorf("web push notification send failed with status code %d: %s", resp.StatusCode, string(b))
 		}
 
 		return fmt.Errorf("web push notification send failed with status code %d", resp.StatusCode)
+	}
+
+	return nil
+}
+
+func (svc *Service) deleteWebPushSubscription(ctx context.Context, userID string, sub webpush.Subscription) error {
+	query := "DELETE FROM user_web_push_subscriptions WHERE user_id = $1 AND sub = $2"
+	_, err := svc.DB.ExecContext(ctx, query, userID, jsonValue{sub})
+	if err != nil {
+		return fmt.Errorf("sql delete user web push subscription: %w", err)
 	}
 
 	return nil
