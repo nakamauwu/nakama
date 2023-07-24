@@ -45,15 +45,9 @@ CREATE TABLE IF NOT EXISTS posts (
     reactions JSONB,
     comments_count INT NOT NULL DEFAULT 0 CHECK (comments_count >= 0),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMP NOT NULL DEFAULT now(),
     INDEX sorted_posts (created_at DESC, id)
 );
-
-ALTER TABLE IF EXISTS posts ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP;
-
-UPDATE posts SET updated_at = created_at WHERE updated_at IS NULL;
-
-ALTER TABLE IF EXISTS posts ALTER COLUMN updated_at SET NOT NULL;
-ALTER TABLE IF EXISTS posts ALTER COLUMN updated_at SET DEFAULT now();
 
 CREATE TABLE IF NOT EXISTS post_reactions (
     user_id UUID NOT NULL REFERENCES users ON DELETE CASCADE,
