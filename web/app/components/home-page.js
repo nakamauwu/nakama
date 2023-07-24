@@ -20,7 +20,9 @@ export default function () {
 
 function HomePage() {
     const [_, setAuth] = useStore(authStore)
-    const [mode, setMode] = useState(/** @type {"timeline"|"posts"} */("posts"))
+    const [mode, setMode] = useState(() => {
+        return localStorage.getItem("home-page-mode") === "timeline" ? "timeline" : "posts"
+    })
     const [posts, setPosts] = useState([])
     const [endCursor, setEndCursor] = useState(null)
     const [fetching, setFetching] = useState(posts.length === 0)
@@ -91,6 +93,10 @@ function HomePage() {
     const onPostsModeClick = () => {
         setMode("posts")
     }
+
+    useEffect(() => {
+        localStorage.setItem("home-page-mode", mode)
+    }, [mode])
 
     useEffect(() => {
         setPosts([])
