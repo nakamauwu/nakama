@@ -24,11 +24,13 @@ function PostItem({ post: initialPost, type }) {
     const [mediaURLs, setMediaURLs] = useState([])
     const [showMenu, setShowMenu] = useState(false)
     const [togglingPostSubscription, setTogglingPostSubscription] = useState(false)
+    const [updating, setUpdating] = useState(false)
     const [removingFromTimeline, setRemovingFromTimeline] = useState(false)
     const [deleting, setDeleting] = useState(false)
     const [displaySpoiler, setDisplaySpoiler] = useState(false)
     const [displayNSFW, setDisplayNSFW] = useState(false)
     const [toast, setToast] = useState(null)
+    const [postCanBeUpdated, setPostCanBeUpdated] = useState(canUpdatePost(post))
 
     const onMenuBtnClick = () => {
         setShowMenu(v => !v)
@@ -53,6 +55,29 @@ function PostItem({ post: initialPost, type }) {
             setToast({ type: "error", content: msg })
         }).finally(() => {
             setTogglingPostSubscription(false)
+        })
+    }
+
+    const onUpdateBtnClick = () => {
+        setUpdating(true)
+
+        const content = prompt(getTranslation("postItem.menu.edit"), post.content)
+        if (content === "" || content === null || content === post.content) {
+            setUpdating(false)
+            return
+        }
+
+        updatePost(post.id, { content }).then(updated => {
+            setPost(p => ({
+                ...p,
+                ...updated,
+            }))
+        }, err => {
+            const msg = getTranslation("postItem.errUpdate") + " " + getTranslation(err.name)
+            console.error(msg)
+            setToast({ type: "error", content: msg })
+        }).finally(() => {
+            setUpdating(false)
         })
     }
 
@@ -110,6 +135,15 @@ function PostItem({ post: initialPost, type }) {
             ...payload,
         }))
     }
+
+    useEffect(() => {
+        const id = setInterval(() => {
+            setPostCanBeUpdated(canUpdatePost(post))
+        }, 1000 * 30) // 30 seconds
+        return () => {
+            clearInterval(id)
+        }
+    }, [post])
 
     useEffect(() => {
         const urls = []
@@ -170,6 +204,14 @@ function PostItem({ post: initialPost, type }) {
                                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g data-name="Layer 2"><g data-name="bell"><rect width="24" height="24" opacity="0"/><path d="M20.52 15.21l-1.8-1.81V8.94a6.86 6.86 0 0 0-5.82-6.88 6.74 6.74 0 0 0-7.62 6.67v4.67l-1.8 1.81A1.64 1.64 0 0 0 4.64 18H8v.34A3.84 3.84 0 0 0 12 22a3.84 3.84 0 0 0 4-3.66V18h3.36a1.64 1.64 0 0 0 1.16-2.79zM14 18.34A1.88 1.88 0 0 1 12 20a1.88 1.88 0 0 1-2-1.66V18h4zM5.51 16l1.18-1.18a2 2 0 0 0 .59-1.42V8.73A4.73 4.73 0 0 1 8.9 5.17 4.67 4.67 0 0 1 12.64 4a4.86 4.86 0 0 1 4.08 4.9v4.5a2 2 0 0 0 .58 1.42L18.49 16z"/></g></g></svg>
                                                 <span>${translate("postItem.menu.susbcribe")}</span>
                                             `}
+                                        </button>
+                                    </li>
+                                ` : null}
+                                ${post.mine && postCanBeUpdated ? html`
+                                    <li class="post-menu-item" role="none">
+                                        <button class="post-menu-btn" role="menuitem" tabindex="-1" .disabled=${updating} @click=${onUpdateBtnClick} @blur=${onMenuWrapperBlur}>
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g data-name="Layer 2"><g data-name="edit"><rect width="24" height="24" opacity="0"/><path d="M19.4 7.34L16.66 4.6A2 2 0 0 0 14 4.53l-9 9a2 2 0 0 0-.57 1.21L4 18.91a1 1 0 0 0 .29.8A1 1 0 0 0 5 20h.09l4.17-.38a2 2 0 0 0 1.21-.57l9-9a1.92 1.92 0 0 0-.07-2.71zM9.08 17.62l-3 .28.27-3L12 9.32l2.7 2.7zM16 10.68L13.32 8l1.95-2L18 8.73z"/></g></g></svg>
+                                            <span>${translate("postItem.menu.edit")}</span>
                                         </button>
                                     </li>
                                 ` : null}
@@ -441,6 +483,7 @@ function MediaScroller({ urls }) {
                                 div.innerHTML = json.html
                                 items.push(html`${div}`)
                                 if ("twttr" in window) {
+                                    // @ts-ignore
                                     window.twttr.widgets.load(div)
                                 }
                                 continue
@@ -584,6 +627,16 @@ function addTwitterWidget() {
 
 // @ts-ignore
 customElements.define("media-scroller", component(MediaScroller, { useShadowDOM: false }))
+
+/**
+ * @param {{createdAt: string|Date}} post
+ * @returns {boolean}
+ */
+function canUpdatePost(post) {
+    const d = new Date(post.createdAt)
+    // post can only be updated if it was created 15 minutes ago
+    return Date.now() - d.getTime() < 15 * 60 * 1000
+}
 
 /**
  * @param {URL} url
@@ -752,4 +805,14 @@ function deleteResource(type, resourceID) {
     }
     return request("DELETE", `/api/${resource}/${encodeURIComponent(resourceID)}`)
         .then(() => void 0)
+}
+
+/**
+ * @param {string} postID
+ * @param {FormData|import("../types.js").UpdatePost} body
+ * @returns {Promise<import("../types.js").UpdatedPost>}
+ */
+function updatePost(postID, body) {
+    return request("PATCH", "/api/posts/" + encodeURIComponent(postID), { body })
+        .then(resp => resp.body)
 }

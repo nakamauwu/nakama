@@ -23,6 +23,7 @@
     "InvalidSpoilerError": "invalid spoiler",
     "PostNotFoundError": "post not found",
     "InvalidUpdatePostParamsError": "invalid update post params",
+    "UpdatePostDeniedError": "update post denied",
     "InvalidCursorError": "invalid cursor",
     "InvalidReactionError": "invalid reaction",
     "InvalidCommentIDError": "invalid comment ID",
@@ -102,6 +103,7 @@
     },
     "postItem": {
         "errToggleSubscription": "could not toggle post subscription:",
+        "errUpdate": "could not update post:",
         "errRemove": "could not remove timeline item:",
         "errDelete": {
             "fmt": "could not delete {{ type }}",
@@ -115,6 +117,7 @@
             "title": "More",
             "unsusbcribe": "Silence notifications",
             "susbcribe": "Subscribe to notifications",
+            "edit": "Edit",
             "remove": "Remove from timeline",
             "delete": "Delete"
         },

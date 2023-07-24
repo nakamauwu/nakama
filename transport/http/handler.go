@@ -56,6 +56,7 @@ func New(svc transport.Service, oauthProviders []OauthProvider, origin *url.URL,
 	api.HandleFunc("GET", "/api/users/:username/posts", h.userPosts)
 	api.HandleFunc("GET", "/api/posts", h.posts)
 	api.HandleFunc("GET", "/api/posts/:post_id", h.post)
+	api.HandleFunc("PATCH", "/api/posts/:post_id", h.updatePost)
 	api.HandleFunc("DELETE", "/api/posts/:post_id", h.deletePost)
 	api.HandleFunc("POST", "/api/posts/:post_id/toggle_reaction", h.togglePostReaction)
 	api.HandleFunc("POST", "/api/posts/:post_id/toggle_subscription", h.togglePostSubscription)

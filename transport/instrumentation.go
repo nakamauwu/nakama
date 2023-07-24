@@ -35,6 +35,7 @@ var (
 	reqDur_Posts                   = promauto.NewHistogram(prometheus.HistogramOpts{Name: "posts_request_duration_ms"})
 	reqDur_PostStream              = promauto.NewHistogram(prometheus.HistogramOpts{Name: "post_stream_request_duration_ms"})
 	reqDur_Post                    = promauto.NewHistogram(prometheus.HistogramOpts{Name: "post_request_duration_ms"})
+	reqDur_UpdatePost              = promauto.NewHistogram(prometheus.HistogramOpts{Name: "update_post_request_duration_ms"})
 	reqDur_DeletePost              = promauto.NewHistogram(prometheus.HistogramOpts{Name: "delete_post_request_duration_ms"})
 	reqDur_TogglePostReaction      = promauto.NewHistogram(prometheus.HistogramOpts{Name: "toggle_post_reaction_request_duration_ms"})
 	reqDur_TogglePostSubscription  = promauto.NewHistogram(prometheus.HistogramOpts{Name: "toggle_post_subscription_request_duration_ms"})
@@ -203,6 +204,13 @@ func (mw *ServiceWithInstrumentation) Post(ctx context.Context, postID string) (
 		reqDur_Post.Observe(float64(time.Since(begin)) / float64(time.Millisecond))
 	}(time.Now())
 	return mw.Next.Post(ctx, postID)
+}
+
+func (mw *ServiceWithInstrumentation) UpdatePost(ctx context.Context, postID string, in nakama.UpdatePost) (nakama.UpdatedPost, error) {
+	defer func(begin time.Time) {
+		reqDur_UpdatePost.Observe(float64(time.Since(begin)) / float64(time.Millisecond))
+	}(time.Now())
+	return mw.Next.UpdatePost(ctx, postID, in)
 }
 
 func (mw *ServiceWithInstrumentation) DeletePost(ctx context.Context, postID string) error {

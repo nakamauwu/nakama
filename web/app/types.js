@@ -40,10 +40,26 @@
  * @prop {number} commentsCount
  * @prop {string[]} mediaURLs
  * @prop {string|Date} createdAt
+ * @prop {string|Date} updatedAt
  * @prop {User=} user
  * @prop {boolean} mine
  * @prop {boolean} liked
  * @prop {boolean} subscribed
+ */
+
+/**
+ * @typedef {object} UpdatePost
+ * @prop {string=} content
+ * @prop {boolean=} nsfw
+ * @prop {string=} spoilerOf
+ */
+
+/**
+ * @typedef {object} UpdatedPost
+ * @prop {string} content
+ * @prop {boolean} nsfw
+ * @prop {string} spoilerOf
+ * @prop {string|Date} UpdatedAt
  */
 
 /**

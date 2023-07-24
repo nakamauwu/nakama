@@ -36,7 +36,8 @@ var (
 	ErrInvalidCursor = InvalidArgumentError("invalid cursor")
 	// ErrInvalidReaction denotes an invalid reaction, that may by an invalid reaction type, or invalid reaction by itslef,
 	// not a valid emoji, or invalid reaction image URL.
-	ErrInvalidReaction = InvalidArgumentError("invalid reaction")
+	ErrInvalidReaction  = InvalidArgumentError("invalid reaction")
+	ErrUpdatePostDenied = PermissionDeniedError("update post denied")
 )
 
 // Post model.
@@ -50,6 +51,7 @@ type Post struct {
 	CommentsCount int        `json:"commentsCount"`
 	MediaURLs     []string   `json:"mediaURLs"`
 	CreatedAt     time.Time  `json:"createdAt"`
+	UpdatedAt     time.Time  `json:"updatedAt"`
 	User          *User      `json:"user,omitempty"`
 	Mine          bool       `json:"mine"`
 	Subscribed    bool       `json:"subscribed"`
@@ -141,6 +143,7 @@ func (s *Service) Posts(ctx context.Context, last uint64, before *string, opts .
 		, posts.comments_count
 		, posts.media
 		, posts.created_at
+		, posts.updated_at
 		{{ if .auth }}
 		, posts.user_id = @uid AS post_mine
 		, reactions.user_reactions
@@ -222,6 +225,7 @@ func (s *Service) Posts(ctx context.Context, last uint64, before *string, opts .
 			&p.CommentsCount,
 			pq.Array(&media),
 			&p.CreatedAt,
+			&p.UpdatedAt,
 		}
 		if auth {
 			dest = append(dest, &p.Mine, &rawUserReactions, &p.Subscribed)
@@ -325,6 +329,7 @@ func (s *Service) Post(ctx context.Context, postID string) (Post, error) {
 			, posts.comments_count
 			, posts.media
 			, posts.created_at
+			, posts.updated_at
 			, users.username
 			, users.avatar
 			{{if .auth}}
@@ -368,6 +373,7 @@ func (s *Service) Post(ctx context.Context, postID string) (Post, error) {
 		&p.CommentsCount,
 		pq.Array(&media),
 		&p.CreatedAt,
+		&p.UpdatedAt,
 		&u.Username,
 		&avatar,
 	}
@@ -416,24 +422,59 @@ func (s *Service) Post(ctx context.Context, postID string) (Post, error) {
 	return p, nil
 }
 
-type UpdatePostParams struct {
-	Content   *string
-	SpoilerOf *string
-	NSFW      *bool
+type UpdatePost struct {
+	Content   *string `json:"content"`
+	SpoilerOf *string `json:"spoilerOf"`
+	NSFW      *bool   `json:"nsfw"`
 }
 
-func (params UpdatePostParams) Empty() bool {
+func (params UpdatePost) Empty() bool {
 	return params.Content == nil && params.NSFW == nil && params.SpoilerOf == nil
 }
 
-type UpdatedPostFields struct {
-	Content   string
-	SpoilerOf *string
-	NSFW      bool
+type UpdatedPost struct {
+	Content   string    `json:"content"`
+	SpoilerOf *string   `json:"spoilerOf"`
+	NSFW      bool      `json:"nsfw"`
+	UpdatedAt time.Time `json:"updatedAt"`
 }
 
-func (s *Service) UpdatePost(ctx context.Context, postID string, params UpdatePostParams) (UpdatedPostFields, error) {
-	var updated UpdatedPostFields
+func (s *Service) UpdatePost(ctx context.Context, postID string, params UpdatePost) (UpdatedPost, error) {
+	var out UpdatedPost
+
+	createdAt, err := s.postCreatedAt(ctx, postID)
+	if err != nil {
+		return out, err
+	}
+
+	isRecent := time.Since(createdAt) < time.Minute*15
+	if !isRecent {
+		return out, ErrUpdatePostDenied
+	}
+
+	return s.updatePost(ctx, postID, params)
+}
+
+func (s *Service) postCreatedAt(ctx context.Context, postID string) (time.Time, error) {
+	const q = `
+		SELECT created_at FROM posts WHERE id = $1
+	`
+
+	var createdAt time.Time
+	err := s.DB.QueryRowContext(ctx, q, postID).Scan(&createdAt)
+	if err == sql.ErrNoRows {
+		return createdAt, ErrPostNotFound
+	}
+
+	if err != nil {
+		return createdAt, fmt.Errorf("sql query select post created at: %w", err)
+	}
+
+	return createdAt, nil
+}
+
+func (s *Service) updatePost(ctx context.Context, postID string, params UpdatePost) (UpdatedPost, error) {
+	var updated UpdatedPost
 	if params.Empty() {
 		return updated, ErrInvalidUpdatePostParams
 	}
@@ -471,12 +512,15 @@ func (s *Service) UpdatePost(ctx context.Context, postID string, params UpdatePo
 	if params.NSFW != nil {
 		set = append(set, "nsfw = @nsfw")
 	}
+
+	set = append(set, "updated_at = now()")
+
 	query, args, err := buildQuery(`
 		UPDATE posts
 		SET {{ .set }}
 		WHERE id = @post_id
 			AND user_id = @auth_user_id
-		RETURNING content, spoiler_of, nsfw
+		RETURNING content, spoiler_of, nsfw, updated_at
 		`, map[string]interface{}{
 		"content":      params.Content,
 		"spoiler_of":   params.SpoilerOf,
@@ -490,7 +534,7 @@ func (s *Service) UpdatePost(ctx context.Context, postID string, params UpdatePo
 	}
 
 	row := s.DB.QueryRowContext(ctx, query, args...)
-	err = row.Scan(&updated.Content, &updated.SpoilerOf, &updated.NSFW)
+	err = row.Scan(&updated.Content, &updated.SpoilerOf, &updated.NSFW, &updated.UpdatedAt)
 	if err != nil {
 		return updated, fmt.Errorf("could not sql update post content: %w", err)
 	}

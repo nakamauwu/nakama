@@ -24,6 +24,7 @@
     "PostNotFoundError": "publicación no encontrada",
     "InvalidUpdatePostParamsError": "parámetros para actualizar publicación inválidos",
     "InvalidCursorError": "marcador de página inválido",
+    "UpdatePostDeniedError": "actualización de publicación denegada",
     "InvalidReactionError": "reacción inválida",
     "InvalidCommentIDError": "ID de comentario inválida",
     "CommentNotFoundError": "Comentario no encontrado",
@@ -102,6 +103,7 @@
     },
     "postItem": {
         "errToggleSubscription": "No se pudo alternar subscripción:",
+        "errUpdate": "no se pudo actualizar publicación:",
         "errRemove": "no se pudo remover el ítem:",
         "errDelete": {
             "fmt": "no se pudo eliminar {{ type }}",
@@ -115,6 +117,7 @@
             "title": "Más",
             "unsusbcribe": "Silenciar notificaciones",
             "susbcribe": "Subscribirse a notificaciones",
+            "edit": "Editar",
             "remove": "Remover de la línea de tiempo",
             "delete": "Eliminar"
         },

@@ -48,6 +48,13 @@ CREATE TABLE IF NOT EXISTS posts (
     INDEX sorted_posts (created_at DESC, id)
 );
 
+ALTER TABLE IF EXISTS posts ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP;
+
+UPDATE posts SET updated_at = created_at WHERE updated_at IS NULL;
+
+ALTER TABLE IF EXISTS posts ALTER COLUMN updated_at SET NOT NULL;
+ALTER TABLE IF EXISTS posts ALTER COLUMN updated_at SET DEFAULT now();
+
 CREATE TABLE IF NOT EXISTS post_reactions (
     user_id UUID NOT NULL REFERENCES users ON DELETE CASCADE,
     post_id UUID NOT NULL REFERENCES posts ON DELETE CASCADE,

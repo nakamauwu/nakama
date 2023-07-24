@@ -137,6 +137,27 @@ func (h *handler) post(w http.ResponseWriter, r *http.Request) {
 	h.respond(w, p, http.StatusOK)
 }
 
+func (h *handler) updatePost(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	var in nakama.UpdatePost
+	err := json.NewDecoder(r.Body).Decode(&in)
+	if err != nil {
+		h.respondErr(w, errBadRequest)
+		return
+	}
+
+	ctx := r.Context()
+	postID := way.Param(ctx, "post_id")
+	out, err := h.svc.UpdatePost(ctx, postID, in)
+	if err != nil {
+		h.respondErr(w, err)
+		return
+	}
+
+	h.respond(w, out, http.StatusOK)
+}
+
 func (h *handler) deletePost(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	postID := way.Param(ctx, "post_id")

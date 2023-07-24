@@ -194,6 +194,7 @@ func (s *Service) CreateTimelineItem(ctx context.Context, content string, spoile
 		p.NSFW = nsfw
 		p.Mine = true
 		p.MediaURLs = s.mediaURLs(fileNames)
+		p.UpdatedAt = p.CreatedAt
 
 		query = "INSERT INTO post_subscriptions (user_id, post_id) VALUES ($1, $2)"
 		if _, err = tx.ExecContext(ctx, query, uid, p.ID); err != nil {
@@ -318,6 +319,7 @@ func (s *Service) Timeline(ctx context.Context, last uint64, before *string) (Ti
 		, posts.comments_count
 		, posts.media
 		, posts.created_at
+		, posts.updated_at
 		, posts.user_id = @uid AS post_mine
 		, subscriptions.user_id IS NOT NULL AS post_subscribed
 		, users.username
@@ -380,6 +382,7 @@ func (s *Service) Timeline(ctx context.Context, last uint64, before *string) (Ti
 			&p.CommentsCount,
 			pq.Array(&media),
 			&p.CreatedAt,
+			&p.UpdatedAt,
 			&p.Mine,
 			&p.Subscribed,
 			&u.Username,

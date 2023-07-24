@@ -121,6 +121,9 @@ var _ Service = &ServiceMock{}
 //			UpdateCoverFunc: func(ctx context.Context, r io.ReadSeeker) (string, error) {
 //				panic("mock out the UpdateCover method")
 //			},
+//			UpdatePostFunc: func(ctx context.Context, postID string, in nakama.UpdatePostParams) (nakama.UpdatedPostFields, error) {
+//				panic("mock out the UpdatePost method")
+//			},
 //			UpdateUserFunc: func(ctx context.Context, params nakama.UpdateUserParams) error {
 //				panic("mock out the UpdateUser method")
 //			},
@@ -241,6 +244,9 @@ type ServiceMock struct {
 
 	// UpdateCoverFunc mocks the UpdateCover method.
 	UpdateCoverFunc func(ctx context.Context, r io.ReadSeeker) (string, error)
+
+	// UpdatePostFunc mocks the UpdatePost method.
+	UpdatePostFunc func(ctx context.Context, postID string, in nakama.UpdatePost) (nakama.UpdatedPost, error)
 
 	// UpdateUserFunc mocks the UpdateUser method.
 	UpdateUserFunc func(ctx context.Context, params nakama.UpdateUserParams) error
@@ -506,6 +512,15 @@ type ServiceMock struct {
 			// R is the r argument value.
 			R io.ReadSeeker
 		}
+		// UpdatePost holds details about calls to the UpdatePost method.
+		UpdatePost []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// PostID is the postID argument value.
+			PostID string
+			// In is the in argument value.
+			In nakama.UpdatePost
+		}
 		// UpdateUser holds details about calls to the UpdateUser method.
 		UpdateUser []struct {
 			// Ctx is the ctx argument value.
@@ -587,6 +602,7 @@ type ServiceMock struct {
 	lockToken                   sync.RWMutex
 	lockUpdateAvatar            sync.RWMutex
 	lockUpdateCover             sync.RWMutex
+	lockUpdatePost              sync.RWMutex
 	lockUpdateUser              sync.RWMutex
 	lockUser                    sync.RWMutex
 	lockUsernames               sync.RWMutex
@@ -1936,6 +1952,50 @@ func (mock *ServiceMock) UpdateCoverCalls() []struct {
 	mock.lockUpdateCover.RLock()
 	calls = mock.calls.UpdateCover
 	mock.lockUpdateCover.RUnlock()
+	return calls
+}
+
+// UpdatePost calls UpdatePostFunc.
+func (mock *ServiceMock) UpdatePost(ctx context.Context, postID string, in nakama.UpdatePost) (nakama.UpdatedPost, error) {
+	callInfo := struct {
+		Ctx    context.Context
+		PostID string
+		In     nakama.UpdatePost
+	}{
+		Ctx:    ctx,
+		PostID: postID,
+		In:     in,
+	}
+	mock.lockUpdatePost.Lock()
+	mock.calls.UpdatePost = append(mock.calls.UpdatePost, callInfo)
+	mock.lockUpdatePost.Unlock()
+	if mock.UpdatePostFunc == nil {
+		var (
+			updatedPostFieldsOut nakama.UpdatedPost
+			errOut               error
+		)
+		return updatedPostFieldsOut, errOut
+	}
+	return mock.UpdatePostFunc(ctx, postID, in)
+}
+
+// UpdatePostCalls gets all the calls that were made to UpdatePost.
+// Check the length with:
+//
+//	len(mockedService.UpdatePostCalls())
+func (mock *ServiceMock) UpdatePostCalls() []struct {
+	Ctx    context.Context
+	PostID string
+	In     nakama.UpdatePost
+} {
+	var calls []struct {
+		Ctx    context.Context
+		PostID string
+		In     nakama.UpdatePost
+	}
+	mock.lockUpdatePost.RLock()
+	calls = mock.calls.UpdatePost
+	mock.lockUpdatePost.RUnlock()
 	return calls
 }
 
