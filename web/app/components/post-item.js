@@ -651,7 +651,7 @@ function findYouTubeID(url) {
 
         if (id === null) {
             const parts = url.pathname.split("/")
-            if (parts.length === 3 && parts[0] === "" && (parts[1] === "shorts" || parts[1] === "embed") && parts[2] !== "") {
+            if (parts.length === 3 && parts[0] === "" && (parts[1] === "shorts" || parts[1] === "embed" || parts[1] === "live") && parts[2] !== "") {
                 id = decodeURIComponent(parts[2])
             }
 
