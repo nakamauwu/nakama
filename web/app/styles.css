@@ -396,6 +396,7 @@ textarea:focus {
 }
 
 @media (prefers-color-scheme: light) {
+
   input[type="text"]:focus,
   input[type="email"]:focus,
   input[type="search"]:focus,
@@ -421,7 +422,7 @@ dialog {
   backdrop-filter: blur(3px);
 }
 
-dialog + .backdrop {
+dialog+.backdrop {
   background-color: var(--surface-backdrop);
   backdrop-filter: blur(3px);
 }
@@ -664,6 +665,7 @@ header .profile-link {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -805,7 +807,7 @@ header .profile-link {
   fill: var(--on-primary);
 }
 
-[aria-haspopup="true"]:not([aria-expanded="true"]) ~ [role="menu"] {
+[aria-haspopup="true"]:not([aria-expanded="true"])~[role="menu"] {
   display: none;
 }
 
@@ -901,6 +903,7 @@ header .profile-link {
     opacity: 0;
     transform: translateY(-1rem);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -962,6 +965,10 @@ header .profile-link {
   scrollbar-width: none;
 }
 
+.media-scroller.small>li>* {
+  max-height: 7rem;
+}
+
 .media-scroller::-webkit-scrollbar {
   display: none;
 }
@@ -985,6 +992,7 @@ header .profile-link {
 
 /* Safari issue */
 @supports (height: intrinsic) {
+
   .media-scroller img,
   .media-scroller audio,
   .media-scroller video,
@@ -1293,11 +1301,11 @@ notification-item[read] .notification a {
   text-decoration: none;
 }
 
-notification-item[read] + notification-item[read] .notification {
+notification-item[read]+notification-item[read] .notification {
   position: relative;
 }
 
-notification-item[read] + notification-item[read] .notification::before {
+notification-item[read]+notification-item[read] .notification::before {
   content: "";
   position: absolute;
   top: 0;
@@ -1454,6 +1462,7 @@ notification-item {
     opacity: 0;
     transform: translateX(1rem);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
