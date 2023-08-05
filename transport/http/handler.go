@@ -65,6 +65,7 @@ func New(svc transport.Service, oauthProviders []OauthProvider, origin *url.URL,
 	api.HandleFunc("DELETE", "/api/timeline/:timeline_item_id", h.deleteTimelineItem)
 	api.HandleFunc("POST", "/api/posts/:post_id/comments", h.createComment)
 	api.HandleFunc("GET", "/api/posts/:post_id/comments", h.comments)
+	api.HandleFunc("PATCH", "/api/comments/:comment_id", h.updateComment)
 	api.HandleFunc("DELETE", "/api/comments/:comment_id", h.deleteComment)
 	api.HandleFunc("POST", "/api/comments/:comment_id/toggle_reaction", h.toggleCommentReaction)
 	api.HandleFunc("GET", "/api/notifications", h.notifications)

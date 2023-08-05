@@ -67,7 +67,9 @@ function PostItem({ post: initialPost, type }) {
             return
         }
 
-        updatePost(post.id, { content }).then(updated => {
+        const fn = type === "comment" ? updateComment : updatePost
+
+        fn(post.id, { content }).then(updated => {
             setPost(p => ({
                 ...p,
                 ...updated,
@@ -168,9 +170,13 @@ function PostItem({ post: initialPost, type }) {
                     <span class="username">${post.user.username}</span>
                 </a>
                 <div class="post-meta">
-                    <a href="/posts/${post.id}" class="post-ts">
-                        <relative-datetime .datetime=${post.createdAt}></relative-datetime>
-                    </a>
+                    ${type === "comment" ? html`
+                        <relative-datetime class="post-ts" .datetime=${post.createdAt}></relative-datetime>
+                    ` : html`
+                        <a href="/posts/${post.id}" class="post-ts">
+                            <relative-datetime .datetime=${post.createdAt}></relative-datetime>
+                        </a>
+                    `}
                     ${auth !== null && !(type === "comment" && !post.mine) ? html`
                         <div class="post-menu-wrapper">
                             <button class="post-menu-wrapper-btn"
@@ -814,5 +820,15 @@ function deleteResource(type, resourceID) {
  */
 function updatePost(postID, body) {
     return request("PATCH", "/api/posts/" + encodeURIComponent(postID), { body })
+        .then(resp => resp.body)
+}
+
+/**
+ * @param {string} commentID
+ * @param {FormData|import("../types.js").UpdatePost} body
+ * @returns {Promise<import("../types.js").UpdatedComment>}
+ */
+function updateComment(commentID, body) {
+    return request("PATCH", "/api/comments/" + encodeURIComponent(commentID), { body })
         .then(resp => resp.body)
 }

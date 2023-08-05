@@ -104,6 +104,27 @@ func (h *handler) commentStream(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (h *handler) updateComment(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	var in nakama.UpdateComment
+	err := json.NewDecoder(r.Body).Decode(&in)
+	if err != nil {
+		h.respondErr(w, errBadRequest)
+		return
+	}
+
+	ctx := r.Context()
+	in.ID = way.Param(ctx, "comment_id")
+	out, err := h.svc.UpdateComment(ctx, in)
+	if err != nil {
+		h.respondErr(w, err)
+		return
+	}
+
+	h.respond(w, out, http.StatusOK)
+}
+
 func (h *handler) deleteComment(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	commentID := way.Param(ctx, "comment_id")

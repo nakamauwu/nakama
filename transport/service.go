@@ -28,6 +28,7 @@ type Service interface {
 	CreateComment(ctx context.Context, postID, content string) (nakama.Comment, error)
 	Comments(ctx context.Context, postID string, last uint64, before *string) (nakama.Comments, error)
 	CommentStream(ctx context.Context, postID string) (<-chan nakama.Comment, error)
+	UpdateComment(ctx context.Context, in nakama.UpdateComment) (nakama.UpdatedComment, error)
 	DeleteComment(ctx context.Context, commentID string) error
 	ToggleCommentReaction(ctx context.Context, commentID string, in nakama.ReactionInput) ([]nakama.Reaction, error)
 

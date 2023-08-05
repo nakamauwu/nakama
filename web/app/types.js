@@ -63,6 +63,16 @@
  */
 
 /**
+ * @typedef {object} UpdateComment
+ * @prop {string=} content
+ */
+
+/**
+ * @typedef {object} UpdatedComment
+ * @prop {string} content
+ */
+
+/**
  * @typedef {object} ReactionCount
  * @prop {string} type
  * @prop {string} reaction

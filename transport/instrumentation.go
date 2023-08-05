@@ -25,6 +25,7 @@ var (
 	reqDur_CreateComment           = promauto.NewHistogram(prometheus.HistogramOpts{Name: "create_comment_request_duration_ms"})
 	reqDur_Comments                = promauto.NewHistogram(prometheus.HistogramOpts{Name: "comments_request_duration_ms"})
 	reqDur_CommentStream           = promauto.NewHistogram(prometheus.HistogramOpts{Name: "comment_stream_request_duration_ms"})
+	reqDur_UpdateComment           = promauto.NewHistogram(prometheus.HistogramOpts{Name: "update_comment_request_duration_ms"})
 	reqDur_DeleteComment           = promauto.NewHistogram(prometheus.HistogramOpts{Name: "delete_comment_request_duration_ms"})
 	reqDur_ToggleCommentReaction   = promauto.NewHistogram(prometheus.HistogramOpts{Name: "toggle_comment_reaction_request_duration_ms"})
 	reqDur_Notifications           = promauto.NewHistogram(prometheus.HistogramOpts{Name: "notifications_request_duration_ms"})
@@ -134,6 +135,13 @@ func (mw *ServiceWithInstrumentation) CommentStream(ctx context.Context, postID 
 		reqDur_CommentStream.Observe(float64(time.Since(begin)) / float64(time.Millisecond))
 	}(time.Now())
 	return mw.Next.CommentStream(ctx, postID)
+}
+
+func (mw *ServiceWithInstrumentation) UpdateComment(ctx context.Context, in nakama.UpdateComment) (nakama.UpdatedComment, error) {
+	defer func(begin time.Time) {
+		reqDur_UpdateComment.Observe(float64(time.Since(begin)) / float64(time.Millisecond))
+	}(time.Now())
+	return mw.Next.UpdateComment(ctx, in)
 }
 
 func (mw *ServiceWithInstrumentation) DeleteComment(ctx context.Context, commentID string) error {

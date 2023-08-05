@@ -21,7 +21,8 @@ var (
 	// ErrInvalidCommentID denotes an invalid comment ID; that is not uuid.
 	ErrInvalidCommentID = InvalidArgumentError("invalid comment ID")
 	// ErrCommentNotFound denotes a not found comment.
-	ErrCommentNotFound = NotFoundError("comment not found")
+	ErrCommentNotFound     = NotFoundError("comment not found")
+	ErrUpdateCommentDenied = PermissionDeniedError("update comment denied")
 )
 
 // Comment model.
@@ -34,6 +35,15 @@ type Comment struct {
 	CreatedAt time.Time  `json:"createdAt"`
 	User      *User      `json:"user,omitempty"`
 	Mine      bool       `json:"mine"`
+}
+
+type UpdateComment struct {
+	ID      string  `json:"-"`
+	Content *string `json:"content"`
+}
+
+type UpdatedComment struct {
+	Content string `json:"content"`
 }
 
 // CreateComment on a post.
@@ -297,6 +307,75 @@ func (s *Service) CommentStream(ctx context.Context, postID string) (<-chan Comm
 	}()
 
 	return cc, nil
+}
+
+func (s *Service) UpdateComment(ctx context.Context, in UpdateComment) (UpdatedComment, error) {
+	var out UpdatedComment
+
+	in.ID = strings.TrimSpace(in.ID)
+	if !reUUID.MatchString(in.ID) {
+		return out, ErrInvalidCommentID
+	}
+
+	if in.Content != nil {
+		*in.Content = smartTrim(*in.Content)
+		if *in.Content == "" || utf8.RuneCountInString(*in.Content) > commentContentMaxLength {
+			return out, ErrInvalidContent
+		}
+	}
+
+	uid, ok := ctx.Value(KeyAuthUserID).(string)
+	if !ok {
+		return out, ErrUnauthenticated
+	}
+
+	return out, crdb.ExecuteTx(ctx, s.DB, nil, func(tx *sql.Tx) error {
+		var isOwner bool
+		query := "SELECT user_id = $1 FROM comments WHERE id = $2"
+		row := tx.QueryRowContext(ctx, query, uid, in.ID)
+		err := row.Scan(&isOwner)
+		if err == sql.ErrNoRows {
+			return ErrCommentNotFound
+		}
+
+		if err != nil {
+			return fmt.Errorf("could not sql query select comment is owner: %w", err)
+		}
+
+		if !isOwner {
+			return ErrPermissionDenied
+		}
+
+		var createdAt time.Time
+		query = "SELECT created_at FROM comments WHERE id = $1"
+		row = tx.QueryRowContext(ctx, query, in.ID)
+		err = row.Scan(&createdAt)
+		if err == sql.ErrNoRows {
+			return ErrCommentNotFound
+		}
+
+		if err != nil {
+			return fmt.Errorf("could not sql query select comment created at: %w", err)
+		}
+
+		isRecent := time.Since(createdAt) <= time.Minute*15
+		if !isRecent {
+			return ErrUpdateCommentDenied
+		}
+
+		query = "UPDATE comments SET content = COALESCE($1::varchar, content) WHERE id = $2 RETURNING content"
+		row = tx.QueryRowContext(ctx, query, in.Content, in.ID)
+		err = row.Scan(&out.Content)
+		if err == sql.ErrNoRows {
+			return ErrCommentNotFound
+		}
+
+		if err != nil {
+			return fmt.Errorf("could not sql update comment: %w", err)
+		}
+
+		return nil
+	})
 }
 
 func (s *Service) DeleteComment(ctx context.Context, commentID string) error {
