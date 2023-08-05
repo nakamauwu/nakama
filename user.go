@@ -235,7 +235,8 @@ func (svc *Service) UpdateAvatar(ctx context.Context, media Media) (UpdatedAvata
 		return out, err
 	}
 
-	out.Path = img.Path
+	// TODO: move into a separate function.
+	out.Path = svc.Store.s3Prefix + S3BucketAvatars + img.Path
 	out.Width = avatarWidth
 	out.Height = avatarHeight
 
