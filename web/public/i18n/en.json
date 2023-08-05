@@ -28,6 +28,7 @@
     "InvalidReactionError": "invalid reaction",
     "InvalidCommentIDError": "invalid comment ID",
     "CommentNotFoundError": "comment not found",
+    "UpdateCommentDeniedError": "update comment denied",
     "errView": "Something went wrong while loading the page.",
     "pageLoader": "Loading page... please wait.",
     "accessPage": {

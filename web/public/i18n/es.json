@@ -28,6 +28,7 @@
     "InvalidReactionError": "reacción inválida",
     "InvalidCommentIDError": "ID de comentario inválida",
     "CommentNotFoundError": "Comentario no encontrado",
+    "UpdateCommentDeniedError": "actualización de comentario denegada",
     "errView": "Algo salió mal al cargar la página.",
     "pageLoader": "Cargando página... por favor espera.",
     "accessPage": {
