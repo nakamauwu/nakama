@@ -95,7 +95,7 @@ func (h *Handler) showSettings(w http.ResponseWriter, r *http.Request) {
 	}, http.StatusOK)
 }
 
-// updateUser handles PATCH /username.
+// updateUser handles PATCH /user.
 func (h *Handler) updateUser(w http.ResponseWriter, r *http.Request) {
 	var in nakama.UpdateUser
 	if r.PostForm.Has("username") {

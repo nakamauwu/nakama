@@ -1,7 +1,6 @@
 package web
 
 import (
-	"fmt"
 	"net/http"
 	"net/url"
 
@@ -164,7 +163,7 @@ func parseMediaList(r *http.Request, key string) ([]nakama.Media, func() error, 
 
 	m, ok := r.MultipartForm.File[key]
 	if !ok {
-		return nil, nil, errs.InvalidArgumentError(fmt.Sprintf("missing multipart form %s file", key))
+		return nil, func() error { return nil }, nil
 	}
 
 	var closeFuncs []func() error
