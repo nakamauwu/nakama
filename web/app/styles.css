@@ -611,6 +611,13 @@ header {
   }
 }
 
+@media screen and (max-width: 414px) {
+  header {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    height: calc(4rem + env(safe-area-inset-bottom, 0));
+  }
+}
+
 header svg {
   width: 1.25rem;
   height: 1.25rem;
