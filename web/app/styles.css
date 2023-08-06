@@ -420,11 +420,13 @@ dialog {
 ::backdrop {
   background-color: var(--surface-backdrop);
   backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
 }
 
 dialog+.backdrop {
   background-color: var(--surface-backdrop);
   backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
 }
 
 .switch-wrapper {
@@ -597,6 +599,7 @@ header {
   background-color: var(--surface-backdrop);
   box-shadow: var(--box-shadow);
   backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
   z-index: 1;
 
   display: grid;
