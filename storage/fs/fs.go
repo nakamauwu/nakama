@@ -30,6 +30,14 @@ func (s *Store) Store(_ context.Context, bucket, name string, data []byte, opts 
 	s.once.Do(s.init)
 
 	f, err := os.Create(filepath.Join(s.Root, bucket, name))
+	if os.IsNotExist(err) {
+		if err := os.MkdirAll(filepath.Join(s.Root, bucket), fs.ModePerm); err != nil {
+			return fmt.Errorf("could not create bucket dir: %w", err)
+		}
+
+		f, err = os.Create(filepath.Join(s.Root, bucket, name))
+	}
+
 	if err != nil {
 		return fmt.Errorf("could not create file: %w", err)
 	}

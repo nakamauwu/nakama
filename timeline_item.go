@@ -72,20 +72,24 @@ func (s *Service) CreateTimelineItem(ctx context.Context, content string, spoile
 
 	tags := collectTags(content)
 
-	var files map[string]struct {
-		contentType string
-		contents    []byte
+	type File struct {
+		Name        string
+		ContentType string
+		Content     []byte
 	}
 
+	var files []File
+
 	if len(media) != 0 {
+		files = make([]File, len(media))
+
 		g := errgroup.Group{}
 		var mu sync.Mutex
-		files = map[string]struct {
-			contentType string
-			contents    []byte
-		}{}
-		for _, mediaItem := range media {
+
+		for i, mediaItem := range media {
+			i := i
 			mediaItem := mediaItem
+
 			g.Go(func() error {
 				ct, err := detectContentType(mediaItem)
 				if err != nil {
@@ -127,13 +131,13 @@ func (s *Service) CreateTimelineItem(ctx context.Context, content string, spoile
 				}
 
 				mu.Lock()
-				files[fileName] = struct {
-					contentType string
-					contents    []byte
-				}{
-					contentType: ct,
-					contents:    buf.Bytes(),
+
+				files[i] = File{
+					Name:        fileName,
+					ContentType: ct,
+					Content:     buf.Bytes(),
 				}
+
 				mu.Unlock()
 				return nil
 			})
@@ -146,9 +150,9 @@ func (s *Service) CreateTimelineItem(ctx context.Context, content string, spoile
 
 	var mediaItemsBytes int64
 	var fileNames []string
-	for fileName, data := range files {
-		mediaItemsBytes += int64(len(data.contents))
-		fileNames = append(fileNames, fileName)
+	for _, file := range files {
+		mediaItemsBytes += int64(len(file.Content))
+		fileNames = append(fileNames, file.Name)
 	}
 
 	if mediaItemsBytes > MaxMediaBytes {
@@ -157,11 +161,10 @@ func (s *Service) CreateTimelineItem(ctx context.Context, content string, spoile
 
 	if len(files) != 0 {
 		g, gctx := errgroup.WithContext(ctx)
-		for fileName, data := range files {
-			fileName := fileName
-			data := data
+		for _, file := range files {
+			file := file
 			g.Go(func() error {
-				err := s.Store.Store(gctx, MediaBucket, fileName, data.contents, storage.StoreWithContentType(data.contentType))
+				err := s.Store.Store(gctx, MediaBucket, file.Name, file.Content, storage.StoreWithContentType(file.ContentType))
 				if err != nil {
 					return fmt.Errorf("could not store post media item: %w", err)
 				}

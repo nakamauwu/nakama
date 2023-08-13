@@ -514,7 +514,7 @@ function MediaScroller({ urls }) {
                 }
 
                 {
-                    if (trustedOrigins.includes(url.origin)) {
+                    if (trustedOrigins.includes(url.origin) || (trustedOrigins.some(o => o.includes("localhost") && url.hostname === "localhost"))) {
                         if (imageExts.some(ext => url.pathname.endsWith(ext))) {
                             items.push(html`<zoomable-img .src=${url.toString()}></zoomable-img>`)
                             continue
