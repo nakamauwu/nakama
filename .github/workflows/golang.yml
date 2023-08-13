@@ -19,15 +19,22 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: "1.20"
+          go-version: "1.21"
 
       - name: Lint
         uses: golangci/golangci-lint-action@v3
         with:
-          version: v1.53.3
+          version: v1.54.1
+
+      - name: Set up gotestfmt
+        uses: gotesttools/gotestfmt-action@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Test
-        run: go test ./... -race -count 1
+        run: |
+          set -euo pipefail
+          go test -json -v -race -count 1 ./... 2>&1 | tee /tmp/gotest.log | gotestfmt
 
       - name: Login to DockerHub
         uses: docker/login-action@v2
