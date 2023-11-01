@@ -708,7 +708,7 @@ function findVimeoID(url) {
  * @returns {string|null}
  */
 function findTweetID(url) {
-    if (url.hostname !== "twitter.com") {
+    if (!["twitter.com", "x.com"].includes(url.hostname)) {
         return null
     }
 
