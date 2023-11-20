@@ -59,7 +59,7 @@ func (s *Service) CreateTimelineItem(ctx context.Context, content string, spoile
 	}
 
 	content = smartTrim(content)
-	if content == "" || utf8.RuneCountInString(content) > postContentMaxLength {
+	if len(media) == 0 && content == "" || utf8.RuneCountInString(content) > postContentMaxLength {
 		return ti, ErrInvalidContent
 	}
 
