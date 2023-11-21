@@ -480,7 +480,7 @@ function MediaScroller({ urls }) {
                     const tweetID = findTweetID(url)
                     if (tweetID !== null) {
                         try {
-                            const u = "https://publish.twitter.com/oembed?dnt=true&hide_thread=true&omit_script=1&theme=dark&border_color=23a80000&chrome=" + encodeURIComponent("transparent noborders") + "&url=" + encodeURIComponent(url.origin + url.pathname)
+                            const u = "https://publish.twitter.com/oembed?dnt=true&hide_thread=true&omit_script=1&theme=dark&border_color=23a80000&align=center&chrome=" + encodeURIComponent("transparent noborders") + "&url=" + encodeURIComponent("https://twitter.com" + url.pathname)
                             const resp = await fetchJSONP(u)
                             const json = await resp.json()
                             if (typeof json === "object" && json !== null && typeof json.html === "string") {
