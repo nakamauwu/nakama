@@ -65,4 +65,21 @@ or
 npm run dev
 ```
 
+## Database Backups
+
+Instructions to perform a database backup and restore.<br>
+Have a running S3 compatible instance, then:
+
+```sql
+BACKUP DATABASE nakama INTO 's3://${S3_BUCKET}?AWS_ACCESS_KEY_ID=${S3_ACCESS_KEY_ID}&AWS_SECRET_ACCESS_KEY=${S3_SECRET_ACCESS_KEY}&AWS_REGION=${S3_REGION}&AWS_ENDPOINT=${S3_ENDPOINT}';
+```
+
+```sql
+RESTORE DATABASE nakama FROM LATEST IN 's3://${S3_BUCKET}?AWS_ACCESS_KEY_ID=${S3_ACCESS_KEY_ID}&AWS_SECRET_ACCESS_KEY=${S3_SECRET_ACCESS_KEY}&AWS_REGION=${S3_REGION}&AWS_ENDPOINT=${S3_ENDPOINT}';
+```
+
+CockroachDB follows a `YY.R.PP` **year**, **release** and **patch** versioning system. After each release, we should perform a backup before upgrading.
+
+---
+
 [Eva Icons](https://github.com/akveo/eva-icons) are being used in the front-end. Thank you.
