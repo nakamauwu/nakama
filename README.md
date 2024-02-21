@@ -1,5 +1,5 @@
 [![join slack](https://img.shields.io/badge/slack-join-none.svg?style=social&logo=slack)](https://join.slack.com/t/nakama-social/shared_invite/zt-143j6bzie-spuCdq79xIZJQa4DaPb0uQ)
-[![join discord](https://img.shields.io/discord/860979601990615063)](https://discord.gg/wkvwRa3pju)
+[![join discord](https://dcbadge.vercel.app/api/server/wkvwRa3pju?style=social)](https://discord.gg/wkvwRa3pju)
 
 # Nakama
 
