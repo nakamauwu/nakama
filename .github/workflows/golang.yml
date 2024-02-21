@@ -14,17 +14,17 @@ jobs:
   golang:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
-          go-version: "1.21"
+          go-version: "1.22"
 
       - name: Lint
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@v4
         with:
-          version: v1.54.1
+          version: v1.56.2
 
       - name: Set up gotestfmt
         uses: gotesttools/gotestfmt-action@v2
@@ -37,14 +37,14 @@ jobs:
           go test -json -v -race -count 1 ./... 2>&1 | tee /tmp/gotest.log | gotestfmt
 
       - name: Login to DockerHub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: nicolasparada
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push
         id: docker_build
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: ./
           file: ./Dockerfile
@@ -55,7 +55,7 @@ jobs:
           build-args: VAPID_PUBLIC_KEY=${{ secrets.VAPID_PUBLIC_KEY }}
 
       - name: Secure copy
-        uses: appleboy/scp-action@master
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.REMOTE_HOST }}
           username: ${{ secrets.REMOTE_USER }}
@@ -64,7 +64,7 @@ jobs:
           target: ./
 
       - name: SSH & docker-compose up
-        uses: appleboy/ssh-action@master
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.REMOTE_HOST }}
           username: ${{ secrets.REMOTE_USER }}
