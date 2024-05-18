@@ -141,6 +141,13 @@ func (h *handler) proxy(w http.ResponseWriter, r *http.Request) {
 		ErrorHandler: func(w http.ResponseWriter, _ *http.Request, _ error) {
 			w.WriteHeader(http.StatusBadGateway)
 		},
+		ModifyResponse: func(resp *http.Response) error {
+			// Remove the WWW-Authenticate header to prevent the browser from showing the basic auth pop-up dialog.
+			if resp.Header.Get("Www-Authenticate") != "" {
+				resp.Header.Del("Www-Authenticate")
+			}
+			return nil
+		},
 	}
 	proxy.ServeHTTP(w, r)
 }
