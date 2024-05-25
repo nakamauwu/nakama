@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS sessions (
 	expiry TIMESTAMPTZ NOT NULL
 ) WITH (ttl_expiration_expression = 'expiry');
 
-CREATE INDEX sessions_expiry_idx ON sessions (expiry);
+CREATE INDEX IF NOT EXISTS sessions_expiry_idx ON sessions (expiry);
 
 CREATE TABLE IF NOT EXISTS users (
     id VARCHAR NOT NULL PRIMARY KEY DEFAULT uuid_to_ulid(gen_random_ulid()),
@@ -14,4 +14,12 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP NOT NULL DEFAULT now(),
     updated_at TIMESTAMP NOT NULL DEFAULT now() ON UPDATE now(),
     UNIQUE (LOWER(username))
+);
+
+CREATE TABLE IF NOT EXISTS posts (
+    id VARCHAR NOT NULL PRIMARY KEY DEFAULT uuid_to_ulid(gen_random_ulid()),
+    user_id VARCHAR NOT NULL REFERENCES users ON DELETE CASCADE ON UPDATE CASCADE,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT now(),
+    updated_at TIMESTAMP NOT NULL DEFAULT now() ON UPDATE now()
 );

@@ -7,6 +7,7 @@ require (
 	github.com/alexedwards/scs/v2 v2.8.0
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/caarlos0/env/v11 v11.0.1
+	github.com/go-playground/form/v4 v4.2.1
 	github.com/jackc/pgx/v5 v5.5.5
 	github.com/joho/godotenv v1.5.1
 	github.com/lmittmann/tint v1.0.4

@@ -17,11 +17,13 @@ import (
 var templatesFS embed.FS
 
 func (h *Handler) sessionData(r *http.Request) map[string]any {
-	user, isLoggedIn := auth.UserFromContext(r.Context())
+	ctx := r.Context()
+	user, isLoggedIn := auth.UserFromContext(ctx)
 	return map[string]any{
 		"User":       user,
 		"IsLoggedIn": isLoggedIn,
 		"CurrentURL": r.URL.Path,
+		"FlashError": h.sess.PopString(ctx, sessKeyFlashError),
 	}
 }
 

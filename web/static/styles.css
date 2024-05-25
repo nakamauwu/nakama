@@ -8,6 +8,20 @@
     box-sizing: inherit;
 }
 
+html,
+body {
+    height: 100%;
+}
+
+body {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    margin: 0;
+    padding: 0;
+    background-color: #161a1a;
+    color: white;
+}
+
 .container {
     width: calc(100% - 4rem);
     max-width: 120ch;
@@ -15,10 +29,40 @@
 }
 
 button,
-input {
+input,
+textarea {
     font: inherit;
     color: inherit;
-    border: 1px solid #222;
+}
+
+button,
+input {
+    background-color: #1c2121;
+    border-radius: 1.5rem;
+    padding: 0 1.5rem;
+    height: 3rem;
+}
+
+button {
+    touch-action: manipulation;
+    user-select: none;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+textarea {
+    width: 100%;
+    resize: vertical;
+    background: none;
+    padding: 1rem;
+    border-radius: 1rem;
+    border-bottom-right-radius: 0;
+    height: 3.375rem;
+    min-height: 3.375rem;
+    max-height: 90vh;
 }
 
 [disabled] {
@@ -27,14 +71,25 @@ input {
     cursor: not-allowed;
 }
 
+:focus:not(:focus-visible) {
+    outline: none;
+}
+
 .hstack {
     display: flex;
+}
+
+.hstack.centered {
+    align-items: center;
 }
 
 .vstack {
     display: flex;
     flex-direction: column;
-    align-items: center;
+}
+
+.spacer {
+    flex-grow: 1;
 }
 
 .gap {
@@ -49,20 +104,8 @@ input {
     gap: 3rem;
 }
 
-.spacer {
-    flex-grow: 1;
-}
-
-html,
-body {
-    height: 100%;
-}
-
-body {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    margin: 0;
-    padding: 0;
+.full-width {
+    width: 100%;
 }
 
 header {
@@ -97,4 +140,52 @@ header nav button:hover,
 header nav a[aria-current="page"] {
     color: black;
     background-color: #daebf0;
+}
+
+.avatar {
+    --size: 3rem;
+    width: var(--size);
+    height: var(--size);
+    border-radius: 50%;
+}
+
+header .avatar {
+    --size: 2rem;
+}
+
+.box {
+    border: 1px solid #333;
+    border-radius: 3rem;
+    padding: 1.5rem;
+}
+
+.box textarea,
+.box button {
+    border: none;
+}
+
+.muted-btn {
+    background: none;
+    padding: 0 1rem;
+    color: #666;
+}
+
+.muted-btn:hover {
+    color: white;
+}
+
+.flash {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    padding: 1rem;
+    border-radius: 1rem;
+    background-color: #333;
+    color: white;
+    z-index: 1;
+}
+
+.flash.error {
+    background-color: #d32f2f;
+    color: white;
 }

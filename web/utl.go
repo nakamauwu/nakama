@@ -3,6 +3,7 @@ package web
 import (
 	"crypto/rand"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/btcsuite/btcutil/base58"
@@ -28,4 +29,16 @@ func genRandStr() (string, error) {
 
 func ptr[T any](v T) *T {
 	return &v
+}
+
+func (h *Handler) decode(r *http.Request, dest any) error {
+	if err := r.ParseForm(); err != nil {
+		return fmt.Errorf("parse form: %w", err)
+	}
+
+	if err := h.formDecoder.Decode(dest, r.Form); err != nil {
+		return fmt.Errorf("decode form values: %w", err)
+	}
+
+	return nil
 }

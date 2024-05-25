@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/alexedwards/scs/v2"
+	"github.com/go-playground/form/v4"
 	"github.com/nakamauwu/nakama/auth"
 	"github.com/nakamauwu/nakama/oauth"
 	"github.com/nakamauwu/nakama/service"
@@ -20,8 +21,9 @@ type Handler struct {
 	Service      *service.Service
 	Providers    []oauth.Provider
 
-	renderer *tmplrenderer.Renderer
-	sess     *scs.SessionManager
+	renderer    *tmplrenderer.Renderer
+	sess        *scs.SessionManager
+	formDecoder *form.Decoder
 
 	once    sync.Once
 	handler http.Handler
@@ -33,6 +35,7 @@ func (h *Handler) init() {
 	h.sess.Store = h.SessionStore
 	h.sess.Lifetime = time.Hour * 24 * 14 // 2 weeks
 	// h.sess.Cookie.Secure = true
+	h.formDecoder = form.NewDecoder()
 
 	mux := http.NewServeMux()
 
@@ -51,6 +54,9 @@ func (h *Handler) init() {
 
 	mux.HandleFunc("GET /login", h.showLogin)
 	mux.HandleFunc("POST /logout", h.logout)
+
+	mux.HandleFunc("POST /posts", h.createPost)
+
 	mux.Handle("GET /static/", h.staticHandler())
 	mux.HandleFunc("GET /", h.notFound)
 

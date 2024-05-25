@@ -1,5 +1,86 @@
 {{template "layout.tmpl" .}} {{define "content"}}
 <main class="container">
-    <h1>Posts</h1>
+    <h1>Nakama</h1>
+
+    <form action="/posts" method="POST" class="box">
+        <div class="hstack gap">
+            <img
+                src="https://source.boringavatars.com/beam/192/{{.Session.User.Username}}?square=true"
+                alt="Avatar"
+                width="192"
+                height="192"
+                class="avatar"
+            />
+
+            <div class="vstack gap full-width">
+                <textarea name="content" placeholder="Write something..." required></textarea>
+
+                <div class="hstack">
+                    <button class="muted-btn" type="button" title="Add attachment">
+                        <svg
+                            width="24px"
+                            height="24px"
+                            stroke-width="1.5"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                            color="currentColor"
+                        >
+                            <path
+                                d="M21.4383 11.6622L12.2483 20.8522C11.1225 21.9781 9.59552 22.6106 8.00334 22.6106C6.41115 22.6106 4.88418 21.9781 3.75834 20.8522C2.63249 19.7264 2 18.1994 2 16.6072C2 15.015 2.63249 13.4881 3.75834 12.3622L12.9483 3.17222C13.6989 2.42166 14.7169 2 15.7783 2C16.8398 2 17.8578 2.42166 18.6083 3.17222C19.3589 3.92279 19.7806 4.94077 19.7806 6.00222C19.7806 7.06368 19.3589 8.08166 18.6083 8.83222L9.40834 18.0222C9.03306 18.3975 8.52406 18.6083 7.99334 18.6083C7.46261 18.6083 6.95362 18.3975 6.57834 18.0222C6.20306 17.6469 5.99222 17.138 5.99222 16.6072C5.99222 16.0765 6.20306 15.5675 6.57834 15.1922L15.0683 6.71222"
+                                stroke="currentColor"
+                                stroke-width="1.5"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            ></path>
+                        </svg>
+                    </button>
+                    <div class="spacer"></div>
+                    <button>
+                        <svg
+                            width="24px"
+                            height="24px"
+                            viewBox="0 0 24 24"
+                            stroke-width="1.5"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                            color="currentColor"
+                        >
+                            <path
+                                d="M22.1525 3.55321L11.1772 21.0044L9.50686 12.4078L2.00002 7.89795L22.1525 3.55321Z"
+                                stroke="currentColor"
+                                stroke-width="1.5"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            ></path>
+                            <path
+                                d="M9.45557 12.4436L22.1524 3.55321"
+                                stroke="currentColor"
+                                stroke-width="1.5"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            ></path>
+                        </svg>
+                        <span>Publish</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <h2>Posts</h2>
+
+    {{if not .Posts.Items}}
+    <p>No posts yet.</p>
+    {{else}}
+    <div class="vstack gap">
+        {{range .Posts.Items}}
+        <article class="box">
+            <h3>{{.ID}}</h3>
+            <p>{{.Content}}</p>
+        </article>
+        {{end}}
+    </div>
+    {{end}}
 </main>
 {{end}}

@@ -166,6 +166,16 @@
             </svg>
         </a>
 
+        <a href="/users/{{.Session.User.Username}}" title="Profile" {{if eq .Session.CurrentURL (printf "/users/%s" .Session.User.Username)}}aria-current="page"{{end}}>
+            <img
+                src="https://source.boringavatars.com/beam/192/{{.Session.User.Username}}?square=true"
+                alt="Avatar"
+                width="192"
+                height="192"
+                class="avatar"
+            />
+        </a>
+
         <form action="/logout" method="POST">
             <button type="submit" title="Logout">
                 <svg

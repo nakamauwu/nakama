@@ -42,7 +42,21 @@
         </style>
     </head>
     <body>
-        {{template "header.tmpl" .}}
+        {{with .Session.FlashError}}
+        <div class="flash error">{{.}}</div>
+        {{end}} {{template "header.tmpl" .}}
         <div>{{block "content" .}}{{end}}</div>
     </body>
+
+    <script>
+        const flashes = document.querySelectorAll(".flash");
+        for (const flash of flashes) {
+            setTimeout(() => {
+                flash.style.opacity = 0;
+                setTimeout(() => {
+                    flash.remove();
+                }, 500);
+            }, 5000);
+        }
+    </script>
 </html>
