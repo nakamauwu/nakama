@@ -1,0 +1,26 @@
+{{template "layout.tmpl" .}}
+
+{{define "content"}}
+    <main class="container">
+        <h1>Register</h1>
+
+        <p>Choose an username for your new account.</p>
+
+        <form action="/oauth2/{{.ProviderName}}/redirect" method="GET">
+            <div>
+                <label for="email-input">
+                    <small>Email:</small>
+                </label>
+                <input id="email-input" name="email" type="email" value="{{.Email}}" required disabled>
+            </div>
+
+            <div>
+                <label for="username-input">
+                    <small>Username:</small>
+                </label>
+                <input id="username-input" name="username" type="text" required>
+            </div>
+
+            <button>Register</button>
+    </main>
+{{end}}

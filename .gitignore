@@ -1,4 +1,6 @@
 /nakama
+/tmp
+/cockroach-data
 
 # Created by https://www.toptal.com/developers/gitignore/api/go,git,vim,linux,macos,dotenv,goland,windows,database,executable,visualstudiocode
 # Edit at https://www.toptal.com/developers/gitignore?templates=go,git,vim,linux,macos,dotenv,goland,windows,database,executable,visualstudiocode

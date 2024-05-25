@@ -1,0 +1,100 @@
+:root {
+    box-sizing: border-box;
+}
+
+*,
+::before,
+::after {
+    box-sizing: inherit;
+}
+
+.container {
+    width: calc(100% - 4rem);
+    max-width: 120ch;
+    margin-inline: auto;
+}
+
+button,
+input {
+    font: inherit;
+    color: inherit;
+    border: 1px solid #222;
+}
+
+[disabled] {
+    user-select: none;
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.hstack {
+    display: flex;
+}
+
+.vstack {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.gap {
+    gap: 1rem;
+}
+
+.gap-2 {
+    gap: 2rem;
+}
+
+.gap-3 {
+    gap: 3rem;
+}
+
+.spacer {
+    flex-grow: 1;
+}
+
+html,
+body {
+    height: 100%;
+}
+
+body {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    margin: 0;
+    padding: 0;
+}
+
+header {
+    margin: 1rem;
+    border-radius: 1.5rem;
+    padding: 1rem;
+    background-color: #fafbfd;
+    height: calc(100% - 2rem);
+    color: #444;
+}
+
+header form button {
+    background: none;
+    border: none;
+}
+
+header a,
+header button {
+    width: 3rem;
+    height: 3rem;
+    padding: 0;
+    margin: 0;
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: inherit;
+}
+
+header nav a:hover,
+header nav button:hover,
+header nav a[aria-current="page"] {
+    color: black;
+    background-color: #daebf0;
+}
