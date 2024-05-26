@@ -1,0 +1,27 @@
+<article class="box">
+    <div class="hstack gap">
+        <a href="/@{{.Post.User.Username}}">
+            <img
+                src="https://source.boringavatars.com/beam/192/{{.Post.User.Username}}?square=true"
+                alt="Avatar"
+                width="192"
+                height="192"
+                class="avatar"
+            />
+        </a>
+
+        <div class="vstack gap full-width">
+            <div class="hstack gap centered">
+                <a href="/@{{.Post.User.Username}}" class="reset-link">
+                    <strong>{{.Post.User.Username}}</strong>
+                </a>
+                <div class="spacer"></div>
+                <small class="muted-text">
+                    <time>{{.Post.CreatedAt.Format "2006 Jan _2 15:04"}}</time>
+                </small>
+            </div>
+
+            <p class="content">{{linkify .Post.Content}}</p>
+        </div>
+    </div>
+</article>

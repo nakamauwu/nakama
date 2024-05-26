@@ -74,11 +74,20 @@
     <p>No posts yet.</p>
     {{else}}
     <div class="vstack gap">
-        {{range .Posts.Items}}
-        <article class="box">
-            <h3>{{.ID}}</h3>
-            <p>{{.Content}}</p>
-        </article>
+        <div class="vstack gap">
+            {{range .Posts.Items}} {{template "post.tmpl" (dict "Post" . "Session" $.Session)}} {{end}}
+        </div>
+
+        {{if .Posts.HasNextPage}}
+        <div class="hstack">
+            <div class="spacer"></div>
+
+            <a href="/?before={{.Posts.LastID}}" class="reset-link">
+                <strong>Load more posts</strong>
+            </a>
+
+            <div class="spacer"></div>
+        </div>
         {{end}}
     </div>
     {{end}}

@@ -15,6 +15,8 @@ type Post struct {
 	Content   string    `db:"content"`
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
+
+	User *User `db:"user"`
 }
 
 type CreatePost struct {
@@ -41,13 +43,26 @@ func (in *CreatePost) Validate() error {
 }
 
 type ListPosts struct {
-	UserID string `form:"-"`
+	UserID string  `form:"-"`
+	Last   *uint   `form:"last"`
+	Before *string `form:"before"`
 }
 
 func (in *ListPosts) Validate() error {
 	in.UserID = strings.TrimSpace(in.UserID)
 	if in.UserID != "" {
 		return fmt.Errorf("list posts with user ID from request")
+	}
+
+	if in.Last == nil {
+		in.Last = ptr(pageSizeDefault)
+	}
+	if err := validatePageSize(in.Last); err != nil {
+		return err
+	}
+
+	if err := validateID(in.Before); err != nil {
+		return err
 	}
 
 	return nil

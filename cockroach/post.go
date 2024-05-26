@@ -33,14 +33,19 @@ func (c *Cockroach) Posts(ctx context.Context, in types.ListPosts) (types.List[t
 	var out types.List[types.Post]
 
 	const q = `
-		SELECT *
+		SELECT posts.*, to_jsonb(users.*) AS user
 		FROM posts
-		WHERE user_id = @user_id
-		ORDER BY id DESC
+		INNER JOIN users ON posts.user_id = users.id
+		WHERE posts.user_id = @user_id
+			AND @before::varchar IS NULL OR posts.id < @before::varchar
+		ORDER BY posts.id DESC
+		LIMIT @last::integer
 	`
 
 	rows, err := c.db.Query(ctx, q, pgx.NamedArgs{
 		"user_id": in.UserID,
+		"before":  in.Before,
+		"last":    in.Last,
 	})
 	if err != nil {
 		return out, fmt.Errorf("sql select posts: %w", err)
@@ -49,6 +54,11 @@ func (c *Cockroach) Posts(ctx context.Context, in types.ListPosts) (types.List[t
 	out.Items, err = pgx.CollectRows(rows, pgx.RowToStructByName[types.Post])
 	if err != nil {
 		return out, fmt.Errorf("sql collect posts: %w", err)
+	}
+
+	if l := len(out.Items); l != 0 {
+		out.LastID = ptr(out.Items[l-1].ID)
+		out.HasNextPage = in.Last != nil && *in.Last != 0 && len(out.Items) == int(*in.Last)
 	}
 
 	return out, nil

@@ -14,3 +14,7 @@ func New(pool *pgxpool.Pool) *Cockroach {
 		db: db.New(pool),
 	}
 }
+
+func ptr[T any](v T) *T {
+	return &v
+}

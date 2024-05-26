@@ -31,13 +31,21 @@ func ptr[T any](v T) *T {
 	return &v
 }
 
-func (h *Handler) decode(r *http.Request, dest any) error {
+func (h *Handler) decodePostForm(r *http.Request, dest any) error {
 	if err := r.ParseForm(); err != nil {
 		return fmt.Errorf("parse form: %w", err)
 	}
 
-	if err := h.formDecoder.Decode(dest, r.Form); err != nil {
+	if err := h.formDecoder.Decode(dest, r.PostForm); err != nil {
 		return fmt.Errorf("decode form values: %w", err)
+	}
+
+	return nil
+}
+
+func (h *Handler) decodeQuery(r *http.Request, dest any) error {
+	if err := h.formDecoder.Decode(dest, r.URL.Query()); err != nil {
+		return fmt.Errorf("decode query string params: %w", err)
 	}
 
 	return nil

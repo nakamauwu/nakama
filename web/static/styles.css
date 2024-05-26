@@ -14,17 +14,16 @@ body {
 }
 
 body {
-    display: grid;
-    grid-template-columns: auto 1fr;
     margin: 0;
     padding: 0;
+    padding: 0 0 0 7rem;
     background-color: #161a1a;
     color: white;
 }
 
 .container {
     width: calc(100% - 4rem);
-    max-width: 120ch;
+    max-width: 80ch;
     margin-inline: auto;
 }
 
@@ -38,7 +37,7 @@ textarea {
 button,
 input {
     background-color: #1c2121;
-    border-radius: 1.5rem;
+    border-radius: 1rem;
     padding: 0 1.5rem;
     height: 3rem;
 }
@@ -46,7 +45,6 @@ input {
 button {
     touch-action: manipulation;
     user-select: none;
-
     display: flex;
     justify-content: center;
     align-items: center;
@@ -109,12 +107,15 @@ textarea {
 }
 
 header {
-    margin: 1rem;
     border-radius: 1.5rem;
     padding: 1rem;
     background-color: #fafbfd;
-    height: calc(100% - 2rem);
     color: #444;
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    width: 5rem;
+    height: calc(100% - 2rem);
 }
 
 header form button {
@@ -188,4 +189,14 @@ header .avatar {
 .flash.error {
     background-color: #d32f2f;
     color: white;
+}
+
+.reset-link {
+    color: inherit;
+    text-decoration: none;
+}
+
+.content {
+    margin: 0;
+    white-space: pre-wrap;
 }

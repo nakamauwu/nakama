@@ -5,12 +5,14 @@ import (
 	"embed"
 	"errors"
 	"fmt"
+	"html/template"
 	"net/http"
 	"syscall"
 
 	"github.com/nakamauwu/nakama/auth"
 	"github.com/nicolasparada/go-errs"
 	tmplrenderer "github.com/nicolasparada/go-tmpl-renderer"
+	"mvdan.cc/xurls/v2"
 )
 
 //go:embed templates/includes/*.tmpl templates/*.tmpl
@@ -32,6 +34,9 @@ func newRenderer() *tmplrenderer.Renderer {
 		FS:             templatesFS,
 		BaseDir:        "templates",
 		IncludePatters: []string{"includes/*.tmpl"},
+		FuncMap: template.FuncMap{
+			"linkify": linkify,
+		},
 	}
 }
 
@@ -70,4 +75,14 @@ func (h *Handler) render(w http.ResponseWriter, r *http.Request, tmplName string
 
 func (h *Handler) notFound(w http.ResponseWriter, r *http.Request) {
 	h.renderErr(w, r, errs.NotFoundError("page not found"))
+}
+
+var reURL = xurls.Relaxed()
+
+func linkify(s string) template.HTML {
+	s = template.HTMLEscapeString(s)
+	s = reURL.ReplaceAllString(s,
+		`<a href="$0" target="_blank" rel="noopener noreferrer">$0</a>`,
+	)
+	return template.HTML(s)
 }

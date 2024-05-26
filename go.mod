@@ -14,8 +14,10 @@ require (
 	github.com/nicolasparada/go-db v0.2.3
 	github.com/nicolasparada/go-errs v0.4.0
 	github.com/nicolasparada/go-tmpl-renderer v0.1.1
+	github.com/oklog/ulid/v2 v2.1.0
 	golang.org/x/oauth2 v0.20.0
 	golang.org/x/sync v0.7.0
+	mvdan.cc/xurls/v2 v2.5.0
 )
 
 require (
