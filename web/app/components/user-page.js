@@ -141,10 +141,10 @@ function UserPage({ username }) {
                     ${err !== null ? html`
                     <p class="error" role="alert">Could not fetch user: ${err.message}</p>
                     ` : fetching ? html`
-                    <p class="loader" aria-busy="true" aria-live="polite">Loading user... please wait.<p>
-                            ` : html`
-                            <user-profile .user=${user} @user-updated=${onUserUpdated} @avatar-updated=${onAvatarUpdated} @cover-updated=${onCoverUpdated}></user-profile>
-                            `}
+                    <p class="loader" aria-busy="true" aria-live="polite">Loading user... please wait.</p>
+                    ` : html`
+                    <user-profile .user=${user} @user-updated=${onUserUpdated} @avatar-updated=${onAvatarUpdated} @cover-updated=${onCoverUpdated}></user-profile>
+                    `}
                 </div>
             </div>
             <div class="container posts-wrapper">
@@ -152,23 +152,23 @@ function UserPage({ username }) {
                 ${err !== null ? html`
                 <p class="error" role="alert">Could not fetch posts: ${err.message}</p>
                 ` : fetching ? html`
-                <p class="loader" aria-busy="true" aria-live="polite">Loading posts... please wait.<p>
-                        ` : html`
-                        ${posts.length === 0 ? html`
-                        <p>0 posts</p>
-                        ` : html`
-                        <div class="posts" role="feed">
-                            ${repeat(posts, p => p.id, p => html`<post-item .post=${p} .type=${"post"}
-                                @resource-deleted=${onPostDeleted}></post-item>`)}
-                        </div>
-                        ${!noMorePosts ? html`
-                        <intersectable-comp @is-intersecting=${loadMore}></intersectable-comp>
-                        <p class="loader" aria-busy="true" aria-live="polite">Loading posts... please wait.</p>
-                        ` : endReached ? html`
-                        <p>End reached.</p>
-                        ` : null}
-                        `}
-                        `}
+                <p class="loader" aria-busy="true" aria-live="polite">Loading posts... please wait.</p>
+                ` : html`
+                ${posts.length === 0 ? html`
+                <p>0 posts</p>
+                ` : html`
+                <div class="posts" role="feed">
+                    ${repeat(posts, p => p.id, p => html`<post-item .post=${p} .type=${"post"}
+                        @resource-deleted=${onPostDeleted}></post-item>`)}
+                </div>
+                ${!noMorePosts ? html`
+                <intersectable-comp @is-intersecting=${loadMore}></intersectable-comp>
+                <p class="loader" aria-busy="true" aria-live="polite">Loading posts... please wait.</p>
+                ` : endReached ? html`
+                <p>End reached.</p>
+                ` : null}
+                `}
+                `}
             </div>
         </main>
         ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : null}

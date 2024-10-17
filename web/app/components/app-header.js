@@ -163,7 +163,6 @@ function showNotification(n) {
     const sysn = new Notification(title, {
         body,
         tag: n.id,
-        timestamp: n.issuedAt,
         data: n,
         icon: location.origin + "/icons/logo-circle-512.png",
     })

@@ -75,7 +75,7 @@ function SearchPage() {
             ${err !== null ? html`
                 <p class="error" role="alert">Could not fetch users: ${err.message}</p>
             ` : fetching ? html`
-                <p class="loader" aria-busy="true" aria-live="polite">Loading users... please wait.<p>
+                <p class="loader" aria-busy="true" aria-live="polite">Loading users... please wait.</p>
             ` : html`
                 ${users.length === 0 ? html`
                     <p>0 results</p>
@@ -85,7 +85,7 @@ function SearchPage() {
                     </div>
                     ${!noMoreUsers ? html`
                         <intersectable-comp @is-intersecting=${loadMore}></intersectable-comp>
-                        <p class="loader" aria-busy="true" aria-live="polite">Loading users... please wait.<p>
+                        <p class="loader" aria-busy="true" aria-live="polite">Loading users... please wait.</p>
                     ` : endReached ? html`
                         <p>End reached.</p>
                     ` : null}

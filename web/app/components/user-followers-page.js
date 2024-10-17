@@ -68,7 +68,7 @@ function UserFollowersPage({ username }) {
             ${err !== null ? html`
                 <p class="error" role="alert">Could not fetch followers: ${err.message}</p>
             ` : fetching ? html`
-                <p class="loader" aria-busy="true" aria-live="polite">Loading followers... please wait.<p>
+                <p class="loader" aria-busy="true" aria-live="polite">Loading followers... please wait.</p>
             ` : html`
                 ${users.length === 0 ? html`
                     <p>0 followers</p>
@@ -78,7 +78,7 @@ function UserFollowersPage({ username }) {
                     </div>
                     ${!noMoreUsers ? html`
                         <intersectable-comp @is-intersecting=${loadMore}></intersectable-comp>
-                        <p class="loader" aria-busy="true" aria-live="polite">Loading users... please wait.<p>
+                        <p class="loader" aria-busy="true" aria-live="polite">Loading users... please wait.</p>
                     ` : endReached ? html`
                         <p>End reached.</p>
                     ` : null}

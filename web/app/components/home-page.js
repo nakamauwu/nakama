@@ -78,7 +78,7 @@ function HomePage() {
                 setEndReached(true)
             }
         }, err => {
-            const msg = mode === ("timeline" ? "could not fetch more timeline items: " : "could not fetch more posts: ") + err.message
+            const msg = (mode === "timeline" ? "could not fetch more timeline items: " : "could not fetch more posts: ") + err.message
             console.error(msg)
             setToast({ type: "error", content: msg })
         }).finally(() => {
@@ -165,7 +165,7 @@ function HomePage() {
                 <p class="loader" aria-busy="true" aria-live="polite">${mode === "timeline"
                 ? translate("homePage.loading.timeline")
                 : translate("homePage.loading.posts")}
-                <p>
+                </p>
             ` : html`
                 <div role="tabpanel" id="${mode}-tabpanel" aria-labelledby="${mode}-tab">
                 ${posts.length === 0 ? html`
@@ -184,11 +184,12 @@ function HomePage() {
                         <p class="loader" aria-busy="true" aria-live="polite">${mode === "timeline"
                         ? translate("homePage.loading.timeline")
                         : translate("homePage.loading.posts")}
-                        <p>
+                        </p>
                     ` : endReached ? html`
                         <p>${translate("homePage.end")}</p>
                     ` : null}
                 `}
+                </div>
             `}
         </main>
         ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : null}
@@ -472,7 +473,7 @@ function PostForm() {
                             </g>
                         </g>
                     </svg>
-                    <span>${translate("postForm.submit")}</button>
+                    <span>${translate("postForm.submit")}</span>
                 </button>
                 </div>
             ` : null}

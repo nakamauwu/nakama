@@ -99,25 +99,26 @@ function TaggedPostsPage({ tag }) {
             ` : fetching ? html`
                 <p class="loader" aria-busy="true" aria-live="polite">
                     Loading tagged posts... please wait.
-                <p>
+                </p>
             ` : html`
                 <div role="tabpanel" id="tabpanel" aria-labelledby="tab">
                 ${posts.length === 0 ? html`
                     <p>0 posts</p>
                 ` : html`
                     <div class="posts" role="feed">
-                        ${repeat(posts, p => p.id, p => html`<post-item .post=${p} .type="post"
+                        ${repeat(posts, p => p.id, p => html`<post-item .post=${p} .type=${"post"}
                             @resource-deleted=${onPostDeleted}></post-item>`)}
                     </div>
                     ${!noMore ? html`
                         <intersectable-comp @is-intersecting=${loadMore}></intersectable-comp>
                         <p class="loader" aria-busy="true" aria-live="polite">
                             Loading tagged posts... please wait.
-                        <p>
+                        </p>
                     ` : endReached ? html`
                         <p>End reached</p>
                     ` : null}
                 `}
+                </div>
             `}
         </main>
         ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : null}

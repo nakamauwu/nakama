@@ -205,11 +205,11 @@ function NotificationsPage() {
                 <h1>Notifications</h1>
                 <div class="notifications-controls">
                     ${window.Notification ? html`
-                    <label class="switch-wrapper">
-                        <input type="checkbox" role="switch" name="notifications_enabled" .checked=${notificationsEnabled}
-                            @change=${onNotifyInputChange}>
-                        <span>Notify?</span>
-                    </label>
+                        <label class="switch-wrapper">
+                            <input type="checkbox" role="switch" name="notifications_enabled" .checked=${notificationsEnabled}
+                                @change=${onNotifyInputChange}>
+                            <span>Notify?</span>
+                        </label>
                     ` : null}
                     <button .disabled=${markingAllAsRead} @click=${onReadAllBtnClick}>
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
@@ -228,28 +228,25 @@ function NotificationsPage() {
                 </div>
             </div>
             ${err !== null ? html`
-            <p class="error" role="alert">Could not fetch notifications: ${err.message}</p>
+                <p class="error" role="alert">Could not fetch notifications: ${err.message}</p>
             ` : fetching ? html`
-            <p class="loader" aria-busy="true" aria-live="polite">Loading notifications... please wait.<p>
-                    ` : html`
-                    ${queue.length !== 0 ? html`
+                <p class="loader" aria-busy="true" aria-live="polite">Loading notifications... please wait.</p>
+            ` : html`
+                ${queue.length !== 0 ? html`
                     <button class="queue-btn" @click=${onQueueBtnClick}>${queue.length} new notifications</button>
-                    ` : null}
-                    ${notifications.length === 0 ? html`
+                ` : null}
+                ${notifications.length === 0 ? html`
                     <p>0 notifications</p>
-                    ` : html`
+                ` : html`
                     <div class="notifications" role="feed">
-                        ${repeat(notifications, n => n.id, n => html`<notification-item .notification=${n}></notification-item>
-                        `)}
+                        ${repeat(notifications, n => n.id, n => html`<notification-item .notification=${n}></notification-item>`)}
                     </div>
                     ${!noMoreNotifications ? html`
-                    <intersectable-comp @is-intersecting=${loadMore}></intersectable-comp>
-                    <p class="loader" aria-busy="true" aria-live="polite">Loading notifications... please wait.<p>
-                            ` : endReached ? html`
-                            <p>End reached.</p>
-                            ` : null}
-                            `}
-                            `}
+                        <intersectable-comp @is-intersecting=${loadMore}></intersectable-comp>
+                        <p class="loader" aria-busy="true" aria-live="polite">Loading notifications... please wait.</p>
+                    ` : endReached ? html`<p>End reached.</p>` : null}
+                `}
+            `}
         </main>
         ${toast !== null ? html`<toast-item .toast=${toast}></toast-item>` : null}
     `
@@ -257,6 +254,10 @@ function NotificationsPage() {
 
 customElements.define("notifications-page", component(NotificationsPage, { useShadowDOM: false }))
 
+/**
+ * @param {Object} props
+ * @param {import("../types.js").Notification} props.notification
+ */
 function NotificationItem({ notification: initialNotification }) {
     const [_, setHasUnreadNotifications] = useStore(hasUnreadNotificationsStore)
     const [notification, setNotification] = useState(initialNotification)
@@ -355,7 +356,6 @@ function NotificationItem({ notification: initialNotification }) {
     `
 }
 
-// @ts-ignore
 customElements.define("notification-item", component(NotificationItem, { useShadowDOM: false }))
 
 function fetchNotifications(before = "", last = pageSize) {
