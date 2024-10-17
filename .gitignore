@@ -5,6 +5,9 @@
 /prometheus-data/**
 /letsencrypt
 /nakama
+/web/static/img/avatars
+/web/static/img/covers
+/web/static/img/media
 !/web/dist/keepme
 /web/dist
 /tmp/**
