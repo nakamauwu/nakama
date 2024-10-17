@@ -200,39 +200,6 @@ body {
   display: none !important;
 }
 
-guarded-view,
-router-view,
-nakama-app,
-access-callback-page,
-login-form,
-app-header,
-home-page,
-post-form,
-intersectable-comp,
-notifications-page,
-notification-item,
-post-item,
-reaction-btn,
-add-reaction-btn,
-media-scroller,
-zoomable-img,
-post-page,
-comment-form,
-relative-datetime,
-search-page,
-search-form,
-toast-item,
-user-follow-btn,
-user-follow-counts,
-user-followees-page,
-user-followers-page,
-user-item,
-user-page,
-user-profile,
-logout-btn {
-  display: contents;
-}
-
 :focus:not(:focus-visible) {
   outline: none;
 }
@@ -1323,6 +1290,7 @@ notification-item[read]+notification-item[read] .notification::before {
   width: 100%;
   height: 1px;
   background-color: var(--line);
+  z-index: -1;
 }
 
 .notification p {
