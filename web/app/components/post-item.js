@@ -516,7 +516,12 @@ function MediaScroller({ urls }) {
                             div.innerHTML = json.html
                             items.push(html`${div}`)
                             setTimeout(() => {
-                                addBskyWidget()
+                                addBskyWidget().then(() => {
+                                    if ("bsky" in window) {
+                                        // @ts-ignore
+                                        window.bsky.scan(div)
+                                    }
+                                })
                             }, 1)
                             continue
                         }
