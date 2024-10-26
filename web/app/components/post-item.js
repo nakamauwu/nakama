@@ -484,15 +484,16 @@ function MediaScroller({ urls }) {
                             const resp = await fetchJSONP(u)
                             const json = await resp.json()
                             if (typeof json === "object" && json !== null && typeof json.html === "string") {
-                                await addTwitterWidget()
                                 const div = document.createElement("div")
                                 div.innerHTML = json.html
                                 items.push(html`${div}`)
                                 setTimeout(() => {
-                                    if ("twttr" in window) {
-                                        // @ts-ignore
-                                        window.twttr.widgets.load(div)
-                                    }
+                                    addTwitterWidget().then(() => {
+                                        if ("twttr" in window) {
+                                            // @ts-ignore
+                                            window.twttr.widgets.load(div)
+                                        }
+                                    })
                                 }, 1)
                                 continue
                             }
@@ -514,12 +515,16 @@ function MediaScroller({ urls }) {
                         if (typeof json === "object" && json !== null && typeof json.html === "string") {
                             const div = document.createElement("div")
                             div.innerHTML = json.html
+                            const script = div.querySelector("script")
+                            if (script !== null) {
+                                script.remove()
+                            }
                             items.push(html`${div}`)
                             setTimeout(() => {
                                 addBskyWidget().then(() => {
-                                    if ("bsky" in window) {
+                                    if ("bluesky" in window) {
                                         // @ts-ignore
-                                        window.bsky.scan(div)
+                                        window.bluesky.scan(div)
                                     }
                                 })
                             }, 1)
@@ -634,45 +639,57 @@ function MediaScroller({ urls }) {
     `
 }
 
-const addedScripts = new Set()
 
 /**
+ * addScript makes sure to insert the script to the document body once.
+ * It resolves only when the symbol is present in the window object.
+ * When the script loads, it checks if the symbol is present in the window object as well.
+ * When the script fails to load or the symbol is not present in the window object after a timeout, it rejects.
  * @param {string} src
+ * @param {string} symbol
  */
-function addScript(src) {
-    if (addedScripts.has(src)) {
+function addScript(src, symbol) {
+    if (symbol in window) {
         return Promise.resolve()
     }
 
-    let resolve = (x) => { }
-    let reject = (x) => { }
+    return new Promise((resolve, reject) => {
+        const script = document.createElement("script")
+        script.src = src
+        script.async = true
+        script.onload = () => {
+            if (symbol in window) {
+                resolve()
+                return
+            }
 
-    const p = new Promise((res, rej) => {
-        resolve = res
-        reject = rej
+            let tries = 0
+
+            const interval = setInterval(() => {
+                if (symbol in window) {
+                    clearInterval(interval)
+                    resolve()
+                    return
+                }
+
+                if (tries++ > 10) {
+                    clearInterval(interval)
+                    reject(new Error("symbol '" + symbol + "' not found after script loaded and 10 tries over 1s"))
+                }
+            }, 100)
+        }
+        script.onerror = () => reject(new Error("failed to load script: " + src))
+        document.body.appendChild(script)
+        setTimeout(() => reject(new Error("script load timeout after 10s: " + src)), 10_000)
     })
-
-    const script = document.createElement("script")
-    script.src = src
-    script.onload = () => {
-        resolve()
-    }
-    script.onerror = err => {
-        reject(err)
-    }
-
-    document.head.append(script)
-    addedScripts.add(src)
-
-    return p
 }
 
 function addTwitterWidget() {
-    return addScript("https://platform.twitter.com/widgets.js")
+    return addScript("https://platform.twitter.com/widgets.js", "twttr")
 }
 
 function addBskyWidget() {
-    return addScript("https://embed.bsky.app/static/embed.js")
+    return addScript("https://embed.bsky.app/static/embed.js", "bluesky")
 }
 
 // @ts-ignore
