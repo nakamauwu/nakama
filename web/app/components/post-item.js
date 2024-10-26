@@ -488,15 +488,40 @@ function MediaScroller({ urls }) {
                                 const div = document.createElement("div")
                                 div.innerHTML = json.html
                                 items.push(html`${div}`)
-                                if ("twttr" in window) {
-                                    // @ts-ignore
-                                    window.twttr.widgets.load(div)
-                                }
+                                setTimeout(() => {
+                                    if ("twttr" in window) {
+                                        // @ts-ignore
+                                        window.twttr.widgets.load(div)
+                                    }
+                                }, 1)
                                 continue
                             }
                         } catch (err) {
                             console.error("failed to load tweet", err)
                         }
+                    }
+                }
+
+                if (url.hostname === "bsky.app" && url.pathname.includes("/post/")) {
+                    try {
+                        const endpoint = "https://embed.bsky.app/oembed?url=" + encodeURIComponent(url.toString())
+                        const resp = await fetch("/api/proxy?target=" + encodeURIComponent(endpoint))
+                        if (!resp.ok) {
+                            continue
+                        }
+
+                        const json = await resp.json()
+                        if (typeof json === "object" && json !== null && typeof json.html === "string") {
+                            const div = document.createElement("div")
+                            div.innerHTML = json.html
+                            items.push(html`${div}`)
+                            setTimeout(() => {
+                                addBskyWidget()
+                            }, 1)
+                            continue
+                        }
+                    } catch (err) {
+                        console.error("failed to load bsky.app post", err)
                     }
                 }
 
@@ -604,31 +629,45 @@ function MediaScroller({ urls }) {
     `
 }
 
-let twitterWidgetAdded = false
+const addedScripts = new Set()
 
-function addTwitterWidget() {
-    if (twitterWidgetAdded) {
-        return
+/**
+ * @param {string} src
+ */
+function addScript(src) {
+    if (addedScripts.has(src)) {
+        return Promise.resolve()
     }
 
     let resolve = (x) => { }
     let reject = (x) => { }
-    const promise = new Promise((ok, bad) => {
-        resolve = ok
-        reject = bad
+
+    const p = new Promise((res, rej) => {
+        resolve = res
+        reject = rej
     })
 
     const script = document.createElement("script")
-    script.src = "https://platform.twitter.com/widgets.js"
+    script.src = src
     script.onload = () => {
         resolve()
     }
-    script.onerror = (err) => {
+    script.onerror = err => {
         reject(err)
     }
 
     document.head.append(script)
-    return promise
+    addedScripts.add(src)
+
+    return p
+}
+
+function addTwitterWidget() {
+    return addScript("https://platform.twitter.com/widgets.js")
+}
+
+function addBskyWidget() {
+    return addScript("https://embed.bsky.app/static/embed.js")
 }
 
 // @ts-ignore
