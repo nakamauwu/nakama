@@ -1,0 +1,39 @@
+package templates
+
+import (
+    "github.com/nakamauwu/nakama/auth"
+)
+
+templ layout() {
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>Nakama</title>
+        <meta name="viewport" content="width=device-width">
+        <meta name="color-scheme" content="dark light">
+        <link rel="stylesheet" href="/static/css/styles.css">
+        <link rel="icon" href="data:,">
+    </head>
+    <body>
+        @header()
+        {children...}
+    </body>
+    </html>
+}
+
+templ header() {
+    {{ user, isLoggedIn := auth.UserFromContext(ctx)}}
+    <header>
+        <div class="container">
+            <a href="/">Nakama</a>
+
+            if isLoggedIn {
+                <p>You are logged in as <strong>{user.Username}</strong></p>
+                <form action="/logout" method="POST">
+                    <button>Logout</button>
+                </form>
+            }
+        </div>
+    </header>
+}

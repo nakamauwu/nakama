@@ -1,10 +1,12 @@
 package web
 
-import "net/http"
+import (
+	"net/http"
+
+	"github.com/nakamauwu/nakama/web/templates"
+)
 
 // showWelcome handles GET /
 func (h *Handler) showWelcome(w http.ResponseWriter, r *http.Request) {
-	h.render(w, r, "welcome.tmpl", map[string]any{
-		"Session": h.sessionData(r),
-	}, http.StatusOK)
+	h.render(w, r, templates.Welcome(), http.StatusOK)
 }

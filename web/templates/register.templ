@@ -1,0 +1,34 @@
+package templates
+
+type RegisterData struct {
+    ProviderName string
+    Email        string
+}
+
+templ Register(data RegisterData) {
+    @layout() {
+        <main>
+            <h1>Register</h1>
+
+            <p>Choose an username for your new account.</p>
+
+            <form action="/oauth2/{data.ProviderName}/redirect" method="GET">
+                <div>
+                    <label for="email-input">
+                        <small>Email:</small>
+                    </label>
+                    <input id="email-input" name="email" type="email" value="{data.Email}" required disabled>
+                </div>
+
+                <div>
+                    <label for="username-input">
+                        <small>Username:</small>
+                    </label>
+                    <input id="username-input" name="username" type="text" required>
+                </div>
+
+                <button>Register</button>
+            </form>
+        </main>
+    }
+}

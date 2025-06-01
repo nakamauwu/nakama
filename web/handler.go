@@ -12,7 +12,6 @@ import (
 	"github.com/nakamauwu/nakama/auth"
 	"github.com/nakamauwu/nakama/oauth"
 	"github.com/nakamauwu/nakama/service"
-	tmplrenderer "github.com/nicolasparada/go-tmpl-renderer"
 )
 
 type Handler struct {
@@ -21,7 +20,6 @@ type Handler struct {
 	Service      *service.Service
 	Providers    []oauth.Provider
 
-	renderer    *tmplrenderer.Renderer
 	sess        *scs.SessionManager
 	formDecoder *form.Decoder
 
@@ -30,7 +28,6 @@ type Handler struct {
 }
 
 func (h *Handler) init() {
-	h.renderer = newRenderer()
 	h.sess = scs.New()
 	h.sess.Store = h.SessionStore
 	h.sess.Lifetime = time.Hour * 24 * 14 // 2 weeks

@@ -8,6 +8,7 @@ import (
 	"github.com/nakamauwu/nakama/oauth"
 	"github.com/nakamauwu/nakama/service"
 	"github.com/nakamauwu/nakama/types"
+	"github.com/nakamauwu/nakama/web/templates"
 	"github.com/nicolasparada/go-errs"
 )
 
@@ -79,11 +80,10 @@ func (h *Handler) providerCallback(provider oauth.Provider) http.HandlerFunc {
 
 		user, err := h.Service.Login(ctx, login)
 		if errors.Is(err, service.ErrUsernameRequired) {
-			h.render(w, r, "register.tmpl", map[string]any{
-				"Session":      h.sessionData(r),
-				"Email":        claims.Email,
-				"ProviderName": provider.Name(),
-			}, http.StatusOK)
+			h.render(w, r, templates.Register(templates.RegisterData{
+				ProviderName: provider.Name(),
+				Email:        claims.Email,
+			}), http.StatusOK)
 			return
 		}
 

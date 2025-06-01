@@ -4,15 +4,14 @@ import (
 	"net/http"
 
 	"github.com/nakamauwu/nakama/auth"
+	"github.com/nakamauwu/nakama/web/templates"
 )
 
 const sessKeyUserID = "user_id"
 
 // showLogin handles GET /login
 func (h *Handler) showLogin(w http.ResponseWriter, r *http.Request) {
-	h.render(w, r, "login.tmpl", map[string]any{
-		"Session": h.sessionData(r),
-	}, http.StatusOK)
+	h.render(w, r, templates.Login(), http.StatusOK)
 }
 
 func (h *Handler) withUser(next http.Handler) http.Handler {

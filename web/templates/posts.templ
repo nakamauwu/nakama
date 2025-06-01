@@ -1,0 +1,42 @@
+package templates
+
+import (
+    "github.com/nakamauwu/nakama/types"
+)
+
+type PostsData struct {
+    Posts types.List[types.Post]
+}
+
+templ Posts(data PostsData) {
+    @layout() {
+        <main>
+            <h1>Posts</h1>
+
+            <form action="/posts" method="POST">
+                <textarea name="content" placeholder="Write something..." required></textarea>
+                <button>Publish</button>
+            </form>
+
+            <div>
+                for _, p := range data.Posts.Items {
+                    @post(p)
+                }
+            </div>
+
+            if data.Posts.HasNextPage {
+                <div>
+                    <a href={templ.URL("/?before="+*data.Posts.LastID)}>Load more</a>
+                </div>
+            }
+        </main>
+    }
+}
+
+templ post(p types.Post) {
+    <article>
+        <h2>{p.User.Username}</h2>
+        <time>{p.CreatedAt.Format("2006 Jan _2 15:04")}</time>
+        <p>@templ.Raw(linkify(p.Content))</p>
+    </article>
+}

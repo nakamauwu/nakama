@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/nakamauwu/nakama/types"
+	"github.com/nakamauwu/nakama/web/templates"
 )
 
 // showPosts handles GET /
@@ -22,10 +23,9 @@ func (h *Handler) showPosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.render(w, r, "posts.tmpl", map[string]any{
-		"Session": h.sessionData(r),
-		"Posts":   posts,
-	}, http.StatusOK)
+	h.render(w, r, templates.Posts(templates.PostsData{
+		Posts: posts,
+	}), http.StatusOK)
 }
 
 // createPost handles POST /posts
