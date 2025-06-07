@@ -3,10 +3,12 @@ package http
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"strconv"
+	"syscall"
 
 	"github.com/matryer/way"
 
@@ -104,7 +106,11 @@ func (h *handler) updateAvatar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprint(w, avatarURL)
+	_, err = fmt.Fprint(w, avatarURL)
+	if err != nil && !errors.Is(err, syscall.EPIPE) {
+		_ = h.logger.Log("err", fmt.Errorf("could not write avatar URL: %w", err))
+		return
+	}
 }
 
 func (h *handler) updateCover(w http.ResponseWriter, r *http.Request) {
@@ -122,7 +128,11 @@ func (h *handler) updateCover(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprint(w, coverURL)
+	_, err = fmt.Fprint(w, coverURL)
+	if err != nil && !errors.Is(err, syscall.EPIPE) {
+		_ = h.logger.Log("err", fmt.Errorf("could not write cover URL: %w", err))
+		return
+	}
 }
 
 func (h *handler) toggleFollow(w http.ResponseWriter, r *http.Request) {

@@ -105,11 +105,17 @@ func (h *handler) writeSSE(w io.Writer, v interface{}) {
 	b, err := json.Marshal(v)
 	if err != nil {
 		_ = h.logger.Log("err", fmt.Errorf("could not json marshal sse data: %w", err))
-		fmt.Fprintf(w, "event: error\ndata: %v\n\n", err)
+		_, errWrite := fmt.Fprintf(w, "event: error\ndata: %v\n\n", err)
+		if errWrite != nil && !errors.Is(errWrite, syscall.EPIPE) {
+			_ = h.logger.Log("err", fmt.Errorf("could not write sse error: %w", errWrite))
+		}
 		return
 	}
 
-	fmt.Fprintf(w, "data: %s\n\n", b)
+	_, errWrite := fmt.Fprintf(w, "data: %s\n\n", b)
+	if errWrite != nil && !errors.Is(errWrite, syscall.EPIPE) {
+		_ = h.logger.Log("err", fmt.Errorf("could not write sse data: %w", errWrite))
+	}
 }
 
 func (h *handler) proxy(w http.ResponseWriter, r *http.Request) {

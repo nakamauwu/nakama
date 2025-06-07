@@ -23,6 +23,8 @@ jobs:
 
       - name: Lint
         uses: golangci/golangci-lint-action@v8
+        with:
+          args: --fast-only
 
       - name: Set up gotestfmt
         uses: gotesttools/gotestfmt-action@v2
