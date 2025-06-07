@@ -1,4 +1,4 @@
-//go:generate go run -mod mod github.com/matryer/moq -rm -stub -out sender_mock.go . Sender
+//go:generate go tool moq -rm -stub -out sender_mock.go . Sender
 
 package mailing
 
