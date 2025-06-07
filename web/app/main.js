@@ -219,7 +219,14 @@ function onError(ev) {
         return
     }
 
-    pushLog(String(ev.error)).catch(err => {
+    let errLog = ""
+    if (typeof ev.error === "object" && ev.error !== null && typeof ev.error.stack === "string") {
+        errLog = ev.error.stack + ": " + ev.error.message
+    } else {
+        errLog = String(ev.error)
+    }
+
+    pushLog(errLog).catch(err => {
         console.error("could not push error log:", err)
     })
 }
@@ -232,7 +239,14 @@ function onUnHandledRejection(ev) {
         return
     }
 
-    pushLog(String(ev.reason)).catch(err => {
+    let errLog = ""
+    if (typeof ev.reason === "object" && ev.reason !== null && typeof ev.reason.stack === "string") {
+        errLog = ev.reason.stack + ": " + ev.reason.message
+    } else {
+        errLog = String(ev.reason)
+    }
+
+    pushLog(errLog).catch(err => {
         console.error("could not push unhandled rejection log:", err)
     })
 }
